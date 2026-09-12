@@ -14,9 +14,7 @@
                     <button type="button" @click="open = !open" :aria-expanded="open"
                             class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300">
                         <span>فیلتر محصولات</span>
-                        <svg class="h-4 w-4 transition" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <x-icons.chevron-down class="h-4 w-4 transition" :class="open ? 'rotate-180' : ''" />
                     </button>
                 </div>
 

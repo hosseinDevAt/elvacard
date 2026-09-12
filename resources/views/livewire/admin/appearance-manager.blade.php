@@ -30,13 +30,16 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">فاوآیکون</label>
-                    <input type="file" wire:model="siteFavicon" accept="image/*,.ico" class="w-full text-sm text-gray-600 file:me-3 file:rounded-lg file:border-0 file:bg-yellow-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-yellow-600">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">فاوآیکون (PNG، ICO یا SVG تا ۵۱۲ کیلوبایت)</label>
+                    <input type="file" wire:model="siteFavicon" accept=".png,.ico,.svg,image/png,image/x-icon,image/svg+xml" class="w-full text-sm text-gray-600 file:me-3 file:rounded-lg file:border-0 file:bg-yellow-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-yellow-600">
                     @error('siteFavicon') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     @if ($siteFavicon)
-                        <img src="{{ $siteFavicon->temporaryUrl() }}" alt="پیش‌نمایش فاوآیکون" class="mt-3 h-10 w-10 object-contain border border-gray-100 rounded p-1">
+                        @if ($siteFavicon->isPreviewable())
+                            <img src="{{ $siteFavicon->temporaryUrl() }}" alt="پیش‌نمایش فاوآیکون" class="mt-3 h-10 w-10 object-contain border border-gray-100 rounded p-1">
+                        @endif
                     @elseif ($siteFaviconPath)
                         <img src="{{ asset('storage/' . $siteFaviconPath) }}" alt="فاوآیکون فعلی" class="mt-3 h-10 w-10 object-contain border border-gray-100 rounded p-1">
+                        <button type="button" wire:click="removeFavicon" class="mt-2 text-xs text-red-600 hover:text-red-700">حذف فاوآیکون</button>
                     @endif
                 </div>
             </div>
@@ -108,6 +111,45 @@
                     @error('contactAddress') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
+        </section>
+
+        {{-- Icons --}}
+        <section class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-900 mb-1">آیکون‌ها</h2>
+            <p class="text-sm text-gray-500 mb-4">نسخه و نمایش آیکون‌های کاربردی سایت را مدیریت کنید. آیکون‌های جستجو و سبد خرید همیشه نمایش داده می‌شوند.</p>
+
+            <div class="space-y-4">
+                @foreach (config('icons.slots', []) as $key => $slot)
+                    <div class="flex flex-wrap items-center gap-4 border border-gray-100 rounded-xl p-4">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 text-gray-700">
+                            <x-dynamic-component :component="'icons.' . str_replace('_', '-', $key)" :variant="$iconSettings[$key]['variant'] ?? null" class="h-6 w-6" />
+                        </div>
+                        <div class="flex-1 min-w-[180px]">
+                            <p class="text-sm font-semibold text-gray-900">{{ $slot['label'] }}</p>
+                            @if ($slot['can_disable'])
+                                <label class="mt-1 flex items-center gap-2 text-sm text-gray-600">
+                                    <input type="checkbox" wire:model="iconSettings.{{ $key }}.enabled" class="rounded border-gray-300 text-yellow-500">
+                                    نمایش آیکون
+                                </label>
+                            @endif
+                            @error("iconSettings.{$key}.variant") <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <select wire:model="iconSettings.{{ $key }}.variant"
+                                    class="px-3 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition text-sm">
+                                @foreach (config('icons.variants', []) as $variant => $meta)
+                                    <option value="{{ $variant }}">{{ $meta['label'] }}</option>
+                                @endforeach
+                            </select>
+                            <button type="button" wire:click="resetIcon('{{ $key }}')"
+                                    class="text-xs text-red-600 hover:text-red-700">
+                                بازنشانی
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            @error('iconSettings') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </section>
 
         {{-- Header menu --}}

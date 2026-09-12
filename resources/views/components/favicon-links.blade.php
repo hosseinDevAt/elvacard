@@ -1,0 +1,1 @@
+<link rel="icon" href="{{ site_favicon_url() }}" type="{{ site_favicon_type() }}" />

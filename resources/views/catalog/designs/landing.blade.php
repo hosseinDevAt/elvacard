@@ -86,9 +86,7 @@
                         <a href="{{ route('catalog.designs.index', ['category' => $category->slug]) }}"
                            class="group rounded-2xl border border-gray-100 bg-white p-6 transition hover:border-primary-200 hover:shadow-lg">
                             <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition group-hover:bg-primary-600 group-hover:text-white">
-                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-                                </svg>
+                                <x-icons.grid class="h-6 w-6" />
                             </div>
                             <h3 class="text-lg font-semibold text-gray-900">{{ $category->name }}</h3>
                             <p class="mt-1 text-sm text-gray-500">{{ number_format($category->designs_count) }} طرح فعال</p>
@@ -112,9 +110,7 @@
                 <a href="{{ route('catalog.products.index') }}"
                    class="inline-flex items-center rounded-full bg-white px-8 py-4 text-lg font-semibold text-primary-700 shadow-lg transition hover:bg-gray-100">
                     شروع طراحی
-                    <svg class="me-0 ms-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8l-4 4m0 0l4 4m-4-4h17" />
-                    </svg>
+                    <x-icons.arrow-left class="me-0 ms-2 h-5 w-5" />
                 </a>
             </div>
         </div>

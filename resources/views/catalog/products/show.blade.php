@@ -4,9 +4,7 @@
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="mb-6">
             <a href="{{ route('catalog.products.index') }}" class="inline-flex items-center text-sm text-primary-600 hover:text-primary-800 transition">
-                <svg class="w-4 h-4 ms-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8l-4 4m0 0l4 4m-4-4h17" />
-                </svg>
+                <x-icons.arrow-left class="ms-1" />
                 بازگشت به محصولات
             </a>
             <h1 class="mt-2 text-2xl font-bold text-gray-900">{{ $product->name }}</h1>

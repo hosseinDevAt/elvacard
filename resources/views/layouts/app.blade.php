@@ -7,9 +7,7 @@
 
         <title>{{ site_setting('site_name', 'الواکارت') }}</title>
 
-        @if ($favicon = site_setting('site_favicon'))
-            <link rel="icon" href="{{ asset('storage/' . $favicon) }}" type="image/x-icon">
-        @endif
+        @include('components.favicon-links')
 
         @yield('meta')
 

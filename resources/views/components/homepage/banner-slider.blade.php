@@ -49,9 +49,7 @@
                                     <a href="{{ safe_url($banner['cta_url']) ?? route('catalog.products.index') }}"
                                        class="inline-flex items-center rounded-full bg-white px-6 py-3 text-lg font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100 sm:px-8 sm:py-4">
                                         {{ $banner['cta_text'] }}
-                                        <svg class="me-0 ms-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8l-4 4m0 0l4 4m-4-4h17" />
-                                        </svg>
+                                        <x-icons.arrow-left class="me-0 ms-2 h-5 w-5" />
                                     </a>
                                 @endif
                             </div>
@@ -63,15 +61,11 @@
             @if ($banners->count() > 1)
                 <button type="button" @click="prev()" :aria-label="'بنر قبلی'"
                         class="absolute start-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white backdrop-blur-sm transition hover:bg-white/30">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <x-icons.chevron-left />
                 </button>
                 <button type="button" @click="next()" :aria-label="'بنر بعدی'"
                         class="absolute end-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white backdrop-blur-sm transition hover:bg-white/30">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <x-icons.chevron-right />
                 </button>
                 <div class="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2">
                     <template x-for="i in count" :key="i">

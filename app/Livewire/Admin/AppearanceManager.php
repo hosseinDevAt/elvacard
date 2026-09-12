@@ -5,7 +5,10 @@ namespace App\Livewire\Admin;
 use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\SiteSetting;
+use App\Services\IconManager;
+use App\Services\SvgSanitizer;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -48,6 +51,9 @@ class AppearanceManager extends Component
     public ?string $contactEmail = null;
     public ?string $contactAddress = null;
 
+    // Icons (slot key => ['variant' => string, 'enabled' => bool])
+    public array $iconSettings = [];
+
     // Header menu items (id => [title, sort_order, is_active])
     public array $menuItems = [];
 
@@ -58,7 +64,7 @@ class AppearanceManager extends Component
         return [
             'siteName' => 'required|string|max:255',
             'siteLogo' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
-            'siteFavicon' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg,ico|max:2048',
+            'siteFavicon' => 'nullable|file|mimes:png,ico,svg|max:512',
             'bannerImage1' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'bannerImage2' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'bannerImage3' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
@@ -82,6 +88,20 @@ class AppearanceManager extends Component
             'menuItems.*.title' => 'required|string|max:255',
             'menuItems.*.sort_order' => 'required|integer|min:0',
             'menuItems.*.is_active' => 'boolean',
+            'iconSettings' => 'required|array',
+            'iconSettings.*.variant' => ['required', 'string', function ($attribute, $value, $fail) {
+                $key = explode('.', $attribute)[1] ?? '';
+
+                if (! app(IconManager::class)->has($key)) {
+                    $fail('تنظیم آیکون نامعتبر است.');
+                    return;
+                }
+
+                if (! in_array($value, app(IconManager::class)->allowedVariants($key), true)) {
+                    $fail('نسخه آیکون انتخابی نامعتبر است.');
+                }
+            }],
+            'iconSettings.*.enabled' => 'nullable|boolean',
         ];
     }
 
@@ -131,6 +151,8 @@ class AppearanceManager extends Component
         $this->loadBanner(2);
         $this->loadBanner(3);
 
+        $this->loadIconSettings();
+
         $this->menuItems = MenuItem::query()
             ->whereHas('menu', fn ($q) => $q->where('location', 'header'))
             ->whereNotNull('route_key')
@@ -159,6 +181,49 @@ class AppearanceManager extends Component
         $this->{"bannerImagePath{$index}"} = $banner['image_path'] ?? null;
     }
 
+    private function loadIconSettings(): void
+    {
+        $this->iconSettings = [];
+
+        foreach (array_keys(config('icons.slots', [])) as $key) {
+            $this->iconSettings[$key] = [
+                'variant' => site_icon_variant($key),
+                'enabled' => site_icon_enabled($key),
+            ];
+        }
+    }
+
+    public function resetIcon(string $key): void
+    {
+        if (! app(IconManager::class)->has($key)) {
+            return;
+        }
+
+        SiteSetting::where('key', 'icon.'.$key)->get()->each->delete();
+        SiteSetting::where('key', 'icon.'.$key.'_enabled')->get()->each->delete();
+
+        $this->iconSettings[$key] = [
+            'variant' => site_icon_variant($key),
+            'enabled' => site_icon_enabled($key),
+        ];
+
+        session()->flash('success', 'آیکون به حالت پیش‌فرض بازگشت');
+    }
+
+    public function removeFavicon(): void
+    {
+        if ($this->siteFaviconPath && Storage::disk('public')->exists($this->siteFaviconPath)) {
+            Storage::disk('public')->delete($this->siteFaviconPath);
+        }
+
+        SiteSetting::where('key', 'site_favicon')->get()->each->delete();
+
+        $this->siteFaviconPath = null;
+        $this->reset('siteFavicon');
+
+        session()->flash('success', 'فاوآیکون حذف شد');
+    }
+
     public function save(): void
     {
         $this->validate();
@@ -166,7 +231,7 @@ class AppearanceManager extends Component
         $this->putSetting('site_name', $this->siteName, 'string');
 
         $this->maybeUpload('siteLogo', 'site_logo', 'siteLogoPath', 'appearance');
-        $this->maybeUpload('siteFavicon', 'site_favicon', 'siteFaviconPath', 'appearance');
+        $this->maybeUpload('siteFavicon', 'site_favicon', 'siteFaviconPath', 'favicons');
 
         $this->putSetting('footer_about_text', $this->footerAboutText, 'string');
         $this->putSetting('contact_phone', $this->contactPhone, 'string');
@@ -186,6 +251,7 @@ class AppearanceManager extends Component
         }
 
         $this->saveMenuItems();
+        $this->saveIconSettings();
 
         session()->flash('success', 'ظاهر سایت با موفقیت ذخیره شد');
         $this->saved = true;
@@ -204,6 +270,10 @@ class AppearanceManager extends Component
 
         $path = $file->store($directory, 'public');
 
+        if (strtolower($file->getClientOriginalExtension()) === 'svg') {
+            $this->sanitizeStoredSvg($path, $property);
+        }
+
         if ($this->{$pathProperty} && Storage::disk('public')->exists($this->{$pathProperty})) {
             Storage::disk('public')->delete($this->{$pathProperty});
         }
@@ -217,6 +287,47 @@ class AppearanceManager extends Component
         $this->reset($property);
 
         return $path;
+    }
+
+    /**
+     * Re-write a stored SVG through the sanitizer. A dangerous or malformed
+     * SVG is deleted and the upload rejected with a validation error.
+     */
+    private function sanitizeStoredSvg(string $path, string $property): void
+    {
+        $disk = Storage::disk('public');
+        $content = $disk->get($path);
+
+        if (! is_string($content)) {
+            $disk->delete($path);
+            throw ValidationException::withMessages([$property => 'خواندن فایل SVG ممکن نشد.']);
+        }
+
+        $clean = app(SvgSanitizer::class)->sanitize($content);
+
+        if ($clean === null) {
+            $disk->delete($path);
+            throw ValidationException::withMessages([$property => 'محتوای فایل SVG نامعتبر یا ناامن است.']);
+        }
+
+        $disk->put($path, $clean);
+    }
+
+    private function saveIconSettings(): void
+    {
+        $manager = app(IconManager::class);
+
+        foreach ($this->iconSettings as $key => $settings) {
+            if (! $manager->has($key)) {
+                continue;
+            }
+
+            $this->putSetting('icon.'.$key, (string) $settings['variant'], 'string');
+
+            if ($manager->canDisable($key)) {
+                $this->putSetting('icon.'.$key.'_enabled', (bool) $settings['enabled'] ? '1' : '0', 'boolean');
+            }
+        }
     }
 
     private function putSetting(string $key, mixed $value, string $type): void
@@ -235,6 +346,7 @@ class AppearanceManager extends Component
     {
         return match (true) {
             in_array($key, ['site_name', 'site_logo', 'site_favicon'], true) => 'identity',
+            str_starts_with($key, 'icon.') => 'icons',
             str_contains($key, 'banner') => 'homepage',
             str_contains($key, 'contact') => 'contact',
             default => 'footer',

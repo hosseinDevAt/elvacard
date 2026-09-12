@@ -30,9 +30,7 @@
                class="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-primary-600 rounded-full hover:bg-primary-700 transition shadow-lg">
                 {{ $settings['cta_text'] }}
                 @if ($settings['cta_icon'] ?? false)
-                    <svg class="w-5 h-5 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8l-4 4m0 0l4 4m-4-4h17" />
-                    </svg>
+                    <x-icons.arrow-left class="w-5 h-5 me-2" />
                 @endif
             </a>
         @endif

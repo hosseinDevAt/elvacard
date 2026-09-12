@@ -78,3 +78,58 @@ if (! function_exists('normalize_phone')) {
         ]);
     }
 }
+
+if (! function_exists('site_icon_variant')) {
+    /**
+     * Resolve the admin-configured variant for a controllable icon slot.
+     * Falls back to the slot default when nothing is stored or the stored
+     * value is not in the server-side allowlist.
+     */
+    function site_icon_variant(string $key): string
+    {
+        return app(\App\Services\IconManager::class)->variant($key);
+    }
+}
+
+if (! function_exists('site_icon_enabled')) {
+    /**
+     * Whether a controllable icon slot should be rendered. Always true for
+     * slots that cannot be disabled by the admin.
+     */
+    function site_icon_enabled(string $key): bool
+    {
+        return app(\App\Services\IconManager::class)->enabled($key);
+    }
+}
+
+if (! function_exists('site_favicon_url')) {
+    /**
+     * Public URL of the favicon. Returns the internal Elvacard fallback when
+     * no favicon has been uploaded - the <link rel="icon"> is never absent.
+     */
+    function site_favicon_url(): string
+    {
+        $path = site_setting('site_favicon');
+
+        return $path ? asset('storage/'.$path) : asset('favicon.svg');
+    }
+}
+
+if (! function_exists('site_favicon_type')) {
+    /**
+     * Correct MIME type for the current favicon so SVG favicons use
+     * image/svg+xml and old .ico files use image/x-icon.
+     */
+    function site_favicon_type(): string
+    {
+        $path = site_setting('site_favicon');
+
+        $ext = $path ? strtolower((string) pathinfo($path, PATHINFO_EXTENSION)) : 'svg';
+
+        return match ($ext) {
+            'ico' => 'image/x-icon',
+            'svg' => 'image/svg+xml',
+            default => 'image/png',
+        };
+    }
+}

@@ -5,11 +5,7 @@
             :aria-expanded="open.toString()"
             aria-controls="faq-answer-{{ $faq->id }}">
         <span>{{ $faq->question }}</span>
-        <svg class="w-5 h-5 text-gray-400 ms-3 flex-shrink-0 transition-transform duration-200"
-             :class="{ 'rotate-180': open }"
-             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
+        <x-icons.chevron-down class="w-5 h-5 text-gray-400 ms-3 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" />
     </button>
     <div x-show="open"
          x-collapse
