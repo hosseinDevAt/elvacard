@@ -274,16 +274,41 @@ class CartService
             }
         }
 
-        $customizationJson = is_array($payload['customization_json'] ?? null)
+        $rawCustomization = is_array($payload['customization_json'] ?? null)
             ? $payload['customization_json']
             : [];
 
-        $snapshot = [
+        $sanitizedCustomization = [];
+        if (! empty($rawCustomization['card_holder_name'])) {
+            $sanitizedCustomization['card_holder_name'] = mb_substr(trim((string) $rawCustomization['card_holder_name']), 0, 100);
+        }
+        if (! empty($rawCustomization['back_text'])) {
+            $sanitizedCustomization['back_text'] = mb_substr(trim((string) $rawCustomization['back_text']), 0, 255);
+        }
+        if (isset($rawCustomization['security_cvv_enabled'])) {
+            $sanitizedCustomization['security_cvv_enabled'] = (bool) $rawCustomization['security_cvv_enabled'];
+        }
+        if (isset($rawCustomization['security_expiry_enabled'])) {
+            $sanitizedCustomization['security_expiry_enabled'] = (bool) $rawCustomization['security_expiry_enabled'];
+            if ($sanitizedCustomization['security_expiry_enabled']) {
+                if (! empty($rawCustomization['expiry_month'])) {
+                    $sanitizedCustomization['expiry_month'] = mb_substr((string) $rawCustomization['expiry_month'], 0, 2);
+                }
+                if (! empty($rawCustomization['expiry_year'])) {
+                    $sanitizedCustomization['expiry_year'] = mb_substr((string) $rawCustomization['expiry_year'], 0, 2);
+                }
+            }
+        }
+        if (isset($rawCustomization['qr_code_enabled'])) {
+            $sanitizedCustomization['qr_code_enabled'] = (bool) $rawCustomization['qr_code_enabled'];
+        }
+
+        $snapshot = array_merge($sanitizedCustomization, [
             'product_id' => $productId,
             'color_id' => $colorId,
             'design_id' => $designId,
             'design_image_id' => $designImageId,
-        ];
+        ]);
 
         return [
             'product_id' => $productId,
@@ -294,7 +319,7 @@ class CartService
             'product_name_snapshot' => $product->name,
             'unit_price_snapshot' => (int) $colorPrice->price,
             'final_price' => (int) $colorPrice->price * $quantity,
-            'customization_json' => array_merge($customizationJson, $snapshot),
+            'customization_json' => $snapshot,
             'for_existing' => $forExisting,
         ];
     }

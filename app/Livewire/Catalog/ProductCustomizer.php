@@ -14,8 +14,21 @@ class ProductCustomizer extends Component
     public ?int $color_id = null;
     public ?int $design_id = null;
     public ?int $design_image_id = null;
+    public ?int $selected_category_id = null;
     public int $quantity = 1;
-    public array $customization_json = [];
+
+    // Step & View state
+    public int $step = 1; // 1: Front design/color, 2: Back specifications
+    public string $activeView = 'front'; // 'front' | 'back'
+
+    // Customer customization preferences (starting clean / default safe)
+    public string $card_holder_name = '';
+    public string $back_text = '';
+    public bool $security_cvv_enabled = false;
+    public bool $security_expiry_enabled = false;
+    public bool $qr_code_enabled = false;
+    public string $expiry_month = '01';
+    public string $expiry_year = '28';
 
     public Product $product;
     public Collection $colorPrices;
@@ -45,6 +58,26 @@ class ProductCustomizer extends Component
         $this->color_id = $this->colorPrices->first()?->color_id;
 
         $this->refreshDesignData();
+
+        if ($this->catalog->isNotEmpty()) {
+            $this->selected_category_id = $this->catalog->first()->id;
+        }
+    }
+
+    public function setStep(int $step): void
+    {
+        $this->step = in_array($step, [1, 2], true) ? $step : 1;
+        $this->activeView = $this->step === 2 ? 'back' : 'front';
+    }
+
+    public function setActiveView(string $view): void
+    {
+        $this->activeView = in_array($view, ['front', 'back'], true) ? $view : 'front';
+    }
+
+    public function selectCategory(int $categoryId): void
+    {
+        $this->selected_category_id = $categoryId;
     }
 
     public function selectColor(int $colorId): void
@@ -76,6 +109,21 @@ class ProductCustomizer extends Component
         $this->design_id = $image->design_id;
     }
 
+    public function toggleCvv(): void
+    {
+        $this->security_cvv_enabled = ! $this->security_cvv_enabled;
+    }
+
+    public function toggleExpiry(): void
+    {
+        $this->security_expiry_enabled = ! $this->security_expiry_enabled;
+    }
+
+    public function toggleQrCode(): void
+    {
+        $this->qr_code_enabled = ! $this->qr_code_enabled;
+    }
+
     public function addToCart(CartService $cartService): void
     {
         $this->validate([
@@ -84,7 +132,25 @@ class ProductCustomizer extends Component
             'design_id' => ['required', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
             'quantity' => ['required', 'integer', 'min:1', 'max:20'],
+            'card_holder_name' => ['nullable', 'string', 'max:100'],
+            'back_text' => ['nullable', 'string', 'max:255'],
+            'security_cvv_enabled' => ['boolean'],
+            'security_expiry_enabled' => ['boolean'],
+            'qr_code_enabled' => ['boolean'],
         ]);
+
+        $customizationJson = [
+            'card_holder_name' => trim($this->card_holder_name),
+            'back_text' => trim($this->back_text),
+            'security_cvv_enabled' => $this->security_cvv_enabled,
+            'security_expiry_enabled' => $this->security_expiry_enabled,
+            'qr_code_enabled' => $this->qr_code_enabled,
+        ];
+
+        if ($this->security_expiry_enabled) {
+            $customizationJson['expiry_month'] = $this->expiry_month;
+            $customizationJson['expiry_year'] = $this->expiry_year;
+        }
 
         $cartService->addItem([
             'product_id' => $this->product_id,
@@ -92,10 +158,10 @@ class ProductCustomizer extends Component
             'design_id' => $this->design_id,
             'design_image_id' => $this->design_image_id,
             'quantity' => $this->quantity,
-            'customization_json' => $this->customization_json,
+            'customization_json' => $customizationJson,
         ]);
 
-        session()->flash('success', 'Item added to cart.');
+        session()->flash('success', 'محصول با موفقیت به سبد خرید اضافه شد.');
 
         $this->redirectRoute('cart.index', navigate: true);
     }
@@ -159,17 +225,22 @@ class ProductCustomizer extends Component
         $this->design_image_id = $this->design_image_id && $imagesForDesign->contains('id', $this->design_image_id)
             ? $this->design_image_id
             : $imagesForDesign->first()?->id;
+
+        if ($this->selected_category_id && ! $this->catalog->contains('id', $this->selected_category_id)) {
+            $this->selected_category_id = $this->catalog->first()?->id;
+        }
     }
 
     public function render()
     {
-        $this->customization_json = [
-            'product_id' => $this->product_id,
-            'color_id' => $this->color_id,
-            'design_id' => $this->design_id,
-            'design_image_id' => $this->design_image_id,
-        ];
+        $selectedPriceItem = $this->colorPrices->firstWhere('color_id', $this->color_id);
+        $unitPrice = $selectedPriceItem?->price ?? $this->product->base_price ?? 0;
+        $totalPrice = (int) $unitPrice * max(1, $this->quantity);
 
-        return view('livewire.catalog.product-customizer');
+        return view('livewire.catalog.product-customizer', [
+            'unitPrice' => $unitPrice,
+            'totalPrice' => $totalPrice,
+            'selectedColor' => $selectedPriceItem?->color,
+        ]);
     }
 }
