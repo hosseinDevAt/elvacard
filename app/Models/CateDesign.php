@@ -2,28 +2,37 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CateDesign extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'name',
+        'slug',
+        'image_path',
+        'meta_title',
+        'meta_description',
+        'top_description',
+        'bottom_description',
+        'robots_index',
         'is_active',
+        'sort_order',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'robots_index' => 'boolean',
+        'is_active' => 'boolean',
+    ];
+
+    public function designs(): HasMany
     {
-        return [
-            'is_active' => 'boolean',
-        ];
+        return $this->hasMany(Design::class);
     }
 
-    public function groupDesigns(): HasMany
+    public function scopeActive(Builder $query): Builder
     {
-        return $this->hasMany(GroupDesign::class);
+        return $query->where('is_active', true);
     }
 }

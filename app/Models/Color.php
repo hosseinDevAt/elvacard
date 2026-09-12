@@ -2,31 +2,42 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\Eloquent\Builder;
 
 class Color extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'name',
-        'color_code',
+        'code_hex',
+        'preview_image',
+        'is_active',
+        'sort_order',
     ];
 
-    public function designImages(): HasMany
+    protected $casts = [
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
+    ];
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function productColorPrices()
+    {
+        return $this->hasMany(ProductColorPrice::class);
+    }
+
+    public function designImages()
     {
         return $this->hasMany(DesignImage::class);
     }
 
-    public function forbiddenDesignImages(): HasMany
+    public function designColorCompatibilities()
     {
-        return $this->hasMany(DesignColorRestriction::class, 'forbidden_card_color_id');
-    }
-
-    public function cardTypes(): HasMany
-    {
-        return $this->hasMany(CardType::class);
+        return $this->hasMany(DesignColorCompatibility::class, 'card_color_id');
     }
 }

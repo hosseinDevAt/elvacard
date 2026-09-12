@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration{public function up():void{Schema::create('product_color_prices',function(Blueprint $table){$table->id();$table->foreignId('product_id')->constrained('products')->cascadeOnDelete();$table->foreignId('color_id')->constrained('colors')->restrictOnDelete();$table->unsignedBigInteger('price');$table->boolean('is_active')->default(true)->index();$table->timestamps();$table->unique(['product_id','color_id']);});}public function down():void{Schema::dropIfExists('product_color_prices');}};

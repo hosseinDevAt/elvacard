@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\CardType;
 use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\Design;
-use App\Models\DesignColorRestriction;
+use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
-use App\Models\GroupDesign;
+use App\Models\Product;
+use App\Models\ProductColorPrice;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -16,153 +16,269 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::firstOrCreate(
+        // === Users ===
+        // role and email_verified_at are $guarded: firstOrCreate silently drops them,
+        // so they are force-filled explicitly after creation.
+        $admin = User::firstOrCreate(
             ['phone' => '09000000000'],
-            ['name' => 'ادمین', 'password' => bcrypt('123456')]
+            [
+                'name' => 'Admin Dev',
+                'email' => 'admin@dev.local',
+                'password' => 'password',
+            ]
+        );
+        $admin->forceFill(['role' => 'admin', 'email_verified_at' => now()])->save();
+
+        $customer = User::firstOrCreate(
+            ['phone' => '09000000001'],
+            [
+                'name' => 'Customer Dev',
+                'email' => 'customer@dev.local',
+                'password' => 'password',
+            ]
+        );
+        $customer->forceFill(['role' => 'customer', 'email_verified_at' => now()])->save();
+
+        // === Colors ===
+        $black = Color::firstOrCreate(['name' => 'مشکی مات'], ['code_hex' => '#1a1a1a', 'is_active' => true, 'sort_order' => 1]);
+        $silver = Color::firstOrCreate(['name' => 'نقره‌ای'], ['code_hex' => '#C0C0C0', 'is_active' => true, 'sort_order' => 2]);
+        $gold = Color::firstOrCreate(['name' => 'طلایی'], ['code_hex' => '#FFD700', 'is_active' => true, 'sort_order' => 3]);
+        $white = Color::firstOrCreate(['name' => 'سفید'], ['code_hex' => '#FFFFFF', 'is_active' => true, 'sort_order' => 4]);
+        $navy = Color::firstOrCreate(['name' => 'سرمه‌ای'], ['code_hex' => '#000080', 'is_active' => true, 'sort_order' => 5]);
+        $red = Color::firstOrCreate(['name' => 'قرمز'], ['code_hex' => '#DC143C', 'is_active' => true, 'sort_order' => 6]);
+        $blue = Color::firstOrCreate(['name' => 'آبی تیره'], ['code_hex' => '#1E3A5F', 'is_active' => true, 'sort_order' => 7]);
+        $copper = Color::firstOrCreate(['name' => 'مسی'], ['code_hex' => '#B87333', 'is_active' => true, 'sort_order' => 8]);
+        $green = Color::firstOrCreate(['name' => 'سبز تیره'], ['code_hex' => '#006400', 'is_active' => true, 'sort_order' => 9]);
+        $purple = Color::firstOrCreate(['name' => 'بنفش'], ['code_hex' => '#4B0082', 'is_active' => true, 'sort_order' => 10]);
+
+        // === Products ===
+        $bankCard = Product::firstOrCreate(
+            ['slug' => 'bank-card'],
+            [
+                'type' => 'bank',
+                'name' => 'کارت بانکی',
+                'description' => 'کارت بانکی با طرح سفارشی',
+                'base_price' => 850000,
+                'supports_chip_selection' => true,
+                'is_active' => true,
+            ]
         );
 
-        // === رنگ‌ها ===
-        $black = Color::create(['name' => 'مشکی مات', 'color_code' => '#1a1a1a']);
-        $silver = Color::create(['name' => 'نقره‌ای', 'color_code' => '#C0C0C0']);
-        $gold = Color::create(['name' => 'طلایی', 'color_code' => '#FFD700']);
-        $white = Color::create(['name' => 'سفید', 'color_code' => '#FFFFFF']);
-        $navy = Color::create(['name' => 'سرمه‌ای', 'color_code' => '#000080']);
-        $red = Color::create(['name' => 'قرمز', 'color_code' => '#DC143C']);
-        $blue = Color::create(['name' => 'آبی تیره', 'color_code' => '#1E3A5F']);
-        $copper = Color::create(['name' => 'مسی', 'color_code' => '#B87333']);
-        $green = Color::create(['name' => 'سبز تیره', 'color_code' => '#006400']);
-        $purple = Color::create(['name' => 'بنفش', 'color_code' => '#4B0082']);
+        $fuelCard = Product::firstOrCreate(
+            ['slug' => 'fuel-card'],
+            [
+                'type' => 'fuel',
+                'name' => 'کارت سوخت',
+                'description' => 'کارت سوخت با طرح سفارشی',
+                'base_price' => 450000,
+                'supports_chip_selection' => false,
+                'is_active' => true,
+            ]
+        );
 
-        // === انواع کارت (۵ بانکی + ۱ سوخت-مشکی) ===
-        CardType::insert([
-            ['type' => 'bank', 'color_id' => $black->id, 'base_price' => 850000, 'is_available' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['type' => 'bank', 'color_id' => $silver->id, 'base_price' => 750000, 'is_available' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['type' => 'bank', 'color_id' => $gold->id, 'base_price' => 950000, 'is_available' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['type' => 'bank', 'color_id' => $white->id, 'base_price' => 700000, 'is_available' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['type' => 'bank', 'color_id' => $navy->id, 'base_price' => 800000, 'is_available' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['type' => 'fuel', 'color_id' => $black->id, 'base_price' => 450000, 'is_available' => true, 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        // === Product Color Prices ===
+        $bankPrices = [
+            [$black->id, 850000],
+            [$silver->id, 750000],
+            [$gold->id, 950000],
+            [$white->id, 700000],
+            [$navy->id, 800000],
+        ];
 
-        // === دسته‌بندی طرح‌ها ===
-        $catCrypto = CateDesign::create(['name' => 'رمزارزها', 'is_active' => true]);
-        $catNature = CateDesign::create(['name' => 'طبیعت', 'is_active' => true]);
-        $catAbstract = CateDesign::create(['name' => 'ابستراکت', 'is_active' => true]);
-        $catCar = CateDesign::create(['name' => 'ماشین‌ها', 'is_active' => true]);
+        foreach ($bankPrices as [$colorId, $price]) {
+            ProductColorPrice::firstOrCreate(
+                ['product_id' => $bankCard->id, 'color_id' => $colorId],
+                ['price' => $price, 'is_active' => true]
+            );
+        }
 
-        // === گروه طرح‌ها ===
-        $grpBitcoin = GroupDesign::create(['cate_design_id' => $catCrypto->id, 'name' => 'بیتکوین']);
-        $grpEthereum = GroupDesign::create(['cate_design_id' => $catCrypto->id, 'name' => 'اتریوم']);
-        $grpDoge = GroupDesign::create(['cate_design_id' => $catCrypto->id, 'name' => 'دوج‌کوین']);
-        $grpMountain = GroupDesign::create(['cate_design_id' => $catNature->id, 'name' => 'کوهستان']);
-        $grpOcean = GroupDesign::create(['cate_design_id' => $catNature->id, 'name' => 'اقیانوس']);
-        $grpGeo = GroupDesign::create(['cate_design_id' => $catAbstract->id, 'name' => 'خطوط هندسی']);
-        $grpNeon = GroupDesign::create(['cate_design_id' => $catAbstract->id, 'name' => 'نئونی']);
-        $grpSport = GroupDesign::create(['cate_design_id' => $catCar->id, 'name' => 'اسپرت']);
-        $grpHeavy = GroupDesign::create(['cate_design_id' => $catCar->id, 'name' => 'ماشین سنگین']);
+        ProductColorPrice::firstOrCreate(
+            ['product_id' => $fuelCard->id, 'color_id' => $black->id],
+            ['price' => 450000, 'is_active' => true]
+        );
 
-        // === طرح‌ها ===
-        $designBtcClassic = Design::create(['group_design_id' => $grpBitcoin->id, 'name' => 'بیتکوین کلاسیک', 'image_path' => 'designs/bitcoin-classic.png']);
-        $designBtcGold = Design::create(['group_design_id' => $grpBitcoin->id, 'name' => 'بیتکوین طلایی', 'image_path' => 'designs/bitcoin-gold.png']);
-        $designEthDiamond = Design::create(['group_design_id' => $grpEthereum->id, 'name' => 'اتریوم الماسی', 'image_path' => 'designs/ethereum-diamond.png']);
-        $designEthNeon = Design::create(['group_design_id' => $grpEthereum->id, 'name' => 'اتریوم نئونی', 'image_path' => 'designs/ethereum-neon.png']);
-        $designDoge = Design::create(['group_design_id' => $grpDoge->id, 'name' => 'دوج کوین', 'image_path' => 'designs/dogecoin.png']);
-        $designMountain = Design::create(['group_design_id' => $grpMountain->id, 'name' => 'قله برفی', 'image_path' => 'designs/mountain-snow.png']);
-        $designOcean = Design::create(['group_design_id' => $grpOcean->id, 'name' => 'امواج', 'image_path' => 'designs/ocean-waves.png']);
-        $designGrid = Design::create(['group_design_id' => $grpGeo->id, 'name' => 'شبکه‌ای', 'image_path' => 'designs/geometric-grid.png']);
-        $designNeon = Design::create(['group_design_id' => $grpNeon->id, 'name' => 'نئون سبز', 'image_path' => 'designs/neon-green.png']);
-        $designMustang = Design::create(['group_design_id' => $grpSport->id, 'name' => 'فورد موستانگ', 'image_path' => 'designs/mustang.png']);
-        $designLambo = Design::create(['group_design_id' => $grpSport->id, 'name' => 'لامبورگینی', 'image_path' => 'designs/lamborghini.png']);
-        $designPorsche = Design::create(['group_design_id' => $grpSport->id, 'name' => 'پورشه ۹۱۱', 'image_path' => 'designs/porsche.png']);
+        // === Design Categories ===
+        $catCrypto = CateDesign::firstOrCreate(['name' => 'رمزارزها'], ['slug' => 'crypto', 'is_active' => true, 'sort_order' => 1]);
+        $catNature = CateDesign::firstOrCreate(['name' => 'طبیعت'], ['slug' => 'nature', 'is_active' => true, 'sort_order' => 2]);
+        $catAbstract = CateDesign::firstOrCreate(['name' => 'ابستراکت'], ['slug' => 'abstract', 'is_active' => true, 'sort_order' => 3]);
+        $catCar = CateDesign::firstOrCreate(['name' => 'ماشین‌ها'], ['slug' => 'cars', 'is_active' => true, 'sort_order' => 4]);
 
-        // ماشین سنگین
-        $designTruck = Design::create(['group_design_id' => $grpHeavy->id, 'name' => 'کامیون', 'image_path' => 'designs/truck.png']);
-        $designBus = Design::create(['group_design_id' => $grpHeavy->id, 'name' => 'اتوبوس', 'image_path' => 'designs/bus.png']);
-        $designCrane = Design::create(['group_design_id' => $grpHeavy->id, 'name' => 'جرثقیل', 'image_path' => 'designs/crane.png']);
+        // === Designs (using cate_design_id) ===
+        $designBtcClassic = Design::firstOrCreate(['name' => 'بیتکوین کلاسیک'], ['cate_design_id' => $catCrypto->id, 'slug' => 'btc-classic', 'is_active' => true]);
+        $designBtcGold = Design::firstOrCreate(['name' => 'بیتکوین طلایی'], ['cate_design_id' => $catCrypto->id, 'slug' => 'btc-gold', 'is_active' => true]);
+        $designEthDiamond = Design::firstOrCreate(['name' => 'اتریوم الماسی'], ['cate_design_id' => $catCrypto->id, 'slug' => 'eth-diamond', 'is_active' => true]);
+        $designEthNeon = Design::firstOrCreate(['name' => 'اتریوم نئونی'], ['cate_design_id' => $catCrypto->id, 'slug' => 'eth-neon', 'is_active' => true]);
+        $designDoge = Design::firstOrCreate(['name' => 'دوج کوین'], ['cate_design_id' => $catCrypto->id, 'slug' => 'doge', 'is_active' => true]);
+        $designMountain = Design::firstOrCreate(['name' => 'قله برفی'], ['cate_design_id' => $catNature->id, 'slug' => 'mountain', 'is_active' => true]);
+        $designOcean = Design::firstOrCreate(['name' => 'امواج'], ['cate_design_id' => $catNature->id, 'slug' => 'ocean', 'is_active' => true]);
+        $designGrid = Design::firstOrCreate(['name' => 'شبکه‌ای'], ['cate_design_id' => $catAbstract->id, 'slug' => 'grid', 'is_active' => true]);
+        $designNeon = Design::firstOrCreate(['name' => 'نئون سبز'], ['cate_design_id' => $catAbstract->id, 'slug' => 'neon-green', 'is_active' => true]);
+        $designMustang = Design::firstOrCreate(['name' => 'فورد موستانگ'], ['cate_design_id' => $catCar->id, 'slug' => 'mustang', 'is_active' => true]);
+        $designLambo = Design::firstOrCreate(['name' => 'لامبورگینی'], ['cate_design_id' => $catCar->id, 'slug' => 'lamborghini', 'is_active' => true]);
+        $designPorsche = Design::firstOrCreate(['name' => 'پورشه ۹۱۱'], ['cate_design_id' => $catCar->id, 'slug' => 'porsche', 'is_active' => true]);
 
-        // === تصاویر طرح (هر طرح ۲-۳ رنگ) ===
-        // بیتکوین کلاسیک
-        $di1 = DesignImage::create(['design_id' => $designBtcClassic->id, 'color_id' => $gold->id, 'image_path' => 'design-images/btc-classic-gold.png']);
-        $di2 = DesignImage::create(['design_id' => $designBtcClassic->id, 'color_id' => $black->id, 'image_path' => 'design-images/btc-classic-black.png']);
-        DesignImage::create(['design_id' => $designBtcClassic->id, 'color_id' => $navy->id, 'image_path' => 'design-images/btc-classic-navy.png']);
+        // === Design Images ===
+        $di1 = DesignImage::firstOrCreate(
+            ['design_id' => $designBtcClassic->id, 'color_id' => $gold->id],
+            ['image_path' => 'design-images/btc-classic-gold.png', 'is_active' => true]
+        );
+        $di2 = DesignImage::firstOrCreate(
+            ['design_id' => $designBtcClassic->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/btc-classic-black.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designBtcClassic->id, 'color_id' => $navy->id],
+            ['image_path' => 'design-images/btc-classic-navy.png', 'is_active' => true]
+        );
 
-        // بیتکوین طلایی
-        $di4 = DesignImage::create(['design_id' => $designBtcGold->id, 'color_id' => $black->id, 'image_path' => 'design-images/btc-gold-black.png']);
-        $di5 = DesignImage::create(['design_id' => $designBtcGold->id, 'color_id' => $silver->id, 'image_path' => 'design-images/btc-gold-silver.png']);
+        $di4 = DesignImage::firstOrCreate(
+            ['design_id' => $designBtcGold->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/btc-gold-black.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designBtcGold->id, 'color_id' => $silver->id],
+            ['image_path' => 'design-images/btc-gold-silver.png', 'is_active' => true]
+        );
 
-        // اتریوم الماسی
-        DesignImage::create(['design_id' => $designEthDiamond->id, 'color_id' => $silver->id, 'image_path' => 'design-images/eth-diamond-silver.png']);
-        DesignImage::create(['design_id' => $designEthDiamond->id, 'color_id' => $black->id, 'image_path' => 'design-images/eth-diamond-black.png']);
-        DesignImage::create(['design_id' => $designEthDiamond->id, 'color_id' => $white->id, 'image_path' => 'design-images/eth-diamond-white.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designEthDiamond->id, 'color_id' => $silver->id],
+            ['image_path' => 'design-images/eth-diamond-silver.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designEthDiamond->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/eth-diamond-black.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designEthDiamond->id, 'color_id' => $white->id],
+            ['image_path' => 'design-images/eth-diamond-white.png', 'is_active' => true]
+        );
 
-        // اتریوم نئونی
-        $di9 = DesignImage::create(['design_id' => $designEthNeon->id, 'color_id' => $blue->id, 'image_path' => 'design-images/eth-neon-blue.png']);
-        $di10 = DesignImage::create(['design_id' => $designEthNeon->id, 'color_id' => $black->id, 'image_path' => 'design-images/eth-neon-black.png']);
+        $di9 = DesignImage::firstOrCreate(
+            ['design_id' => $designEthNeon->id, 'color_id' => $blue->id],
+            ['image_path' => 'design-images/eth-neon-blue.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designEthNeon->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/eth-neon-black.png', 'is_active' => true]
+        );
 
-        // دوج
-        DesignImage::create(['design_id' => $designDoge->id, 'color_id' => $gold->id, 'image_path' => 'design-images/doge-gold.png']);
-        DesignImage::create(['design_id' => $designDoge->id, 'color_id' => $black->id, 'image_path' => 'design-images/doge-black.png']);
-        DesignImage::create(['design_id' => $designDoge->id, 'color_id' => $red->id, 'image_path' => 'design-images/doge-red.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designDoge->id, 'color_id' => $gold->id],
+            ['image_path' => 'design-images/doge-gold.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designDoge->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/doge-black.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designDoge->id, 'color_id' => $red->id],
+            ['image_path' => 'design-images/doge-red.png', 'is_active' => true]
+        );
 
-        // کوهستان
-        DesignImage::create(['design_id' => $designMountain->id, 'color_id' => $white->id, 'image_path' => 'design-images/mountain-white.png']);
-        DesignImage::create(['design_id' => $designMountain->id, 'color_id' => $navy->id, 'image_path' => 'design-images/mountain-navy.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designMountain->id, 'color_id' => $white->id],
+            ['image_path' => 'design-images/mountain-white.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designMountain->id, 'color_id' => $navy->id],
+            ['image_path' => 'design-images/mountain-navy.png', 'is_active' => true]
+        );
 
-        // اقیانوس
-        DesignImage::create(['design_id' => $designOcean->id, 'color_id' => $blue->id, 'image_path' => 'design-images/ocean-blue.png']);
-        DesignImage::create(['design_id' => $designOcean->id, 'color_id' => $silver->id, 'image_path' => 'design-images/ocean-silver.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designOcean->id, 'color_id' => $blue->id],
+            ['image_path' => 'design-images/ocean-blue.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designOcean->id, 'color_id' => $silver->id],
+            ['image_path' => 'design-images/ocean-silver.png', 'is_active' => true]
+        );
 
-        // شبکه‌ای
-        DesignImage::create(['design_id' => $designGrid->id, 'color_id' => $black->id, 'image_path' => 'design-images/grid-black.png']);
-        DesignImage::create(['design_id' => $designGrid->id, 'color_id' => $copper->id, 'image_path' => 'design-images/grid-copper.png']);
-        DesignImage::create(['design_id' => $designGrid->id, 'color_id' => $silver->id, 'image_path' => 'design-images/grid-silver.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designGrid->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/grid-black.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designGrid->id, 'color_id' => $copper->id],
+            ['image_path' => 'design-images/grid-copper.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designGrid->id, 'color_id' => $silver->id],
+            ['image_path' => 'design-images/grid-silver.png', 'is_active' => true]
+        );
 
-        // نئون سبز
-        $di19 = DesignImage::create(['design_id' => $designNeon->id, 'color_id' => $black->id, 'image_path' => 'design-images/neon-black.png']);
-        DesignImage::create(['design_id' => $designNeon->id, 'color_id' => $green->id, 'image_path' => 'design-images/neon-green.png']);
+        $di19 = DesignImage::firstOrCreate(
+            ['design_id' => $designNeon->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/neon-black.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designNeon->id, 'color_id' => $green->id],
+            ['image_path' => 'design-images/neon-green.png', 'is_active' => true]
+        );
 
-        // موستانگ
-        DesignImage::create(['design_id' => $designMustang->id, 'color_id' => $red->id, 'image_path' => 'design-images/mustang-red.png']);
-        DesignImage::create(['design_id' => $designMustang->id, 'color_id' => $black->id, 'image_path' => 'design-images/mustang-black.png']);
-        DesignImage::create(['design_id' => $designMustang->id, 'color_id' => $silver->id, 'image_path' => 'design-images/mustang-silver.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designMustang->id, 'color_id' => $red->id],
+            ['image_path' => 'design-images/mustang-red.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designMustang->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/mustang-black.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designMustang->id, 'color_id' => $silver->id],
+            ['image_path' => 'design-images/mustang-silver.png', 'is_active' => true]
+        );
 
-        // لامبورگینی
-        DesignImage::create(['design_id' => $designLambo->id, 'color_id' => $gold->id, 'image_path' => 'design-images/lambo-yellow.png']);
-        DesignImage::create(['design_id' => $designLambo->id, 'color_id' => $black->id, 'image_path' => 'design-images/lambo-black.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designLambo->id, 'color_id' => $gold->id],
+            ['image_path' => 'design-images/lambo-yellow.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designLambo->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/lambo-black.png', 'is_active' => true]
+        );
 
-        // پورشه
-        DesignImage::create(['design_id' => $designPorsche->id, 'color_id' => $red->id, 'image_path' => 'design-images/porsche-red.png']);
-        DesignImage::create(['design_id' => $designPorsche->id, 'color_id' => $white->id, 'image_path' => 'design-images/porsche-white.png']);
-        DesignImage::create(['design_id' => $designPorsche->id, 'color_id' => $black->id, 'image_path' => 'design-images/porsche-black.png']);
+        DesignImage::firstOrCreate(
+            ['design_id' => $designPorsche->id, 'color_id' => $red->id],
+            ['image_path' => 'design-images/porsche-red.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designPorsche->id, 'color_id' => $white->id],
+            ['image_path' => 'design-images/porsche-white.png', 'is_active' => true]
+        );
+        DesignImage::firstOrCreate(
+            ['design_id' => $designPorsche->id, 'color_id' => $black->id],
+            ['image_path' => 'design-images/porsche-black.png', 'is_active' => true]
+        );
 
-        // کامیون
-        DesignImage::create(['design_id' => $designTruck->id, 'color_id' => $white->id, 'image_path' => 'design-images/truck-white.png']);
-        DesignImage::create(['design_id' => $designTruck->id, 'color_id' => $red->id, 'image_path' => 'design-images/truck-red.png']);
+        // === Design Color Compatibilities (is_allowed=true for most, false for a few) ===
+        // Default: all combinations are allowed (created on demand).
+        // Seed a few forbidden combinations for testing.
+        DesignColorCompatibility::firstOrCreate(
+            ['design_image_id' => $di4->id, 'card_color_id' => $black->id],
+            ['is_allowed' => false]
+        );
+        DesignColorCompatibility::firstOrCreate(
+            ['design_image_id' => $di9->id, 'card_color_id' => $white->id],
+            ['is_allowed' => false]
+        );
+        DesignColorCompatibility::firstOrCreate(
+            ['design_image_id' => $di19->id, 'card_color_id' => $white->id],
+            ['is_allowed' => false]
+        );
+        DesignColorCompatibility::firstOrCreate(
+            ['design_image_id' => $di1->id, 'card_color_id' => $gold->id],
+            ['is_allowed' => false]
+        );
 
-        // اتوبوس
-        DesignImage::create(['design_id' => $designBus->id, 'color_id' => $white->id, 'image_path' => 'design-images/bus-white.png']);
-        DesignImage::create(['design_id' => $designBus->id, 'color_id' => $blue->id, 'image_path' => 'design-images/bus-blue.png']);
+        $this->call(CmsContentSeeder::class);
 
-        // جرثقیل
-        DesignImage::create(['design_id' => $designCrane->id, 'color_id' => $gold->id, 'image_path' => 'design-images/crane-yellow.png']);
-        DesignImage::create(['design_id' => $designCrane->id, 'color_id' => $white->id, 'image_path' => 'design-images/crane-white.png']);
-
-        // === محدودیت‌های رنگی ===
-        DesignColorRestriction::insert([
-            // بیتکوین طلایی روی مشکی مات اجرا نمی‌شه
-            ['design_image_id' => $di4->id, 'forbidden_card_color_id' => $black->id, 'created_at' => now(), 'updated_at' => now()],
-            // اتریوم نئونی روی سفید اجرا نمی‌شه
-            ['design_image_id' => $di9->id, 'forbidden_card_color_id' => $white->id, 'created_at' => now(), 'updated_at' => now()],
-            // نئون سبز روی سفید اجرا نمی‌شه
-            ['design_image_id' => $di19->id, 'forbidden_card_color_id' => $white->id, 'created_at' => now(), 'updated_at' => now()],
-            // بیتکوین کلاسیک طلایی روی طلایی اجرا نمی‌شه (رنگ روی رنگ خودش)
-            ['design_image_id' => $di1->id, 'forbidden_card_color_id' => $gold->id, 'created_at' => now(), 'updated_at' => now()],
-        ]);
-
-        echo "\n✅ Seed completed!\n";
-        echo "🏦 Bank cards: 5 colors (مشکی, نقره‌ای, طلایی, سفید, سرمه‌ای)\n";
-        echo "⛽ Fuel cards: 1 color (مشکی مات)\n";
-        echo "🎨 Design categories: 4 (رمزارزها, طبیعت, ابستراکت, ماشین‌ها)\n";
-        echo "🖼️ Design images: 24\n";
-        echo "🚫 Color restrictions: 4\n";
+        echo "\nSeed completed!\n";
+        echo "Users: admin (09000000000/password), customer (09000000001/password)\n";
+        echo "Colors: 10\n";
+        echo "Products: 2 (bank-card, fuel-card)\n";
+        echo "Design categories: 4\n";
+        echo "Designs: 12\n";
+        echo "Design images: ~28\n";
+        echo "Forbidden compatibilities: 4\n";
     }
 }

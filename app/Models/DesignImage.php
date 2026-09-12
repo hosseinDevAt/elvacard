@@ -2,19 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DesignImage extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'design_id',
         'color_id',
         'image_path',
+        'alt_text',
+        'image_title',
+        'optimized_filename',
+        'seo_caption',
+        'is_active',
+        'sort_order',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function design(): BelongsTo
@@ -27,20 +35,13 @@ class DesignImage extends Model
         return $this->belongsTo(Color::class);
     }
 
-    public function colorRestrictions(): HasMany
+    public function compatibilities(): HasMany
     {
-        return $this->hasMany(DesignColorRestriction::class, 'design_image_id');
+        return $this->hasMany(DesignColorCompatibility::class);
     }
 
-    public function customizations(): HasMany
+    public function scopeActive(Builder $query): Builder
     {
-        return $this->hasMany(Customization::class);
-    }
-
-    public function isForbiddenOnColor(int $cardColorId): bool
-    {
-        return $this->colorRestrictions()
-            ->where('forbidden_card_color_id', $cardColorId)
-            ->exists();
+        return $query->where('is_active', true);
     }
 }

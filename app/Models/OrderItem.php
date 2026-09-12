@@ -12,32 +12,25 @@ class OrderItem extends Model
 
     protected $fillable = [
         'order_id',
-        'card_type_id',
-        'customization_id',
+        'product_id',
+        'product_name_snapshot',
+        'unit_price_snapshot',
         'quantity',
-        'price',
+        'final_price',
+        'customization_json',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'quantity' => 'integer',
-            'price' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'customization_json' => 'array',
+    ];
 
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
-    public function cardType(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(CardType::class);
-    }
-
-    public function customization(): BelongsTo
-    {
-        return $this->belongsTo(Customization::class);
+        return $this->belongsTo(Product::class);
     }
 }

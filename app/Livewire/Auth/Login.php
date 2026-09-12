@@ -3,39 +3,53 @@
 namespace App\Livewire\Auth;
 
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
 
 class Login extends Component
 {
     public string $phone = '';
+    public string $password = '';
 
     protected $rules = [
-        'phone' => ['required', 'string', 'digits:11'],
+        'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
+        'password' => ['required', 'string', 'min:1'],
     ];
 
     protected $messages = [
-        'phone.required' => 'شماره تلفن الزامی است',
-        'phone.digits' => 'شماره تلفن باید ۱۱ رقم باشد',
+        'phone.required' => 'شماره موبایل الزامی است',
+        'phone.regex' => 'شماره موبایل معتبر نیست. نمونه صحیح: 09123456789',
+        'password.required' => 'رمز عبور الزامی است',
     ];
 
-    public function login(): void
+    public function login(Request $request): void
     {
         $this->validate();
 
-        $user = User::where('phone', $this->phone)->first();
+        $throttleKey = 'login:'.($this->phone).':'.$request->ip();
 
-        if (!$user) {
-            $user = User::create([
-                'phone' => $this->phone,
-                'name' => 'کاربر ' . $this->phone,
-                'password' => bcrypt('123456'),
-            ]);
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            session()->flash('error', "تعداد تلاش‌های ورود بیش از حد مجاز است. لطفاً {$seconds} ثانیه صبر کنید.");
+
+            return;
         }
 
-        Auth::login($user);
+        if (! Auth::attempt(['phone' => $this->phone, 'password' => $this->password])) {
+            RateLimiter::hit($throttleKey, 120);
+            session()->flash('error', 'شماره تلفن یا رمز عبور صحیح نیست.');
+
+            return;
+        }
+
+        RateLimiter::clear($throttleKey);
+
+        $user = Auth::user();
         session()->regenerate();
-        $this->redirect(route('home'), navigate: true);
+
+        $this->redirect($user->dashboardRoute(), navigate: true);
     }
 
     public function render()

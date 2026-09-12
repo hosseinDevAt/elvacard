@@ -4,15 +4,22 @@
     @endif
 
     <h2 class="text-xl font-bold text-gray-900 mb-1">ورود به حساب</h2>
-    <p class="text-sm text-gray-500 mb-6">شماره تلفن خود را وارد کنید</p>
+    <p class="text-sm text-gray-500 mb-6">شماره تلفن و رمز عبور خود را وارد کنید</p>
 
     <form wire:submit.prevent="login" class="space-y-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">شماره تلفن</label>
             <input type="text" wire:model.blur="phone" placeholder="09123456789"
-                class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition text-right"
+                class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition text-left"
                 dir="ltr">
             @error('phone') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
+            <input type="password" wire:model.blur="password" placeholder="رمز عبور"
+                class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+            @error('password') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>
 
         <button type="submit"
@@ -24,6 +31,6 @@
     </form>
 
     <div class="mt-6 text-center space-y-2">
-        <p class="text-xs text-gray-400">اگر شماره تلفن قبلاً ثبت نشده باشد، حساب جدید ساخته می‌شود</p>
+        <p class="text-xs text-gray-400">رمز عبور خود را فراموش کرده‌اید؟ <a href="{{ route('password.request') }}" class="text-yellow-600 hover:underline">بازیابی رمز</a></p>
     </div>
 </div>

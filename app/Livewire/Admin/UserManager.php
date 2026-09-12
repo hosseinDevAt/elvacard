@@ -25,6 +25,6 @@ class UserManager extends Component
 
         return view('livewire.admin.user-manager', [
             'users' => $query->latest()->paginate(15),
-        ])->layout('layouts.admin');
+        ])->layout('layouts.admin')->title('مدیریت کاربران');
     }
 }

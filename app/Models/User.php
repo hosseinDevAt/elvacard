@@ -15,9 +15,20 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'phone',
-        'address',
+        'email',
         'password',
+        'address',
+        'postal_code',
+        'plaque',
+    ];
+
+    protected $guarded = [
+        'role',
+        'email_verified_at',
+        'remember_token',
     ];
 
     protected $hidden = [
@@ -28,6 +39,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -35,5 +47,27 @@ class User extends Authenticatable
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Display name: first + last when available, otherwise the full name.
+     */
+    public function displayName(): string
+    {
+        if (filled($this->first_name) || filled($this->last_name)) {
+            return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
+        }
+
+        return (string) $this->name;
+    }
+
+    /**
+     * Relative path to the role-appropriate dashboard after login.
+     */
+    public function dashboardRoute(): string
+    {
+        return $this->role === 'admin'
+            ? route('admin.dashboard', absolute: false)
+            : route('account.dashboard', absolute: false);
     }
 }

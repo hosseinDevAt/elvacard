@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'ورود - کارت شخصی')</title>
+    <title>@yield('title', 'ورود - الواکارت')</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=vazirmatn:300,400,500,600,700,800,900" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -12,7 +12,7 @@
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
     <div class="w-full max-w-md px-4">
         <div class="text-center mb-8">
-            <a href="{{ route('home') }}" class="text-2xl font-bold text-yellow-500">کارت شخصی</a>
+            <a href="{{ route('home') }}" class="text-2xl font-bold text-primary-600">{{ site_setting('site_name', 'الواکارت') }}</a>
         </div>
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             @yield('content')

@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration{public function up():void{Schema::create('design_color_compatibilities',function(Blueprint $table){$table->id();$table->foreignId('design_image_id')->constrained('design_images')->cascadeOnDelete();$table->foreignId('card_color_id')->constrained('colors')->restrictOnDelete();$table->boolean('is_allowed')->default(true);$table->timestamps();$table->unique(['design_image_id','card_color_id'],'design_color_compatibilities_pair_unique');});}public function down():void{Schema::dropIfExists('design_color_compatibilities');}};
