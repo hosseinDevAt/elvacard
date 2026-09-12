@@ -326,53 +326,31 @@ class ProductCustomizerTest extends TestCase
         $this->assertArrayNotHasKey('expiry_year', $cart['items'][0]['customization_json']);
     }
 
-    public function test_update_position_clamps_coordinates_to_0_85(): void
+    public function test_component_has_no_user_position_state(): void
     {
-        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->assertSet('positions', null);
 
-        $component->call('updatePosition', 'card_holder_name', 2.0, -1.0)
-            ->assertSet('positions.card_holder_name.x', 0.85)
-            ->assertSet('positions.card_holder_name.y', 0.0);
-
-        $component->call('updatePosition', 'card_holder_name', 0.123456, 0.654321)
-            ->assertSet('positions.card_holder_name.x', 0.1235)
-            ->assertSet('positions.card_holder_name.y', 0.6543);
+        // The interactive drag state is gone: no positions property remains.
+        $this->assertArrayNotHasKey('positions', get_object_vars($component->instance()));
     }
 
-    public function test_update_position_ignores_unknown_elements(): void
+    public function test_fixed_slots_are_defined_for_all_back_card_elements(): void
     {
-        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->call('updatePosition', 'chip_icon', 0.5, 0.5)
-            ->call('updatePosition', 'script_injection', 0.5, 0.5)
-            ->assertSet('positions.chip_icon', null)
-            ->assertSet('positions.script_injection', null);
+        $slots = ProductCustomizer::fixedSlots();
+
+        foreach (['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry', 'qr_code'] as $element) {
+            $this->assertArrayHasKey($element, $slots);
+            $this->assertArrayHasKey('x', $slots[$element]);
+            $this->assertArrayHasKey('y', $slots[$element]);
+            $this->assertGreaterThanOrEqual(0.0, $slots[$element]['x']);
+            $this->assertLessThanOrEqual(1.0, $slots[$element]['x']);
+            $this->assertGreaterThanOrEqual(0.0, $slots[$element]['y']);
+            $this->assertLessThanOrEqual(1.0, $slots[$element]['y']);
+        }
     }
 
-    public function test_positions_are_stored_only_for_active_elements(): void
-    {
-        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_holder_name', 'ALI REZA')
-            ->set('back_text', 'BORN TO LEAD')
-            ->call('toggleCvv')
-            ->set('cvv2', '808')
-            ->call('updatePosition', 'card_holder_name', 0.3, 0.4)
-            ->call('updatePosition', 'back_text', 0.2, 0.6)
-            ->call('updatePosition', 'cvv2', 0.7, 0.8)
-            ->call('updatePosition', 'qr_code', 0.5, 0.1)
-            ->call('addToCart')
-            ->assertRedirect(route('cart.index'));
-
-        $cart = app(CartService::class)->getCart();
-        $positions = $cart['items'][0]['customization_json']['positions'];
-
-        $this->assertArrayHasKey('card_holder_name', $positions);
-        $this->assertArrayHasKey('back_text', $positions);
-        $this->assertArrayHasKey('cvv2', $positions);
-        $this->assertArrayNotHasKey('qr_code', $positions);
-        $this->assertArrayNotHasKey('expiry', $positions);
-    }
-
-    public function test_positions_are_clamped_to_0_85_by_cart_service(): void
+    public function test_cart_service_drops_positions_from_customization(): void
     {
         $cartService = app(CartService::class);
 
@@ -385,16 +363,45 @@ class ProductCustomizerTest extends TestCase
             'customization_json' => [
                 'card_holder_name' => 'ALI REZA',
                 'positions' => [
-                    'card_holder_name' => ['x' => 0.9999, 'y' => -0.5],
+                    'card_holder_name' => ['x' => 0.3, 'y' => 0.4],
+                    'card_number' => ['x' => 0.5, 'y' => 0.5],
                 ],
             ],
         ];
 
         $result = $cartService->addItem($payload);
-        $positions = $result['items'][0]['customization_json']['positions']['card_holder_name'];
+        $customization = $result['items'][0]['customization_json'];
 
-        $this->assertSame(0.85, $positions['x']);
-        $this->assertSame(0.0, $positions['y']);
+        $this->assertSame('ALI REZA', $customization['card_holder_name']);
+        // Legacy/forged positions are never carried into new snapshots.
+        $this->assertArrayNotHasKey('positions', $customization);
+    }
+
+    public function test_snapshot_has_no_positions_when_configuration_is_complete(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('card_number', '1234657897897897')
+            ->set('card_holder_name', 'HOSSEIN REZAIE')
+            ->set('back_text', 'BORN TO LEAD')
+            ->call('toggleCvv')
+            ->set('cvv2', '808')
+            ->call('toggleExpiry')
+            ->set('expiry_month', '05')
+            ->set('expiry_year', (string) ((int) date('y') + 3))
+            ->call('toggleQrCode')
+            ->set('qr_code_path', 'customizations/qr_codes/test.png')
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'));
+
+        $customization = app(CartService::class)->getCart()['items'][0]['customization_json'];
+
+        $this->assertSame('1234657897897897', $customization['card_number']);
+        $this->assertSame('HOSSEIN REZAIE', $customization['card_holder_name']);
+        $this->assertSame('BORN TO LEAD', $customization['back_text']);
+        $this->assertSame('808', $customization['cvv2']);
+        $this->assertSame('05', $customization['expiry_month']);
+        $this->assertArrayHasKey('qr_code_path', $customization);
+        $this->assertArrayNotHasKey('positions', $customization);
     }
 
     public function test_cart_service_rejects_invalid_card_number_and_cvv2(): void
@@ -453,7 +460,6 @@ class ProductCustomizerTest extends TestCase
             ->call('toggleExpiry')
             ->set('expiry_month', '05')
             ->set('expiry_year', (string) ((int) date('y') + 3))
-            ->call('updatePosition', 'card_holder_name', 0.3, 0.4)
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -475,8 +481,7 @@ class ProductCustomizerTest extends TestCase
         $this->assertSame('6274051234567890', $orderItem->customization_json['card_number']);
         $this->assertSame('808', $orderItem->customization_json['cvv2']);
         $this->assertSame('05', $orderItem->customization_json['expiry_month']);
-        $this->assertSame(0.3, $orderItem->customization_json['positions']['card_holder_name']['x'] ?? null);
-        $this->assertSame(0.4, $orderItem->customization_json['positions']['card_holder_name']['y'] ?? null);
+        $this->assertArrayNotHasKey('positions', $orderItem->customization_json);
     }
 
     public function test_card_number_above_16_digits_is_rejected(): void
@@ -502,6 +507,13 @@ class ProductCustomizerTest extends TestCase
         $this->assertSame('6274 0512 34', ProductCustomizer::presentCardNumber('6274051234'));
         $this->assertSame('6274 0512 3456 7890', ProductCustomizer::presentCardNumber('6274-0512-3456-7890'));
         $this->assertSame('', ProductCustomizer::presentCardNumber(''));
+    }
+
+    public function test_present_card_number_preserves_digit_order(): void
+    {
+        // The group order must never be reversed by RTL/bidi rendering logic:
+        // 1234 stays first, 7897 stays last.
+        $this->assertSame('1234 6578 9789 7897', ProductCustomizer::presentCardNumber('1234657897897897'));
     }
 
     public function test_display_card_number_is_presentation_only_and_never_stored(): void

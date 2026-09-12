@@ -56,7 +56,7 @@
                 @foreach ($selectedOrder->items as $item)
                     @php
                         $custom = is_array($item->customization_json) ? $item->customization_json : [];
-                        $positions = is_array($custom['positions'] ?? null) ? $custom['positions'] : [];
+                        $slots = \App\Livewire\Catalog\ProductCustomizer::fixedSlots();
                     @endphp
                     <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
@@ -97,32 +97,32 @@
 
                                 <div class="relative h-full w-full mt-4 text-[10px]">
                                     @if (!empty($custom['card_number']))
-                                        <div class="absolute font-mono font-bold" style="left: {{ ($positions['card_number']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_number']['y'] ?? 0.42) * 100 }}%;">
-                                            {{ \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($custom['card_number']) }}
+                                        <div class="absolute font-mono font-bold" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;" dir="ltr">
+                                            <span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($custom['card_number']) }}</span>
                                         </div>
                                     @endif
                                     @if (!empty($custom['card_holder_name']))
-                                        <div class="absolute font-serif italic bg-white/90 text-gray-900 px-1 rounded text-[9px] font-bold" style="left: {{ ($positions['card_holder_name']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_holder_name']['y'] ?? 0.78) * 100 }}%;">
+                                        <div class="absolute font-serif italic bg-white/90 text-gray-900 px-1 rounded text-[9px] font-bold" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
                                             {{ $custom['card_holder_name'] }}
                                         </div>
                                     @endif
                                     @if (!empty($custom['back_text']))
-                                        <div class="absolute italic text-[9px]" style="left: {{ ($positions['back_text']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['back_text']['y'] ?? 0.62) * 100 }}%;">
+                                        <div class="absolute italic text-[9px]" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
                                             {{ $custom['back_text'] }}
                                         </div>
                                     @endif
                                     @if (!empty($custom['security_cvv_enabled']) && !empty($custom['cvv2']))
-                                        <div class="absolute font-mono text-[9px]" style="left: {{ ($positions['cvv2']['x'] ?? 0.72) * 100 }}%; top: {{ ($positions['cvv2']['y'] ?? 0.78) * 100 }}%;">
+                                        <div class="absolute font-mono text-[9px]" style="left: {{ $slots['cvv2']['x'] * 100 }}%; top: {{ $slots['cvv2']['y'] * 100 }}%;" dir="ltr">
                                             CVV2: {{ $custom['cvv2'] }}
                                         </div>
                                     @endif
                                     @if (!empty($custom['security_expiry_enabled']) && (!empty($custom['expiry_month']) || !empty($custom['expiry_year'])))
-                                        <div class="absolute font-mono text-[9px]" style="left: {{ ($positions['expiry']['x'] ?? 0.48) * 100 }}%; top: {{ ($positions['expiry']['y'] ?? 0.78) * 100 }}%;">
+                                        <div class="absolute font-mono text-[9px]" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;" dir="ltr">
                                             EXP: {{ $custom['expiry_month'] ?? '--' }}/{{ $custom['expiry_year'] ?? '--' }}
                                         </div>
                                     @endif
                                     @if (!empty($custom['qr_code_enabled']) && !empty($custom['qr_code_path']))
-                                        <div class="absolute" style="left: {{ ($positions['qr_code']['x'] ?? 0.76) * 100 }}%; top: {{ ($positions['qr_code']['y'] ?? 0.15) * 100 }}%;">
+                                        <div class="absolute" style="left: {{ $slots['qr_code']['x'] * 100 }}%; top: {{ $slots['qr_code']['y'] * 100 }}%;">
                                             <img src="{{ route('admin.orders.qr.show', ['path' => $custom['qr_code_path']]) }}" class="h-6 w-6 bg-white p-0.5 rounded">
                                         </div>
                                     @endif

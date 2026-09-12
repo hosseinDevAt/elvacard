@@ -22,10 +22,6 @@ class CartService
 
     private const MAX_QUANTITY = 20;
 
-    // Single positioning rule shared with the client and ProductCustomizer:
-    // normalized coordinates are clamped to [0.00, 0.85].
-    private const MAX_POSITION = 0.85;
-
     public function getCart(): array
     {
         $cart = session(self::SESSION_KEY, ['items' => []]);
@@ -342,24 +338,6 @@ class CartService
                 if (str_starts_with($qrPath, 'customizations/qr_codes/') && ! str_contains($qrPath, '..')) {
                     $sanitizedCustomization['qr_code_path'] = $qrPath;
                 }
-            }
-        }
-
-        if (! empty($rawCustomization['positions']) && is_array($rawCustomization['positions'])) {
-            $allowedPosKeys = ['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry', 'qr_code'];
-            $sanitizedPositions = [];
-            foreach ($rawCustomization['positions'] as $key => $pos) {
-                if (in_array($key, $allowedPosKeys, true) && is_array($pos)) {
-                    $x = isset($pos['x']) ? (float) $pos['x'] : 0.0;
-                    $y = isset($pos['y']) ? (float) $pos['y'] : 0.0;
-                    $sanitizedPositions[$key] = [
-                        'x' => round(max(0.0, min(self::MAX_POSITION, $x)), 4),
-                        'y' => round(max(0.0, min(self::MAX_POSITION, $y)), 4),
-                    ];
-                }
-            }
-            if (! empty($sanitizedPositions)) {
-                $sanitizedCustomization['positions'] = $sanitizedPositions;
             }
         }
 

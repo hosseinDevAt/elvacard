@@ -116,7 +116,7 @@
                 <div class="space-y-6">
                     <div>
                         <h2 class="text-lg font-bold text-white mb-1">۲. مشخصات اطلاعات پشت کارت</h2>
-                        <p class="text-xs text-gray-400">اطلاعات واقعی که می‌خواهید پشت کارت حک شود را وارد کنید. با لمس/درگ می‌توانید جایگاه عناصر را تغییر دهید.</p>
+                        <p class="text-xs text-gray-400">اطلاعات واقعی که می‌خواهید پشت کارت حک شود را وارد کنید.</p>
                     </div>
 
                     {{-- Card Number Input --}}
@@ -334,95 +334,8 @@
             @endif
         </div>
 
-        {{-- Right Panel — Live 2D Interactive Preview with Pointer Drag & Drop --}}
-        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-gray-950 flex flex-col items-center justify-between space-y-6"
-             x-data="{
-                 dragKey: null,
-                 dragRelX: 0,
-                 dragRelY: 0,
-                 moved: false,
-                 pointerMoved: false,
-                 cardRect: null,
-                 elemWidth: 0,
-                 elemHeight: 0,
-                 maxX: 0.85,
-                 maxY: 0.85,
-                 rafId: null,
-                 dragEl: null,
-                 lastX: 0,
-                 lastY: 0,
-                 startDrag(key, event) {
-                     this.dragKey = key;
-                     this.dragEl = event.currentTarget || event.target;
-                     const cardRect = this.$refs.cardBack.getBoundingClientRect();
-                     this.cardRect = cardRect;
-                     const er = this.dragEl.getBoundingClientRect();
-                     this.elemWidth = er.width;
-                     this.elemHeight = er.height;
-                     this.maxX = Math.max(0.0, Math.min(0.85, (cardRect.width - er.width) / cardRect.width));
-                     this.maxY = Math.max(0.0, Math.min(0.85, (cardRect.height - er.height) / cardRect.height));
-                     this.lastX = event.clientX;
-                     this.lastY = event.clientY;
-                     this.moved = false;
-                     this.pointerMoved = false;
-                     event.preventDefault();
-                 },
-                 onMove(event) {
-                     if (!this.dragKey) return;
-                     this.lastX = event.clientX;
-                     this.lastY = event.clientY;
-                     this.pointerMoved = true;
-                     if (this.rafId == null) {
-                         this.rafId = requestAnimationFrame(() => {
-                             this.rafId = null;
-                             this.applyDrag();
-                         });
-                     }
-                 },
-                 applyDrag() {
-                     if (!this.dragKey || !this.cardRect) return;
-                     const cr = this.cardRect;
-                     let relX = (this.lastX - cr.left) / cr.width;
-                     let relY = (this.lastY - cr.top) / cr.height;
-                     relX = Math.max(0.0, Math.min(this.maxX, relX));
-                     relY = Math.max(0.0, Math.min(this.maxY, relY));
-                     this.dragRelX = relX;
-                     this.dragRelY = relY;
-                     if (this.pointerMoved) {
-                         this.moved = true;
-                     }
-                     if (this.dragEl) {
-                         this.dragEl.style.left = (relX * 100).toFixed(2) + '%';
-                         this.dragEl.style.top = (relY * 100).toFixed(2) + '%';
-                     }
-                 },
-                 stopDrag() {
-                     if (this.rafId != null) {
-                         cancelAnimationFrame(this.rafId);
-                         this.rafId = null;
-                     }
-                     const key = this.dragKey;
-                     if (key && this.cardRect) {
-                         // Flush the last pointer position so the final drop
-                         // position is exact (no trailing frame lost).
-                         this.applyDrag();
-                         if (this.moved) {
-                             // Single server round-trip per drag; the server
-                             // still validates and clamps the final position.
-                             $wire.updatePosition(key, this.dragRelX, this.dragRelY);
-                         }
-                     }
-                     this.dragKey = null;
-                     this.moved = false;
-                     this.pointerMoved = false;
-                     this.dragEl = null;
-                     this.cardRect = null;
-                 }
-             }"
-             @pointermove.window="onMove($event)"
-             @pointerup.window="stopDrag()"
-             @pointercancel.window="stopDrag()"
-        >
+        {{-- Right Panel — Live 2D Fixed-Layout Preview --}}
+        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-gray-950 flex flex-col items-center justify-between space-y-6">
             <div class="w-full flex flex-col items-center space-y-6">
                 {{-- Preview Header & Controls --}}
                 <div class="w-full flex flex-wrap items-center justify-between gap-4">
@@ -430,7 +343,7 @@
                         @if ($step === 1)
                             انتخاب رنگ ورقه فلزی کارت
                         @else
-                            نمای پشت کارت فلزی سفارش (با قابلیت جابه‌جایی عناصر)
+                            نمای پشت کارت فلزی سفارش
                         @endif
                     </h3>
 
@@ -491,9 +404,7 @@
                     $selectedDesignImage = $designImageOptions->firstWhere('id', $design_image_id);
                 @endphp
 
-                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}"
-                     x-ref="cardBack"
-                >
+                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}">
                     {{-- Subtle Card Metallic Shine --}}
                     <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
 
@@ -508,79 +419,62 @@
                             @endif
                         </div>
                     @else
-                        {{-- BACK CARD PREVIEW WITH INTERACTIVE TOUCH / POINTER DRAG & DROP --}}
+                        @php $slots = \App\Livewire\Catalog\ProductCustomizer::fixedSlots(); @endphp
+                        {{-- BACK CARD PREVIEW WITH FIXED LAYOUT SLOTS --}}
                         <div class="relative h-full w-full select-none">
                             {{-- Top Magnetic Stripe --}}
                             <div class="absolute top-2 inset-x-0 h-10 bg-gray-950 shadow-inner pointer-events-none"></div>
 
-                            {{-- Draggable Element 1: Card Number --}}
+                            {{-- Fixed Slot 1: Card Number --}}
                             @if ($card_number !== '')
-                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
-                                     style="left: {{ ($positions['card_number']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_number']['y'] ?? 0.42) * 100 }}%; touch-action: none;"
-                                     @pointerdown="startDrag('card_number', $event)"
-                                >
-                                    <div class="font-mono text-sm font-bold tracking-widest dir-ltr opacity-95">
+                                <div class="absolute rounded px-1" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;">
+                                    <div class="font-mono text-sm font-bold tracking-widest opacity-95" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $this->displayCardNumber }}
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Draggable Element 2: Card Holder Name --}}
+                            {{-- Fixed Slot 2: Card Holder Name --}}
                             @if ($card_holder_name !== '')
-                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
-                                     style="left: {{ ($positions['card_holder_name']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_holder_name']['y'] ?? 0.78) * 100 }}%; touch-action: none;"
-                                     @pointerdown="startDrag('card_holder_name', $event)"
-                                >
+                                <div class="absolute rounded px-1" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
                                     <div class="h-7 bg-white/90 rounded px-2.5 flex items-center text-gray-900 font-serif italic text-xs font-bold tracking-wider shadow-inner">
                                         {{ $card_holder_name }}
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Draggable Element 3: Back Text --}}
+                            {{-- Fixed Slot 3: Back Text --}}
                             @if ($back_text !== '')
-                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow max-w-[200px]"
-                                     style="left: {{ ($positions['back_text']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['back_text']['y'] ?? 0.62) * 100 }}%; touch-action: none;"
-                                     @pointerdown="startDrag('back_text', $event)"
-                                >
+                                <div class="absolute rounded px-1 max-w-[200px]" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
                                     <div class="text-xs font-medium italic opacity-90 truncate">
                                         {{ $back_text }}
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Draggable Element 4: CVV2 --}}
+                            {{-- Fixed Slot 4: CVV2 --}}
                             @if ($security_cvv_enabled && $cvv2 !== '')
-                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
-                                     style="left: {{ ($positions['cvv2']['x'] ?? 0.72) * 100 }}%; top: {{ ($positions['cvv2']['y'] ?? 0.78) * 100 }}%; touch-action: none;"
-                                     @pointerdown="startDrag('cvv2', $event)"
-                                >
+                                <div class="absolute rounded px-1" style="left: {{ $slots['cvv2']['x'] * 100 }}%; top: {{ $slots['cvv2']['y'] * 100 }}%;">
                                     <div class="text-[9px] font-bold tracking-widest opacity-75">CVV2</div>
-                                    <div class="font-mono font-bold text-xs tracking-widest dir-ltr">
+                                    <div class="font-mono font-bold text-xs tracking-widest" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $cvv2 }}
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Draggable Element 5: Expiry Date --}}
+                            {{-- Fixed Slot 5: Expiry Date --}}
                             @if ($security_expiry_enabled && ($expiry_month !== '' || $expiry_year !== ''))
-                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
-                                     style="left: {{ ($positions['expiry']['x'] ?? 0.48) * 100 }}%; top: {{ ($positions['expiry']['y'] ?? 0.78) * 100 }}%; touch-action: none;"
-                                     @pointerdown="startDrag('expiry', $event)"
-                                >
+                                <div class="absolute rounded px-1" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;">
                                     <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
-                                    <div class="font-mono font-bold text-xs tracking-wider dir-ltr">
+                                    <div class="font-mono font-bold text-xs tracking-wider" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $expiry_month ?: '--' }}/{{ $expiry_year ?: '--' }}
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Draggable Element 6: QR Code --}}
+                            {{-- Fixed Slot 6: QR Code --}}
                             @if ($qr_code_enabled && $qr_code_path)
-                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded p-0.5 transition-shadow"
-                                     style="left: {{ ($positions['qr_code']['x'] ?? 0.76) * 100 }}%; top: {{ ($positions['qr_code']['y'] ?? 0.15) * 100 }}%; touch-action: none;"
-                                     @pointerdown="startDrag('qr_code', $event)"
-                                >
+                                <div class="absolute rounded p-0.5" style="left: {{ $slots['qr_code']['x'] * 100 }}%; top: {{ $slots['qr_code']['y'] * 100 }}%;">
                                     <div class="h-10 w-10 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center">
                                         <img src="{{ \URL::temporarySignedRoute('customizations.qr.preview', now()->addHours(1), ['path' => $qr_code_path]) }}" alt="QR Code" class="h-full w-full object-contain">
                                     </div>
@@ -589,11 +483,6 @@
                         </div>
                     @endif
                 </div>
-
-                <p class="text-[11px] text-gray-500 text-center flex items-center justify-center gap-1.5">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                    <span>طرح و مشخصات انتخابی به عنوان Snapshot اصلی سفارش شما ثبت خواهند شد.</span>
-                </p>
             </div>
         </div>
     </div>

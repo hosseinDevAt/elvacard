@@ -15,10 +15,6 @@ class ProductCustomizer extends Component
 {
     use WithFileUploads;
 
-    // Single positioning rule shared with the client and CartService:
-    // normalized coordinates are clamped to [0.00, 0.85].
-    public const MAX_POSITION = 0.85;
-
     public int $product_id;
 
     public ?int $color_id = null;
@@ -58,16 +54,6 @@ class ProductCustomizer extends Component
     public $qr_code_file = null;
 
     public ?string $qr_code_path = null;
-
-    // Interactive Drag & Drop Positions (normalized 0.0 - 1.0)
-    public array $positions = [
-        'card_number' => ['x' => 0.08, 'y' => 0.42],
-        'card_holder_name' => ['x' => 0.08, 'y' => 0.78],
-        'back_text' => ['x' => 0.08, 'y' => 0.62],
-        'cvv2' => ['x' => 0.72, 'y' => 0.78],
-        'expiry' => ['x' => 0.48, 'y' => 0.78],
-        'qr_code' => ['x' => 0.76, 'y' => 0.15],
-    ];
 
     public Product $product;
 
@@ -225,19 +211,6 @@ class ProductCustomizer extends Component
         $this->qr_code_path = null;
     }
 
-    public function updatePosition(string $element, float $x, float $y): void
-    {
-        $allowed = ['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry', 'qr_code'];
-        if (! in_array($element, $allowed, true)) {
-            return;
-        }
-
-        $this->positions[$element] = [
-            'x' => round(max(0.0, min(self::MAX_POSITION, $x)), 4),
-            'y' => round(max(0.0, min(self::MAX_POSITION, $y)), 4),
-        ];
-    }
-
     private function canonicalizeCardNumber(?string $value): string
     {
         if ($value === null || trim($value) === '') {
@@ -276,6 +249,22 @@ class ProductCustomizer extends Component
         $digits = preg_replace('/\D/', '', $value) ?? '';
 
         return trim(preg_replace('/(.{4})(?=.)/', '$1 ', $digits) ?? '');
+    }
+
+    // Fixed layout slots for the back card. Presentation-only constants; the
+    // layout is decided by the design, never by the user, so the snapshot
+    // never stores user-controlled positions. Normalized (0.0 - 1.0) so the
+    // fixed positions scale with the card on every viewport.
+    public static function fixedSlots(): array
+    {
+        return [
+            'card_number' => ['x' => 0.08, 'y' => 0.42],
+            'card_holder_name' => ['x' => 0.08, 'y' => 0.78],
+            'back_text' => ['x' => 0.08, 'y' => 0.62],
+            'cvv2' => ['x' => 0.72, 'y' => 0.78],
+            'expiry' => ['x' => 0.48, 'y' => 0.78],
+            'qr_code' => ['x' => 0.76, 'y' => 0.15],
+        ];
     }
 
     public function addToCart(CartService $cartService): void
@@ -351,30 +340,6 @@ class ProductCustomizer extends Component
 
         if ($this->qr_code_enabled && $this->qr_code_path) {
             $customizationJson['qr_code_path'] = $this->qr_code_path;
-        }
-
-        $activePositions = [];
-        if (! empty($customizationJson['card_number']) && isset($this->positions['card_number'])) {
-            $activePositions['card_number'] = $this->positions['card_number'];
-        }
-        if (! empty($customizationJson['card_holder_name']) && isset($this->positions['card_holder_name'])) {
-            $activePositions['card_holder_name'] = $this->positions['card_holder_name'];
-        }
-        if (! empty($customizationJson['back_text']) && isset($this->positions['back_text'])) {
-            $activePositions['back_text'] = $this->positions['back_text'];
-        }
-        if ($this->security_cvv_enabled && ! empty($customizationJson['cvv2']) && isset($this->positions['cvv2'])) {
-            $activePositions['cvv2'] = $this->positions['cvv2'];
-        }
-        if ($this->security_expiry_enabled && (! empty($customizationJson['expiry_month']) || ! empty($customizationJson['expiry_year'])) && isset($this->positions['expiry'])) {
-            $activePositions['expiry'] = $this->positions['expiry'];
-        }
-        if ($this->qr_code_enabled && ! empty($customizationJson['qr_code_path']) && isset($this->positions['qr_code'])) {
-            $activePositions['qr_code'] = $this->positions['qr_code'];
-        }
-
-        if (! empty($activePositions)) {
-            $customizationJson['positions'] = $activePositions;
         }
 
         $cartService->addItem([
