@@ -478,4 +478,63 @@ class ProductCustomizerTest extends TestCase
         $this->assertSame(0.3, $orderItem->customization_json['positions']['card_holder_name']['x'] ?? null);
         $this->assertSame(0.4, $orderItem->customization_json['positions']['card_holder_name']['y'] ?? null);
     }
+
+    public function test_card_number_above_16_digits_is_rejected(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('card_number', '627405123456789012')
+            ->call('addToCart')
+            ->assertHasErrors(['card_number' => 'digits']);
+    }
+
+    public function test_cvv2_above_4_digits_is_rejected(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('toggleCvv')
+            ->set('cvv2', '80805')
+            ->call('addToCart')
+            ->assertHasErrors(['cvv2' => 'digits_between']);
+    }
+
+    public function test_present_card_number_groups_digits_by_four(): void
+    {
+        $this->assertSame('6274 0512 3456 7890', ProductCustomizer::presentCardNumber('6274051234567890'));
+        $this->assertSame('6274 0512 34', ProductCustomizer::presentCardNumber('6274051234'));
+        $this->assertSame('6274 0512 3456 7890', ProductCustomizer::presentCardNumber('6274-0512-3456-7890'));
+        $this->assertSame('', ProductCustomizer::presentCardNumber(''));
+    }
+
+    public function test_display_card_number_is_presentation_only_and_never_stored(): void
+    {
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
+
+        $component->set('card_number', '6274051234567890');
+        $this->assertSame('6274 0512 3456 7890', $component->get('displayCardNumber'));
+
+        $component->set('card_number', '6274 0512 3456 7890')
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'));
+
+        $cart = app(CartService::class)->getCart();
+        $customization = $cart['items'][0]['customization_json'];
+
+        // The snapshot must keep the canonical form; presentation never leaks in.
+        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertStringNotContainsString(' ', $customization['card_number']);
+        $this->assertSame('6274 0512 3456 7890', ProductCustomizer::presentCardNumber($customization['card_number']));
+    }
+
+    public function test_display_card_number_computed_property_formats_live_input(): void
+    {
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
+
+        $component->set('card_number', '6274');
+        $this->assertSame('6274', $component->get('displayCardNumber'));
+
+        $component->set('card_number', '62740512');
+        $this->assertSame('6274 0512', $component->get('displayCardNumber'));
+
+        $component->set('card_number', '627405123456');
+        $this->assertSame('6274 0512 3456', $component->get('displayCardNumber'));
+    }
 }

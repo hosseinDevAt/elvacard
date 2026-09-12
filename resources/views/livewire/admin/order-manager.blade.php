@@ -73,7 +73,7 @@
                             {{-- Details List --}}
                             <div class="space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                 <div class="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">پارامترهای حکاکی کاربر:</div>
-                                <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ $custom['card_number'] ?? 'ثبت نشده' }}</span></div>
+                                <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ !empty($custom['card_number']) ? \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($custom['card_number']) : 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">نام دارنده کارت:</span> <span class="text-gray-900 font-bold">{{ $custom['card_holder_name'] ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">متن دلخواه پشت:</span> <span class="text-gray-900 font-bold">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">وضعیت CVV2:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_cvv_enabled']) ? 'فعال (مقدار: ' . ($custom['cvv2'] ?? 'مشخص نشده') . ')' : 'غیرفعال' }}</span></div>
@@ -98,7 +98,7 @@
                                 <div class="relative h-full w-full mt-4 text-[10px]">
                                     @if (!empty($custom['card_number']))
                                         <div class="absolute font-mono font-bold" style="left: {{ ($positions['card_number']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_number']['y'] ?? 0.42) * 100 }}%;">
-                                            {{ $custom['card_number'] }}
+                                            {{ \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($custom['card_number']) }}
                                         </div>
                                     @endif
                                     @if (!empty($custom['card_holder_name']))

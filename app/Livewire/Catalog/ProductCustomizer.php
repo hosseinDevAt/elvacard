@@ -257,6 +257,27 @@ class ProductCustomizer extends Component
         return preg_replace('/[\s\-]+/', '', $value) ?? '';
     }
 
+    // Presentation-only grouped display (e.g. "6274 0512 3456 7890").
+    // Never persisted: the snapshot always keeps the canonical 16 ASCII digits.
+    public function getDisplayCardNumberProperty(): string
+    {
+        return self::presentCardNumber($this->card_number);
+    }
+
+    public static function presentCardNumber(?string $value): string
+    {
+        $value = strtr(trim((string) $value), [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]);
+
+        $digits = preg_replace('/\D/', '', $value) ?? '';
+
+        return trim(preg_replace('/(.{4})(?=.)/', '$1 ', $digits) ?? '');
+    }
+
     public function addToCart(CartService $cartService): void
     {
         $this->card_number = $this->canonicalizeCardNumber($this->card_number);

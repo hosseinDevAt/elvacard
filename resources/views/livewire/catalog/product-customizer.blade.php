@@ -27,7 +27,7 @@
     {{-- Main Workspace Content --}}
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0">
         {{-- Left Control Panel --}}
-        <div class="lg:col-span-5 p-6 sm:p-8 bg-gray-900/50 border-b lg:border-b-0 lg:border-e border-gray-800 flex flex-col justify-between space-y-6 overflow-y-auto">
+        <div class="lg:col-span-5 min-w-0 p-6 sm:p-8 bg-gray-900/50 border-b lg:border-b-0 lg:border-e border-gray-800 flex flex-col justify-between space-y-6 overflow-y-auto">
             @if ($step === 1)
                 {{-- STEP 1: Front of Card Customization --}}
                 <div class="space-y-6">
@@ -122,14 +122,17 @@
                     {{-- Card Number Input --}}
                     <div class="space-y-1.5">
                         <label for="card_number" class="block text-xs font-bold text-gray-300">
-                            شماره کارت (۱۶ رقمی یا دلخواه)
+                            شماره کارت (۱۶ رقمی)
                         </label>
                         <input
                             id="card_number"
                             type="text"
                             inputmode="numeric"
+                            autocomplete="off"
+                            maxlength="16"
                             wire:model.live.debounce.150ms="card_number"
-                            placeholder="۶۲۷۴ ۰۵۱۲ ۳۴۵۶ ۷۸۹۰"
+                            placeholder="6274 0512 3456 7890"
+                            oninput="this.value = this.value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9]/g, '').slice(0, 16)"
                             class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white font-mono dir-ltr text-start placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                         >
                         @error('card_number')
@@ -145,6 +148,8 @@
                         <input
                             id="card_holder_name"
                             type="text"
+                            autocomplete="off"
+                            maxlength="100"
                             wire:model.live.debounce.150ms="card_holder_name"
                             placeholder="AMIR HOSSEIN REZAIE"
                             class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
@@ -162,6 +167,8 @@
                         <input
                             id="back_text"
                             type="text"
+                            autocomplete="off"
+                            maxlength="255"
                             wire:model.live.debounce.150ms="back_text"
                             placeholder="مثال: Born to Lead"
                             class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
@@ -203,9 +210,11 @@
                                         id="cvv2"
                                         type="text"
                                         inputmode="numeric"
+                                        autocomplete="off"
                                         maxlength="4"
                                         wire:model.live.debounce.150ms="cvv2"
                                         placeholder="مثال: 314"
+                                        oninput="this.value = this.value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9]/g, '').slice(0, 4)"
                                         class="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white font-mono dir-ltr focus:border-amber-500 focus:outline-none"
                                     >
                                     @error('cvv2')
@@ -326,48 +335,93 @@
         </div>
 
         {{-- Right Panel — Live 2D Interactive Preview with Pointer Drag & Drop --}}
-        <div class="lg:col-span-7 p-6 sm:p-8 bg-gray-950 flex flex-col items-center justify-between space-y-6"
+        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-gray-950 flex flex-col items-center justify-between space-y-6"
              x-data="{
                  dragKey: null,
-                 startX: 0,
-                 startY: 0,
+                 dragRelX: 0,
+                 dragRelY: 0,
+                 moved: false,
+                 pointerMoved: false,
+                 cardRect: null,
                  elemWidth: 0,
                  elemHeight: 0,
+                 maxX: 0.85,
+                 maxY: 0.85,
+                 rafId: null,
+                 dragEl: null,
+                 lastX: 0,
+                 lastY: 0,
                  startDrag(key, event) {
                      this.dragKey = key;
+                     this.dragEl = event.currentTarget || event.target;
                      const cardRect = this.$refs.cardBack.getBoundingClientRect();
-                     const element = event.currentTarget || event.target;
-                     this.elemWidth = element ? element.getBoundingClientRect().width : 0;
-                     this.elemHeight = element ? element.getBoundingClientRect().height : 0;
-                     this.startX = event.clientX || (event.touches ? event.touches[0].clientX : 0);
-                     this.startY = event.clientY || (event.touches ? event.touches[0].clientY : 0);
+                     this.cardRect = cardRect;
+                     const er = this.dragEl.getBoundingClientRect();
+                     this.elemWidth = er.width;
+                     this.elemHeight = er.height;
+                     this.maxX = Math.max(0.0, Math.min(0.85, (cardRect.width - er.width) / cardRect.width));
+                     this.maxY = Math.max(0.0, Math.min(0.85, (cardRect.height - er.height) / cardRect.height));
+                     this.lastX = event.clientX;
+                     this.lastY = event.clientY;
+                     this.moved = false;
+                     this.pointerMoved = false;
+                     event.preventDefault();
                  },
                  onMove(event) {
                      if (!this.dragKey) return;
-                     const cardRect = this.$refs.cardBack.getBoundingClientRect();
-                     const currentX = event.clientX || (event.touches ? event.touches[0].clientX : 0);
-                     const currentY = event.clientY || (event.touches ? event.touches[0].clientY : 0);
-
-                     let relX = (currentX - cardRect.left) / cardRect.width;
-                     let relY = (currentY - cardRect.top) / cardRect.height;
-
-                     // Unified positioning rule shared with the server (0.85).
-                     const upperBound = 0.85;
-                     // Keep the whole element inside the card surface.
-                     const maxX = Math.max(0.0, Math.min(upperBound, (cardRect.width - this.elemWidth) / cardRect.width));
-                     const maxY = Math.max(0.0, Math.min(upperBound, (cardRect.height - this.elemHeight) / cardRect.height));
-
-                     relX = Math.max(0.0, Math.min(maxX, relX));
-                     relY = Math.max(0.0, Math.min(maxY, relY));
-
-                     $wire.updatePosition(this.dragKey, relX, relY);
+                     this.lastX = event.clientX;
+                     this.lastY = event.clientY;
+                     this.pointerMoved = true;
+                     if (this.rafId == null) {
+                         this.rafId = requestAnimationFrame(() => {
+                             this.rafId = null;
+                             this.applyDrag();
+                         });
+                     }
+                 },
+                 applyDrag() {
+                     if (!this.dragKey || !this.cardRect) return;
+                     const cr = this.cardRect;
+                     let relX = (this.lastX - cr.left) / cr.width;
+                     let relY = (this.lastY - cr.top) / cr.height;
+                     relX = Math.max(0.0, Math.min(this.maxX, relX));
+                     relY = Math.max(0.0, Math.min(this.maxY, relY));
+                     this.dragRelX = relX;
+                     this.dragRelY = relY;
+                     if (this.pointerMoved) {
+                         this.moved = true;
+                     }
+                     if (this.dragEl) {
+                         this.dragEl.style.left = (relX * 100).toFixed(2) + '%';
+                         this.dragEl.style.top = (relY * 100).toFixed(2) + '%';
+                     }
                  },
                  stopDrag() {
+                     if (this.rafId != null) {
+                         cancelAnimationFrame(this.rafId);
+                         this.rafId = null;
+                     }
+                     const key = this.dragKey;
+                     if (key && this.cardRect) {
+                         // Flush the last pointer position so the final drop
+                         // position is exact (no trailing frame lost).
+                         this.applyDrag();
+                         if (this.moved) {
+                             // Single server round-trip per drag; the server
+                             // still validates and clamps the final position.
+                             $wire.updatePosition(key, this.dragRelX, this.dragRelY);
+                         }
+                     }
                      this.dragKey = null;
+                     this.moved = false;
+                     this.pointerMoved = false;
+                     this.dragEl = null;
+                     this.cardRect = null;
                  }
              }"
              @pointermove.window="onMove($event)"
              @pointerup.window="stopDrag()"
+             @pointercancel.window="stopDrag()"
         >
             <div class="w-full flex flex-col items-center space-y-6">
                 {{-- Preview Header & Controls --}}
@@ -466,7 +520,7 @@
                                      @pointerdown="startDrag('card_number', $event)"
                                 >
                                     <div class="font-mono text-sm font-bold tracking-widest dir-ltr opacity-95">
-                                        {{ $card_number }}
+                                        {{ $this->displayCardNumber }}
                                     </div>
                                 </div>
                             @endif
@@ -547,12 +601,12 @@
     {{-- Workspace Footer Bar --}}
     <footer class="border-t border-gray-800 bg-gray-900/90 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md">
         {{-- Navigation Actions --}}
-        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             @if ($step === 1)
                 <button
                     type="button"
                     wire:click="setStep(2)"
-                    class="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-xs font-extrabold text-gray-950 transition duration-200 hover:bg-amber-400 shadow-lg shadow-amber-500/20"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 w-full sm:w-auto text-xs font-extrabold text-gray-950 transition duration-200 hover:bg-amber-400 shadow-lg shadow-amber-500/20"
                 >
                     <span>مرحله بعد: اطلاعات پشت کارت</span>
                     <svg class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -563,7 +617,7 @@
                 <button
                     type="button"
                     wire:click="setStep(1)"
-                    class="inline-flex items-center gap-2 rounded-xl bg-gray-800 px-4 py-3 text-xs font-bold text-gray-300 transition hover:bg-gray-700 hover:text-white border border-gray-700"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-800 px-4 py-3 w-full sm:w-auto text-xs font-bold text-gray-300 transition hover:bg-gray-700 hover:text-white border border-gray-700"
                 >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
@@ -575,7 +629,7 @@
                     type="button"
                     wire:click="addToCart"
                     wire:loading.attr="disabled"
-                    class="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-xs font-extrabold text-gray-950 transition duration-200 hover:bg-amber-400 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 w-full sm:w-auto text-xs font-extrabold text-gray-950 transition duration-200 hover:bg-amber-400 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span wire:loading.remove>ثبت نهایی و افزودن به سبد خرید</span>
                     <span wire:loading class="inline-flex items-center gap-2">
