@@ -29,7 +29,7 @@
     <article class="prose prose-persian max-w-none">
         <header class="mb-8">
             @if ($article->category)
-                <a href="{{ route('articles.index') }}" class="inline-block text-sm font-medium text-primary-600 hover:text-primary-700 mb-3">
+                        <a href="{{ route('articles.index') }}" wire:navigate class="inline-block text-sm font-medium text-primary-600 hover:text-primary-700 mb-3">
                     {{ $article->category->name }}
                 </a>
             @endif
@@ -62,7 +62,7 @@
     <hr class="my-10 border-gray-200">
 
     <div class="text-center">
-        <a href="{{ route('articles.index') }}" class="text-primary-600 hover:text-primary-700 font-medium">
+                        <a href="{{ route('articles.index') }}" wire:navigate class="text-primary-600 hover:text-primary-700 font-medium">
             ← بازگشت به لیست مقالات
         </a>
     </div>

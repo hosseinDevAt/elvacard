@@ -8,7 +8,7 @@
                 <p class="mt-1 text-sm text-gray-600">مدیریت آیتم‌های انتخابی قبل از ثبت سفارش اولیه</p>
             </div>
 
-            <a href="{{ route('catalog.products.index') }}" class="text-sm text-primary-600 hover:text-primary-800 transition">ادامه خرید</a>
+                            <a href="{{ route('catalog.products.index') }}" wire:navigate class="text-sm text-primary-600 hover:text-primary-800 transition">ادامه خرید</a>
         </div>
 
         @if (session('success'))
@@ -75,7 +75,7 @@
                         <button type="submit" class="rounded bg-red-100 px-4 py-2 text-sm text-red-700 hover:bg-red-200 transition">پاک کردن سبد</button>
                     </form>
 
-                    <a href="{{ route('checkout.index') }}" class="rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">
+                    <a href="{{ route('checkout.index') }}" wire:navigate class="rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">
                         ادامه به تسویه حساب
                     </a>
                 </div>

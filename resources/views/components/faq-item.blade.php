@@ -5,7 +5,7 @@
             :aria-expanded="open.toString()"
             aria-controls="faq-answer-{{ $faq->id }}">
         <span>{{ $faq->question }}</span>
-        <x-icons.chevron-down class="w-5 h-5 text-gray-400 ms-3 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" />
+        <x-icons.chevron-down class="w-5 h-5 text-gray-400 ms-3 flex-shrink-0 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" />
     </button>
     <div x-show="open"
          x-collapse

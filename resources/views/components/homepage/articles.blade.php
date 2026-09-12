@@ -20,7 +20,7 @@
                         </p>
                     @endif
                 </header>
-                <a href="{{ route('articles.index') }}"
+                <a href="{{ route('articles.index') }}" wire:navigate
                    class="hidden sm:inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 transition">
                     همه مقالات
                     <x-icons.arrow-left class="me-1" />
@@ -30,7 +30,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach ($articles as $article)
                     <article class="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
-                        <a href="{{ route('articles.show', $article) }}" class="block">
+                        <a href="{{ route('articles.show', $article) }}" wire:navigate class="block">
                             @if ($article->cover_image)
                                 <div class="aspect-[16/9] overflow-hidden bg-gray-50">
                                     <img src="{{ asset('storage/' . $article->cover_image) }}"
@@ -53,7 +53,7 @@
                             @endif
 
                             <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">
-                                <a href="{{ route('articles.show', $article) }}" class="hover:text-primary-600 transition">
+                                <a href="{{ route('articles.show', $article) }}" wire:navigate class="hover:text-primary-600 transition">
                                     {{ $article->title }}
                                 </a>
                             </h3>

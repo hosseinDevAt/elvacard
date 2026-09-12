@@ -39,7 +39,7 @@ $contactAddress = site_setting('contact_address');
         <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <!-- Brand -->
             <div class="lg:col-span-2">
-                <a href="{{ route('home') }}" class="flex items-center gap-2 mb-4">
+                <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2 mb-4">
                     @if ($siteLogo)
                         <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
                     @else
@@ -69,31 +69,31 @@ $contactAddress = site_setting('contact_address');
                                     {{ $item->title }}
                                 </a>
                             @else
-                                <a href="{{ $item->url }}" class="text-sm text-gray-400 hover:text-white transition">
+                                <a href="{{ $item->url }}" wire:navigate class="text-sm text-gray-400 hover:text-white transition">
                                     {{ $item->title }}
                                 </a>
                             @endif
                         </li>
                     @empty
                         <li>
-                            <a href="{{ route('catalog.products.index') }}" class="text-sm text-gray-400 hover:text-white transition">
-                                فروشگاه
-                            </a>
+                                <a href="{{ route('catalog.products.index') }}" wire:navigate class="text-sm text-gray-400 hover:text-white transition">
+                                    فروشگاه
+                                </a>
                         </li>
                         <li>
-                            <a href="{{ route('catalog.designs.index') }}" class="text-sm text-gray-400 hover:text-white transition">
-                                طرح‌ها
-                            </a>
+                                <a href="{{ route('catalog.designs.index') }}" wire:navigate class="text-sm text-gray-400 hover:text-white transition">
+                                    طرح‌ها
+                                </a>
                         </li>
                         <li>
-                            <a href="{{ route('articles.index') }}" class="text-sm text-gray-400 hover:text-white transition">
-                                مقالات
-                            </a>
+                                <a href="{{ route('articles.index') }}" wire:navigate class="text-sm text-gray-400 hover:text-white transition">
+                                    مقالات
+                                </a>
                         </li>
                         <li>
-                            <a href="{{ route('faq.index') }}" class="text-sm text-gray-400 hover:text-white transition">
-                                سوالات متداول
-                            </a>
+                                <a href="{{ route('faq.index') }}" wire:navigate class="text-sm text-gray-400 hover:text-white transition">
+                                    سوالات متداول
+                                </a>
                         </li>
                     @endforelse
                 </ul>
@@ -123,7 +123,7 @@ $contactAddress = site_setting('contact_address');
                     @endif
                     @if (! $contactPhone && ! $contactEmail && ! $contactAddress)
                         <li>
-                            <a href="{{ route('pages.show', 'contact-us') }}" class="hover:text-white transition">
+                            <a href="{{ route('pages.show', 'contact-us') }}" wire:navigate class="hover:text-white transition">
                                 صفحه تماس با ما
                             </a>
                         </li>

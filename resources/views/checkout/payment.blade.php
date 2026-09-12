@@ -90,7 +90,7 @@
                     </form>
                 @else
                     <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                        <a href="{{ route('checkout.success', $order->token) }}" class="w-full inline-block rounded bg-gray-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-gray-700 transition">مشاهده وضعیت سفارش</a>
+                        <a href="{{ route('checkout.success', $order->token) }}" wire:navigate class="w-full inline-block rounded bg-gray-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-gray-700 transition">مشاهده وضعیت سفارش</a>
                     </div>
                 @endif
             </div>

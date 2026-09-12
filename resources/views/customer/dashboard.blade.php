@@ -19,17 +19,17 @@
                     <p class="text-sm text-gray-500">آخرین سفارش</p>
                     <p class="mt-1 text-xl font-bold text-gray-900">{{ $latestOrder->reference ?? ('#'.$latestOrder->id) }}</p>
                     <p class="mt-1 text-xs text-gray-500">{{ $latestOrder->status?->faLabel() ?? $latestOrder->status }} · {{ number_format($latestOrder->total_price) }} تومان</p>
-                    <a href="{{ route('orders.show', $latestOrder) }}" class="mt-3 inline-block text-xs font-medium text-primary-600 hover:text-primary-800 transition">مشاهده جزئیات</a>
+                    <a href="{{ route('orders.show', $latestOrder) }}" wire:navigate class="mt-3 inline-block text-xs font-medium text-primary-600 hover:text-primary-800 transition">مشاهده جزئیات</a>
                 </div>
             @else
                 <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                     <p class="text-sm text-gray-500">دسترسی سریع</p>
                     <div class="mt-2 flex flex-wrap gap-2 text-xs">
-                        <a href="{{ route('orders.index') }}" class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">سفارش‌های من</a>
-                        <a href="{{ route('profile.edit') }}" class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">پروفایل</a>
-                        <a href="{{ route('catalog.products.index') }}" class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">محصولات</a>
-                        <a href="{{ route('catalog.designs.index') }}" class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">طرح‌ها</a>
-                        <a href="{{ route('cart.index') }}" class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">سبد خرید</a>
+                        <a href="{{ route('orders.index') }}" wire:navigate class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">سفارش‌های من</a>
+                        <a href="{{ route('profile.edit') }}" wire:navigate class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">پروفایل</a>
+                        <a href="{{ route('catalog.products.index') }}" wire:navigate class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">محصولات</a>
+                        <a href="{{ route('catalog.designs.index') }}" wire:navigate class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">طرح‌ها</a>
+                        <a href="{{ route('cart.index') }}" wire:navigate class="rounded bg-primary-50 px-2 py-1 text-primary-700 hover:bg-primary-100 transition">سبد خرید</a>
                     </div>
                 </div>
             @endif
@@ -59,7 +59,7 @@
                                 <td class="px-4 py-3">{{ $order->status?->faLabel() ?? $order->status }}</td>
                                 <td class="px-4 py-3 font-mono" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
                                 <td class="px-4 py-3">
-                                    <a href="{{ route('orders.show', $order) }}" class="text-xs text-primary-600 hover:text-primary-800 transition">جزئیات</a>
+                                    <a href="{{ route('orders.show', $order) }}" wire:navigate class="text-xs text-primary-600 hover:text-primary-800 transition">جزئیات</a>
                                 </td>
                             </tr>
                         @empty

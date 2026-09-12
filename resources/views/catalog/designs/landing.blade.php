@@ -13,11 +13,11 @@
                     کارت شخصی خود را با طرح دلخواهتان بسازید؛ از انتخاب رنگ تا حکاکی طرح بر روی کارت. همه‌چیز با کیفیت عالی و توسط ما انجام می‌شود.
                 </p>
                 <div class="flex flex-wrap items-center justify-center gap-4">
-                    <a href="{{ route('catalog.products.index') }}"
+                    <a href="{{ route('catalog.products.index') }}" wire:navigate
                        class="inline-flex items-center rounded-full bg-white px-6 py-3 text-lg font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100 sm:px-8 sm:py-4">
                         انتخاب محصول
                     </a>
-                    <a href="{{ route('catalog.designs.index') }}"
+                    <a href="{{ route('catalog.designs.index') }}" wire:navigate
                        class="inline-flex items-center rounded-full border-2 border-white/40 px-6 py-3 text-lg font-semibold text-white transition hover:border-white hover:bg-white/10 sm:px-8 sm:py-4">
                         مشاهده طرح‌ها
                     </a>

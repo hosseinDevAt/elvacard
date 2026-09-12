@@ -31,7 +31,7 @@
             </div>
 
             <div class="mt-6">
-                <a href="{{ route('order-tracking.index') }}" class="text-sm text-primary-600 hover:text-primary-800 transition">پیگیری سفارش دیگر</a>
+                <a href="{{ route('order-tracking.index') }}" wire:navigate class="text-sm text-primary-600 hover:text-primary-800 transition">پیگیری سفارش دیگر</a>
             </div>
         </div>
     </div>

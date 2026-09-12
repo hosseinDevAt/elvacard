@@ -85,12 +85,12 @@
                 @endforelse
 
                 @if ($order->payment_status?->value !== 'paid' && $order->payments()->where('status', 'failed')->exists())
-                    <a href="{{ route('checkout.payment', $order->token) }}" class="mt-3 inline-block rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">پرداخت مجدد</a>
+                    <a href="{{ route('checkout.payment', $order->token) }}" wire:navigate class="mt-3 inline-block rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">پرداخت مجدد</a>
                 @endif
             </div>
 
             <div>
-                <a href="{{ route('orders.index') }}" class="text-primary-600 hover:text-primary-800 text-sm transition">بازگشت به سفارش‌های من</a>
+                <a href="{{ route('orders.index') }}" wire:navigate class="text-primary-600 hover:text-primary-800 text-sm transition">بازگشت به سفارش‌های من</a>
             </div>
         </div>
     </div>

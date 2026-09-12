@@ -14,7 +14,7 @@
                     <button type="button" @click="open = !open" :aria-expanded="open"
                             class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300">
                         <span>فیلتر محصولات</span>
-                        <x-icons.chevron-down class="h-4 w-4 transition" :class="open ? 'rotate-180' : ''" />
+                        <x-icons.chevron-down class="h-4 w-4 transition" x-bind:class="open ? 'rotate-180' : ''" />
                     </button>
                 </div>
 
@@ -56,7 +56,8 @@
                                 @endforeach
                             </div>
                             @if($selectedType)
-                                <a href="{{ route('catalog.products.index', array_filter(['search' => $search ?: null, 'sort' => $sort])) }}"
+                                <a href="{{ route('catalog.products.index', array_filter(['search' => $search ?: null, 'sort' => $sort])) }}" wire:navigate
+                                   class="mt-2 inline-block text-xs text-primary-600 underline">حذف فیلتر نوع</a> wire:navigate
                                    class="mt-2 inline-block text-xs text-primary-600 underline">حذف فیلتر نوع</a>
                             @endif
                         </div>
@@ -94,7 +95,7 @@
                             <button type="submit" class="flex-1 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary-700">
                                 اعمال فیلتر
                             </button>
-                            <a href="{{ route('catalog.products.index') }}"
+                            <a href="{{ route('catalog.products.index') }}" wire:navigate
                                class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:border-gray-400">
                                 پاک کردن
                             </a>
@@ -127,7 +128,7 @@
                         @if($maxPrice)
                             <span class="rounded-full bg-white px-2.5 py-0.5">تا {{ number_format($maxPrice) }} تومان</span>
                         @endif
-                        <a href="{{ route('catalog.products.index') }}" class="ms-auto underline hover:text-primary-800">پاک کردن همه</a>
+                        <a href="{{ route('catalog.products.index') }}" wire:navigate class="ms-auto underline hover:text-primary-800">پاک کردن همه</a>
                     </div>
                 @endif
 
@@ -143,7 +144,7 @@
                     @empty
                         <div class="col-span-full rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
                             <p class="text-sm text-gray-500 mb-4">محصولی مطابق با فیلترهای شما یافت نشد.</p>
-                            <a href="{{ route('catalog.products.index') }}"
+                            <a href="{{ route('catalog.products.index') }}" wire:navigate
                                class="inline-flex rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700">
                                 مشاهده همه محصولات
                             </a>

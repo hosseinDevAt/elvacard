@@ -55,7 +55,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     <x-icons.menu-toggle x-var="open" />
                 </button>
 
-                <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0">
+                <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2 shrink-0">
                     @if ($siteLogo)
                         <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
                     @else
@@ -71,11 +71,11 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
             <div class="hidden lg:flex lg:items-center lg:gap-2">
                 @foreach ($navItems as $link)
                     @if ($link->target === '_blank')
-                        <x-nav-link :href="$link->url" :active="$link->active" target="{{ $link->target }}" rel="noopener noreferrer">
+                        <x-nav-link :href="str_starts_with($link->url, '/') ? $link->url : $link->url" :active="$link->active" wire:navigate target="{{ $link->target }}" rel="noopener noreferrer">
                             {{ $link->title }}
                         </x-nav-link>
                     @else
-                        <x-nav-link :href="$link->url" :active="$link->active">
+                        <x-nav-link :href="$link->url" :active="$link->active" wire:navigate>
                             {{ $link->title }}
                         </x-nav-link>
                     @endif
@@ -103,7 +103,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
 
             <!-- Cart + Auth Actions -->
             <div class="flex items-center gap-5">
-                <a href="{{ route('cart.index') }}" class="relative inline-flex items-center text-white/80 hover:text-white transition" title="سبد خرید">
+                <a href="{{ route('cart.index') }}" wire:navigate class="relative inline-flex items-center text-white/80 hover:text-white transition" title="سبد خرید">
                     <x-icons.cart class="h-6 w-6" />
                     @if ($cartCount > 0)
                         <span class="absolute -top-1.5 -end-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-1 text-[10px] font-bold leading-none text-primary-600">
@@ -113,8 +113,8 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                 </a>
 
                 @if (Auth::guest())
-                    <a href="{{ route('login') }}" class="hidden sm:block text-sm font-medium text-white/80 hover:text-white transition">ورود</a>
-                    <a href="{{ route('register') }}" class="hidden sm:block rounded-lg bg-accent-500 px-4 py-2 text-sm font-bold text-primary-600 hover:bg-accent-600 transition">ثبت نام</a>
+                    <a href="{{ route('login') }}" wire:navigate class="hidden sm:block text-sm font-medium text-white/80 hover:text-white transition">ورود</a>
+                    <a href="{{ route('register') }}" wire:navigate class="hidden sm:block rounded-lg bg-accent-500 px-4 py-2 text-sm font-bold text-primary-600 hover:bg-accent-600 transition">ثبت نام</a>
                 @else
                     <div class="hidden sm:block">
                         <x-dropdown align="right" width="48">
@@ -129,16 +129,16 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
 
                             <x-slot name="content">
                                 @if (Auth::user()->role === 'admin' && Route::has('admin.dashboard'))
-                                    <x-dropdown-link :href="route('admin.dashboard')">
+                                    <x-dropdown-link :href="route('admin.dashboard')" wire:navigate>
                                         پنل مدیریت
                                     </x-dropdown-link>
                                 @endif
 
-                                <x-dropdown-link :href="route('account.dashboard')">
+                                <x-dropdown-link :href="route('account.dashboard')" wire:navigate>
                                     حساب کاربری
                                 </x-dropdown-link>
 
-                                <x-dropdown-link :href="route('orders.index')">
+                                <x-dropdown-link :href="route('orders.index')" wire:navigate>
                                     سفارش‌های من
                                 </x-dropdown-link>
 
@@ -186,6 +186,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                                 :active="$link->active"
                                 target="{{ $link->target }}"
                                 rel="noopener noreferrer"
+                                @click="open = false"
                             >
                                 {{ $link->title }}
                             </x-responsive-nav-link>
@@ -194,6 +195,8 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                                 :href="$link->url"
                                 :active="$link->active"
                                 target="{{ $link->target }}"
+                                wire:navigate
+                                @click="open = false"
                             >
                                 {{ $link->title }}
                             </x-responsive-nav-link>
@@ -203,30 +206,30 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
             @endif
 
             <div class="pt-2 border-t border-gray-100 space-y-1">
-                <x-responsive-nav-link :href="route('cart.index')">
+                <x-responsive-nav-link :href="route('cart.index')" wire:navigate @click="open = false">
                     سبد خرید @if ($cartCount > 0)({{ $cartCount }})@endif
                 </x-responsive-nav-link>
 
                 @if (Auth::guest())
-                    <x-responsive-nav-link :href="route('login')">
+                    <x-responsive-nav-link :href="route('login')" wire:navigate @click="open = false">
                         ورود
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('register')">
+                    <x-responsive-nav-link :href="route('register')" wire:navigate @click="open = false">
                         ثبت نام
                     </x-responsive-nav-link>
                 @else
                     @if (Auth::user()->role === 'admin' && Route::has('admin.dashboard'))
-                        <x-responsive-nav-link :href="route('admin.dashboard')">
+                        <x-responsive-nav-link :href="route('admin.dashboard')" wire:navigate @click="open = false">
                             پنل مدیریت
                         </x-responsive-nav-link>
                     @endif
-                    <x-responsive-nav-link :href="route('account.dashboard')">
+                    <x-responsive-nav-link :href="route('account.dashboard')" wire:navigate @click="open = false">
                         حساب کاربری
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('orders.index')">
+                    <x-responsive-nav-link :href="route('orders.index')" wire:navigate @click="open = false">
                         سفارش‌های من
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('profile.edit')">
+                    <x-responsive-nav-link :href="route('profile.edit')" wire:navigate @click="open = false">
                         پروفایل
                     </x-responsive-nav-link>
                     <div class="pt-2">

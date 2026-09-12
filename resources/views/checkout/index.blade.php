@@ -7,7 +7,7 @@
                 <h1 class="text-2xl font-bold text-gray-900">تسویه حساب</h1>
                 <p class="mt-1 text-sm text-gray-600">بررسی نهایی سبد خرید و ثبت سفارش اولیه</p>
             </div>
-            <a href="{{ route('cart.index') }}" class="text-sm text-primary-600 hover:text-primary-800 transition">بازگشت به سبد خرید</a>
+                            <a href="{{ route('cart.index') }}" wire:navigate class="text-sm text-primary-600 hover:text-primary-800 transition">بازگشت به سبد خرید</a>
         </div>
 
         @if ($errors->any())

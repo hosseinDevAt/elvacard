@@ -29,7 +29,7 @@
                                     <td class="px-4 py-3">{{ $order->payment_status?->faLabel() ?? $order->payment_status }}</td>
                                     <td class="px-4 py-3 font-mono" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
                                     <td class="px-4 py-3">
-                                        <a href="{{ route('orders.show', $order) }}" class="text-primary-600 hover:text-primary-800 text-xs transition">مشاهده سفارش</a>
+                                        <a href="{{ route('orders.show', $order) }}" wire:navigate class="text-primary-600 hover:text-primary-800 text-xs transition">مشاهده سفارش</a>
                                     </td>
                                 </tr>
                             @empty

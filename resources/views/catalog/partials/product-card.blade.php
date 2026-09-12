@@ -2,7 +2,7 @@
     $lowestPrice = $product->colorPrices?->first()?->price ?? $product->base_price;
 @endphp
 <article class="group flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden transition hover:border-primary-200 hover:shadow-lg">
-    <a href="{{ route('catalog.products.show', $product->slug) }}" class="block relative aspect-[4/3] overflow-hidden bg-gray-50">
+    <a href="{{ route('catalog.products.show', $product->slug) }}" wire:navigate class="block relative aspect-[4/3] overflow-hidden bg-gray-50">
         @if ($product->main_image)
             <img src="{{ asset('storage/' . $product->main_image) }}"
                  alt="{{ $product->name }}"
@@ -20,7 +20,7 @@
 
     <div class="flex flex-1 flex-col p-5">
         <h3 class="mb-1 font-semibold text-gray-900 line-clamp-1">
-            <a href="{{ route('catalog.products.show', $product->slug) }}" class="hover:text-primary-600 transition">
+            <a href="{{ route('catalog.products.show', $product->slug) }}" wire:navigate class="hover:text-primary-600 transition">
                 {{ $product->name }}
             </a>
         </h3>
@@ -38,6 +38,7 @@
         @endif
 
         <a href="{{ route('catalog.products.show', $product->slug) }}"
+           wire:navigate
            class="mt-auto inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700">
             مشاهده و سفارش
         </a>

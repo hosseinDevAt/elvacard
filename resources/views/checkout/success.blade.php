@@ -20,12 +20,12 @@
             @elseif ($payment && $payment->status?->value === 'failed')
                 <div class="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">
                     <p class="font-semibold">پرداخت شما رد شده است.</p>
-                    <a href="{{ route('checkout.payment', $order->token) }}" class="mt-1 inline-block font-medium text-red-900 underline">پرداخت مجدد</a>
+                    <a href="{{ route('checkout.payment', $order->token) }}" wire:navigate class="mt-1 inline-block font-medium text-red-900 underline">پرداخت مجدد</a>
                 </div>
             @else
                 <div class="mt-4 rounded-md bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
                     پرداخت هنوز ثبت نشده است.
-                    <a href="{{ route('checkout.payment', $order->token) }}" class="font-medium text-yellow-900 underline">تکمیل مرحله پرداخت</a>
+                    <a href="{{ route('checkout.payment', $order->token) }}" wire:navigate class="font-medium text-yellow-900 underline">تکمیل مرحله پرداخت</a>
                 </div>
             @endif
 
@@ -54,8 +54,8 @@
             </div>
 
             <div class="mt-6 flex flex-wrap gap-3">
-                <a href="{{ route('catalog.products.index') }}" class="rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">بازگشت به محصولات</a>
-                <a href="{{ route('home') }}" class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">بازگشت به صفحه اصلی</a>
+                <a href="{{ route('catalog.products.index') }}" wire:navigate class="rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">بازگشت به محصولات</a>
+                <a href="{{ route('home') }}" wire:navigate class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">بازگشت به صفحه اصلی</a>
             </div>
         </div>
     </div>
