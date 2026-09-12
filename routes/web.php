@@ -23,6 +23,7 @@ use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\DesignColorCompatibilityManager;
 use App\Livewire\Admin\DesignImageManager;
 use App\Livewire\Admin\DesignManager;
+use App\Livewire\Admin\DesignWizard;
 use App\Livewire\Admin\ProductColorPriceManager;
 use App\Livewire\Admin\ProductManager;
 use App\Livewire\Admin\FaqItemManager;
@@ -43,6 +44,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard/products', ProductManager::class)->name('admin.products');
     Route::get('/dashboard/product-colors', ProductColorPriceManager::class)->name('admin.product-colors');
     Route::get('/dashboard/designs', DesignManager::class)->name('admin.designs');
+    Route::get('/dashboard/designs/create', DesignWizard::class)->name('admin.designs.create');
+    Route::get('/dashboard/designs/{designId}/edit', DesignWizard::class)->name('admin.designs.edit');
     Route::get('/dashboard/design-images', DesignImageManager::class)->name('admin.design-images');
     Route::get('/dashboard/design-color-compatibilities', DesignColorCompatibilityManager::class)->name('admin.design-color-compatibilities');
     Route::get('/dashboard/cate-designs', CateDesignManager::class)->name('admin.cate-designs');

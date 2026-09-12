@@ -20,79 +20,124 @@
             <div class="p-4 border-b border-gray-800">
                 <a href="{{ route('admin.dashboard') }}" class="text-lg font-bold">پنل ادمین</a>
             </div>
-            <nav class="flex-1 p-4 space-y-1">
+            @php
+                $currentRoute = request()->route()?->getName() ?? '';
+                $storeRoutes = ['admin.products', 'admin.colors', 'admin.designs', 'admin.designs.create', 'admin.designs.edit'];
+                $contentRoutes = ['admin.pages', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements'];
+                $appearanceRoutes = ['admin.appearance', 'admin.menus', 'admin.menu-items', 'admin.homepage-sections'];
+                $groups = [
+                    'store' => in_array($currentRoute, $storeRoutes),
+                    'content' => in_array($currentRoute, $contentRoutes),
+                    'appearance' => in_array($currentRoute, $appearanceRoutes),
+                ];
+            @endphp
+            <nav class="flex-1 overflow-y-auto p-4 space-y-1"
+                 x-data="{ open: @js($groups) }"
+                 data-open-groups="{{ implode(' ', array_keys(array_filter($groups))) }}" />
                 <a href="{{ route('admin.dashboard') }}"
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.dashboard') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     داشبورد
                 </a>
-                <a href="{{ route('admin.colors') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.colors') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    رنگ‌ها
-                </a>
-                <a href="{{ route('admin.products') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.products') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    محصولات
-                </a>
-                <a href="{{ route('admin.product-colors') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.product-colors') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    قیمت رنگ محصولات
-                </a>
-                <a href="{{ route('admin.cate-designs') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.cate-designs') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    دسته‌بندی طرح‌ها
-                </a>
-                <a href="{{ route('admin.designs') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.designs') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    طرح‌ها
-                </a>
-                <a href="{{ route('admin.design-images') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.design-images') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    تصاویر طرح‌ها
-                </a>
-                <a href="{{ route('admin.design-color-compatibilities') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.design-color-compatibilities') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    سازگاری رنگ طرح‌ها
-                </a>
-                <a href="{{ route('admin.faq') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.faq') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    مدیریت سوالات متداول
-                </a>
-                <a href="{{ route('admin.announcements') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.announcements') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    مدیریت اطلاعیه‌ها
-                </a>
-                <a href="{{ route('admin.article-categories') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.article-categories') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    دسته‌بندی مقالات
-                </a>
-                <a href="{{ route('admin.articles') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.articles') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    مقالات
-                </a>
-                <a href="{{ route('admin.pages') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.pages') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    مدیریت صفحات
-                </a>
-                <a href="{{ route('admin.menus') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menus') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    مدیریت منوها
-                </a>
-                <a href="{{ route('admin.menu-items') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menu-items') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    آیتم‌های منو
-                </a>
-                <a href="{{ route('admin.homepage-sections') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.homepage-sections') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    مدیریت صفحه اصلی
-                </a>
-                <a href="{{ route('admin.site-settings') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.site-settings') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    تنظیمات سایت
-                </a>
-                <a href="{{ route('admin.appearance') }}"
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.appearance') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    ظاهر سایت
-                </a>
+
+                {{-- فروشگاه --}}
+                <div>
+                    <button type="button"
+                            @click="open.store = !open.store"
+                            :aria-expanded="open.store === true"
+                            aria-controls="group-store"
+                            aria-label="فروشگاه"
+                            class="flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition {{ $groups['store'] ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                        <span>فروشگاه</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="open.store ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="group-store" x-show="open.store" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
+                        <a href="{{ route('admin.products') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.products') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            محصولات
+                        </a>
+                        <a href="{{ route('admin.colors') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.colors') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            رنگ‌ها
+                        </a>
+                        <a href="{{ route('admin.designs') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.designs', 'admin.designs.create', 'admin.designs.edit') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            طرح‌ها
+                        </a>
+                    </div>
+                </div>
+
+                {{-- محتوا --}}
+                <div>
+                    <button type="button"
+                            @click="open.content = !open.content"
+                            :aria-expanded="open.content === true"
+                            aria-controls="group-content"
+                            aria-label="محتوا"
+                            class="flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition {{ $groups['content'] ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                        <span>محتوا</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="open.content ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="group-content" x-show="open.content" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
+                        <a href="{{ route('admin.pages') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.pages') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            صفحات
+                        </a>
+                        <a href="{{ route('admin.articles') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.articles') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            مقالات
+                        </a>
+                        <a href="{{ route('admin.article-categories') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.article-categories') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            دسته‌بندی مقالات
+                        </a>
+                        <a href="{{ route('admin.faq') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.faq') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            سوالات متداول
+                        </a>
+                        <a href="{{ route('admin.announcements') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.announcements') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            اطلاعیه‌ها
+                        </a>
+                    </div>
+                </div>
+
+                {{-- ظاهر سایت --}}
+                <div>
+                    <button type="button"
+                            @click="open.appearance = !open.appearance"
+                            :aria-expanded="open.appearance === true"
+                            aria-controls="group-appearance"
+                            aria-label="ظاهر سایت"
+                            class="flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition {{ $groups['appearance'] ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                        <span>ظاهر سایت</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="open.appearance ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="group-appearance" x-show="open.appearance" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
+                        <a href="{{ route('admin.appearance') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.appearance') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            ظاهر و برند
+                        </a>
+                        <a href="{{ route('admin.menus') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menus') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            منوها
+                        </a>
+                        <a href="{{ route('admin.menu-items') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menu-items') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            آیتم‌های منو
+                        </a>
+                        <a href="{{ route('admin.homepage-sections') }}"
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.homepage-sections') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            صفحه اصلی
+                        </a>
+                    </div>
+                </div>
+
                 <a href="{{ route('admin.orders') }}"
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.orders') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     سفارشات
@@ -100,6 +145,10 @@
                 <a href="{{ route('admin.users') }}"
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.users') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     کاربران
+                </a>
+                <a href="{{ route('admin.site-settings') }}"
+                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.site-settings') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                    تنظیمات سایت
                 </a>
             </nav>
             <div class="p-4 border-t border-gray-800">

@@ -36,6 +36,15 @@ class ProductColorPriceManager extends Component
         'price.min' => 'قیمت نمی‌تواند منفی باشد.',
     ];
 
+    public function mount(): void
+    {
+        $product = request()->query('product');
+
+        if ($product !== null && filter_var($product, FILTER_VALIDATE_INT) !== false) {
+            $this->productId = (int) $product;
+        }
+    }
+
     public function save(): void
     {
         $this->validate();
@@ -152,6 +161,7 @@ class ProductColorPriceManager extends Component
     {
         $prices = ProductColorPrice::query()
             ->with('product', 'color')
+            ->when($this->productId, fn ($query) => $query->where('product_id', $this->productId))
             ->when($this->search !== '', fn ($query) => $query->whereHas('product', fn ($productQuery) => $productQuery->where('name', 'like', '%'.$this->search.'%')))
             ->orderByDesc('id')
             ->paginate(15);

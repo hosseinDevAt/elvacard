@@ -130,7 +130,11 @@
                         <td class="px-4 py-3 font-medium">{{ $product->name }}</td>
                         <td class="px-4 py-3 text-gray-500 font-mono text-xs" dir="ltr">{{ $product->slug }}</td>
                         <td class="px-4 py-3 text-gray-500 text-xs" dir="ltr">{{ $product->type?->value }}</td>
-                        <td class="px-4 py-3 text-gray-500">{{ $product->color_prices_count }}</td>
+                        <td class="px-4 py-3">
+                            <a href="{{ route('admin.product-colors', ['product' => $product->id]) }}" class="inline-flex items-center gap-1 text-yellow-600 hover:text-yellow-800 text-xs">
+                                قیمت رنگ‌ها ({{ $product->color_prices_count }})
+                            </a>
+                        </td>
                         <td class="px-4 py-3">
                             <span class="{{ $product->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $product->is_active ? 'فعال' : 'غیرفعال' }}</span>
                         </td>
