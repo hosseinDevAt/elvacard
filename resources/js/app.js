@@ -1,10 +1,16 @@
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 
-Alpine.plugin(collapse);
-
 document.addEventListener('alpine:init', () => {
-    Alpine.data('bannerSlider', (count) => ({
+    // On Livewire pages `window.Alpine` is the Alpine instance Livewire boots.
+    // On pages without Livewire, `window.Alpine` is set by us just before start.
+    // Either way the handler receives the single active instance, so plugins and
+    // global components are never registered twice and no second instance spawns.
+    const target = window.Alpine ?? Alpine;
+
+    target.plugin(collapse);
+
+    target.data('bannerSlider', (count) => ({
         count: count,
         slide: 0,
         timer: null,
@@ -47,6 +53,11 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 
-window.Alpine = Alpine;
-
-Alpine.start();
+// Livewire hosts its own Alpine instance (window.Alpine) and calls Alpine.start()
+// itself on DOMContentLoaded. Booting a second Alpine here caused conflicting
+// instances, broke Alpine.navigate and made admin navigation unreliable.
+// Only boot our own Alpine on pages that have no Livewire at all.
+if (window.Livewire === undefined) {
+    window.Alpine = Alpine;
+    Alpine.start();
+}

@@ -72,6 +72,39 @@ class AdminNavigationTest extends TestCase
             ->assertSee(route('admin.site-settings'));
     }
 
+    public function test_sidebar_links_are_spa_navigable(): void
+    {
+        $response = $this->actingAs($this->admin())
+            ->get(route('admin.dashboard'));
+
+        foreach ([
+            'admin.dashboard', 'admin.products', 'admin.colors', 'admin.designs',
+            'admin.pages', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements',
+            'admin.appearance', 'admin.menus', 'admin.menu-items', 'admin.homepage-sections',
+            'admin.orders', 'admin.users', 'admin.site-settings',
+        ] as $route) {
+            $this->assertStringContainsString(
+                'href="'.route($route).'" wire:navigate',
+                $response->getContent(),
+                "Sidebar link for {$route} should carry wire:navigate."
+            );
+        }
+    }
+
+    public function test_dashboard_cards_are_spa_navigable(): void
+    {
+        $response = $this->actingAs($this->admin())
+            ->get(route('admin.dashboard'));
+
+        foreach (['admin.products', 'admin.colors', 'admin.designs', 'admin.pages', 'admin.orders'] as $route) {
+            $this->assertStringContainsString(
+                'href="'.route($route).'" wire:navigate',
+                $response->getContent(),
+                "Dashboard card for {$route} should carry wire:navigate."
+            );
+        }
+    }
+
     public function test_standalone_workflow_links_are_removed_from_sidebar(): void
     {
         $response = $this->actingAs($this->admin())

@@ -18,7 +18,7 @@
         <aside class="fixed inset-y-0 start-0 z-40 w-64 transform bg-gray-900 text-white flex flex-col transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 lg:transform-none"
                :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full'">
             <div class="p-4 border-b border-gray-800">
-                <a href="{{ route('admin.dashboard') }}" class="text-lg font-bold">پنل ادمین</a>
+                <a href="{{ route('admin.dashboard') }}" wire:navigate class="text-lg font-bold">پنل ادمین</a>
             </div>
             @php
                 $currentRoute = request()->route()?->getName() ?? '';
@@ -34,7 +34,7 @@
             <nav class="flex-1 overflow-y-auto p-4 space-y-1"
                  x-data="{ open: @js($groups) }"
                  data-open-groups="{{ implode(' ', array_keys(array_filter($groups))) }}" />
-                <a href="{{ route('admin.dashboard') }}"
+                <a href="{{ route('admin.dashboard') }}" wire:navigate
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.dashboard') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     داشبورد
                 </a>
@@ -53,15 +53,15 @@
                         </svg>
                     </button>
                     <div id="group-store" x-show="open.store" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
-                        <a href="{{ route('admin.products') }}"
+                        <a href="{{ route('admin.products') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.products') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             محصولات
                         </a>
-                        <a href="{{ route('admin.colors') }}"
+                        <a href="{{ route('admin.colors') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.colors') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             رنگ‌ها
                         </a>
-                        <a href="{{ route('admin.designs') }}"
+                        <a href="{{ route('admin.designs') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.designs', 'admin.designs.create', 'admin.designs.edit') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             طرح‌ها
                         </a>
@@ -82,23 +82,23 @@
                         </svg>
                     </button>
                     <div id="group-content" x-show="open.content" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
-                        <a href="{{ route('admin.pages') }}"
+                        <a href="{{ route('admin.pages') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.pages') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             صفحات
                         </a>
-                        <a href="{{ route('admin.articles') }}"
+                        <a href="{{ route('admin.articles') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.articles') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             مقالات
                         </a>
-                        <a href="{{ route('admin.article-categories') }}"
+                        <a href="{{ route('admin.article-categories') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.article-categories') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             دسته‌بندی مقالات
                         </a>
-                        <a href="{{ route('admin.faq') }}"
+                        <a href="{{ route('admin.faq') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.faq') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             سوالات متداول
                         </a>
-                        <a href="{{ route('admin.announcements') }}"
+                        <a href="{{ route('admin.announcements') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.announcements') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             اطلاعیه‌ها
                         </a>
@@ -119,34 +119,34 @@
                         </svg>
                     </button>
                     <div id="group-appearance" x-show="open.appearance" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
-                        <a href="{{ route('admin.appearance') }}"
+                        <a href="{{ route('admin.appearance') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.appearance') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             ظاهر و برند
                         </a>
-                        <a href="{{ route('admin.menus') }}"
+                        <a href="{{ route('admin.menus') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menus') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             منوها
                         </a>
-                        <a href="{{ route('admin.menu-items') }}"
+                        <a href="{{ route('admin.menu-items') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menu-items') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             آیتم‌های منو
                         </a>
-                        <a href="{{ route('admin.homepage-sections') }}"
+                        <a href="{{ route('admin.homepage-sections') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.homepage-sections') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             صفحه اصلی
                         </a>
                     </div>
                 </div>
 
-                <a href="{{ route('admin.orders') }}"
+                <a href="{{ route('admin.orders') }}" wire:navigate
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.orders') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     سفارشات
                 </a>
-                <a href="{{ route('admin.users') }}"
+                <a href="{{ route('admin.users') }}" wire:navigate
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.users') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     کاربران
                 </a>
-                <a href="{{ route('admin.site-settings') }}"
+                <a href="{{ route('admin.site-settings') }}" wire:navigate
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.site-settings') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     تنظیمات سایت
                 </a>
