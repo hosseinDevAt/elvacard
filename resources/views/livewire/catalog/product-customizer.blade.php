@@ -7,7 +7,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
             </span>
-            <span class="text-xl font-extrabold tracking-wider text-white">METALUXE</span>
+            <span class="text-xl font-extrabold tracking-wider text-white">ElvaCard</span>
         </div>
 
         <div class="flex items-center gap-3">
@@ -116,7 +116,25 @@
                 <div class="space-y-6">
                     <div>
                         <h2 class="text-lg font-bold text-white mb-1">۲. مشخصات اطلاعات پشت کارت</h2>
-                        <p class="text-xs text-gray-400">اطلاعاتی که می‌خواهید پشت کارت حک شود را وارد و تنظیم کنید.</p>
+                        <p class="text-xs text-gray-400">اطلاعات واقعی که می‌خواهید پشت کارت حک شود را وارد کنید. با لمس/درگ می‌توانید جایگاه عناصر را تغییر دهید.</p>
+                    </div>
+
+                    {{-- Card Number Input --}}
+                    <div class="space-y-1.5">
+                        <label for="card_number" class="block text-xs font-bold text-gray-300">
+                            شماره کارت (۱۶ رقمی یا دلخواه)
+                        </label>
+                        <input
+                            id="card_number"
+                            type="text"
+                            inputmode="numeric"
+                            wire:model.live.debounce.150ms="card_number"
+                            placeholder="۶۲۷۴ ۰۵۱۲ ۳۴۵۶ ۷۸۹۰"
+                            class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white font-mono dir-ltr text-start placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        >
+                        @error('card_number')
+                            <p class="text-xs text-red-400">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     {{-- Cardholder Name Input --}}
@@ -177,6 +195,24 @@
                                     <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $security_cvv_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
                                 </button>
                             </div>
+
+                            @if ($security_cvv_enabled)
+                                <div class="pt-2">
+                                    <label for="cvv2" class="block text-[10px] text-gray-400 mb-1">مقدار CVV2 واقعی</label>
+                                    <input
+                                        id="cvv2"
+                                        type="text"
+                                        inputmode="numeric"
+                                        maxlength="6"
+                                        wire:model.live.debounce.150ms="cvv2"
+                                        placeholder="مثال: 314"
+                                        class="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white font-mono dir-ltr focus:border-amber-500 focus:outline-none"
+                                    >
+                                    @error('cvv2')
+                                        <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
                         </div>
 
                         {{-- Toggle 2: Expiry Date --}}
@@ -196,24 +232,86 @@
                                     <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $security_expiry_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
                                 </button>
                             </div>
+
+                            @if ($security_expiry_enabled)
+                                <div class="grid grid-cols-2 gap-2 pt-2">
+                                    <div>
+                                        <label class="block text-[10px] text-gray-400 mb-1">ماه انقضا</label>
+                                        <select wire:model.live="expiry_month" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
+                                            <option value="">انتخاب ماه...</option>
+                                            @for ($m = 1; $m <= 12; $m++)
+                                                <option value="{{ sprintf('%02d', $m) }}">{{ sprintf('%02d', $m) }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-gray-400 mb-1">سال انقضا</label>
+                                        <select wire:model.live="expiry_year" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
+                                            <option value="">انتخاب سال...</option>
+                                            @for ($y = 24; $y <= 35; $y++)
+                                                <option value="{{ $y }}">{{ $y }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
-                    {{-- QR Code Toggle --}}
-                    <div class="rounded-2xl border border-gray-800 bg-gray-950/60 p-4 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-gray-200">افزودن کیوآرکد (QR Code) اختصاصی پشت کارت</span>
-                            <span class="rounded bg-gray-800 px-2 py-0.5 text-[10px] font-semibold text-gray-400">اختیاری</span>
+                    {{-- QR Code Toggle & Upload --}}
+                    <div class="rounded-2xl border border-gray-800 bg-gray-950/60 p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-gray-200">افزودن کیوآرکد (QR Code) اختصاصی پشت کارت</span>
+                                <span class="rounded bg-gray-800 px-2 py-0.5 text-[10px] font-semibold text-gray-400">اختیاری</span>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked="{{ $qr_code_enabled ? 'true' : 'false' }}"
+                                wire:click="toggleQrCode"
+                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $qr_code_enabled ? 'bg-amber-500' : 'bg-gray-800' }}"
+                            >
+                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $qr_code_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked="{{ $qr_code_enabled ? 'true' : 'false' }}"
-                            wire:click="toggleQrCode"
-                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $qr_code_enabled ? 'bg-amber-500' : 'bg-gray-800' }}"
-                        >
-                            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $qr_code_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
-                        </button>
+
+                        @if ($qr_code_enabled)
+                            <div class="pt-2 border-t border-gray-800 space-y-2">
+                                <label for="qr_code_file" class="block text-xs font-medium text-gray-300">
+                                    آپلود تصویر QR Code (PNG, JPG, WEBP, SVG)
+                                </label>
+                                <input
+                                    id="qr_code_file"
+                                    type="file"
+                                    wire:model="qr_code_file"
+                                    accept=".png,.jpg,.jpeg,.webp,.svg"
+                                    class="w-full text-xs text-gray-400 file:me-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-gray-950 hover:file:bg-amber-400 cursor-pointer"
+                                >
+                                <div wire:loading wire:target="qr_code_file" class="text-xs text-amber-400 flex items-center gap-2">
+                                    <svg class="animate-spin h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>در حال آپلود و اعتبارسنجی QR...</span>
+                                </div>
+                                @error('qr_code_file')
+                                    <p class="text-xs text-red-400">{{ $message }}</p>
+                                @enderror
+
+                                @if ($qr_code_path)
+                                    <div class="flex items-center justify-between rounded-xl bg-gray-900 p-2 border border-gray-800">
+                                        <div class="flex items-center gap-2">
+                                            <img src="{{ \URL::temporarySignedRoute('customizations.qr.preview', now()->addHours(1), ['path' => $qr_code_path]) }}" alt="Uploaded QR" class="h-8 w-8 object-contain bg-white p-0.5 rounded">
+                                            <span class="text-xs text-emerald-400 font-medium">QR آپلود شد</span>
+                                        </div>
+                                        <button type="button" wire:click="removeQrCode" class="text-xs text-red-400 hover:text-red-300 font-medium">
+                                            حذف
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Notice Box --}}
@@ -221,14 +319,47 @@
                         <svg class="h-5 w-5 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>توجه: ممکن است کمی با نمونه کارت‌های شتاب استاندارد پشت کارت تفاوت داشته باشد.</span>
+                        <span>توجه: ممکن است موقعیت عناصر روی کارت چاپی نهایی با توجه به ابعاد دقیق لیزر کمی با پیش‌نمایش تفاوت داشته باشد.</span>
                     </div>
                 </div>
             @endif
         </div>
 
-        {{-- Right Panel — Live 2D Interactive Preview --}}
-        <div class="lg:col-span-7 p-6 sm:p-8 bg-gray-950 flex flex-col items-center justify-between space-y-6">
+        {{-- Right Panel — Live 2D Interactive Preview with Pointer Drag & Drop --}}
+        <div class="lg:col-span-7 p-6 sm:p-8 bg-gray-950 flex flex-col items-center justify-between space-y-6"
+             x-data="{
+                 dragKey: null,
+                 startX: 0,
+                 startY: 0,
+                 elemLeft: 0,
+                 elemTop: 0,
+                 startDrag(key, event) {
+                     this.dragKey = key;
+                     const cardRect = this.$refs.cardBack.getBoundingClientRect();
+                     this.startX = event.clientX || (event.touches ? event.touches[0].clientX : 0);
+                     this.startY = event.clientY || (event.touches ? event.touches[0].clientY : 0);
+                 },
+                 onMove(event) {
+                     if (!this.dragKey) return;
+                     const cardRect = this.$refs.cardBack.getBoundingClientRect();
+                     const currentX = event.clientX || (event.touches ? event.touches[0].clientX : 0);
+                     const currentY = event.clientY || (event.touches ? event.touches[0].clientY : 0);
+                     
+                     let relX = (currentX - cardRect.left) / cardRect.width;
+                     let relY = (currentY - cardRect.top) / cardRect.height;
+                     
+                     relX = Math.max(0.0, Math.min(0.85, relX));
+                     relY = Math.max(0.0, Math.min(0.85, relY));
+                     
+                     $wire.updatePosition(this.dragKey, relX, relY);
+                 },
+                 stopDrag() {
+                     this.dragKey = null;
+                 }
+             }"
+             @pointermove.window="onMove($event)"
+             @pointerup.window="stopDrag()"
+        >
             <div class="w-full flex flex-col items-center space-y-6">
                 {{-- Preview Header & Controls --}}
                 <div class="w-full flex flex-wrap items-center justify-between gap-4">
@@ -236,7 +367,7 @@
                         @if ($step === 1)
                             انتخاب رنگ ورقه فلزی کارت
                         @else
-                            نمای پشت کارت فلزی سفارش
+                            نمای پشت کارت فلزی سفارش (با قابلیت جابه‌جایی عناصر)
                         @endif
                     </h3>
 
@@ -297,106 +428,108 @@
                     $selectedDesignImage = $designImageOptions->firstWhere('id', $design_image_id);
                 @endphp
 
-                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}">
+                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}"
+                     x-ref="cardBack"
+                >
                     {{-- Subtle Card Metallic Shine --}}
                     <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
 
                     @if ($activeView === 'front')
-                        {{-- FRONT CARD PREVIEW --}}
-                        <div class="relative h-full flex flex-col justify-between">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-black tracking-widest uppercase opacity-80">ROYAL BANK</span>
-                                <svg class="h-6 w-6 opacity-60" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-                                </svg>
-                            </div>
-
-                            {{-- Metallic Chip Graphic --}}
-                            <div class="h-9 w-12 rounded-lg bg-gradient-to-br from-yellow-300 to-amber-500 border border-yellow-200/50 shadow-inner flex items-center justify-center">
-                                <div class="w-full h-0.5 bg-amber-700/40"></div>
-                            </div>
-
+                        {{-- FRONT CARD PREVIEW (Clean layout per Figma M.1: No Chip, No Card Number, No Holder Name, No Royal Bank) --}}
+                        <div class="relative h-full flex flex-col justify-between items-center">
                             {{-- Design Overlay Image (if selected) --}}
                             @if ($selectedDesignImage && $selectedDesignImage->image_path)
-                                <div class="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
+                                <div class="absolute inset-0 flex items-center justify-center p-4 opacity-40 pointer-events-none">
                                     <img src="{{ asset('storage/' . $selectedDesignImage->image_path) }}" alt="Laser Overlay" class="max-h-full max-w-full object-contain">
                                 </div>
                             @endif
-
-                            {{-- Front Numbers & Holder Name --}}
-                            <div class="space-y-1 z-10">
-                                <div class="font-mono text-lg font-bold tracking-widest dir-ltr text-start">
-                                    ۴۰۳۲ ۸۸۱۶ ۹۹۴۰ ۵۵۲۱
-                                </div>
-                                <div class="text-xs font-semibold tracking-wider uppercase opacity-90 truncate">
-                                    {{ $card_holder_name !== '' ? strtoupper($card_holder_name) : 'AMIR HOSSEIN REZAIE' }}
-                                </div>
-                            </div>
                         </div>
                     @else
-                        {{-- BACK CARD PREVIEW --}}
-                        <div class="relative h-full flex flex-col justify-between -m-6 p-6">
+                        {{-- BACK CARD PREVIEW WITH INTERACTIVE TOUCH / POINTER DRAG & DROP --}}
+                        <div class="relative h-full w-full select-none">
                             {{-- Top Magnetic Stripe --}}
-                            <div class="absolute top-4 inset-x-0 h-10 bg-gray-950 shadow-inner"></div>
+                            <div class="absolute top-2 inset-x-0 h-10 bg-gray-950 shadow-inner pointer-events-none"></div>
 
-                            {{-- Signature Strip with Holder Name Script Font --}}
-                            <div class="mt-12 flex items-center justify-between">
-                                <div class="h-8 w-2/3 bg-white/90 rounded px-3 flex items-center text-gray-900 font-serif italic text-xs font-bold tracking-wider shadow-inner">
-                                    {{ $card_holder_name !== '' ? $card_holder_name : 'Amir H. Rezaie' }}
-                                </div>
-
-                                {{-- Card Number (Rendered on Back as Core Card Element) --}}
-                                <div class="font-mono text-sm font-bold tracking-wider dir-ltr opacity-90">
-                                    ۶۲۷۴ ۰۵۱۲ ۳۴۵۶ ۷۸۹۰
-                                </div>
-                            </div>
-
-                            {{-- Middle Security Information Blocks --}}
-                            <div class="grid grid-cols-2 gap-4 text-xs z-10 mt-2">
-                                {{-- Expiry Block (Rendered ONLY if security_expiry_enabled === true) --}}
-                                <div>
-                                    @if ($security_expiry_enabled)
-                                        <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
-                                        <div class="font-mono font-bold text-sm tracking-wider">
-                                            01/28
-                                        </div>
-                                    @endif
-                                </div>
-
-                                {{-- CVV2 Block (Rendered ONLY if security_cvv_enabled === true) --}}
-                                <div>
-                                    @if ($security_cvv_enabled)
-                                        <div class="text-[9px] font-bold tracking-widest opacity-75">CVV2</div>
-                                        <div class="font-mono font-bold text-sm tracking-widest">
-                                            ***
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-
-                            {{-- Bottom Section: Custom Quote & QR Code --}}
-                            <div class="flex items-end justify-between z-10 mt-auto">
-                                {{-- Engraved Custom Quote --}}
-                                <div class="text-xs font-medium italic opacity-85 truncate max-w-[200px]">
-                                    {{ $back_text !== '' ? $back_text : 'Born to Lead' }}
-                                </div>
-
-                                {{-- QR Code Area (Rendered ONLY if qr_code_enabled === true) --}}
-                                @if ($qr_code_enabled)
-                                    <div class="h-10 w-10 bg-white p-1 rounded-lg shadow-md flex items-center justify-center">
-                                        <svg class="h-full w-full text-gray-900" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 3h2v3h-2v-3zm3 0h3v5h-3v-5zm-3-3h3v2h-3v-2z" />
-                                        </svg>
+                            {{-- Draggable Element 1: Card Number --}}
+                            @if ($card_number !== '')
+                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
+                                     style="left: {{ ($positions['card_number']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_number']['y'] ?? 0.42) * 100 }}%; touch-action: none;"
+                                     @pointerdown="startDrag('card_number', $event)"
+                                >
+                                    <div class="font-mono text-sm font-bold tracking-widest dir-ltr opacity-95">
+                                        {{ $card_number }}
                                     </div>
-                                @endif
-                            </div>
+                                </div>
+                            @endif
+
+                            {{-- Draggable Element 2: Card Holder Name --}}
+                            @if ($card_holder_name !== '')
+                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
+                                     style="left: {{ ($positions['card_holder_name']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_holder_name']['y'] ?? 0.78) * 100 }}%; touch-action: none;"
+                                     @pointerdown="startDrag('card_holder_name', $event)"
+                                >
+                                    <div class="h-7 bg-white/90 rounded px-2.5 flex items-center text-gray-900 font-serif italic text-xs font-bold tracking-wider shadow-inner">
+                                        {{ $card_holder_name }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Draggable Element 3: Back Text --}}
+                            @if ($back_text !== '')
+                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow max-w-[200px]"
+                                     style="left: {{ ($positions['back_text']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['back_text']['y'] ?? 0.62) * 100 }}%; touch-action: none;"
+                                     @pointerdown="startDrag('back_text', $event)"
+                                >
+                                    <div class="text-xs font-medium italic opacity-90 truncate">
+                                        {{ $back_text }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Draggable Element 4: CVV2 --}}
+                            @if ($security_cvv_enabled && $cvv2 !== '')
+                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
+                                     style="left: {{ ($positions['cvv2']['x'] ?? 0.72) * 100 }}%; top: {{ ($positions['cvv2']['y'] ?? 0.78) * 100 }}%; touch-action: none;"
+                                     @pointerdown="startDrag('cvv2', $event)"
+                                >
+                                    <div class="text-[9px] font-bold tracking-widest opacity-75">CVV2</div>
+                                    <div class="font-mono font-bold text-xs tracking-widest dir-ltr">
+                                        {{ $cvv2 }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Draggable Element 5: Expiry Date --}}
+                            @if ($security_expiry_enabled && ($expiry_month !== '' || $expiry_year !== ''))
+                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded px-1 transition-shadow"
+                                     style="left: {{ ($positions['expiry']['x'] ?? 0.48) * 100 }}%; top: {{ ($positions['expiry']['y'] ?? 0.78) * 100 }}%; touch-action: none;"
+                                     @pointerdown="startDrag('expiry', $event)"
+                                >
+                                    <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
+                                    <div class="font-mono font-bold text-xs tracking-wider dir-ltr">
+                                        {{ $expiry_month ?: '01' }}/{{ $expiry_year ?: '28' }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Draggable Element 6: QR Code --}}
+                            @if ($qr_code_enabled && $qr_code_path)
+                                <div class="absolute cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-amber-400 rounded p-0.5 transition-shadow"
+                                     style="left: {{ ($positions['qr_code']['x'] ?? 0.76) * 100 }}%; top: {{ ($positions['qr_code']['y'] ?? 0.15) * 100 }}%; touch-action: none;"
+                                     @pointerdown="startDrag('qr_code', $event)"
+                                >
+                                    <div class="h-10 w-10 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center">
+                                        <img src="{{ \URL::temporarySignedRoute('customizations.qr.preview', now()->addHours(1), ['path' => $qr_code_path]) }}" alt="QR Code" class="h-full w-full object-contain">
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>
 
                 <p class="text-[11px] text-gray-500 text-center flex items-center justify-center gap-1.5">
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                    <span>طرح انتخاب شده روی کارت در مرحله قبل اعمال گردید.</span>
+                    <span>طرح و مشخصات انتخابی به عنوان Snapshot اصلی سفارش شما ثبت خواهند شد.</span>
                 </p>
             </div>
         </div>

@@ -1,4 +1,4 @@
-﻿<div>
+<div>
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900">مدیریت سفارشات</h1>
         <div class="flex flex-wrap gap-2">
@@ -42,7 +42,95 @@
                 <div>
                     <div class="text-gray-400 text-xs">وضعیت پرداخت</div>
                     <div class="text-gray-900">{{ $selectedOrder->payment_status->faLabel() }}</div>
-                </div>
+            </div>
+
+            {{-- Order Items & Customization Snapshot --}}
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50 space-y-4">
+                <h3 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                    <svg class="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    آیتم‌ها و مشخصات سفارشی‌سازی کارت (Snapshot)
+                </h3>
+
+                @foreach ($selectedOrder->items as $item)
+                    @php
+                        $custom = is_array($item->customization_json) ? $item->customization_json : [];
+                        $positions = is_array($custom['positions'] ?? null) ? $custom['positions'] : [];
+                    @endphp
+                    <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                            <div>
+                                <span class="font-bold text-gray-900 text-sm">{{ $item->product_name_snapshot }}</span>
+                                <span class="text-xs text-gray-500 ms-2">(تعداد: {{ $item->quantity }})</span>
+                            </div>
+                            <div class="text-xs font-mono font-bold text-amber-600">
+                                قیمت واحد: {{ number_format($item->unit_price_snapshot) }} تومان | جمع: {{ number_format($item->final_price) }} تومان
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            {{-- Details List --}}
+                            <div class="space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <div class="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">پارامترهای حکاکی کاربر:</div>
+                                <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ $custom['card_number'] ?? 'ثبت نشده' }}</span></div>
+                                <div><span class="text-gray-400">نام دارنده کارت:</span> <span class="text-gray-900 font-bold">{{ $custom['card_holder_name'] ?? 'ثبت نشده' }}</span></div>
+                                <div><span class="text-gray-400">متن دلخواه پشت:</span> <span class="text-gray-900 font-bold">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span></div>
+                                <div><span class="text-gray-400">وضعیت CVV2:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_cvv_enabled']) ? 'فعال (مقدار: ' . ($custom['cvv2'] ?? 'مشخص نشده') . ')' : 'غیرفعال' }}</span></div>
+                                <div><span class="text-gray-400">وضعیت تاریخ انقضا:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_expiry_enabled']) ? 'فعال (تاریخ: ' . ($custom['expiry_month'] ?? '--') . '/' . ($custom['expiry_year'] ?? '--') . ')' : 'غیرفعال' }}</span></div>
+                                <div><span class="text-gray-400">وضعیت QR Code:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['qr_code_enabled']) ? 'فعال' : 'غیرفعال' }}</span></div>
+                                @if (!empty($custom['qr_code_path']))
+                                    <div class="mt-2 pt-2 border-t border-gray-200 flex items-center gap-2">
+                                        <span class="text-gray-400">تصویر QR:</span>
+                                        <a href="{{ route('admin.orders.qr.show', ['path' => $custom['qr_code_path']]) }}" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                            <img src="{{ route('admin.orders.qr.show', ['path' => $custom['qr_code_path']]) }}" alt="QR" class="h-6 w-6 object-contain bg-white border rounded">
+                                            <span>مشاهده تصویر QR کامل</span>
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Mini Visual Snapshot Card Preview --}}
+                            <div class="bg-gray-900 text-amber-100 rounded-lg p-3 relative h-40 border border-gray-800 flex flex-col justify-between overflow-hidden select-none" dir="ltr">
+                                <div class="text-[9px] font-mono text-gray-400 mb-1">2D Snapshot Preview:</div>
+                                <div class="absolute top-7 inset-x-0 h-6 bg-gray-950 shadow-inner"></div>
+
+                                <div class="relative h-full w-full mt-4 text-[10px]">
+                                    @if (!empty($custom['card_number']))
+                                        <div class="absolute font-mono font-bold" style="left: {{ ($positions['card_number']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_number']['y'] ?? 0.42) * 100 }}%;">
+                                            {{ $custom['card_number'] }}
+                                        </div>
+                                    @endif
+                                    @if (!empty($custom['card_holder_name']))
+                                        <div class="absolute font-serif italic bg-white/90 text-gray-900 px-1 rounded text-[9px] font-bold" style="left: {{ ($positions['card_holder_name']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['card_holder_name']['y'] ?? 0.78) * 100 }}%;">
+                                            {{ $custom['card_holder_name'] }}
+                                        </div>
+                                    @endif
+                                    @if (!empty($custom['back_text']))
+                                        <div class="absolute italic text-[9px]" style="left: {{ ($positions['back_text']['x'] ?? 0.08) * 100 }}%; top: {{ ($positions['back_text']['y'] ?? 0.62) * 100 }}%;">
+                                            {{ $custom['back_text'] }}
+                                        </div>
+                                    @endif
+                                    @if (!empty($custom['security_cvv_enabled']) && !empty($custom['cvv2']))
+                                        <div class="absolute font-mono text-[9px]" style="left: {{ ($positions['cvv2']['x'] ?? 0.72) * 100 }}%; top: {{ ($positions['cvv2']['y'] ?? 0.78) * 100 }}%;">
+                                            CVV2: {{ $custom['cvv2'] }}
+                                        </div>
+                                    @endif
+                                    @if (!empty($custom['security_expiry_enabled']) && (!empty($custom['expiry_month']) || !empty($custom['expiry_year'])))
+                                        <div class="absolute font-mono text-[9px]" style="left: {{ ($positions['expiry']['x'] ?? 0.48) * 100 }}%; top: {{ ($positions['expiry']['y'] ?? 0.78) * 100 }}%;">
+                                            EXP: {{ $custom['expiry_month'] ?? '01' }}/{{ $custom['expiry_year'] ?? '28' }}
+                                        </div>
+                                    @endif
+                                    @if (!empty($custom['qr_code_enabled']) && !empty($custom['qr_code_path']))
+                                        <div class="absolute" style="left: {{ ($positions['qr_code']['x'] ?? 0.76) * 100 }}%; top: {{ ($positions['qr_code']['y'] ?? 0.15) * 100 }}%;">
+                                            <img src="{{ route('admin.orders.qr.show', ['path' => $custom['qr_code_path']]) }}" class="h-6 w-6 bg-white p-0.5 rounded">
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
 
             @php

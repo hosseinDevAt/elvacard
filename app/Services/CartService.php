@@ -279,26 +279,76 @@ class CartService
             : [];
 
         $sanitizedCustomization = [];
+
+        if (! empty($rawCustomization['card_number']) && is_string($rawCustomization['card_number'])) {
+            $cardNumber = mb_substr(trim($rawCustomization['card_number']), 0, 30);
+            if ($cardNumber !== '') {
+                $sanitizedCustomization['card_number'] = $cardNumber;
+            }
+        }
+
         if (! empty($rawCustomization['card_holder_name']) && is_string($rawCustomization['card_holder_name'])) {
             $name = mb_substr(trim($rawCustomization['card_holder_name']), 0, 100);
             if ($name !== '') {
                 $sanitizedCustomization['card_holder_name'] = $name;
             }
         }
+
         if (! empty($rawCustomization['back_text']) && is_string($rawCustomization['back_text'])) {
             $text = mb_substr(trim($rawCustomization['back_text']), 0, 255);
             if ($text !== '') {
                 $sanitizedCustomization['back_text'] = $text;
             }
         }
+
         if (isset($rawCustomization['security_cvv_enabled'])) {
             $sanitizedCustomization['security_cvv_enabled'] = (bool) $rawCustomization['security_cvv_enabled'];
+            if ($sanitizedCustomization['security_cvv_enabled'] && ! empty($rawCustomization['cvv2']) && is_string($rawCustomization['cvv2'])) {
+                $cvv = mb_substr(trim($rawCustomization['cvv2']), 0, 10);
+                if ($cvv !== '') {
+                    $sanitizedCustomization['cvv2'] = $cvv;
+                }
+            }
         }
+
         if (isset($rawCustomization['security_expiry_enabled'])) {
             $sanitizedCustomization['security_expiry_enabled'] = (bool) $rawCustomization['security_expiry_enabled'];
+            if ($sanitizedCustomization['security_expiry_enabled']) {
+                if (! empty($rawCustomization['expiry_month']) && is_string($rawCustomization['expiry_month'])) {
+                    $sanitizedCustomization['expiry_month'] = mb_substr(trim($rawCustomization['expiry_month']), 0, 2);
+                }
+                if (! empty($rawCustomization['expiry_year']) && is_string($rawCustomization['expiry_year'])) {
+                    $sanitizedCustomization['expiry_year'] = mb_substr(trim($rawCustomization['expiry_year']), 0, 2);
+                }
+            }
         }
+
         if (isset($rawCustomization['qr_code_enabled'])) {
             $sanitizedCustomization['qr_code_enabled'] = (bool) $rawCustomization['qr_code_enabled'];
+            if ($sanitizedCustomization['qr_code_enabled'] && ! empty($rawCustomization['qr_code_path']) && is_string($rawCustomization['qr_code_path'])) {
+                $qrPath = trim($rawCustomization['qr_code_path']);
+                if (str_starts_with($qrPath, 'customizations/qr_codes/') && ! str_contains($qrPath, '..')) {
+                    $sanitizedCustomization['qr_code_path'] = $qrPath;
+                }
+            }
+        }
+
+        if (! empty($rawCustomization['positions']) && is_array($rawCustomization['positions'])) {
+            $allowedPosKeys = ['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry', 'qr_code'];
+            $sanitizedPositions = [];
+            foreach ($rawCustomization['positions'] as $key => $pos) {
+                if (in_array($key, $allowedPosKeys, true) && is_array($pos)) {
+                    $x = isset($pos['x']) ? (float) $pos['x'] : 0.0;
+                    $y = isset($pos['y']) ? (float) $pos['y'] : 0.0;
+                    $sanitizedPositions[$key] = [
+                        'x' => round(max(0.0, min(0.95, $x)), 4),
+                        'y' => round(max(0.0, min(0.95, $y)), 4),
+                    ];
+                }
+            }
+            if (! empty($sanitizedPositions)) {
+                $sanitizedCustomization['positions'] = $sanitizedPositions;
+            }
         }
 
         $snapshot = array_merge($sanitizedCustomization, [

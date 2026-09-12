@@ -5,11 +5,16 @@ namespace App\Livewire\Catalog;
 use App\Models\CateDesign;
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\SvgSanitizer;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ProductCustomizer extends Component
 {
+    use WithFileUploads;
+
     public int $product_id;
     public ?int $color_id = null;
     public ?int $design_id = null;
@@ -21,12 +26,28 @@ class ProductCustomizer extends Component
     public int $step = 1; // 1: Front design/color, 2: Back specifications
     public string $activeView = 'front'; // 'front' | 'back'
 
-    // Customer customization preferences (starting clean / default safe)
+    // Customer customization preferences
+    public string $card_number = '';
     public string $card_holder_name = '';
     public string $back_text = '';
+    public string $cvv2 = '';
+    public string $expiry_month = '';
+    public string $expiry_year = '';
     public bool $security_cvv_enabled = false;
     public bool $security_expiry_enabled = false;
     public bool $qr_code_enabled = false;
+    public $qr_code_file = null;
+    public ?string $qr_code_path = null;
+
+    // Interactive Drag & Drop Positions (normalized 0.0 - 1.0)
+    public array $positions = [
+        'card_number'      => ['x' => 0.08, 'y' => 0.42],
+        'card_holder_name' => ['x' => 0.08, 'y' => 0.78],
+        'back_text'        => ['x' => 0.08, 'y' => 0.62],
+        'cvv2'             => ['x' => 0.72, 'y' => 0.78],
+        'expiry'           => ['x' => 0.48, 'y' => 0.78],
+        'qr_code'          => ['x' => 0.76, 'y' => 0.15],
+    ];
 
     public Product $product;
     public Collection $colorPrices;
@@ -110,16 +131,87 @@ class ProductCustomizer extends Component
     public function toggleCvv(): void
     {
         $this->security_cvv_enabled = ! $this->security_cvv_enabled;
+        if (! $this->security_cvv_enabled) {
+            $this->cvv2 = '';
+        }
     }
 
     public function toggleExpiry(): void
     {
         $this->security_expiry_enabled = ! $this->security_expiry_enabled;
+        if (! $this->security_expiry_enabled) {
+            $this->expiry_month = '';
+            $this->expiry_year = '';
+        }
     }
 
     public function toggleQrCode(): void
     {
         $this->qr_code_enabled = ! $this->qr_code_enabled;
+        if (! $this->qr_code_enabled) {
+            $this->removeQrCode();
+        }
+    }
+
+    public function updatedQrCodeFile(): void
+    {
+        if (! $this->qr_code_enabled || ! $this->qr_code_file) {
+            return;
+        }
+
+        $this->validate([
+            'qr_code_file' => ['required', 'file', 'mimes:png,jpg,jpeg,webp,svg', 'max:2048'],
+        ]);
+
+        $extension = strtolower($this->qr_code_file->getClientOriginalExtension());
+        if ($extension === 'svg') {
+            $sanitizer = new SvgSanitizer();
+            $content = file_get_contents($this->qr_code_file->getRealPath());
+            $sanitized = $sanitizer->sanitize($content ?: '');
+            if (! $sanitized) {
+                $this->addError('qr_code_file', 'فایل SVG انتخاب شده نامعتبر یا ناامن است.');
+                $this->qr_code_file = null;
+
+                return;
+            }
+        }
+
+        $this->deleteStoredQrCode();
+
+        // QR codes are user-sensitive content: store on the private "local"
+        // disk (storage/app/private) so they are never publicly served from
+        // the public disk. A signed/session-owned route renders the preview.
+        $storedPath = $this->qr_code_file->store('customizations/qr_codes', 'local');
+        $this->qr_code_path = $storedPath;
+    }
+
+    public function removeQrCode(): void
+    {
+        $this->deleteStoredQrCode();
+        $this->qr_code_file = null;
+        $this->qr_code_enabled = false;
+    }
+
+    private function deleteStoredQrCode(): void
+    {
+        if ($this->qr_code_path && Storage::disk('local')->exists($this->qr_code_path)) {
+            Storage::disk('local')->delete($this->qr_code_path);
+        }
+
+        $this->qr_code_path = null;
+    }
+
+    public function updatePosition(string $element, float $x, float $y): void
+    {
+        $allowed = ['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry', 'qr_code'];
+        if (! in_array($element, $allowed, true)) {
+            return;
+        }
+
+        $this->positions[$element] = [
+            'x' => round(max(0.0, min(0.95, $x)), 4),
+            'y' => round(max(0.0, min(0.95, $y)), 4),
+        ];
     }
 
     public function addToCart(CartService $cartService): void
@@ -130,8 +222,12 @@ class ProductCustomizer extends Component
             'design_id' => ['required', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
             'quantity' => ['required', 'integer', 'min:1', 'max:20'],
+            'card_number' => ['nullable', 'string', 'max:30'],
             'card_holder_name' => ['nullable', 'string', 'max:100'],
             'back_text' => ['nullable', 'string', 'max:255'],
+            'cvv2' => ['nullable', 'string', 'max:10'],
+            'expiry_month' => ['nullable', 'string', 'max:2'],
+            'expiry_year' => ['nullable', 'string', 'max:2'],
             'security_cvv_enabled' => ['boolean'],
             'security_expiry_enabled' => ['boolean'],
             'qr_code_enabled' => ['boolean'],
@@ -143,12 +239,57 @@ class ProductCustomizer extends Component
             'qr_code_enabled' => $this->qr_code_enabled,
         ];
 
+        if (trim($this->card_number) !== '') {
+            $customizationJson['card_number'] = trim($this->card_number);
+        }
+
         if (trim($this->card_holder_name) !== '') {
             $customizationJson['card_holder_name'] = trim($this->card_holder_name);
         }
 
         if (trim($this->back_text) !== '') {
             $customizationJson['back_text'] = trim($this->back_text);
+        }
+
+        if ($this->security_cvv_enabled && trim($this->cvv2) !== '') {
+            $customizationJson['cvv2'] = trim($this->cvv2);
+        }
+
+        if ($this->security_expiry_enabled) {
+            if (trim($this->expiry_month) !== '') {
+                $customizationJson['expiry_month'] = trim($this->expiry_month);
+            }
+            if (trim($this->expiry_year) !== '') {
+                $customizationJson['expiry_year'] = trim($this->expiry_year);
+            }
+        }
+
+        if ($this->qr_code_enabled && $this->qr_code_path) {
+            $customizationJson['qr_code_path'] = $this->qr_code_path;
+        }
+
+        $activePositions = [];
+        if (! empty($customizationJson['card_number']) && isset($this->positions['card_number'])) {
+            $activePositions['card_number'] = $this->positions['card_number'];
+        }
+        if (! empty($customizationJson['card_holder_name']) && isset($this->positions['card_holder_name'])) {
+            $activePositions['card_holder_name'] = $this->positions['card_holder_name'];
+        }
+        if (! empty($customizationJson['back_text']) && isset($this->positions['back_text'])) {
+            $activePositions['back_text'] = $this->positions['back_text'];
+        }
+        if ($this->security_cvv_enabled && ! empty($customizationJson['cvv2']) && isset($this->positions['cvv2'])) {
+            $activePositions['cvv2'] = $this->positions['cvv2'];
+        }
+        if ($this->security_expiry_enabled && (! empty($customizationJson['expiry_month']) || ! empty($customizationJson['expiry_year'])) && isset($this->positions['expiry'])) {
+            $activePositions['expiry'] = $this->positions['expiry'];
+        }
+        if ($this->qr_code_enabled && ! empty($customizationJson['qr_code_path']) && isset($this->positions['qr_code'])) {
+            $activePositions['qr_code'] = $this->positions['qr_code'];
+        }
+
+        if (! empty($activePositions)) {
+            $customizationJson['positions'] = $activePositions;
         }
 
         $cartService->addItem([
