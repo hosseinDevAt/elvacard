@@ -203,7 +203,7 @@
                                         id="cvv2"
                                         type="text"
                                         inputmode="numeric"
-                                        maxlength="6"
+                                        maxlength="4"
                                         wire:model.live.debounce.150ms="cvv2"
                                         placeholder="مثال: 314"
                                         class="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white font-mono dir-ltr focus:border-amber-500 focus:outline-none"
@@ -245,10 +245,10 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] text-gray-400 mb-1">سال انقضا</label>
+                                        <label class="block text-[10px] text-gray-400 mb-1">سال انقضا (دو رقم)</label>
                                         <select wire:model.live="expiry_year" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
                                             <option value="">انتخاب سال...</option>
-                                            @for ($y = 24; $y <= 35; $y++)
+                                            @for ($y = (int) now()->format('y'); $y <= (int) now()->format('y') + 10; $y++)
                                                 <option value="{{ $y }}">{{ $y }}</option>
                                             @endfor
                                         </select>
@@ -331,11 +331,14 @@
                  dragKey: null,
                  startX: 0,
                  startY: 0,
-                 elemLeft: 0,
-                 elemTop: 0,
+                 elemWidth: 0,
+                 elemHeight: 0,
                  startDrag(key, event) {
                      this.dragKey = key;
                      const cardRect = this.$refs.cardBack.getBoundingClientRect();
+                     const element = event.currentTarget || event.target;
+                     this.elemWidth = element ? element.getBoundingClientRect().width : 0;
+                     this.elemHeight = element ? element.getBoundingClientRect().height : 0;
                      this.startX = event.clientX || (event.touches ? event.touches[0].clientX : 0);
                      this.startY = event.clientY || (event.touches ? event.touches[0].clientY : 0);
                  },
@@ -344,13 +347,19 @@
                      const cardRect = this.$refs.cardBack.getBoundingClientRect();
                      const currentX = event.clientX || (event.touches ? event.touches[0].clientX : 0);
                      const currentY = event.clientY || (event.touches ? event.touches[0].clientY : 0);
-                     
+
                      let relX = (currentX - cardRect.left) / cardRect.width;
                      let relY = (currentY - cardRect.top) / cardRect.height;
-                     
-                     relX = Math.max(0.0, Math.min(0.85, relX));
-                     relY = Math.max(0.0, Math.min(0.85, relY));
-                     
+
+                     // Unified positioning rule shared with the server (0.85).
+                     const upperBound = 0.85;
+                     // Keep the whole element inside the card surface.
+                     const maxX = Math.max(0.0, Math.min(upperBound, (cardRect.width - this.elemWidth) / cardRect.width));
+                     const maxY = Math.max(0.0, Math.min(upperBound, (cardRect.height - this.elemHeight) / cardRect.height));
+
+                     relX = Math.max(0.0, Math.min(maxX, relX));
+                     relY = Math.max(0.0, Math.min(maxY, relY));
+
                      $wire.updatePosition(this.dragKey, relX, relY);
                  },
                  stopDrag() {
@@ -507,7 +516,7 @@
                                 >
                                     <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
                                     <div class="font-mono font-bold text-xs tracking-wider dir-ltr">
-                                        {{ $expiry_month ?: '01' }}/{{ $expiry_year ?: '28' }}
+                                        {{ $expiry_month ?: '--' }}/{{ $expiry_year ?: '--' }}
                                     </div>
                                 </div>
                             @endif

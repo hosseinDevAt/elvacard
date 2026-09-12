@@ -19,7 +19,12 @@ use InvalidArgumentException;
 class CartService
 {
     private const SESSION_KEY = 'cart';
+
     private const MAX_QUANTITY = 20;
+
+    // Single positioning rule shared with the client and ProductCustomizer:
+    // normalized coordinates are clamped to [0.00, 0.85].
+    private const MAX_POSITION = 0.85;
 
     public function getCart(): array
     {
@@ -160,7 +165,7 @@ class CartService
         for ($attempt = 1; $attempt <= 3; $attempt++) {
             try {
                 return DB::transaction(function () use ($customerData, $validatedItems, $userId, $idempotencyToken) {
-                    $order = new Order();
+                    $order = new Order;
                     $order->user_id = $userId;
                     $order->customer_name = $customerData['customer_name'];
                     $order->customer_phone = $customerData['customer_phone'];
@@ -281,8 +286,8 @@ class CartService
         $sanitizedCustomization = [];
 
         if (! empty($rawCustomization['card_number']) && is_string($rawCustomization['card_number'])) {
-            $cardNumber = mb_substr(trim($rawCustomization['card_number']), 0, 30);
-            if ($cardNumber !== '') {
+            $cardNumber = $this->canonicalizeCardNumber($rawCustomization['card_number']);
+            if (preg_match('/^[0-9]{16}$/', $cardNumber) === 1) {
                 $sanitizedCustomization['card_number'] = $cardNumber;
             }
         }
@@ -304,8 +309,8 @@ class CartService
         if (isset($rawCustomization['security_cvv_enabled'])) {
             $sanitizedCustomization['security_cvv_enabled'] = (bool) $rawCustomization['security_cvv_enabled'];
             if ($sanitizedCustomization['security_cvv_enabled'] && ! empty($rawCustomization['cvv2']) && is_string($rawCustomization['cvv2'])) {
-                $cvv = mb_substr(trim($rawCustomization['cvv2']), 0, 10);
-                if ($cvv !== '') {
+                $cvv = $this->canonicalizeCardNumber($rawCustomization['cvv2']);
+                if (preg_match('/^[0-9]{3,4}$/', $cvv) === 1) {
                     $sanitizedCustomization['cvv2'] = $cvv;
                 }
             }
@@ -315,10 +320,17 @@ class CartService
             $sanitizedCustomization['security_expiry_enabled'] = (bool) $rawCustomization['security_expiry_enabled'];
             if ($sanitizedCustomization['security_expiry_enabled']) {
                 if (! empty($rawCustomization['expiry_month']) && is_string($rawCustomization['expiry_month'])) {
-                    $sanitizedCustomization['expiry_month'] = mb_substr(trim($rawCustomization['expiry_month']), 0, 2);
+                    $month = substr(trim($rawCustomization['expiry_month']), 0, 2);
+                    if (preg_match('/^(0[1-9]|1[0-2])$/', $month) === 1) {
+                        $sanitizedCustomization['expiry_month'] = $month;
+                    }
                 }
                 if (! empty($rawCustomization['expiry_year']) && is_string($rawCustomization['expiry_year'])) {
-                    $sanitizedCustomization['expiry_year'] = mb_substr(trim($rawCustomization['expiry_year']), 0, 2);
+                    $year = substr(trim($rawCustomization['expiry_year']), 0, 2);
+                    $currentShort = (int) date('y');
+                    if (preg_match('/^[0-9]{2}$/', $year) === 1 && (int) $year >= $currentShort && (int) $year <= $currentShort + 10) {
+                        $sanitizedCustomization['expiry_year'] = $year;
+                    }
                 }
             }
         }
@@ -341,8 +353,8 @@ class CartService
                     $x = isset($pos['x']) ? (float) $pos['x'] : 0.0;
                     $y = isset($pos['y']) ? (float) $pos['y'] : 0.0;
                     $sanitizedPositions[$key] = [
-                        'x' => round(max(0.0, min(0.95, $x)), 4),
-                        'y' => round(max(0.0, min(0.95, $y)), 4),
+                        'x' => round(max(0.0, min(self::MAX_POSITION, $x)), 4),
+                        'y' => round(max(0.0, min(self::MAX_POSITION, $y)), 4),
                     ];
                 }
             }
@@ -370,6 +382,21 @@ class CartService
             'customization_json' => $snapshot,
             'for_existing' => $forExisting,
         ];
+    }
+
+    private function canonicalizeCardNumber(string $value): string
+    {
+        // Presentation separators (spaces/dashes) and Persian/Arabic digit
+        // glyphs are tolerated on input but the canonical snapshot form is
+        // ASCII digits without separators.
+        $value = strtr(trim($value), [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]);
+
+        return preg_replace('/[\s\-]+/', '', $value) ?? '';
     }
 
     private function findDuplicateItemIndex(array $items, array $validated): ?int

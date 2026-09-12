@@ -15,44 +15,68 @@ class ProductCustomizer extends Component
 {
     use WithFileUploads;
 
+    // Single positioning rule shared with the client and CartService:
+    // normalized coordinates are clamped to [0.00, 0.85].
+    public const MAX_POSITION = 0.85;
+
     public int $product_id;
+
     public ?int $color_id = null;
+
     public ?int $design_id = null;
+
     public ?int $design_image_id = null;
+
     public ?int $selected_category_id = null;
+
     public int $quantity = 1;
 
     // Step & View state
     public int $step = 1; // 1: Front design/color, 2: Back specifications
+
     public string $activeView = 'front'; // 'front' | 'back'
 
     // Customer customization preferences
     public string $card_number = '';
+
     public string $card_holder_name = '';
+
     public string $back_text = '';
+
     public string $cvv2 = '';
+
     public string $expiry_month = '';
+
     public string $expiry_year = '';
+
     public bool $security_cvv_enabled = false;
+
     public bool $security_expiry_enabled = false;
+
     public bool $qr_code_enabled = false;
+
     public $qr_code_file = null;
+
     public ?string $qr_code_path = null;
 
     // Interactive Drag & Drop Positions (normalized 0.0 - 1.0)
     public array $positions = [
-        'card_number'      => ['x' => 0.08, 'y' => 0.42],
+        'card_number' => ['x' => 0.08, 'y' => 0.42],
         'card_holder_name' => ['x' => 0.08, 'y' => 0.78],
-        'back_text'        => ['x' => 0.08, 'y' => 0.62],
-        'cvv2'             => ['x' => 0.72, 'y' => 0.78],
-        'expiry'           => ['x' => 0.48, 'y' => 0.78],
-        'qr_code'          => ['x' => 0.76, 'y' => 0.15],
+        'back_text' => ['x' => 0.08, 'y' => 0.62],
+        'cvv2' => ['x' => 0.72, 'y' => 0.78],
+        'expiry' => ['x' => 0.48, 'y' => 0.78],
+        'qr_code' => ['x' => 0.76, 'y' => 0.15],
     ];
 
     public Product $product;
+
     public Collection $colorPrices;
+
     public Collection $catalog;
+
     public Collection $designOptions;
+
     public Collection $designImageOptions;
 
     public function mount(int $productId): void
@@ -165,7 +189,7 @@ class ProductCustomizer extends Component
 
         $extension = strtolower($this->qr_code_file->getClientOriginalExtension());
         if ($extension === 'svg') {
-            $sanitizer = new SvgSanitizer();
+            $sanitizer = new SvgSanitizer;
             $content = file_get_contents($this->qr_code_file->getRealPath());
             $sanitized = $sanitizer->sanitize($content ?: '');
             if (! $sanitized) {
@@ -209,29 +233,69 @@ class ProductCustomizer extends Component
         }
 
         $this->positions[$element] = [
-            'x' => round(max(0.0, min(0.95, $x)), 4),
-            'y' => round(max(0.0, min(0.95, $y)), 4),
+            'x' => round(max(0.0, min(self::MAX_POSITION, $x)), 4),
+            'y' => round(max(0.0, min(self::MAX_POSITION, $y)), 4),
         ];
+    }
+
+    private function canonicalizeCardNumber(?string $value): string
+    {
+        if ($value === null || trim($value) === '') {
+            return '';
+        }
+
+        // Presentation separators (spaces/dashes) and Persian/Arabic digit glyphs
+        // are tolerated on input but the canonical snapshot form is exactly 16
+        // ASCII digits without separators.
+        $value = strtr(trim($value), [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]);
+
+        return preg_replace('/[\s\-]+/', '', $value) ?? '';
     }
 
     public function addToCart(CartService $cartService): void
     {
-        $this->validate([
+        $this->card_number = $this->canonicalizeCardNumber($this->card_number);
+
+        $currentYearShort = (int) date('y');
+        $yearRange = 'between:'.$currentYearShort.','.($currentYearShort + 10);
+
+        $rules = [
             'product_id' => ['required', 'integer', 'min:1'],
             'color_id' => ['required', 'integer', 'min:1'],
             'design_id' => ['required', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
             'quantity' => ['required', 'integer', 'min:1', 'max:20'],
-            'card_number' => ['nullable', 'string', 'max:30'],
+            'card_number' => ['nullable', 'string', 'digits:16'],
             'card_holder_name' => ['nullable', 'string', 'max:100'],
             'back_text' => ['nullable', 'string', 'max:255'],
-            'cvv2' => ['nullable', 'string', 'max:10'],
-            'expiry_month' => ['nullable', 'string', 'max:2'],
-            'expiry_year' => ['nullable', 'string', 'max:2'],
             'security_cvv_enabled' => ['boolean'],
             'security_expiry_enabled' => ['boolean'],
             'qr_code_enabled' => ['boolean'],
-        ]);
+        ];
+
+        if ($this->security_cvv_enabled) {
+            $rules['cvv2'] = ['nullable', 'string', 'digits_between:3,4'];
+        }
+
+        if ($this->security_expiry_enabled) {
+            $rules['expiry_month'] = ['nullable', 'string', 'regex:/^(0[1-9]|1[0-2])$/'];
+            $rules['expiry_year'] = ['nullable', 'string', 'integer', 'digits:2', $yearRange];
+        }
+
+        $messages = [
+            'card_number.digits' => 'شماره کارت باید دقیقاً ۱۶ رقمی باشد.',
+            'cvv2.digits_between' => 'CVV2 باید ۳ تا ۴ رقم باشد.',
+            'expiry_month.regex' => 'ماه انقضا باید بین ۰۱ تا ۱۲ باشد.',
+            'expiry_year.digits' => 'سال انقضا باید دو رقم باشد.',
+            'expiry_year.between' => 'سال انقضا باید در بازه معتبر باشد.',
+        ];
+
+        $this->validate($rules, $messages);
 
         $customizationJson = [
             'security_cvv_enabled' => $this->security_cvv_enabled,

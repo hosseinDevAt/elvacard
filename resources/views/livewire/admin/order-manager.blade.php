@@ -118,7 +118,7 @@
                                     @endif
                                     @if (!empty($custom['security_expiry_enabled']) && (!empty($custom['expiry_month']) || !empty($custom['expiry_year'])))
                                         <div class="absolute font-mono text-[9px]" style="left: {{ ($positions['expiry']['x'] ?? 0.48) * 100 }}%; top: {{ ($positions['expiry']['y'] ?? 0.78) * 100 }}%;">
-                                            EXP: {{ $custom['expiry_month'] ?? '01' }}/{{ $custom['expiry_year'] ?? '28' }}
+                                            EXP: {{ $custom['expiry_month'] ?? '--' }}/{{ $custom['expiry_year'] ?? '--' }}
                                         </div>
                                     @endif
                                     @if (!empty($custom['qr_code_enabled']) && !empty($custom['qr_code_path']))

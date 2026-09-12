@@ -9,6 +9,7 @@ use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\CartService;
@@ -21,8 +22,11 @@ class ProductCustomizerTest extends TestCase
     use RefreshDatabase;
 
     private Product $product;
+
     private Color $color;
+
     private Design $design;
+
     private DesignImage $designImage;
 
     protected function setUp(): void
@@ -198,5 +202,280 @@ class ProductCustomizerTest extends TestCase
         $this->assertArrayNotHasKey('expiry_month', $customization);
         $this->assertArrayNotHasKey('expiry_year', $customization);
         $this->assertArrayNotHasKey('random_injected_field', $customization);
+    }
+
+    public function test_card_number_must_be_exactly_16_digits(): void
+    {
+        $invalidCardNumbers = ['1234567890', '123456789012345', '62740000000000001', '6274-0512-3456-789'];
+
+        foreach ($invalidCardNumbers as $cardNumber) {
+            Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+                ->set('card_number', $cardNumber)
+                ->call('addToCart')
+                ->assertHasErrors(['card_number' => 'digits']);
+        }
+    }
+
+    public function test_card_number_is_canonicalized_before_storage(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('card_number', ' 6274 0512 3456 7890 ')
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'));
+
+        $cart = app(CartService::class)->getCart();
+        $customization = $cart['items'][0]['customization_json'];
+
+        $this->assertSame('6274051234567890', $customization['card_number']);
+    }
+
+    public function test_card_number_digits_only_rejects_letters(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('card_number', '6274-0512-3456-789X')
+            ->call('addToCart')
+            ->assertHasErrors(['card_number' => 'digits']);
+    }
+
+    public function test_cvv2_must_be_3_to_4_digits_when_enabled(): void
+    {
+        foreach (['12', '12A', '12345', 'ABC', '12 3'] as $cvv) {
+            Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+                ->call('toggleCvv')
+                ->set('cvv2', $cvv)
+                ->call('addToCart')
+                ->assertHasErrors(['cvv2' => 'digits_between']);
+        }
+    }
+
+    public function test_cvv2_accepts_3_or_4_digits(): void
+    {
+        foreach (['123', '8080'] as $cvv) {
+            Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+                ->call('toggleCvv')
+                ->set('cvv2', $cvv)
+                ->call('addToCart')
+                ->assertRedirect(route('cart.index'));
+
+            $cart = app(CartService::class)->getCart();
+            $this->assertSame($cvv, $cart['items'][0]['customization_json']['cvv2']);
+
+            app(CartService::class)->clear();
+        }
+    }
+
+    public function test_cvv2_not_validated_when_toggle_disabled(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('cvv2', '12')
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'))
+            ->assertHasNoErrors(['cvv2']);
+
+        $cart = app(CartService::class)->getCart();
+        $this->assertArrayNotHasKey('cvv2', $cart['items'][0]['customization_json']);
+    }
+
+    public function test_expiry_month_must_be_between_01_and_12(): void
+    {
+        foreach (['00', '13', '99', 'A1'] as $month) {
+            Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+                ->call('toggleExpiry')
+                ->set('expiry_month', $month)
+                ->set('expiry_year', (string) ((int) date('y') + 2))
+                ->call('addToCart')
+                ->assertHasErrors(['expiry_month' => 'regex']);
+        }
+    }
+
+    public function test_expiry_year_must_be_in_valid_range(): void
+    {
+        $currentShort = (int) date('y');
+        $validYear = (string) ($currentShort + 5);
+        $pastYear = (string) ($currentShort - 2);
+        $tooFarYear = (string) ($currentShort + 12);
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('toggleExpiry')
+            ->set('expiry_month', '05')
+            ->set('expiry_year', $validYear)
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'));
+
+        foreach ([$pastYear, $tooFarYear, '1', '2029'] as $year) {
+            Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+                ->call('toggleExpiry')
+                ->set('expiry_month', '05')
+                ->set('expiry_year', $year)
+                ->call('addToCart')
+                ->assertHasErrors(['expiry_year']);
+        }
+    }
+
+    public function test_expiry_not_validated_when_toggle_disabled(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('expiry_month', '00')
+            ->set('expiry_year', '00')
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'))
+            ->assertHasNoErrors(['expiry_month', 'expiry_year']);
+
+        $cart = app(CartService::class)->getCart();
+        $this->assertArrayNotHasKey('expiry_month', $cart['items'][0]['customization_json']);
+        $this->assertArrayNotHasKey('expiry_year', $cart['items'][0]['customization_json']);
+    }
+
+    public function test_update_position_clamps_coordinates_to_0_85(): void
+    {
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
+
+        $component->call('updatePosition', 'card_holder_name', 2.0, -1.0)
+            ->assertSet('positions.card_holder_name.x', 0.85)
+            ->assertSet('positions.card_holder_name.y', 0.0);
+
+        $component->call('updatePosition', 'card_holder_name', 0.123456, 0.654321)
+            ->assertSet('positions.card_holder_name.x', 0.1235)
+            ->assertSet('positions.card_holder_name.y', 0.6543);
+    }
+
+    public function test_update_position_ignores_unknown_elements(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('updatePosition', 'chip_icon', 0.5, 0.5)
+            ->call('updatePosition', 'script_injection', 0.5, 0.5)
+            ->assertSet('positions.chip_icon', null)
+            ->assertSet('positions.script_injection', null);
+    }
+
+    public function test_positions_are_stored_only_for_active_elements(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('card_holder_name', 'ALI REZA')
+            ->set('back_text', 'BORN TO LEAD')
+            ->call('toggleCvv')
+            ->set('cvv2', '808')
+            ->call('updatePosition', 'card_holder_name', 0.3, 0.4)
+            ->call('updatePosition', 'back_text', 0.2, 0.6)
+            ->call('updatePosition', 'cvv2', 0.7, 0.8)
+            ->call('updatePosition', 'qr_code', 0.5, 0.1)
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'));
+
+        $cart = app(CartService::class)->getCart();
+        $positions = $cart['items'][0]['customization_json']['positions'];
+
+        $this->assertArrayHasKey('card_holder_name', $positions);
+        $this->assertArrayHasKey('back_text', $positions);
+        $this->assertArrayHasKey('cvv2', $positions);
+        $this->assertArrayNotHasKey('qr_code', $positions);
+        $this->assertArrayNotHasKey('expiry', $positions);
+    }
+
+    public function test_positions_are_clamped_to_0_85_by_cart_service(): void
+    {
+        $cartService = app(CartService::class);
+
+        $payload = [
+            'product_id' => $this->product->id,
+            'color_id' => $this->color->id,
+            'design_id' => $this->design->id,
+            'design_image_id' => $this->designImage->id,
+            'quantity' => 1,
+            'customization_json' => [
+                'card_holder_name' => 'ALI REZA',
+                'positions' => [
+                    'card_holder_name' => ['x' => 0.9999, 'y' => -0.5],
+                ],
+            ],
+        ];
+
+        $result = $cartService->addItem($payload);
+        $positions = $result['items'][0]['customization_json']['positions']['card_holder_name'];
+
+        $this->assertSame(0.85, $positions['x']);
+        $this->assertSame(0.0, $positions['y']);
+    }
+
+    public function test_cart_service_rejects_invalid_card_number_and_cvv2(): void
+    {
+        $cartService = app(CartService::class);
+
+        $payload = [
+            'product_id' => $this->product->id,
+            'color_id' => $this->color->id,
+            'design_id' => $this->design->id,
+            'design_image_id' => $this->designImage->id,
+            'quantity' => 1,
+            'customization_json' => [
+                'card_number' => '1234-5678', // not 16 digits
+                'security_cvv_enabled' => true,
+                'cvv2' => '12XY', // not 3-4 digits
+            ],
+        ];
+
+        $result = $cartService->addItem($payload);
+        $customization = $result['items'][0]['customization_json'];
+
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertArrayNotHasKey('cvv2', $customization);
+    }
+
+    public function test_cart_service_canonicalizes_card_number_with_separators(): void
+    {
+        $cartService = app(CartService::class);
+
+        $payload = [
+            'product_id' => $this->product->id,
+            'color_id' => $this->color->id,
+            'design_id' => $this->design->id,
+            'design_image_id' => $this->designImage->id,
+            'quantity' => 1,
+            'customization_json' => [
+                'card_number' => '6274 0512-3456 7890',
+            ],
+        ];
+
+        $result = $cartService->addItem($payload);
+        $customization = $result['items'][0]['customization_json'];
+
+        $this->assertSame('6274051234567890', $customization['card_number']);
+    }
+
+    public function test_end_to_end_snapshot_is_persisted_without_regeneration(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('card_holder_name', 'HOSSEIN REZAIE')
+            ->set('card_number', ' 6274 0512 3456 7890 ')
+            ->set('back_text', 'BORN TO LEAD')
+            ->call('toggleCvv')
+            ->set('cvv2', '808')
+            ->call('toggleExpiry')
+            ->set('expiry_month', '05')
+            ->set('expiry_year', (string) ((int) date('y') + 3))
+            ->call('updatePosition', 'card_holder_name', 0.3, 0.4)
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'));
+
+        $cartService = app(CartService::class);
+        $cart = $cartService->getCart();
+        $snapshotInCart = $cart['items'][0]['customization_json'];
+
+        $customerData = [
+            'customer_name' => 'حسین',
+            'customer_phone' => '09120000000',
+        ];
+        $order = $cartService->createDraftOrder($customerData);
+
+        $orderItem = OrderItem::query()->where('order_id', $order->id)->first();
+        $this->assertNotNull($orderItem);
+
+        $this->assertSame($snapshotInCart, $orderItem->customization_json);
+
+        $this->assertSame('6274051234567890', $orderItem->customization_json['card_number']);
+        $this->assertSame('808', $orderItem->customization_json['cvv2']);
+        $this->assertSame('05', $orderItem->customization_json['expiry_month']);
+        $this->assertSame(0.3, $orderItem->customization_json['positions']['card_holder_name']['x'] ?? null);
+        $this->assertSame(0.4, $orderItem->customization_json['positions']['card_holder_name']['y'] ?? null);
     }
 }
