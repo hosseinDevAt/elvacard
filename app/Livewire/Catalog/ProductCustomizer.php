@@ -27,8 +27,6 @@ class ProductCustomizer extends Component
     public bool $security_cvv_enabled = false;
     public bool $security_expiry_enabled = false;
     public bool $qr_code_enabled = false;
-    public string $expiry_month = '01';
-    public string $expiry_year = '28';
 
     public Product $product;
     public Collection $colorPrices;
@@ -140,16 +138,17 @@ class ProductCustomizer extends Component
         ]);
 
         $customizationJson = [
-            'card_holder_name' => trim($this->card_holder_name),
-            'back_text' => trim($this->back_text),
             'security_cvv_enabled' => $this->security_cvv_enabled,
             'security_expiry_enabled' => $this->security_expiry_enabled,
             'qr_code_enabled' => $this->qr_code_enabled,
         ];
 
-        if ($this->security_expiry_enabled) {
-            $customizationJson['expiry_month'] = $this->expiry_month;
-            $customizationJson['expiry_year'] = $this->expiry_year;
+        if (trim($this->card_holder_name) !== '') {
+            $customizationJson['card_holder_name'] = trim($this->card_holder_name);
+        }
+
+        if (trim($this->back_text) !== '') {
+            $customizationJson['back_text'] = trim($this->back_text);
         }
 
         $cartService->addItem([

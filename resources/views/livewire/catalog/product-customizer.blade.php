@@ -196,27 +196,6 @@
                                     <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $security_expiry_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
                                 </button>
                             </div>
-
-                            @if ($security_expiry_enabled)
-                                <div class="grid grid-cols-2 gap-2 pt-2">
-                                    <div>
-                                        <label class="block text-[10px] text-gray-400 mb-1">ماه</label>
-                                        <select wire:model.live="expiry_month" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
-                                            @for ($m = 1; $m <= 12; $m++)
-                                                <option value="{{ sprintf('%02d', $m) }}">{{ sprintf('%02d', $m) }}</option>
-                                            @endfor
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] text-gray-400 mb-1">سال</label>
-                                        <select wire:model.live="expiry_year" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
-                                            @for ($y = 24; $y <= 35; $y++)
-                                                <option value="{{ $y }}">{{ $y }}</option>
-                                            @endfor
-                                        </select>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     </div>
 
@@ -379,7 +358,7 @@
                                     @if ($security_expiry_enabled)
                                         <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
                                         <div class="font-mono font-bold text-sm tracking-wider">
-                                            {{ $expiry_month }}/{{ $expiry_year }}
+                                            01/28
                                         </div>
                                     @endif
                                 </div>

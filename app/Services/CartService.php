@@ -279,25 +279,23 @@ class CartService
             : [];
 
         $sanitizedCustomization = [];
-        if (! empty($rawCustomization['card_holder_name'])) {
-            $sanitizedCustomization['card_holder_name'] = mb_substr(trim((string) $rawCustomization['card_holder_name']), 0, 100);
+        if (! empty($rawCustomization['card_holder_name']) && is_string($rawCustomization['card_holder_name'])) {
+            $name = mb_substr(trim($rawCustomization['card_holder_name']), 0, 100);
+            if ($name !== '') {
+                $sanitizedCustomization['card_holder_name'] = $name;
+            }
         }
-        if (! empty($rawCustomization['back_text'])) {
-            $sanitizedCustomization['back_text'] = mb_substr(trim((string) $rawCustomization['back_text']), 0, 255);
+        if (! empty($rawCustomization['back_text']) && is_string($rawCustomization['back_text'])) {
+            $text = mb_substr(trim($rawCustomization['back_text']), 0, 255);
+            if ($text !== '') {
+                $sanitizedCustomization['back_text'] = $text;
+            }
         }
         if (isset($rawCustomization['security_cvv_enabled'])) {
             $sanitizedCustomization['security_cvv_enabled'] = (bool) $rawCustomization['security_cvv_enabled'];
         }
         if (isset($rawCustomization['security_expiry_enabled'])) {
             $sanitizedCustomization['security_expiry_enabled'] = (bool) $rawCustomization['security_expiry_enabled'];
-            if ($sanitizedCustomization['security_expiry_enabled']) {
-                if (! empty($rawCustomization['expiry_month'])) {
-                    $sanitizedCustomization['expiry_month'] = mb_substr((string) $rawCustomization['expiry_month'], 0, 2);
-                }
-                if (! empty($rawCustomization['expiry_year'])) {
-                    $sanitizedCustomization['expiry_year'] = mb_substr((string) $rawCustomization['expiry_year'], 0, 2);
-                }
-            }
         }
         if (isset($rawCustomization['qr_code_enabled'])) {
             $sanitizedCustomization['qr_code_enabled'] = (bool) $rawCustomization['qr_code_enabled'];
