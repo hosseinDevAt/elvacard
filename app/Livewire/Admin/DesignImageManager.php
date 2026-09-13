@@ -5,6 +5,8 @@ namespace App\Livewire\Admin;
 use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignImage;
+use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -13,18 +15,29 @@ class DesignImageManager extends Component
     use WithPagination;
 
     public ?int $designId = null;
+
     public ?int $colorId = null;
+
     public string $imagePath = '';
+
     public ?string $altText = null;
+
     public ?string $imageTitle = null;
+
     public ?string $optimizedFilename = null;
+
     public ?string $seoCaption = null;
+
     public bool $isActive = true;
+
     public int $sortOrder = 0;
 
     public string $search = '';
+
     public ?int $designFilter = null;
+
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected $rules = [
@@ -110,7 +123,8 @@ class DesignImageManager extends Component
         session()->flash('success', 'تصویر طرح به همراه سازگاری‌هایش حذف شد');
     }
 
-    public function getDesignOptionsProperty(): array
+    #[Computed]
+    public function designOptions(): array
     {
         $items = $this->designFilterOptions;
 
@@ -128,12 +142,14 @@ class DesignImageManager extends Component
         );
     }
 
-    public function getDesignFilterOptionsProperty(): \Illuminate\Support\Collection
+    #[Computed]
+    public function designFilterOptions(): Collection
     {
         return Design::query()->orderBy('name')->get(['id', 'name', 'is_active']);
     }
 
-    public function getColorOptionsProperty(): array
+    #[Computed]
+    public function colorOptions(): array
     {
         $items = Color::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'is_active']);
 

@@ -366,4 +366,103 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
             $this->bankAddPayload($product, $color, $designData['design'], $designData['designImage'])
         );
     }
+
+    private function designCatalogQueries(array $log): array
+    {
+        $tables = ['cate_designs', 'designs', 'design_images', 'design_color_compatibilities'];
+
+        return array_values(array_filter(
+            array_map(fn (array $query) => $query['query'], $log),
+            fn (string $sql) => (bool) preg_match('~from (`|")(\w+)(`|")~i', $sql, $m) && in_array($m[2], $tables, true)
+        ));
+    }
+
+    public function test_commerce_product_page_does_not_query_design_catalog(): void
+    {
+        $product = $this->createCommerceProduct();
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $response = $this->get(route('catalog.products.show', $product->slug));
+
+        $response->assertOk();
+        $response->assertSee('افزودن به سبد خرید');
+        $response->assertDontSee('فهرست طرح‌ها');
+
+        $this->assertCount(0, $this->designCatalogQueries(DB::getQueryLog()), 'Commerce-only page must not query the design catalog.');
+    }
+
+    public function test_bank_product_page_still_queries_design_catalog(): void
+    {
+        $color = $this->createColor();
+        $designData = $this->createDesign($color);
+        $product = $this->createBankProduct($color, $designData['design']);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $response = $this->get(route('catalog.products.show', $product->slug));
+
+        $response->assertOk();
+        $response->assertSee('فهرست طرح‌ها');
+
+        $this->assertNotEmpty($this->designCatalogQueries(DB::getQueryLog()), 'Bank-card page must still load the design catalog.');
+    }
+
+    public function test_cart_resolves_color_without_extra_lazy_query(): void
+    {
+        $product = $this->createCommerceProduct();
+        $color = $this->createColor();
+
+        ProductColorPrice::create([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'price' => 300000,
+            'is_active' => true,
+        ]);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $cart = app(CartService::class)->addItem([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'quantity' => 1,
+        ]);
+
+        $this->assertSame($color->name, $cart['items'][0]['color_name_snapshot']);
+        $this->assertSame(300000, $cart['items'][0]['unit_price_snapshot']);
+        $this->assertSame(300000, $cart['items'][0]['final_price']);
+
+        $colorQueries = array_values(array_filter(
+            array_map(fn (array $query) => $query['query'], DB::getQueryLog()),
+            fn (string $sql) => (bool) preg_match('~from (`|")(\w+)(`|")~i', $sql, $m) && $m[2] === 'colors'
+        ));
+        $this->assertCount(1, $colorQueries, 'Commercial color must be resolved exactly once (eager loaded).');
+
+        app(CartService::class)->clear();
+
+        $bankColor = $this->createColor();
+        $designData = $this->createDesign($bankColor);
+        $bankProduct = $this->createBankProduct($bankColor, $designData['design']);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $cart = app(CartService::class)->addItem(
+            $this->bankAddPayload($bankProduct, $bankColor, $designData['design'], $designData['designImage'])
+        );
+
+        $this->assertSame($bankColor->name, $cart['items'][0]['color_name_snapshot']);
+        $this->assertSame(700000, $cart['items'][0]['unit_price_snapshot']);
+
+        $colorQueries = array_values(array_filter(
+            array_map(fn (array $query) => $query['query'], DB::getQueryLog()),
+            fn (string $sql) => (bool) preg_match('~from (`|")(\w+)(`|")~i', $sql, $m) && $m[2] === 'colors'
+        ));
+        $this->assertCount(1, $colorQueries, 'Bank-card color must be resolved exactly once (eager loaded).');
+
+        app(CartService::class)->clear();
+    }
 }

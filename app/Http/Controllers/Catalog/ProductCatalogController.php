@@ -127,10 +127,12 @@ class ProductCatalogController extends Controller
             ->withCatalog()
             ->firstOrFail();
 
-        $designCatalog = $this->designCatalogQuery($selectedColorId);
-
         $workflowRaw = $product->getRawOriginal('customization_workflow');
         $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
+
+        $designCatalog = $workflow !== null
+            ? $this->designCatalogQuery($selectedColorId)
+            : collect();
 
         return view('catalog.products.show', [
             'product' => $product,
