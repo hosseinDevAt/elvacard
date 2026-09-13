@@ -34,10 +34,10 @@
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-1 text-sm text-gray-700">
                                 <p class="break-words"><span class="font-semibold">محصول:</span> {{ $item['product_name_snapshot'] }}</p>
-                                <p class="break-words"><span class="font-semibold">رنگ:</span> {{ $item['color_name_snapshot'] ?? $item['color_id'] }}</p>
-                                <p class="break-words"><span class="font-semibold">طرح:</span> {{ $item['design_name_snapshot'] ?? $item['design_id'] }}</p>
-                                @if ($item['design_image_id'] ?? null)
-                                    <p><span class="font-semibold">تصویر طرح:</span> {{ $item['design_image_id'] }}</p>
+                                <p class="break-words"><span class="font-semibold">رنگ:</span> {{ $item['color_name_snapshot'] ?? 'ثبت نشده' }}</p>
+                                <p class="break-words"><span class="font-semibold">طرح:</span> {{ $item['design_name_snapshot'] ?? 'ثبت نشده' }}</p>
+                                @if (! empty($item['design_image_path_snapshot']))
+                                    <p><span class="font-semibold">تصویر طرح:</span> {{ $item['design_image_path_snapshot'] }}</p>
                                 @endif
                             </div>
 

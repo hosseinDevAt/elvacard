@@ -32,19 +32,14 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">آیتم‌های سفارش</h3>
 
                 <div class="space-y-4">
-                    @php
-                        $snapshotColorIds = $order->items->map(fn ($i) => data_get($i->customization_json, 'color_id'))->filter()->unique()->values();
-                        $snapshotDesignIds = $order->items->map(fn ($i) => data_get($i->customization_json, 'design_id'))->filter()->unique()->values();
-                        $colorNameMap = \App\Models\Color::query()->whereIn('id', $snapshotColorIds)->pluck('name', 'id');
-                        $designNameMap = \App\Models\Design::query()->whereIn('id', $snapshotDesignIds)->pluck('name', 'id');
-                    @endphp
-
                     @forelse ($order->items as $item)
                         <div class="rounded border border-gray-100 p-4 text-sm">
                             <p class="break-words"><span class="font-semibold">محصول:</span> {{ $item->product_name_snapshot }}</p>
                             <p><span class="font-semibold">تعداد:</span> {{ $item->quantity }}</p>
                             <p><span class="font-semibold">قیمت واحد:</span> {{ number_format($item->unit_price_snapshot) }} تومان</p>
                             <p><span class="font-semibold">مبلغ نهایی:</span> {{ number_format($item->final_price) }} تومان</p>
+                            <p><span class="font-semibold">رنگ کارت:</span> {{ $item->color_name_snapshot ?? 'ثبت نشده' }}</p>
+                            <p><span class="font-semibold">طرح کارت:</span> {{ $item->design_name_snapshot ?? 'ثبت نشده' }}</p>
 
                             @if ($item->customization_json)
                                 <div class="mt-2 border-t border-gray-100 pt-2 text-gray-600">
@@ -54,8 +49,6 @@
 
                                     @if (is_array($customization))
                                         <div class="grid gap-1.5 sm:grid-cols-2 text-sm">
-                                            <p><span class="font-semibold">رنگ کارت:</span> {{ $colorNameMap[$customization['color_id'] ?? null] ?? ($customization['color_id'] ?? 'ثبت نشده') }}</p>
-                                            <p><span class="font-semibold">طرح کارت:</span> {{ $designNameMap[$customization['design_id'] ?? null] ?? ($customization['design_id'] ?? 'ثبت نشده') }}</p>
                                             @if (! empty($customization['card_number']))
                                                 <p class="sm:col-span-2"><span class="font-semibold">شماره کارت:</span> <span dir="ltr" class="font-mono"><span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($customization['card_number']) }}</span></span></p>
                                             @endif

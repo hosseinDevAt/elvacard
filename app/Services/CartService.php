@@ -50,13 +50,20 @@ class CartService
             $cart['items'][$existingIndex]['unit_price_snapshot'] = $validated['unit_price_snapshot'];
             $cart['items'][$existingIndex]['final_price'] = $newQuantity * $validated['unit_price_snapshot'];
             $cart['items'][$existingIndex]['customization_json'] = $validated['customization_json'];
+            $cart['items'][$existingIndex]['product_name_snapshot'] = $validated['product_name_snapshot'];
+            $cart['items'][$existingIndex]['color_name_snapshot'] = $validated['color_name_snapshot'];
+            $cart['items'][$existingIndex]['design_name_snapshot'] = $validated['design_name_snapshot'];
+            $cart['items'][$existingIndex]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
         } else {
             $cart['items'][] = [
                 'id' => (string) Str::uuid(),
                 'product_id' => $validated['product_id'],
                 'color_id' => $validated['color_id'],
+                'color_name_snapshot' => $validated['color_name_snapshot'],
                 'design_id' => $validated['design_id'],
+                'design_name_snapshot' => $validated['design_name_snapshot'],
                 'design_image_id' => $validated['design_image_id'],
+                'design_image_path_snapshot' => $validated['design_image_path_snapshot'],
                 'quantity' => $validated['quantity'],
                 'product_name_snapshot' => $validated['product_name_snapshot'],
                 'unit_price_snapshot' => $validated['unit_price_snapshot'],
@@ -112,6 +119,9 @@ class CartService
             $cart['items'][$index]['final_price'] = $validated['final_price'];
             $cart['items'][$index]['customization_json'] = $validated['customization_json'];
             $cart['items'][$index]['product_name_snapshot'] = $validated['product_name_snapshot'];
+            $cart['items'][$index]['color_name_snapshot'] = $validated['color_name_snapshot'];
+            $cart['items'][$index]['design_name_snapshot'] = $validated['design_name_snapshot'];
+            $cart['items'][$index]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
 
             $this->store($cart['items']);
 
@@ -183,6 +193,12 @@ class CartService
                             'order_id' => $order->id,
                             'product_id' => $item['product_id'],
                             'product_name_snapshot' => $item['product_name_snapshot'],
+                            'color_id' => $item['color_id'],
+                            'color_name_snapshot' => $item['color_name_snapshot'],
+                            'design_id' => $item['design_id'],
+                            'design_name_snapshot' => $item['design_name_snapshot'],
+                            'design_image_id' => $item['design_image_id'],
+                            'design_image_path_snapshot' => $item['design_image_path_snapshot'],
                             'unit_price_snapshot' => $item['unit_price_snapshot'],
                             'quantity' => $item['quantity'],
                             'final_price' => $item['final_price'],
@@ -252,6 +268,8 @@ class CartService
         if (! $design) {
             throw new InvalidArgumentException('Selected design is not available.');
         }
+
+        $designImage = null;
 
         if ($designImageId !== null) {
             $designImage = DesignImage::query()->active()->find($designImageId);
@@ -331,23 +349,19 @@ class CartService
             }
         }
 
-        $snapshot = array_merge($sanitizedCustomization, [
-            'product_id' => $productId,
-            'color_id' => $colorId,
-            'design_id' => $designId,
-            'design_image_id' => $designImageId,
-        ]);
-
         return [
             'product_id' => $productId,
             'color_id' => $colorId,
+            'color_name_snapshot' => $colorPrice->color->name,
             'design_id' => $designId,
+            'design_name_snapshot' => $design->name,
             'design_image_id' => $designImageId,
+            'design_image_path_snapshot' => $designImage?->image_path,
             'quantity' => $quantity,
             'product_name_snapshot' => $product->name,
             'unit_price_snapshot' => (int) $colorPrice->price,
             'final_price' => (int) $colorPrice->price * $quantity,
-            'customization_json' => $snapshot,
+            'customization_json' => $sanitizedCustomization,
             'for_existing' => $forExisting,
         ];
     }

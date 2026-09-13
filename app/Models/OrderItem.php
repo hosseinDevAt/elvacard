@@ -14,6 +14,12 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'product_name_snapshot',
+        'color_id',
+        'color_name_snapshot',
+        'design_id',
+        'design_name_snapshot',
+        'design_image_id',
+        'design_image_path_snapshot',
         'unit_price_snapshot',
         'quantity',
         'final_price',
@@ -22,6 +28,9 @@ class OrderItem extends Model
 
     protected $casts = [
         'customization_json' => 'array',
+        'color_id' => 'integer',
+        'design_id' => 'integer',
+        'design_image_id' => 'integer',
     ];
 
     public function order(): BelongsTo
@@ -32,5 +41,20 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function color(): BelongsTo
+    {
+        return $this->belongsTo(Color::class);
+    }
+
+    public function design(): BelongsTo
+    {
+        return $this->belongsTo(Design::class);
+    }
+
+    public function designImage(): BelongsTo
+    {
+        return $this->belongsTo(DesignImage::class);
     }
 }

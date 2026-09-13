@@ -73,6 +73,8 @@
                             {{-- Details List --}}
                             <div class="space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                 <div class="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">پارامترهای حکاکی کاربر:</div>
+                                <div><span class="text-gray-400">رنگ کارت:</span> <span class="text-gray-900 font-bold">{{ $item->color_name_snapshot ?? 'ثبت نشده' }}</span></div>
+                                <div><span class="text-gray-400">طرح کارت:</span> <span class="text-gray-900 font-bold">{{ $item->design_name_snapshot ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ !empty($custom['card_number']) ? \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($custom['card_number']) : 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">نام دارنده کارت:</span> <span class="text-gray-900 font-bold">{{ $custom['card_holder_name'] ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">متن دلخواه پشت:</span> <span class="text-gray-900 font-bold">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span></div>
