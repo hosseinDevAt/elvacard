@@ -199,6 +199,7 @@ class CartService
                         OrderItem::query()->create([
                             'order_id' => $order->id,
                             'product_id' => $item['product_id'],
+                            'customization_workflow' => $item['customization_workflow'],
                             'product_name_snapshot' => $item['product_name_snapshot'],
                             'color_id' => $item['color_id'],
                             'color_name_snapshot' => $item['color_name_snapshot'],
@@ -270,11 +271,13 @@ class CartService
             throw new InvalidArgumentException('Selected product customization is currently unavailable.');
         }
 
-        if ($workflow === null) {
-            return $this->validateCommercePayload($product, $colorId, $quantity, $forExisting);
-        }
+        $validated = $workflow === null
+            ? $this->validateCommercePayload($product, $colorId, $quantity, $forExisting)
+            : $this->validateBankCardPayload($product, $colorId, $designId, $designImageId, $quantity, $payload, $forExisting);
 
-        return $this->validateBankCardPayload($product, $colorId, $designId, $designImageId, $quantity, $payload, $forExisting);
+        $validated['customization_workflow'] = $workflow?->value;
+
+        return $validated;
     }
 
     private function validateCommercePayload($product, ?int $colorId, int $quantity, bool $forExisting): array

@@ -22,4 +22,29 @@ class CustomizationWorkflowRegistry
 
         return in_array($workflow, self::ACTIVE_WORKFLOWS, true);
     }
+
+    public static function classifyLegacyCustomization(array $customization): ?CustomizationWorkflowEnum
+    {
+        $bankEvidenceKeys = [
+            'card_number',
+            'card_holder_name',
+            'back_text',
+            'cvv2',
+            'expiry_month',
+            'expiry_year',
+            'security_cvv_enabled',
+            'security_expiry_enabled',
+            'positions',
+            'qr_code_enabled',
+            'qr_code_path',
+        ];
+
+        foreach ($bankEvidenceKeys as $key) {
+            if (array_key_exists($key, $customization)) {
+                return CustomizationWorkflowEnum::BANK_CARD;
+            }
+        }
+
+        return null;
+    }
 }

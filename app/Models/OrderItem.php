@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CustomizationWorkflowEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
+        'customization_workflow',
         'product_name_snapshot',
         'color_id',
         'color_name_snapshot',
@@ -28,6 +30,7 @@ class OrderItem extends Model
 
     protected $casts = [
         'customization_json' => 'array',
+        'customization_workflow' => CustomizationWorkflowEnum::class,
         'color_id' => 'integer',
         'design_id' => 'integer',
         'design_image_id' => 'integer',
