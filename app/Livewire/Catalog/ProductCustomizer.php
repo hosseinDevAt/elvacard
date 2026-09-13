@@ -4,6 +4,7 @@ namespace App\Livewire\Catalog;
 
 use App\Enums\CustomizationWorkflowEnum;
 use App\Livewire\Forms\BankCardWorkspace;
+use App\Livewire\Forms\FuelCardWorkspace;
 use App\Models\CateDesign;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
@@ -39,6 +40,10 @@ class ProductCustomizer extends Component
 
     // Bank card workspace owns card-specific state, validation, and payload.
     public BankCardWorkspace $bankCard;
+
+    // Fuel card workspace is the independent Fuel boundary (no routing yet;
+    // orchestration happens in a later phase).
+    public FuelCardWorkspace $fuelCard;
 
     public int $basePrice = 0;
 
