@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Models\CateDesign;
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -56,8 +58,6 @@ class ProductCustomizer extends Component
 
     public function mount(int $productId): void
     {
-        $this->product_id = $productId;
-
         $this->product = Product::query()
             ->active()
             ->with([
@@ -71,6 +71,15 @@ class ProductCustomizer extends Component
                     ->orderBy('price'),
             ])
             ->findOrFail($productId);
+
+        $workflowRaw = $this->product->getRawOriginal('customization_workflow');
+        $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
+
+        if (! CustomizationWorkflowRegistry::isActive($workflow)) {
+            abort(404);
+        }
+
+        $this->product_id = $productId;
 
         $this->colorPrices = $this->product->colorPrices;
         $this->color_id = $this->colorPrices->first()?->color_id;

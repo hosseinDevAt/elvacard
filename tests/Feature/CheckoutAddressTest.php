@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Models\CateDesign;
 use App\Models\Color;
@@ -26,6 +27,7 @@ class CheckoutAddressTest extends TestCase
 
         $product = Product::create([
             'type' => ProductTypeEnum::STANDARD->value,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD->value,
             'name' => 'کارت تست',
             'slug' => 'test-card',
             'description' => 'desc',

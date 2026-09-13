@@ -21,6 +21,20 @@
                         @error('type') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">فرآیند شخصی‌سازی</label>
+                        <select wire:model="customizationWorkflow" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                            @foreach($workflowOptions as $option)
+                                <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                            @endforeach
+                        </select>
+                        @error('customizationWorkflow') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @if($customizationWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
+                            <p class="text-amber-600 text-xs mt-1">
+                                هشدار: سرویس کارت سوخت هنوز فعال نشده است؛ این محصول تا راه‌اندازی سرویس قابل فروش نیست.
+                            </p>
+                        @endif
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">نام محصول</label>
                         <input type="text" wire:model="name" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
                         @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -118,6 +132,7 @@
                     <th class="px-4 py-3 text-start font-medium text-gray-500">نام</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">اسلاگ</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">نوع</th>
+                    <th class="px-4 py-3 text-start font-medium text-gray-500">فرآیند</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">قیمت‌های رنگ</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
@@ -130,6 +145,12 @@
                         <td class="px-4 py-3 font-medium">{{ $product->name }}</td>
                         <td class="px-4 py-3 text-gray-500 font-mono text-xs" dir="ltr">{{ $product->slug }}</td>
                         <td class="px-4 py-3 text-gray-500 text-xs" dir="ltr">{{ $product->type?->value }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">
+                            {{ $product->customization_workflow?->faLabel() ?? '-' }}
+                            @if($product->customization_workflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
+                                <span class="text-amber-600">(قابل فروش نیست)</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3">
                             <a href="{{ route('admin.product-colors', ['product' => $product->id]) }}" class="inline-flex items-center gap-1 text-yellow-600 hover:text-yellow-800 text-xs">
                                 قیمت رنگ‌ها ({{ $product->color_prices_count }})

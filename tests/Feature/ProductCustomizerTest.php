@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Livewire\Catalog\ProductCustomizer;
 use App\Models\CateDesign;
@@ -42,6 +43,7 @@ class ProductCustomizerTest extends TestCase
 
         $this->product = Product::create([
             'type' => ProductTypeEnum::STANDARD->value,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD->value,
             'name' => 'کارت فلزی کلاسیک',
             'slug' => 'classic-metal-card',
             'base_price' => 500000,

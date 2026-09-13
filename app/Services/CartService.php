@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentStatusEnum;
 use App\Models\Design;
@@ -11,6 +12,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
+use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -105,9 +107,11 @@ class CartService
 
             $payload = [
                 'product_id' => (int) $item['product_id'],
-                'color_id' => (int) $item['color_id'],
-                'design_id' => (int) $item['design_id'],
-                'design_image_id' => isset($item['design_image_id']) ? (int) $item['design_image_id'] : null,
+                'color_id' => isset($item['color_id']) && $item['color_id'] !== '' ? (int) $item['color_id'] : null,
+                'design_id' => isset($item['design_id']) && $item['design_id'] !== '' ? (int) $item['design_id'] : null,
+                'design_image_id' => isset($item['design_image_id']) && $item['design_image_id'] !== ''
+                    ? (int) $item['design_image_id']
+                    : null,
                 'quantity' => $quantity,
                 'customization_json' => is_array($item['customization_json'] ?? null) ? $item['customization_json'] : [],
             ];
@@ -151,9 +155,11 @@ class CartService
         foreach ($cart['items'] as $item) {
             $validatedItems[] = $this->validatePayload([
                 'product_id' => (int) ($item['product_id'] ?? 0),
-                'color_id' => (int) ($item['color_id'] ?? 0),
-                'design_id' => (int) ($item['design_id'] ?? 0),
-                'design_image_id' => isset($item['design_image_id']) ? (int) $item['design_image_id'] : null,
+                'color_id' => isset($item['color_id']) && $item['color_id'] !== '' ? (int) $item['color_id'] : null,
+                'design_id' => isset($item['design_id']) && $item['design_id'] !== '' ? (int) $item['design_id'] : null,
+                'design_image_id' => isset($item['design_image_id']) && $item['design_image_id'] !== ''
+                    ? (int) $item['design_image_id']
+                    : null,
                 'quantity' => (int) ($item['quantity'] ?? 1),
                 'customization_json' => is_array($item['customization_json'] ?? null) ? $item['customization_json'] : [],
             ], true) + [
@@ -231,15 +237,15 @@ class CartService
     private function validatePayload(array $payload, bool $forExisting): array
     {
         $productId = (int) ($payload['product_id'] ?? 0);
-        $colorId = (int) ($payload['color_id'] ?? 0);
-        $designId = (int) ($payload['design_id'] ?? 0);
+        $colorId = isset($payload['color_id']) && $payload['color_id'] !== '' ? (int) $payload['color_id'] : null;
+        $designId = isset($payload['design_id']) && $payload['design_id'] !== '' ? (int) $payload['design_id'] : null;
         $designImageId = isset($payload['design_image_id']) && $payload['design_image_id'] !== ''
             ? (int) $payload['design_image_id']
             : null;
         $quantity = (int) ($payload['quantity'] ?? 1);
 
-        if ($productId < 1 || $colorId < 1 || $designId < 1) {
-            throw new InvalidArgumentException('Invalid product/color/design selection.');
+        if ($productId < 1) {
+            throw new InvalidArgumentException('Invalid product selection.');
         }
 
         if ($quantity < 1 || $quantity > self::MAX_QUANTITY) {
@@ -252,8 +258,75 @@ class CartService
             throw new InvalidArgumentException('Selected product is not available.');
         }
 
+        $workflowRaw = $product->getRawOriginal('customization_workflow');
+        $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
+
+        if ($workflowRaw !== null && $workflow === null) {
+            throw new InvalidArgumentException('Selected product has an unsupported customization workflow.');
+        }
+
+        if ($workflow !== null && ! CustomizationWorkflowRegistry::isActive($workflow)) {
+            throw new InvalidArgumentException('Selected product customization is currently unavailable.');
+        }
+
+        if ($workflow === null) {
+            return $this->validateCommercePayload($product, $colorId, $quantity, $forExisting);
+        }
+
+        return $this->validateBankCardPayload($product, $colorId, $designId, $designImageId, $quantity, $payload, $forExisting);
+    }
+
+    private function validateCommercePayload($product, ?int $colorId, int $quantity, bool $forExisting): array
+    {
+        $colorPrice = null;
+        $colorName = null;
+        $unitPrice = $product->base_price !== null ? (int) $product->base_price : null;
+
+        if ($colorId !== null) {
+            $colorPrice = ProductColorPrice::query()
+                ->where('product_id', $product->id)
+                ->where('color_id', $colorId)
+                ->where('is_active', true)
+                ->with(['color' => fn ($query) => $query->where('is_active', true)])
+                ->first();
+
+            if (! $colorPrice || ! $colorPrice->color) {
+                throw new InvalidArgumentException('Selected color is not valid for this product.');
+            }
+
+            $unitPrice = (int) $colorPrice->price;
+            $colorName = $colorPrice->color->name;
+        }
+
+        if ($unitPrice === null) {
+            throw new InvalidArgumentException('Selected product has no base price.');
+        }
+
+        return [
+            'product_id' => $product->id,
+            'color_id' => $colorId,
+            'color_name_snapshot' => $colorName,
+            'design_id' => null,
+            'design_name_snapshot' => null,
+            'design_image_id' => null,
+            'design_image_path_snapshot' => null,
+            'quantity' => $quantity,
+            'product_name_snapshot' => $product->name,
+            'unit_price_snapshot' => $unitPrice,
+            'final_price' => $unitPrice * $quantity,
+            'customization_json' => [],
+            'for_existing' => $forExisting,
+        ];
+    }
+
+    private function validateBankCardPayload($product, ?int $colorId, ?int $designId, ?int $designImageId, int $quantity, array $payload, bool $forExisting): array
+    {
+        if ($colorId === null || $designId === null) {
+            throw new InvalidArgumentException('Invalid product/color/design selection.');
+        }
+
         $colorPrice = ProductColorPrice::query()
-            ->where('product_id', $productId)
+            ->where('product_id', $product->id)
             ->where('color_id', $colorId)
             ->where('is_active', true)
             ->with(['color' => fn ($query) => $query->where('is_active', true)])
@@ -293,6 +366,25 @@ class CartService
             }
         }
 
+        return [
+            'product_id' => $product->id,
+            'color_id' => $colorId,
+            'color_name_snapshot' => $colorPrice->color->name,
+            'design_id' => $designId,
+            'design_name_snapshot' => $design->name,
+            'design_image_id' => $designImageId,
+            'design_image_path_snapshot' => $designImage?->image_path,
+            'quantity' => $quantity,
+            'product_name_snapshot' => $product->name,
+            'unit_price_snapshot' => (int) $colorPrice->price,
+            'final_price' => (int) $colorPrice->price * $quantity,
+            'customization_json' => $this->sanitizeCardCustomization($payload),
+            'for_existing' => $forExisting,
+        ];
+    }
+
+    private function sanitizeCardCustomization(array $payload): array
+    {
         $rawCustomization = is_array($payload['customization_json'] ?? null)
             ? $payload['customization_json']
             : [];
@@ -349,21 +441,7 @@ class CartService
             }
         }
 
-        return [
-            'product_id' => $productId,
-            'color_id' => $colorId,
-            'color_name_snapshot' => $colorPrice->color->name,
-            'design_id' => $designId,
-            'design_name_snapshot' => $design->name,
-            'design_image_id' => $designImageId,
-            'design_image_path_snapshot' => $designImage?->image_path,
-            'quantity' => $quantity,
-            'product_name_snapshot' => $product->name,
-            'unit_price_snapshot' => (int) $colorPrice->price,
-            'final_price' => (int) $colorPrice->price * $quantity,
-            'customization_json' => $sanitizedCustomization,
-            'for_existing' => $forExisting,
-        ];
+        return $sanitizedCustomization;
     }
 
     private function canonicalizeCardNumber(string $value): string
@@ -386,8 +464,8 @@ class CartService
         foreach ($items as $index => $item) {
             if (
                 (int) ($item['product_id'] ?? 0) === $validated['product_id']
-                && (int) ($item['color_id'] ?? 0) === $validated['color_id']
-                && (int) ($item['design_id'] ?? 0) === $validated['design_id']
+                && (int) ($item['color_id'] ?? 0) === (int) ($validated['color_id'] ?? 0)
+                && (int) ($item['design_id'] ?? 0) === (int) ($validated['design_id'] ?? 0)
                 && ((int) ($item['design_image_id'] ?? 0) === (int) ($validated['design_image_id'] ?? 0))
             ) {
                 return $index;

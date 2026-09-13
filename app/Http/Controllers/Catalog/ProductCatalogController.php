@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Catalog;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\PaymentStatusEnum;
 use App\Enums\ProductTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\Product;
+use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -127,10 +129,15 @@ class ProductCatalogController extends Controller
 
         $designCatalog = $this->designCatalogQuery($selectedColorId);
 
+        $workflowRaw = $product->getRawOriginal('customization_workflow');
+        $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
+
         return view('catalog.products.show', [
             'product' => $product,
             'designCatalog' => $designCatalog,
             'selectedColorId' => $selectedColorId,
+            'hasCustomization' => $workflow !== null,
+            'customizationAvailable' => CustomizationWorkflowRegistry::isActive($workflow),
         ]);
     }
 

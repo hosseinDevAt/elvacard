@@ -11,9 +11,7 @@ use InvalidArgumentException;
 
 class CartController extends Controller
 {
-    public function __construct(private readonly CartService $cartService)
-    {
-    }
+    public function __construct(private readonly CartService $cartService) {}
 
     public function index()
     {
@@ -28,8 +26,8 @@ class CartController extends Controller
     {
         $payload = $request->validate([
             'product_id' => ['required', 'integer', 'min:1'],
-            'color_id' => ['required', 'integer', 'min:1'],
-            'design_id' => ['required', 'integer', 'min:1'],
+            'color_id' => ['nullable', 'integer', 'min:1'],
+            'design_id' => ['nullable', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:20'],
             'customization_json' => ['nullable', 'array'],

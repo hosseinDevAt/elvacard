@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ class Product extends Model
 {
     protected $fillable = [
         'type',
+        'customization_workflow',
         'name',
         'slug',
         'description',
@@ -28,6 +30,7 @@ class Product extends Model
 
     protected $casts = [
         'type' => ProductTypeEnum::class,
+        'customization_workflow' => CustomizationWorkflowEnum::class,
         'design_config' => 'array',
         'supports_chip_selection' => 'boolean',
         'robots_index' => 'boolean',

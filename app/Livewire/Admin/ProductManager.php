@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Models\Product;
 use App\Support\Concerns\GeneratesUniqueSlug;
@@ -10,30 +11,48 @@ use Livewire\WithPagination;
 
 class ProductManager extends Component
 {
-    use WithPagination;
     use GeneratesUniqueSlug;
+    use WithPagination;
 
     public string $type = 'bank';
+
+    public ?string $customizationWorkflow = null;
+
     public string $name = '';
+
     public ?string $description = null;
+
     public ?string $mainImage = null;
+
     public ?int $basePrice = null;
+
     public bool $supportsChipSelection = false;
+
     public ?string $designConfig = null;
+
     public ?string $metaTitle = null;
+
     public ?string $metaDescription = null;
+
     public ?string $canonicalUrl = null;
+
     public bool $robotsIndex = true;
+
     public ?string $ogImage = null;
+
     public ?string $seoContent = null;
+
     public bool $isActive = true;
 
     public string $search = '';
+
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected $rules = [
         'type' => 'required|in:bank,fuel,standard',
+        'customizationWorkflow' => 'nullable|in:bank_card,fuel_card',
         'name' => 'required|string|min:1|max:255',
         'description' => 'nullable|string',
         'mainImage' => 'nullable|string|max:255',
@@ -53,10 +72,20 @@ class ProductManager extends Component
     {
         $this->validate();
 
+        if ($this->customizationWorkflow === CustomizationWorkflowEnum::FUEL_CARD->value && $this->isActive) {
+            $this->addError(
+                'customizationWorkflow',
+                'سرویس کارت سوخت هنوز فعال نشده است؛ محصول قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
+            );
+
+            return;
+        }
+
         $slug = $this->uniqueSlug($this->name, Product::class, $this->editingId, 'product');
 
         $data = [
             'type' => $this->type,
+            'customization_workflow' => $this->customizationWorkflow ?: null,
             'name' => $this->name,
             'slug' => $slug,
             'description' => $this->description ?: null,
@@ -97,6 +126,7 @@ class ProductManager extends Component
 
         $this->editingId = $id;
         $this->type = $product->type->value;
+        $this->customizationWorkflow = $product->customization_workflow?->value ?? null;
         $this->name = $product->name;
         $this->description = $product->description;
         $this->mainImage = $product->main_image;
@@ -136,6 +166,7 @@ class ProductManager extends Component
     public function resetForm(): void
     {
         $this->type = 'bank';
+        $this->customizationWorkflow = null;
         $this->name = '';
         $this->description = null;
         $this->mainImage = null;
@@ -163,6 +194,11 @@ class ProductManager extends Component
         return view('livewire.admin.product-manager', [
             'products' => $products,
             'typeOptions' => ProductTypeEnum::options(),
+            'workflowOptions' => [
+                ['value' => '', 'label' => 'بدون شخصی‌سازی'],
+                ['value' => CustomizationWorkflowEnum::BANK_CARD->value, 'label' => CustomizationWorkflowEnum::BANK_CARD->faLabel()],
+                ['value' => CustomizationWorkflowEnum::FUEL_CARD->value, 'label' => CustomizationWorkflowEnum::FUEL_CARD->faLabel()],
+            ],
         ])->layout('layouts.admin')->title('مدیریت محصولات');
     }
 }

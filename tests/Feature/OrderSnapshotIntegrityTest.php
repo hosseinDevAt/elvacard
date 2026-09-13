@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Models\CateDesign;
 use App\Models\Color;
@@ -42,6 +43,7 @@ class OrderSnapshotIntegrityTest extends TestCase
 
         $this->product = Product::create([
             'type' => ProductTypeEnum::STANDARD->value,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD->value,
             'name' => 'کارت فلزی کلاسیک',
             'slug' => 'classic-metal',
             'base_price' => 500000,

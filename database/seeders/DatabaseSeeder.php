@@ -56,6 +56,7 @@ class DatabaseSeeder extends Seeder
             ['slug' => 'bank-card'],
             [
                 'type' => 'bank',
+                'customization_workflow' => 'bank_card',
                 'name' => 'کارت بانکی',
                 'description' => 'کارت بانکی با طرح سفارشی',
                 'base_price' => 850000,
@@ -68,6 +69,7 @@ class DatabaseSeeder extends Seeder
             ['slug' => 'fuel-card'],
             [
                 'type' => 'fuel',
+                'customization_workflow' => 'fuel_card',
                 'name' => 'کارت سوخت',
                 'description' => 'کارت سوخت با طرح سفارشی',
                 'base_price' => 450000,
