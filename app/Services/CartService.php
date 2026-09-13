@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\BankCard\BankCardCustomization;
 use App\Services\Customization\CustomizationWorkflowRegistry;
+use App\Services\FuelCard\FuelCardCustomization;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -271,9 +272,11 @@ class CartService
             throw new InvalidArgumentException('Selected product customization is currently unavailable.');
         }
 
-        $validated = $workflow === null
-            ? $this->validateCommercePayload($product, $colorId, $quantity, $forExisting)
-            : $this->validateBankCardPayload($product, $colorId, $designId, $designImageId, $quantity, $payload, $forExisting);
+        if ($workflow === null) {
+            $validated = $this->validateCommercePayload($product, $colorId, $quantity, $forExisting);
+        } else {
+            $validated = $this->validateCustomizationPayload($product, $workflow, $colorId, $designId, $designImageId, $quantity, $payload, $forExisting);
+        }
 
         $validated['customization_workflow'] = $workflow?->value;
 
@@ -323,9 +326,22 @@ class CartService
         ];
     }
 
-    private function validateBankCardPayload($product, ?int $colorId, ?int $designId, ?int $designImageId, int $quantity, array $payload, bool $forExisting): array
+    private function validateCustomizationPayload($product, CustomizationWorkflowEnum $workflow, ?int $clientColorId, ?int $designId, ?int $designImageId, int $quantity, array $payload, bool $forExisting): array
     {
-        if ($colorId === null || $designId === null) {
+        $colorPrice = $workflow === CustomizationWorkflowEnum::FUEL_CARD
+            ? $this->resolveFuelColorPrice($product, $clientColorId)
+            : $this->resolveSelectedColorPrice($product, $clientColorId);
+
+        $validated = $this->resolveCustomizationSnapshot($product, $colorPrice, $designId, $designImageId, $quantity, $forExisting);
+
+        $validated['customization_json'] = $this->sanitizeCustomization($workflow, $payload);
+
+        return $validated;
+    }
+
+    private function resolveSelectedColorPrice($product, ?int $colorId): ProductColorPrice
+    {
+        if ($colorId === null) {
             throw new InvalidArgumentException('Invalid product/color/design selection.');
         }
 
@@ -338,6 +354,36 @@ class CartService
 
         if (! $colorPrice || ! $colorPrice->color) {
             throw new InvalidArgumentException('Selected color is not valid for this product.');
+        }
+
+        return $colorPrice;
+    }
+
+    private function resolveFuelColorPrice($product, ?int $clientColorId): ProductColorPrice
+    {
+        $activeRows = ProductColorPrice::query()
+            ->where('product_id', $product->id)
+            ->where('is_active', true)
+            ->with(['color' => fn ($query) => $query->where('is_active', true)])
+            ->get();
+
+        if ($activeRows->count() !== 1 || ! $activeRows->first()->color) {
+            throw new InvalidArgumentException('Fuel card products require exactly one active color.');
+        }
+
+        $colorPrice = $activeRows->first();
+
+        if ($clientColorId !== null && (int) $clientColorId !== (int) $colorPrice->color_id) {
+            throw new InvalidArgumentException('Selected color is not valid for this product.');
+        }
+
+        return $colorPrice;
+    }
+
+    private function resolveCustomizationSnapshot($product, ProductColorPrice $colorPrice, ?int $designId, ?int $designImageId, int $quantity, bool $forExisting): array
+    {
+        if ($designId === null) {
+            throw new InvalidArgumentException('Invalid product/color/design selection.');
         }
 
         $design = Design::query()->active()->find($designId);
@@ -361,7 +407,7 @@ class CartService
 
             $compatible = DesignColorCompatibility::query()
                 ->where('design_image_id', $designImageId)
-                ->where('card_color_id', $colorId)
+                ->where('card_color_id', $colorPrice->color_id)
                 ->where('is_allowed', true)
                 ->exists();
 
@@ -372,7 +418,7 @@ class CartService
 
         return [
             'product_id' => $product->id,
-            'color_id' => $colorId,
+            'color_id' => $colorPrice->color_id,
             'color_name_snapshot' => $colorPrice->color->name,
             'design_id' => $designId,
             'design_name_snapshot' => $design->name,
@@ -382,9 +428,22 @@ class CartService
             'product_name_snapshot' => $product->name,
             'unit_price_snapshot' => (int) $colorPrice->price,
             'final_price' => (int) $colorPrice->price * $quantity,
-            'customization_json' => BankCardCustomization::sanitize($payload),
             'for_existing' => $forExisting,
         ];
+    }
+
+    private function sanitizeCustomization(?CustomizationWorkflowEnum $workflow, array $payload): array
+    {
+        switch ($workflow) {
+            case CustomizationWorkflowEnum::BANK_CARD:
+                return BankCardCustomization::sanitize($payload);
+
+            case CustomizationWorkflowEnum::FUEL_CARD:
+                return FuelCardCustomization::sanitize($payload);
+
+            default:
+                return [];
+        }
     }
 
     private function findDuplicateItemIndex(array $items, array $validated): ?int
