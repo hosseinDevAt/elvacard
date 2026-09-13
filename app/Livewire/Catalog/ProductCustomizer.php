@@ -5,11 +5,15 @@ namespace App\Livewire\Catalog;
 use App\Enums\CustomizationWorkflowEnum;
 use App\Livewire\Forms\BankCardWorkspace;
 use App\Models\CateDesign;
+use App\Models\Design;
+use App\Models\DesignColorCompatibility;
+use App\Models\DesignImage;
 use App\Models\Product;
 use App\Services\CartService;
 use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class ProductCustomizer extends Component
@@ -82,7 +86,9 @@ class ProductCustomizer extends Component
 
         $this->color_id = $this->colorPrices[0]['color_id'] ?? null;
 
-        $this->refreshDesignData();
+        $this->refreshCategories();
+        $allowedImageIds = $this->refreshDesigns();
+        $this->refreshSelectedDesignImages($allowedImageIds);
 
         if ($this->categories !== []) {
             $this->selected_category_id = $this->categories[0]['id'];
@@ -111,19 +117,15 @@ class ProductCustomizer extends Component
         $this->design_id = null;
         $this->design_image_id = null;
 
-        $this->refreshDesignData();
+        $allowedImageIds = $this->refreshDesigns();
+        $this->refreshSelectedDesignImages($allowedImageIds);
     }
 
     public function selectDesign(int $designId): void
     {
         $this->design_id = $designId;
 
-        $imagesForDesign = array_values(array_filter(
-            $this->designImages,
-            fn (array $image) => $image['design_id'] === $designId
-        ));
-
-        $this->design_image_id = $imagesForDesign[0]['id'] ?? null;
+        $this->refreshSelectedDesignImages($this->allowedImageIds());
     }
 
     public function selectDesignImage(int $designImageId): void
@@ -188,79 +190,72 @@ class ProductCustomizer extends Component
         $this->redirectRoute('cart.index', navigate: true);
     }
 
-    private function refreshDesignData(): void
+    private function refreshCategories(): void
     {
-        $selectedColorId = $this->color_id;
-
-        $catalog = CateDesign::query()
+        $this->categories = CateDesign::query()
             ->active()
-            ->with([
-                'designs' => fn ($q) => $q
-                    ->active()
-                    ->with([
-                        'images' => fn ($iq) => $iq
-                            ->active()
-                            ->when($selectedColorId, fn ($query) => $query->whereHas('compatibilities', function ($compatibilityQuery) use ($selectedColorId) {
-                                $compatibilityQuery
-                                    ->where('card_color_id', $selectedColorId)
-                                    ->where('is_allowed', true);
-                            }))
-                            ->with([
-                                'color' => fn ($colorQuery) => $colorQuery->active(),
-                            ])
-                            ->orderBy('sort_order'),
-                    ])
-                    ->orderBy('sort_order'),
+            ->orderBy('sort_order')
+            ->get(['id', 'name'])
+            ->map(fn (CateDesign $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
             ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Loads the lightweight design list (with a preview image per design),
+     * without hydrating every DesignImage of every design into Livewire state.
+     */
+    private function refreshDesigns(): ?Collection
+    {
+        $allowedImageIds = $this->allowedImageIds();
+
+        if ($this->categories === []) {
+            $this->designs = [];
+            $this->design_id = null;
+            $this->design_image_id = null;
+
+            return $allowedImageIds;
+        }
+
+        $preview = DesignImage::query()
+            ->select('image_path')
+            ->whereColumn('design_id', 'designs.id')
+            ->where('is_active', true)
+            ->when($allowedImageIds !== null, fn ($query) => $query->whereIn('id', $allowedImageIds))
+            ->when(
+                $this->color_id !== null,
+                fn ($query) => $query->orderByRaw('(color_id = ?) DESC, sort_order ASC', [$this->color_id]),
+                fn ($query) => $query->orderBy('sort_order')
+            )
+            ->limit(1);
+
+        $designs = Design::query()
+            ->select(['id', 'cate_design_id', 'name'])
+            ->addSelect(['preview_image_path' => $preview])
+            ->whereIn('cate_design_id', array_column($this->categories, 'id'))
+            ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
-        $categories = [];
-        $designs = [];
-        $images = [];
-
-        foreach ($catalog as $category) {
-            $categories[] = [
-                'id' => $category->id,
-                'name' => $category->name,
-            ];
-
-            foreach ($category->designs as $design) {
-                if ($design->images->isEmpty()) {
-                    continue;
-                }
-
-                $preview = $design->images->firstWhere('color_id', $selectedColorId) ?? $design->images->first();
-
-                $designs[] = [
-                    'id' => $design->id,
-                    'category_id' => $category->id,
-                    'name' => $design->name,
-                    'preview_image_path' => $preview?->image_path,
-                ];
-
-                foreach ($design->images as $image) {
-                    $images[] = [
-                        'id' => $image->id,
-                        'design_id' => $design->id,
-                        'color_id' => $image->color_id,
-                        'color_name' => $image->color?->name,
-                        'color_hex' => $image->color?->code_hex,
-                        'image_path' => $image->image_path,
-                    ];
-                }
-            }
-        }
-
-        $this->categories = $categories;
-        $this->designs = $designs;
-        $this->designImages = $images;
+        $this->designs = $designs
+            ->reject(fn (Design $design) => $design->preview_image_path === null)
+            ->map(fn (Design $design) => [
+                'id' => $design->id,
+                'category_id' => (int) $design->cate_design_id,
+                'name' => $design->name,
+                'preview_image_path' => $design->preview_image_path,
+            ])
+            ->values()
+            ->all();
 
         if ($this->designs === []) {
             $this->design_id = null;
             $this->design_image_id = null;
 
-            return;
+            return $allowedImageIds;
         }
 
         $designIds = array_column($this->designs, 'id');
@@ -269,22 +264,67 @@ class ProductCustomizer extends Component
             ? $this->design_id
             : $designIds[0];
 
-        $imagesForDesign = array_values(array_filter(
-            $this->designImages,
-            fn (array $image) => $image['design_id'] === $this->design_id
-        ));
-
-        $imageIds = array_column($imagesForDesign, 'id');
-
-        $this->design_image_id = ($this->design_image_id && in_array($this->design_image_id, $imageIds, true))
-            ? $this->design_image_id
-            : ($imageIds[0] ?? null);
-
         $categoryIds = array_column($this->categories, 'id');
 
         if ($this->selected_category_id && ! in_array($this->selected_category_id, $categoryIds, true)) {
             $this->selected_category_id = $categoryIds[0] ?? null;
         }
+
+        return $allowedImageIds;
+    }
+
+    /**
+     * Loads (and persists in state) only the selected design's images.
+     * Previously every compatible image of every design was hydrated here.
+     */
+    private function refreshSelectedDesignImages(?Collection $allowedImageIds): void
+    {
+        if ($this->design_id === null) {
+            $this->designImages = [];
+            $this->design_image_id = null;
+
+            return;
+        }
+
+        $images = DesignImage::query()
+            ->where('design_id', $this->design_id)
+            ->where('is_active', true)
+            ->when($allowedImageIds !== null, fn ($query) => $query->whereIn('id', $allowedImageIds))
+            ->with([
+                'color' => fn ($colorQuery) => $colorQuery->active(),
+            ])
+            ->orderBy('sort_order')
+            ->get(['id', 'design_id', 'color_id', 'image_path']);
+
+        $this->designImages = $images
+            ->map(fn (DesignImage $image) => [
+                'id' => $image->id,
+                'design_id' => $image->design_id,
+                'color_id' => $image->color_id,
+                'color_name' => $image->color?->name,
+                'color_hex' => $image->color?->code_hex,
+                'image_path' => $image->image_path,
+            ])
+            ->values()
+            ->all();
+
+        $imageIds = array_column($this->designImages, 'id');
+
+        $this->design_image_id = ($this->design_image_id && in_array($this->design_image_id, $imageIds, true))
+            ? $this->design_image_id
+            : ($imageIds[0] ?? null);
+    }
+
+    private function allowedImageIds(): ?Collection
+    {
+        if ($this->color_id === null) {
+            return null;
+        }
+
+        return DesignColorCompatibility::query()
+            ->where('card_color_id', $this->color_id)
+            ->where('is_allowed', true)
+            ->pluck('design_image_id');
     }
 
     public function render()

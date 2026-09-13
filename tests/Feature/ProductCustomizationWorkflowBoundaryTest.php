@@ -378,6 +378,18 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         ));
     }
 
+    private function countTableReferences(string $table, array $log): int
+    {
+        $count = 0;
+
+        foreach ($log as $query) {
+            preg_match_all('~from (`|")(\w+)(`|")~i', (string) $query['query'], $matches);
+            $count += count(array_filter($matches[2] ?? [], fn (string $t) => $t === $table));
+        }
+
+        return $count;
+    }
+
     public function test_commerce_product_page_does_not_query_design_catalog(): void
     {
         $product = $this->createCommerceProduct();
@@ -408,16 +420,31 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $response->assertOk();
         $response->assertSee('انتخاب طرح لیزر روی کارت');
 
-        foreach (['cate_designs', 'designs', 'design_images'] as $table) {
-            $this->assertSame(
-                1,
-                count(array_filter(
-                    DB::getQueryLog(),
-                    fn (array $query) => (bool) preg_match('~from (`|")(\w+)(`|")~i', $query['query'], $m) && $m[2] === $table
-                )),
-                "Design table {$table} must be loaded exactly once (customizer mount); the controller must not duplicate the catalog."
-            );
-        }
+        $log = DB::getQueryLog();
+
+        $this->assertSame(
+            1,
+            $this->countTableReferences('cate_designs', $log),
+            "Design table 'cate_designs' must be loaded exactly once (customizer mount); the controller must not duplicate the catalog."
+        );
+
+        $this->assertSame(
+            1,
+            $this->countTableReferences('designs', $log),
+            "Design table 'designs' must be loaded exactly once (customizer mount); the controller must not duplicate the catalog."
+        );
+
+        $this->assertSame(
+            1,
+            $this->countTableReferences('design_color_compatibilities', $log),
+            'Color compatibility must be resolved with a single allowed-image lookup.'
+        );
+
+        $this->assertSame(
+            2,
+            $this->countTableReferences('design_images', $log),
+            "Incremental design loading references design_images exactly twice: the correlated per-design preview inside the design-list query, plus only the selected design's image chips - never every design's images at once."
+        );
     }
 
     public function test_cart_resolves_color_without_extra_lazy_query(): void

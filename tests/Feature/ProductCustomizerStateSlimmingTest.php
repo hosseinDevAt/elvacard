@@ -144,6 +144,18 @@ class ProductCustomizerStateSlimmingTest extends TestCase
         );
     }
 
+    private function queriesForDesignTable(string $table): array
+    {
+        return array_values(array_filter(
+            array_map(fn (array $query) => $query['query'], DB::getQueryLog()),
+            function (string $sql) use ($table) {
+                preg_match_all('~from (`|")(\w+)(`|")~i', $sql, $matches);
+
+                return in_array($table, $matches[2] ?? [], true);
+            }
+        ));
+    }
+
     public function test_catalog_state_is_slim_scalar_arrays_not_eloquent_models(): void
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])->instance();
@@ -206,35 +218,65 @@ class ProductCustomizerStateSlimmingTest extends TestCase
         $this->assertSame($this->eagleDesign->id, $designs[0]['id']);
     }
 
-    public function test_design_change_updates_image_options_without_querying_catalog(): void
+    public function test_mount_loads_only_selected_design_images_into_state(): void
+    {
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
+
+        // The full design grid is intentional, but only the SELECTED design's image chips enter the state.
+        $designs = collect($component->get('designs'))->values();
+        $this->assertSame(
+            [$this->lionDesign->id, $this->eagleDesign->id],
+            $designs->pluck('id')->all()
+        );
+
+        $designImages = $component->get('designImages');
+        $this->assertCount(1, $designImages);
+        $this->assertSame($this->lionGoldImage->id, $designImages[0]['id']);
+        $this->assertSame($this->lionDesign->id, $designImages[0]['design_id']);
+        $this->assertSame($this->lionDesign->id, $component->get('design_id'));
+    }
+
+    public function test_design_change_lazily_updates_image_options(): void
+    {
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
+
+        $component->call('selectDesign', $this->eagleDesign->id)
+            ->assertSet('design_id', $this->eagleDesign->id)
+            ->assertSet('design_image_id', $this->eagleGoldImage->id);
+
+        // Switching designs swaps ONLY the chips: the grid (designs) is untouched and still complete.
+        $this->assertCount(2, $component->get('designs'));
+        $this->assertSame([$this->eagleGoldImage->id], array_column($component->get('designImages'), 'id'));
+    }
+
+    public function test_select_design_lazily_queries_only_selected_design_images(): void
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
         DB::flushQueryLog();
         DB::enableQueryLog();
 
-        $component->call('selectDesign', $this->eagleDesign->id)
-            ->assertSet('design_id', $this->eagleDesign->id)
-            ->assertSet('design_image_id', $this->eagleGoldImage->id);
+        $component->call('selectDesign', $this->eagleDesign->id);
 
-        $this->assertCount(0, $this->designTableQueries(), 'Design switching must not re-query the design catalog.');
+        $this->assertCount(0, $this->queriesForDesignTable('cate_designs'), 'Design selection must not reload the category list.');
+        $this->assertCount(0, $this->queriesForDesignTable('designs'), 'Design selection must not reload the full design list.');
+        $this->assertCount(1, $this->queriesForDesignTable('design_images'), "Design selection must query only the selected design's images.");
+        $this->assertCount(1, $this->queriesForDesignTable('design_color_compatibilities'), 'Design selection must perform a single color-compatibility lookup.');
+
+        $this->assertSame([$this->eagleGoldImage->id], array_column($component->get('designImages'), 'id'));
     }
 
     public function test_image_change_sets_correct_design_without_querying_catalog(): void
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        DB::flushQueryLog();
-        DB::enableQueryLog();
-
-        $component->call('selectColor', $this->silver->id);
+        $component->call('selectDesign', $this->eagleDesign->id);
 
         DB::flushQueryLog();
         DB::enableQueryLog();
 
-        $component->call('selectDesign', $this->eagleDesign->id)
-            ->call('selectDesignImage', $this->eagleSilverImage->id)
-            ->assertSet('design_image_id', $this->eagleSilverImage->id)
+        $component->call('selectDesignImage', $this->eagleGoldImage->id)
+            ->assertSet('design_image_id', $this->eagleGoldImage->id)
             ->assertSet('design_id', $this->eagleDesign->id);
 
         $this->assertCount(0, $this->designTableQueries(), 'Image switching must not re-query the design catalog.');

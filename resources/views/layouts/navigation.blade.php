@@ -71,7 +71,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
             <div class="hidden lg:flex lg:items-center lg:gap-2">
                 @foreach ($navItems as $link)
                     @if ($link->target === '_blank')
-                        <x-nav-link :href="str_starts_with($link->url, '/') ? $link->url : $link->url" :active="$link->active" wire:navigate target="{{ $link->target }}" rel="noopener noreferrer">
+                        <x-nav-link :href="$link->url" :active="$link->active" target="{{ $link->target }}" rel="noopener noreferrer">
                             {{ $link->title }}
                         </x-nav-link>
                     @else
