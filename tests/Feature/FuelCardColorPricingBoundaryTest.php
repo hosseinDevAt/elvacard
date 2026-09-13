@@ -246,7 +246,7 @@ class FuelCardColorPricingBoundaryTest extends TestCase
         $this->assertFalse($product->is_active);
     }
 
-    public function test_product_manager_still_forbids_fuel_activation_even_with_valid_single_active_price(): void
+    public function test_product_manager_rejects_fuel_activation_without_purchasable_design(): void
     {
         $product = $this->createFuelProduct();
         $color = $this->createColor();
@@ -254,7 +254,7 @@ class FuelCardColorPricingBoundaryTest extends TestCase
 
         $this->fillProductForm($product, CustomizationWorkflowEnum::FUEL_CARD->value, true)
             ->call('save')
-            ->assertHasErrors('customizationWorkflow');
+            ->assertHasErrors(['customizationWorkflow' => 'کارت سوخت به حداقل یک طرح قابل خرید نیاز دارد؛ طرح باید فعال، در دسته فعال، و دارای تصویر فعال مجاز برای رنگ کارت باشد.']);
 
         $this->assertFalse($product->fresh()->is_active);
     }
@@ -291,11 +291,14 @@ class FuelCardColorPricingBoundaryTest extends TestCase
         $this->assertSame(3, ProductColorPrice::where('product_id', $product->id)->where('is_active', true)->count());
     }
 
-    public function test_registry_still_activates_only_bank_card(): void
+    public function test_registry_activates_both_card_workflows(): void
     {
-        $this->assertSame([CustomizationWorkflowEnum::BANK_CARD], CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS);
+        $this->assertSame(
+            [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
+            CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS
+        );
         $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::BANK_CARD));
-        $this->assertFalse(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
+        $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
         $this->assertFalse(CustomizationWorkflowRegistry::isActive(null));
     }
 }

@@ -187,20 +187,24 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
         $this->assertSame([], FuelCardCustomization::sanitize($bankPayload), 'The same Bank payload must be entirely rejected by the Fuel boundary.');
     }
 
-    public function test_registry_still_exposes_only_bank_card(): void
+    public function test_registry_exposes_both_card_workflows(): void
     {
-        $this->assertSame([CustomizationWorkflowEnum::BANK_CARD], CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS);
+        $this->assertSame(
+            [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
+            CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS
+        );
         $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::BANK_CARD));
-        $this->assertFalse(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
+        $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
         $this->assertFalse(CustomizationWorkflowRegistry::isActive(null));
     }
 
-    public function test_fuel_product_remains_unavailable_via_customizer(): void
+    public function test_fuel_product_mounts_customizer_after_activation(): void
     {
         $product = $this->createFuelProduct();
 
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertSet('workflow', CustomizationWorkflowEnum::FUEL_CARD->value);
 
         $this->assertSame('fuel_card', $product->getRawOriginal('customization_workflow'));
     }

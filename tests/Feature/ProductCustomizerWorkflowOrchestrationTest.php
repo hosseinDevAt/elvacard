@@ -131,15 +131,21 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
         $this->assertSame($this->color->id, $component->get('color_id'));
     }
 
-    public function test_fuel_workflow_branch_uses_fuel_workspace_and_stays_offline(): void
+    public function test_fuel_workflow_branch_mounts_fuel_workspace(): void
     {
         $product = $this->createFuelProduct();
 
-        // Registry is still BANK-only: a fuel product must never mount.
-        $this->assertSame([CustomizationWorkflowEnum::BANK_CARD], CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS);
+        $this->assertSame(
+            [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
+            CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS
+        );
 
-        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
-            ->assertStatus(404);
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $product->id]);
+
+        $component->assertStatus(200);
+        $this->assertSame('fuel_card', $component->get('workflow'));
+        $this->assertInstanceOf(FuelCardWorkspace::class, $component->get('fuelCard'));
+        $this->assertSame([], $component->get('fuelCard')->customizationJson());
 
         $this->assertSame('fuel_card', $product->getRawOriginal('customization_workflow'));
     }
@@ -211,10 +217,11 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
 
         $fuelResponse = $this->get(route('catalog.products.show', $fuelProduct->slug));
         $fuelResponse->assertOk();
-        $fuelResponse->assertSee('هنوز قابل خرید نیست');
-        $fuelResponse->assertDontSee('شماره کارت');
+        $fuelResponse->assertSee('انتخاب طرح لیزر روی کارت');
         $fuelResponse->assertDontSee('حکاکی CVV2');
-        $fuelResponse->assertDontSee('cvv2');
+        $fuelResponse->assertDontSee('مقدار CVV2 واقعی');
+        $fuelResponse->assertDontSee('حکاکی تاریخ انقضا');
+        $fuelResponse->assertDontSee('شماره کارت (۱۶ رقمی)');
 
         $bankResponse = $this->get(route('catalog.products.show', $bankProduct->slug));
         $bankResponse->assertOk();
@@ -232,8 +239,8 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Direct instance: mount 404s publicly for fuel, so the color lock is
-        // exercised at the action level against the product row.
+        // Direct instance: the color lock is exercised at the action level
+        // against the product row, independent of public hydration.
         $component = new ProductCustomizer;
         $component->product_id = $product->id;
         $component->workflow = CustomizationWorkflowEnum::FUEL_CARD->value;

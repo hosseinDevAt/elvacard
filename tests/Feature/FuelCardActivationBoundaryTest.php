@@ -261,25 +261,26 @@ class FuelCardActivationBoundaryTest extends TestCase
         $this->assertStringContainsString('محصول یافت نشد', implode(' ', $blockers));
     }
 
-    public function test_fuel_activation_still_blocked_while_registry_is_inactive(): void
+    public function test_fuel_activation_succeeds_when_fully_ready_after_registry_activation(): void
     {
         $this->makeReady();
 
         $product = $this->fuelProduct;
-        $component = Livewire::actingAs($this->admin())
+
+        Livewire::actingAs($this->admin())
             ->test(ProductManager::class)
             ->set('editingId', $product->id)
             ->set('type', ProductTypeEnum::FUEL->value)
             ->set('customizationWorkflow', CustomizationWorkflowEnum::FUEL_CARD->value)
             ->set('name', $product->name)
             ->set('isActive', true)
-            ->call('save');
+            ->call('save')
+            ->assertHasNoErrors();
 
-        $component->assertHasErrors([
-            'customizationWorkflow' => 'سرویس کارت سوخت هنوز فعال نشده است؛ محصول قابل فروش نیست و نمی‌تواند فعال ذخیره شود.',
-        ]);
+        $product = $product->fresh();
 
-        $this->assertFalse($product->fresh()->is_active);
+        $this->assertTrue($product->is_active);
+        $this->assertSame(CustomizationWorkflowEnum::FUEL_CARD->value, $product->getRawOriginal('customization_workflow'));
     }
 
     public function test_bank_product_activation_is_unchanged(): void
@@ -335,24 +336,22 @@ class FuelCardActivationBoundaryTest extends TestCase
         $this->assertSame(3, ProductColorPrice::where('product_id', $product->id)->where('is_active', true)->count());
     }
 
-    public function test_public_fuel_page_remains_unavailable_even_when_fully_ready(): void
+    public function test_public_fuel_page_renders_customizer_when_fully_ready(): void
     {
         $this->makeReady();
-
-        // The admin gate prevents activating a fuel product, so this DB update
-        // simulates a product whose row is already active; the registry still
-        // keeps the public purchase closed and the page must show "unavailable".
         $this->fuelProduct->update(['is_active' => true]);
 
         $response = $this->get(route('catalog.products.show', $this->fuelProduct->slug));
 
         $response->assertOk();
-        $response->assertSee('هنوز قابل خرید نیست');
-        $response->assertDontSee('افزودن به سبد خرید');
-        $response->assertDontSee('انتخاب طرح لیزر روی کارت');
+        $response->assertSee('انتخاب طرح لیزر روی کارت');
+        $response->assertDontSee('هنوز قابل خرید نیست');
+        $response->assertDontSee('حکاکی CVV2');
+        $response->assertDontSee('شماره کارت (۱۶ رقمی)');
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->fuelProduct->id])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertSet('workflow', CustomizationWorkflowEnum::FUEL_CARD->value);
     }
 
     public function test_public_bank_page_still_mounts_customizer(): void
@@ -388,10 +387,13 @@ class FuelCardActivationBoundaryTest extends TestCase
             ->assertDontSee('هنوز قابل خرید نیست');
     }
 
-    public function test_registry_still_excludes_fuel_and_public_purchase_stays_impossible(): void
+    public function test_registry_is_fully_activated_for_both_card_workflows(): void
     {
-        $this->assertSame([CustomizationWorkflowEnum::BANK_CARD], CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS);
+        $this->assertSame(
+            [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
+            CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS
+        );
         $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::BANK_CARD));
-        $this->assertFalse(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
+        $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
     }
 }

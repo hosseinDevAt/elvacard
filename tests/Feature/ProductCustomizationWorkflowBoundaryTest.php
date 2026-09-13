@@ -187,11 +187,14 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $response = $this->get(route('catalog.products.show', $product->slug));
 
         $response->assertOk();
-        $response->assertSee('هنوز قابل خرید نیست');
-        $response->assertDontSee('افزودن به سبد خرید');
+        $response->assertSee('انتخاب طرح لیزر روی کارت');
+        $response->assertDontSee('هنوز قابل خرید نیست');
+        $response->assertDontSee('حکاکی CVV2');
+        $response->assertDontSee('شماره کارت (۱۶ رقمی)');
 
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertSet('workflow', CustomizationWorkflowEnum::FUEL_CARD->value);
     }
 
     public function test_unknown_workflow_value_is_rejected_by_cart_and_customizer(): void
@@ -357,15 +360,19 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $this->assertSame('bank', $product->fresh()->getRawOriginal('type'));
         $this->assertSame('fuel_card', $product->fresh()->getRawOriginal('customization_workflow'));
 
+        // The mutation now routes the product into the live Fuel boundary: the
+        // customizer mounts the Fuel workspace, and a valid (compatible) Bank
+        // configuration becomes a purchasable Fuel item with the empty boundary.
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertSet('workflow', CustomizationWorkflowEnum::FUEL_CARD->value);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('currently unavailable');
-
-        app(CartService::class)->addItem(
+        $cart = app(CartService::class)->addItem(
             $this->bankAddPayload($product, $color, $designData['design'], $designData['designImage'])
         );
+
+        $this->assertSame(700000, $cart['items'][0]['unit_price_snapshot']);
+        $this->assertSame([], $cart['items'][0]['customization_json']);
     }
 
     private function designCatalogQueries(array $log): array

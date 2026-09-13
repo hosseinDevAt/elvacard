@@ -30,8 +30,8 @@
                         @error('customizationWorkflow') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         @if($customizationWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
                             <div class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
-                                <p class="font-bold text-amber-900">هشدار: سرویس کارت سوخت هنوز فعال نشده است؛ این محصول تا راه‌اندازی سرویس قابل فروش نیست.</p>
-                                <p class="text-amber-900">پیش‌نیاز فعال‌سازی (پس از راه‌اندازی سرویس):</p>
+                                <p class="font-bold text-amber-900">پیش‌نیازهای فعال‌سازی و فروش کارت سوخت:</p>
+                                <p class="text-amber-900">این محصول تا تکمیل پیش‌نیازهای زیر قابل فعال‌سازی نیست:</p>
                                 <ul class="list-disc ms-4 space-y-0.5">
                                     @foreach($fuelPreparation as $item)
                                         <li>

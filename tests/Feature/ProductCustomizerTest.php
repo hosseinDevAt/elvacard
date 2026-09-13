@@ -494,7 +494,10 @@ class ProductCustomizerTest extends TestCase
         $orderItem = OrderItem::query()->where('order_id', $order->id)->first();
         $this->assertNotNull($orderItem);
 
-        $this->assertSame($snapshotInCart, $orderItem->customization_json);
+        ksort($snapshotInCart);
+        $persisted = $orderItem->customization_json;
+        ksort($persisted);
+        $this->assertSame($snapshotInCart, $persisted);
 
         $this->assertSame('6274051234567890', $orderItem->customization_json['card_number']);
         $this->assertSame('808', $orderItem->customization_json['cvv2']);

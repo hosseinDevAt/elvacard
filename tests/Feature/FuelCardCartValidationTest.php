@@ -430,11 +430,14 @@ class FuelCardCartValidationTest extends TestCase
         $this->assertSame('29', $customization['expiry_year']);
     }
 
-    public function test_registry_gates_fuel_and_public_cart_still_rejects_it(): void
+    public function test_fuel_is_active_and_public_cart_accepts_valid_payload(): void
     {
-        $this->assertSame([CustomizationWorkflowEnum::BANK_CARD], CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS);
+        $this->assertSame(
+            [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
+            CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS
+        );
         $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::BANK_CARD));
-        $this->assertFalse(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
+        $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
 
         $color = $this->createColor();
         $designData = $this->createDesign($color);
@@ -442,16 +445,23 @@ class FuelCardCartValidationTest extends TestCase
             ['color_id' => $color->id, 'price' => 480000, 'is_active' => true],
         ]);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('currently unavailable');
-
-        app(CartService::class)->addItem([
+        $cart = app(CartService::class)->addItem([
             'product_id' => $product->id,
             'color_id' => $color->id,
             'design_id' => $designData['design']->id,
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
+            'customization_json' => [
+                'card_number' => '6274051234567890',
+                'cvv2' => '808',
+            ],
         ]);
+
+        $item = $cart['items'][0];
+
+        $this->assertSame($color->id, $item['color_id']);
+        $this->assertSame($color->name, $item['color_name_snapshot']);
+        $this->assertSame([], $item['customization_json']);
     }
 
     public function test_client_workflow_tampering_is_ignored(): void

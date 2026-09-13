@@ -264,7 +264,9 @@ class ProductCustomizerPaginationTest extends TestCase
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        $component->set('workflow', CustomizationWorkflowEnum::FUEL_CARD->value)
+        // Any tampered workflow that is not a live, allow-listed one empties the
+        // catalog server-side; the empty state is rendered, never a partial view.
+        $component->set('workflow', 'garbage')
             ->assertSee('رنگ انتخابی موجود نیست');
 
         // Selection attempts while the workflow gate is closed are rejected.

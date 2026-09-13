@@ -475,20 +475,26 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $response->assertDontSee('CVV2');
     }
 
-    public function test_registry_and_public_cart_still_reject_fuel(): void
+    public function test_fuel_is_active_and_public_cart_accepts_valid_payload(): void
     {
-        $this->assertSame([CustomizationWorkflowEnum::BANK_CARD], CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS);
-        $this->assertFalse(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
+        $this->assertSame(
+            [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
+            CustomizationWorkflowRegistry::ACTIVE_WORKFLOWS
+        );
+        $this->assertTrue(CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD));
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('currently unavailable');
-
-        app(CartService::class)->addItem([
+        $cart = app(CartService::class)->addItem([
             'product_id' => $this->fuelProduct->id,
             'color_id' => $this->color->id,
             'design_id' => $this->design->id,
             'design_image_id' => $this->designImage->id,
             'quantity' => 1,
         ]);
+
+        $item = $cart['items'][0];
+
+        $this->assertSame($this->color->id, $item['color_id']);
+        $this->assertSame($this->designImage->id, $item['design_image_id']);
+        $this->assertSame([], $item['customization_json']);
     }
 }

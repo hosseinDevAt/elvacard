@@ -12,6 +12,7 @@ class CustomizationWorkflowRegistry
     // product row can never point to a class/component name of its choosing.
     public const ACTIVE_WORKFLOWS = [
         CustomizationWorkflowEnum::BANK_CARD,
+        CustomizationWorkflowEnum::FUEL_CARD,
     ];
 
     public static function isActive(?CustomizationWorkflowEnum $workflow): bool
