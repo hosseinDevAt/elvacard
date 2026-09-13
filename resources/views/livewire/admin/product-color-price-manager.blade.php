@@ -30,6 +30,9 @@
                             @endforeach
                         </select>
                         @error('colorId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @if($selectedProductIsFuel)
+                            <p class="text-xs text-amber-600 mt-1">کارت سوخت فقط یک رنگ فعال می‌پذیرد؛ برای تعویض رنگ فعال، ابتدا رنگ فعال فعلی را غیرفعال کنید. ردیف‌های غیرفعال اضافی مجاز هستند.</p>
+                        @endif
                     </div>
                 </div>
                 <div>

@@ -63,13 +63,39 @@ class DesignCatalogService
             return false;
         }
 
-        return Design::query()
+        return $this->baseQuery($categoryId, $allowedImageIds)
             ->where('id', $designId)
-            ->where('cate_design_id', $categoryId)
-            ->where('is_active', true)
-            ->whereRelation('category', fn ($query) => $query->where('is_active', true))
-            ->whereExists(fn ($query) => $this->scopeAllowedImages($query, $allowedImageIds))
             ->exists();
+    }
+
+    /**
+     * Whether at least one purchasable design exists: the design and its
+     * category are active and it has at least one active image allowed for the
+     * given card color. Reused by activation readiness so fuel activation and
+     * the public catalog share one design-visibility truth.
+     */
+    public function hasPurchasableDesign(?int $categoryId = null, ?Collection $allowedImageIds = null): bool
+    {
+        return $this->baseQuery($categoryId, $allowedImageIds)->exists();
+    }
+
+    /**
+     * The single source of design visibility: active design, active category,
+     * and at least one active image within the allowed set.
+     */
+    private function baseQuery(?int $categoryId, ?Collection $allowedImageIds)
+    {
+        return Design::query()
+            ->when(
+                $categoryId !== null,
+                fn ($query) => $query->where('cate_design_id', $categoryId)
+            )
+            ->where('is_active', true)
+            // Authoritative active-category enforcement: Livewire public
+            // properties are client-hydrated, so visibility must be guaranteed
+            // in the query itself, not by any component or controller input.
+            ->whereRelation('category', fn ($query) => $query->where('is_active', true))
+            ->whereExists(fn ($query) => $this->scopeAllowedImages($query, $allowedImageIds));
     }
 
     private function page(
@@ -93,19 +119,9 @@ class DesignCatalogService
             )
             ->limit(1);
 
-        return Design::query()
+        return $this->baseQuery($categoryId, $allowedImageIds)
             ->select(['id', 'cate_design_id', 'name'])
             ->addSelect(['preview_image_path' => $preview])
-            ->when(
-                $categoryId !== null,
-                fn ($query) => $query->where('cate_design_id', $categoryId)
-            )
-            ->where('is_active', true)
-            // Authoritative active-category enforcement: Livewire public
-            // properties are client-hydrated, so visibility must be guaranteed
-            // in the query itself, not by any component or controller input.
-            ->whereRelation('category', fn ($query) => $query->where('is_active', true))
-            ->whereExists(fn ($query) => $this->scopeAllowedImages($query, $allowedImageIds))
             ->orderBy('sort_order')
             ->orderBy('id')
             ->paginate($perPage)

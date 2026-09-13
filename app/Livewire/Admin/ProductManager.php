@@ -4,8 +4,12 @@ namespace App\Livewire\Admin;
 
 use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
+use App\Models\DesignColorCompatibility;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
+use App\Services\Customization\CustomizationWorkflowRegistry;
+use App\Services\Customization\FuelCardActivationService;
+use App\Services\DesignCatalogService;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -73,15 +77,6 @@ class ProductManager extends Component
     {
         $this->validate();
 
-        if ($this->customizationWorkflow === CustomizationWorkflowEnum::FUEL_CARD->value && $this->isActive) {
-            $this->addError(
-                'customizationWorkflow',
-                'سرویس کارت سوخت هنوز فعال نشده است؛ محصول قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
-            );
-
-            return;
-        }
-
         if (
             $this->customizationWorkflow === CustomizationWorkflowEnum::FUEL_CARD->value
             && $this->editingId
@@ -93,6 +88,25 @@ class ProductManager extends Component
             );
 
             return;
+        }
+
+        if ($this->customizationWorkflow === CustomizationWorkflowEnum::FUEL_CARD->value && $this->isActive) {
+            if (! CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::FUEL_CARD)) {
+                $this->addError(
+                    'customizationWorkflow',
+                    'سرویس کارت سوخت هنوز فعال نشده است؛ محصول قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
+                );
+
+                return;
+            }
+
+            foreach (FuelCardActivationService::activationBlockers($this->editingId) as $blocker) {
+                $this->addError('customizationWorkflow', $blocker);
+            }
+
+            if ($this->getErrorBag()->has('customizationWorkflow')) {
+                return;
+            }
         }
 
         $slug = $this->uniqueSlug($this->name, Product::class, $this->editingId, 'product');
@@ -195,6 +209,46 @@ class ProductManager extends Component
         $this->seoContent = null;
         $this->isActive = true;
         $this->editingId = null;
+    }
+
+    /**
+     * Fuel activation checklist for the admin form. Each item reflects the
+     * database (`ProductColorPrice` row and purchasable-design catalog), never
+     * the submitted color count or design ids; for a new product the items are
+     * merely listed as required work (nothing can be checked before save).
+     */
+    public function getFuelPreparationProperty(): array
+    {
+        $items = [
+            ['label' => 'انتخاب یک رنگ فعال', 'ok' => false],
+            ['label' => 'تعریف قیمت', 'ok' => false],
+            ['label' => 'انتخاب طرح کارت', 'ok' => false],
+        ];
+
+        if ($this->editingId === null) {
+            return $items;
+        }
+
+        $activeColorPrices = ProductColorPrice::query()
+            ->where('product_id', $this->editingId)
+            ->where('is_active', true)
+            ->get(['color_id']);
+
+        $items[0]['ok'] = $activeColorPrices->isNotEmpty();
+        $items[1]['ok'] = $activeColorPrices->isNotEmpty();
+
+        if ($activeColorPrices->count() === 1) {
+            $colorId = (int) $activeColorPrices->first()->color_id;
+
+            $allowedImageIds = DesignColorCompatibility::query()
+                ->where('card_color_id', $colorId)
+                ->where('is_allowed', true)
+                ->pluck('design_image_id');
+
+            $items[2]['ok'] = app(DesignCatalogService::class)->hasPurchasableDesign(null, $allowedImageIds);
+        }
+
+        return $items;
     }
 
     public function render()

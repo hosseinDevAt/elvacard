@@ -184,10 +184,13 @@ class ProductColorPriceManager extends Component
             ->orderByDesc('id')
             ->paginate(15);
 
+        $selectedProduct = $this->productId ? Product::query()->find($this->productId) : null;
+
         return view('livewire.admin.product-color-price-manager', [
             'prices' => $prices,
             'productOptions' => $this->productOptions,
             'colorOptions' => $this->colorOptions,
+            'selectedProductIsFuel' => $selectedProduct?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD,
         ])->layout('layouts.admin')->title('قیمت رنگ محصولات');
     }
 }

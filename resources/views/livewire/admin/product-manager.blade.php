@@ -29,9 +29,29 @@
                         </select>
                         @error('customizationWorkflow') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         @if($customizationWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
-                            <p class="text-amber-600 text-xs mt-1">
-                                هشدار: سرویس کارت سوخت هنوز فعال نشده است؛ این محصول تا راه‌اندازی سرویس قابل فروش نیست.
-                            </p>
+                            <div class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
+                                <p class="font-bold text-amber-900">هشدار: سرویس کارت سوخت هنوز فعال نشده است؛ این محصول تا راه‌اندازی سرویس قابل فروش نیست.</p>
+                                <p class="text-amber-900">پیش‌نیاز فعال‌سازی (پس از راه‌اندازی سرویس):</p>
+                                <ul class="list-disc ms-4 space-y-0.5">
+                                    @foreach($fuelPreparation as $item)
+                                        <li>
+                                            {{ $item['label'] }}
+                                            @if($editingId)
+                                                @if($item['ok'])
+                                                    <span class="text-green-600">✓ تکمیل شده</span>
+                                                @else
+                                                    <span class="text-red-500">✗ لازم است</span>
+                                                @endif
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                                @if($editingId)
+                                    <div class="pt-1">
+                                        <a href="{{ route('admin.product-colors', ['product' => $editingId]) }}" class="text-amber-900 underline">مدیریت رنگ و قیمت این محصول</a>
+                                    </div>
+                                @endif
+                            </div>
                         @endif
                     </div>
                     <div>
@@ -67,10 +87,12 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-6">
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="supportsChipSelection" id="supports_chip" class="rounded border-gray-300 text-yellow-500">
-                        <label for="supports_chip" class="text-sm text-gray-700">پشتیبانی از انتخاب چیپ</label>
-                    </div>
+                    @if($customizationWorkflow !== \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" wire:model="supportsChipSelection" id="supports_chip" class="rounded border-gray-300 text-yellow-500">
+                            <label for="supports_chip" class="text-sm text-gray-700">پشتیبانی از انتخاب چیپ</label>
+                        </div>
+                    @endif
                     <div class="flex items-center gap-2">
                         <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
                         <label for="is_active" class="text-sm text-gray-700">فعال (نمایش در فروشگاه)</label>
