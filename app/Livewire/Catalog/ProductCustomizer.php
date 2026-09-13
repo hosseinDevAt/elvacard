@@ -94,6 +94,11 @@ class ProductCustomizer extends Component
 
         $this->color_id = $this->colorPrices[0]['color_id'] ?? null;
 
+        // colorPrices only ever contain active rows; for the FUEL workflow the
+        // product-configuration invariant (M.2-f-2) guarantees exactly one, so
+        // color_id is locked to that single configured color at mount time and
+        // the browser is never offered a color selector.
+
         $this->refreshCategories();
 
         // The design catalog is never loaded into state: the first page is
@@ -128,6 +133,18 @@ class ProductCustomizer extends Component
 
     public function selectColor(int $colorId): void
     {
+        // Fuel color is configuration-bound: the browser can never pick a color
+        // other than the single active ProductColorPrice row of the product.
+        // The workflow is re-resolved from the product row so a crafted payload
+        // cannot bypass the lock.
+        if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::FUEL_CARD->value) {
+            $configuredColorId = $this->colorPrices[0]['color_id'] ?? null;
+
+            if ($configuredColorId === null || (int) $colorId !== (int) $configuredColorId) {
+                return;
+            }
+        }
+
         $this->color_id = $colorId;
         $this->design_id = null;
         $this->design_image_id = null;
@@ -197,9 +214,25 @@ class ProductCustomizer extends Component
 
     public function addToCart(CartService $cartService): void
     {
-        $this->bankCard->canonicalize();
+        // The workflow is re-resolved from the product row (never client-hydrated
+        // state), and each workflow owns its canonicalization and customization
+        // snapshot. No dynamic class or view resolution happens here.
+        switch ($this->authoritativeWorkflow()) {
+            case CustomizationWorkflowEnum::BANK_CARD->value:
+                $this->bankCard->canonicalize();
+                $customization = $this->bankCard->customizationJson();
+                break;
 
-        // Commerce rules plus the bank card workspace rules run in one validate
+            case CustomizationWorkflowEnum::FUEL_CARD->value:
+                $customization = $this->fuelCard->customizationJson();
+                break;
+
+            default:
+                $customization = [];
+                break;
+        }
+
+        // Commerce rules plus the active workspace rules run in one validate
         // call (Livewire Form sub-validation owns the card-specific rules).
         $this->validate();
 
@@ -209,7 +242,7 @@ class ProductCustomizer extends Component
             'design_id' => $this->design_id,
             'design_image_id' => $this->design_image_id,
             'quantity' => $this->quantity,
-            'customization_json' => $this->bankCard->customizationJson(),
+            'customization_json' => $customization,
         ]);
 
         session()->flash('success', 'محصول با موفقیت به سبد خرید اضافه شد.');
@@ -288,6 +321,24 @@ class ProductCustomizer extends Component
     private function currentCategoryId(): int
     {
         return $this->selected_category_id ?? ($this->categories[0]['id'] ?? 0);
+    }
+
+    /**
+     * Server-authoritative workflow for orchestration decisions. Read live from
+     * the product row (raw column) so a client-hydrated "$this->workflow" can
+     * never steer branching, payload building, or color locking.
+     */
+    private function authoritativeWorkflow(): ?string
+    {
+        $product = Product::query()->find($this->product_id);
+
+        if ($product === null) {
+            return null;
+        }
+
+        $raw = $product->getRawOriginal('customization_workflow');
+
+        return $raw !== null ? (string) $raw : null;
     }
 
     private function catalogWorkflow(): ?CustomizationWorkflowEnum
