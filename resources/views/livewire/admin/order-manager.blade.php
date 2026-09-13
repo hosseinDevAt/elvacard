@@ -57,6 +57,11 @@
                     @php
                         $custom = is_array($item->customization_json) ? $item->customization_json : [];
                         $slots = \App\Services\Customization\CardPresenter::fixedSlots();
+                        $itemWorkflow = $item->customization_workflow;
+                        if ($itemWorkflow === null) {
+                            $itemWorkflow = \App\Services\Customization\CustomizationWorkflowRegistry::classifyLegacyCustomization($custom);
+                        }
+                        $isFuel = $itemWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD;
                     @endphp
                     <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
@@ -69,6 +74,20 @@
                             </div>
                         </div>
 
+                        @if ($isFuel)
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                <div class="space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                    <div class="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">مشخصات کارت سوخت:</div>
+                                    <div><span class="text-gray-400">روش شخصی‌سازی:</span> <span class="text-gray-900 font-bold">{{ $itemWorkflow->faLabel() }}</span></div>
+                                    <div><span class="text-gray-400">رنگ کارت:</span> <span class="text-gray-900 font-bold">{{ $item->color_name_snapshot ?? 'ثبت نشده' }}</span></div>
+                                    <div><span class="text-gray-400">طرح کارت:</span> <span class="text-gray-900 font-bold">{{ $item->design_name_snapshot ?? 'ثبت نشده' }}</span></div>
+                                    <div><span class="text-gray-400">تصویر طرح:</span> <span class="text-gray-900 font-bold">{{ $item->design_image_path_snapshot ?? 'ثبت نشده' }}</span></div>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center justify-center text-gray-400 text-[10px]">
+                                    پیش‌نمایش پشت کارت: تعریف نشده
+                                </div>
+                            </div>
+                        @else
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                             {{-- Details List --}}
                             <div class="space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -116,6 +135,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

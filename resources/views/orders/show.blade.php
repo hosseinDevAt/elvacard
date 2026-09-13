@@ -33,7 +33,18 @@
 
                 <div class="space-y-4">
                     @forelse ($order->items as $item)
+                        @php
+                            $customization = is_array($item->customization_json) ? $item->customization_json : json_decode($item->customization_json, true);
+                            $itemWorkflow = $item->customization_workflow;
+                            if ($itemWorkflow === null) {
+                                $itemWorkflow = \App\Services\Customization\CustomizationWorkflowRegistry::classifyLegacyCustomization(is_array($customization) ? $customization : []);
+                            }
+                            $isFuel = $itemWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD;
+                        @endphp
                         <div class="rounded border border-gray-100 p-4 text-sm">
+                            @if ($isFuel)
+                                <p><span class="font-semibold">روش شخصی‌سازی:</span> {{ $itemWorkflow->faLabel() }}</p>
+                            @endif
                             <p class="break-words"><span class="font-semibold">محصول:</span> {{ $item->product_name_snapshot }}</p>
                             <p><span class="font-semibold">تعداد:</span> {{ $item->quantity }}</p>
                             <p><span class="font-semibold">قیمت واحد:</span> {{ number_format($item->unit_price_snapshot) }} تومان</p>
@@ -41,12 +52,12 @@
                             <p><span class="font-semibold">رنگ کارت:</span> {{ $item->color_name_snapshot ?? 'ثبت نشده' }}</p>
                             <p><span class="font-semibold">طرح کارت:</span> {{ $item->design_name_snapshot ?? 'ثبت نشده' }}</p>
 
-                            @if ($item->customization_json)
-                                <div class="mt-2 border-t border-gray-100 pt-2 text-gray-600">
-                                    @php
-                                        $customization = is_array($item->customization_json) ? $item->customization_json : json_decode($item->customization_json, true);
-                                    @endphp
+                            @if ($isFuel && $item->design_image_path_snapshot)
+                                <p><span class="font-semibold">تصویر طرح:</span> {{ $item->design_image_path_snapshot }}</p>
+                            @endif
 
+                            @if (! $isFuel && $item->customization_json)
+                                <div class="mt-2 border-t border-gray-100 pt-2 text-gray-600">
                                     @if (is_array($customization))
                                         <div class="grid gap-1.5 sm:grid-cols-2 text-sm">
                                             @if (! empty($customization['card_number']))
