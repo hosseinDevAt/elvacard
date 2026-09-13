@@ -175,7 +175,8 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $response = $this->get(route('catalog.products.show', $product->slug));
 
         $response->assertOk();
-        $response->assertSee('فهرست طرح‌ها');
+        $response->assertSee('انتخاب طرح لیزر روی کارت');
+        $response->assertDontSee('فهرست طرح‌ها');
         $response->assertDontSee('افزودن به سبد خرید');
     }
 
@@ -393,7 +394,7 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $this->assertCount(0, $this->designCatalogQueries(DB::getQueryLog()), 'Commerce-only page must not query the design catalog.');
     }
 
-    public function test_bank_product_page_still_queries_design_catalog(): void
+    public function test_bank_product_page_does_not_duplicate_design_catalog_loading(): void
     {
         $color = $this->createColor();
         $designData = $this->createDesign($color);
@@ -405,9 +406,18 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $response = $this->get(route('catalog.products.show', $product->slug));
 
         $response->assertOk();
-        $response->assertSee('فهرست طرح‌ها');
+        $response->assertSee('انتخاب طرح لیزر روی کارت');
 
-        $this->assertNotEmpty($this->designCatalogQueries(DB::getQueryLog()), 'Bank-card page must still load the design catalog.');
+        foreach (['cate_designs', 'designs', 'design_images'] as $table) {
+            $this->assertSame(
+                1,
+                count(array_filter(
+                    DB::getQueryLog(),
+                    fn (array $query) => (bool) preg_match('~from (`|")(\w+)(`|")~i', $query['query'], $m) && $m[2] === $table
+                )),
+                "Design table {$table} must be loaded exactly once (customizer mount); the controller must not duplicate the catalog."
+            );
+        }
     }
 
     public function test_cart_resolves_color_without_extra_lazy_query(): void

@@ -37,15 +37,15 @@
                     </div>
 
                     {{-- Category Tabs --}}
-                    @if ($catalog->isNotEmpty())
+                    @if (count($categories) > 0)
                         <div class="flex flex-wrap gap-2 border-b border-gray-800 pb-4">
-                            @foreach ($catalog as $category)
+                            @foreach ($categories as $category)
                                 <button
                                     type="button"
-                                    wire:click="selectCategory({{ $category->id }})"
-                                    class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 {{ (int) $selected_category_id === (int) $category->id ? 'bg-amber-500 text-gray-950 shadow-md shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-800 hover:text-white' }}"
+                                    wire:click="selectCategory({{ $category['id'] }})"
+                                    class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 {{ (int) $selected_category_id === (int) $category['id'] ? 'bg-amber-500 text-gray-950 shadow-md shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-800 hover:text-white' }}"
                                 >
-                                    {{ $category->name }}
+                                    {{ $category['name'] }}
                                 </button>
                             @endforeach
                         </div>
@@ -53,23 +53,20 @@
 
                     {{-- Designs Grid --}}
                     @php
-                        $activeCategory = $catalog->firstWhere('id', $selected_category_id) ?? $catalog->first();
-                        $designsToDisplay = $activeCategory ? $activeCategory->designs->filter(fn($d) => $d->images->isNotEmpty()) : collect();
+                        $activeCategoryId = $selected_category_id ?? ($categories[0]['id'] ?? null);
+                        $designsToDisplay = collect($designs)->where('category_id', $activeCategoryId)->values();
                     @endphp
 
                     <div class="grid grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pe-1">
                         @forelse ($designsToDisplay as $design)
                             <button
                                 type="button"
-                                wire:click="selectDesign({{ $design->id }})"
-                                class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-gray-900/90 overflow-hidden {{ (int) $design_id === (int) $design->id ? 'border-amber-500 ring-2 ring-amber-500/50 shadow-lg shadow-amber-500/10' : 'border-gray-800 hover:border-gray-700' }}"
+                                wire:click="selectDesign({{ $design['id'] }})"
+                                class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-gray-900/90 overflow-hidden {{ (int) $design_id === (int) $design['id'] ? 'border-amber-500 ring-2 ring-amber-500/50 shadow-lg shadow-amber-500/10' : 'border-gray-800 hover:border-gray-700' }}"
                             >
                                 <div class="relative aspect-[16/10] w-full rounded-xl bg-gray-950 overflow-hidden flex items-center justify-center p-2 border border-gray-800">
-                                    @php
-                                        $previewImage = $design->images->firstWhere('color_id', $color_id) ?? $design->images->first();
-                                    @endphp
-                                    @if ($previewImage && $previewImage->image_path)
-                                        <img src="{{ asset('storage/' . $previewImage->image_path) }}" alt="{{ $design->name }}" class="h-full w-full object-contain transition group-hover:scale-105">
+                                    @if ($design['preview_image_path'])
+                                        <img src="{{ asset('storage/' . $design['preview_image_path']) }}" alt="{{ $design['name'] }}" class="h-full w-full object-contain transition group-hover:scale-105">
                                     @else
                                         <div class="flex flex-col items-center text-gray-600">
                                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,7 +75,7 @@
                                         </div>
                                     @endif
                                 </div>
-                                <span class="mt-2 text-xs font-bold text-gray-200 line-clamp-1 truncate">{{ $design->name }}</span>
+                                <span class="mt-2 text-xs font-bold text-gray-200 line-clamp-1 truncate">{{ $design['name'] }}</span>
                             </button>
                         @empty
                             <div class="col-span-2 py-8 text-center text-xs text-gray-500">
@@ -90,7 +87,7 @@
                     {{-- Laser Engraving Color Selector --}}
                     @if ($design_id)
                         @php
-                            $availableImages = $designImageOptions->where('design_id', $design_id);
+                            $availableImages = collect($designImages)->where('design_id', $design_id)->values();
                         @endphp
                         @if ($availableImages->isNotEmpty())
                             <div class="pt-2 border-t border-gray-800">
@@ -99,11 +96,11 @@
                                     @foreach ($availableImages as $img)
                                         <button
                                             type="button"
-                                            wire:click="selectDesignImage({{ $img->id }})"
-                                            class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition {{ (int) $design_image_id === (int) $img->id ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-gray-800 bg-gray-900 text-gray-400 hover:border-gray-700' }}"
+                                            wire:click="selectDesignImage({{ $img['id'] }})"
+                                            class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition {{ (int) $design_image_id === (int) $img['id'] ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-gray-800 bg-gray-900 text-gray-400 hover:border-gray-700' }}"
                                         >
-                                            <span class="h-3 w-3 rounded-full border border-white/20" style="background-color: {{ $img->color?->color_code ?? '#cccccc' }};"></span>
-                                            <span>{{ $img->color?->name ?? 'رنگ لیزر' }}</span>
+                                            <span class="h-3 w-3 rounded-full border border-white/20" style="background-color: {{ $img['color_hex'] ?? '#cccccc' }};"></span>
+                                            <span>{{ $img['color_name'] ?? 'رنگ لیزر' }}</span>
                                         </button>
                                     @endforeach
                                 </div>
@@ -311,32 +308,29 @@
                 </div>
 
                 {{-- Color Swatches (Step 1) --}}
-                @if ($colorPrices->isNotEmpty())
+                @if ($colorPrices !== [])
                     <div class="flex flex-wrap items-center justify-center gap-3">
                         @foreach ($colorPrices as $cp)
                             @php
-                                $c = $cp->color;
-                                $isSelected = (int) $color_id === (int) $cp->color_id;
+                                $isSelected = (int) $color_id === (int) $cp['color_id'];
                             @endphp
-                            @if ($c)
-                                <button
-                                    type="button"
-                                    wire:click="selectColor({{ $c->id }})"
-                                    class="group flex flex-col items-center gap-1 focus:outline-none"
-                                >
-                                    <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-gray-950 scale-110' : 'hover:scale-105' }}"
-                                          style="background-color: {{ $c->color_code ?? '#111' }};"
-                                    ></span>
-                                    <span class="text-[10px] font-medium {{ $isSelected ? 'text-amber-400 font-bold' : 'text-gray-400' }}">{{ $c->name }}</span>
-                                </button>
-                            @endif
+                            <button
+                                type="button"
+                                wire:click="selectColor({{ $cp['color_id'] }})"
+                                class="group flex flex-col items-center gap-1 focus:outline-none"
+                            >
+                                <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-gray-950 scale-110' : 'hover:scale-105' }}"
+                                      style="background-color: {{ $cp['color_hex'] ?? '#111' }};"
+                                ></span>
+                                <span class="text-[10px] font-medium {{ $isSelected ? 'text-amber-400 font-bold' : 'text-gray-400' }}">{{ $cp['name'] }}</span>
+                            </button>
                         @endforeach
                     </div>
                 @endif
 
                 {{-- 2D Metallic Card Visualizer Box --}}
                 @php
-                    $colorName = mb_strtolower($selectedColor?->name ?? '');
+                    $colorName = mb_strtolower($selectedColor['name'] ?? '');
                     $bgGradient = match (true) {
                         str_contains($colorName, 'طلایی') => 'from-amber-400 via-yellow-500 to-amber-600 text-gray-950',
                         str_contains($colorName, 'نقره') => 'from-slate-200 via-gray-300 to-slate-400 text-gray-900',
@@ -344,8 +338,7 @@
                         str_contains($colorName, 'رزگلد') || str_contains($colorName, 'رز') => 'from-rose-300 via-pink-400 to-rose-500 text-gray-900',
                         default => 'from-gray-800 via-gray-900 to-black text-amber-200/90',
                     };
-                    $selectedDesign = $designOptions->firstWhere('id', $design_id);
-                    $selectedDesignImage = $designImageOptions->firstWhere('id', $design_image_id);
+                    $selectedDesignImage = collect($designImages)->firstWhere('id', $design_image_id);
                 @endphp
 
                 <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}">
@@ -356,9 +349,9 @@
                         {{-- FRONT CARD PREVIEW (Clean layout per Figma M.1: No Chip, No Card Number, No Holder Name, No Royal Bank) --}}
                         <div class="relative h-full flex flex-col justify-between items-center">
                             {{-- Design Overlay Image (if selected) --}}
-                            @if ($selectedDesignImage && $selectedDesignImage->image_path)
+                            @if ($selectedDesignImage && $selectedDesignImage['image_path'])
                                 <div class="absolute inset-0 flex items-center justify-center p-4 opacity-40 pointer-events-none">
-                                    <img src="{{ asset('storage/' . $selectedDesignImage->image_path) }}" alt="Laser Overlay" class="max-h-full max-w-full object-contain">
+                                    <img src="{{ asset('storage/' . $selectedDesignImage['image_path']) }}" alt="Laser Overlay" class="max-h-full max-w-full object-contain">
                                 </div>
                             @endif
                         </div>

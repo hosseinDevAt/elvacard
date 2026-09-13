@@ -130,13 +130,8 @@ class ProductCatalogController extends Controller
         $workflowRaw = $product->getRawOriginal('customization_workflow');
         $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
 
-        $designCatalog = $workflow !== null
-            ? $this->designCatalogQuery($selectedColorId)
-            : collect();
-
         return view('catalog.products.show', [
             'product' => $product,
-            'designCatalog' => $designCatalog,
             'selectedColorId' => $selectedColorId,
             'hasCustomization' => $workflow !== null,
             'customizationAvailable' => CustomizationWorkflowRegistry::isActive($workflow),

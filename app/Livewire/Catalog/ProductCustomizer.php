@@ -9,7 +9,7 @@ use App\Models\Product;
 use App\Services\CartService;
 use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class ProductCustomizer extends Component
@@ -34,19 +34,19 @@ class ProductCustomizer extends Component
     // Bank card workspace owns card-specific state, validation, and payload.
     public BankCardWorkspace $bankCard;
 
-    public Product $product;
+    public int $basePrice = 0;
 
-    public Collection $colorPrices;
+    public array $colorPrices = [];
 
-    public Collection $catalog;
+    public array $categories = [];
 
-    public Collection $designOptions;
+    public array $designs = [];
 
-    public Collection $designImageOptions;
+    public array $designImages = [];
 
     public function mount(int $productId): void
     {
-        $this->product = Product::query()
+        $product = Product::query()
             ->active()
             ->with([
                 'colorPrices' => fn ($query) => $query
@@ -60,7 +60,7 @@ class ProductCustomizer extends Component
             ])
             ->findOrFail($productId);
 
-        $workflowRaw = $this->product->getRawOriginal('customization_workflow');
+        $workflowRaw = $product->getRawOriginal('customization_workflow');
         $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
 
         if (! CustomizationWorkflowRegistry::isActive($workflow)) {
@@ -68,14 +68,24 @@ class ProductCustomizer extends Component
         }
 
         $this->product_id = $productId;
+        $this->basePrice = (int) $product->base_price;
 
-        $this->colorPrices = $this->product->colorPrices;
-        $this->color_id = $this->colorPrices->first()?->color_id;
+        $this->colorPrices = collect($product->colorPrices)
+            ->map(fn ($price) => [
+                'color_id' => $price->color_id,
+                'name' => $price->color?->name,
+                'color_hex' => $price->color?->code_hex,
+                'price' => (int) $price->price,
+            ])
+            ->values()
+            ->all();
+
+        $this->color_id = $this->colorPrices[0]['color_id'] ?? null;
 
         $this->refreshDesignData();
 
-        if ($this->catalog->isNotEmpty()) {
-            $this->selected_category_id = $this->catalog->first()->id;
+        if ($this->categories !== []) {
+            $this->selected_category_id = $this->categories[0]['id'];
         }
     }
 
@@ -108,20 +118,24 @@ class ProductCustomizer extends Component
     {
         $this->design_id = $designId;
 
-        $images = $this->designImageOptions->where('design_id', $designId)->values();
-        $this->design_image_id = $images->first()?->id;
+        $imagesForDesign = array_values(array_filter(
+            $this->designImages,
+            fn (array $image) => $image['design_id'] === $designId
+        ));
+
+        $this->design_image_id = $imagesForDesign[0]['id'] ?? null;
     }
 
     public function selectDesignImage(int $designImageId): void
     {
-        $image = $this->designImageOptions->firstWhere('id', $designImageId);
+        $image = collect($this->designImages)->firstWhere('id', $designImageId);
 
         if (! $image) {
             return;
         }
 
         $this->design_image_id = $designImageId;
-        $this->design_id = $image->design_id;
+        $this->design_id = $image['design_id'];
     }
 
     public function toggleCvv(): void
@@ -178,26 +192,21 @@ class ProductCustomizer extends Component
     {
         $selectedColorId = $this->color_id;
 
-        $this->catalog = CateDesign::query()
+        $catalog = CateDesign::query()
             ->active()
             ->with([
-                'designs' => fn ($designQuery) => $designQuery
+                'designs' => fn ($q) => $q
                     ->active()
                     ->with([
-                        'images' => fn ($imageQuery) => $imageQuery
+                        'images' => fn ($iq) => $iq
                             ->active()
-                            ->when($selectedColorId, function ($query) use ($selectedColorId) {
-                                $query->whereHas('compatibilities', function ($compatibilityQuery) use ($selectedColorId) {
-                                    $compatibilityQuery
-                                        ->where('card_color_id', $selectedColorId)
-                                        ->where('is_allowed', true);
-                                });
-                            })
+                            ->when($selectedColorId, fn ($query) => $query->whereHas('compatibilities', function ($compatibilityQuery) use ($selectedColorId) {
+                                $compatibilityQuery
+                                    ->where('card_color_id', $selectedColorId)
+                                    ->where('is_allowed', true);
+                            }))
                             ->with([
                                 'color' => fn ($colorQuery) => $colorQuery->active(),
-                                'compatibilities' => fn ($compatibilityQuery) => $compatibilityQuery
-                                    ->where('is_allowed', true)
-                                    ->with('cardColor'),
                             ])
                             ->orderBy('sort_order'),
                     ])
@@ -206,49 +215,88 @@ class ProductCustomizer extends Component
             ->orderBy('sort_order')
             ->get();
 
-        $this->designOptions = $this->catalog
-            ->pluck('designs')
-            ->flatten(1)
-            ->filter(fn ($design) => $design->images->isNotEmpty())
-            ->values();
+        $categories = [];
+        $designs = [];
+        $images = [];
 
-        $this->designImageOptions = $this->designOptions
-            ->pluck('images')
-            ->flatten(1)
-            ->values();
+        foreach ($catalog as $category) {
+            $categories[] = [
+                'id' => $category->id,
+                'name' => $category->name,
+            ];
 
-        if ($this->designOptions->isEmpty()) {
+            foreach ($category->designs as $design) {
+                if ($design->images->isEmpty()) {
+                    continue;
+                }
+
+                $preview = $design->images->firstWhere('color_id', $selectedColorId) ?? $design->images->first();
+
+                $designs[] = [
+                    'id' => $design->id,
+                    'category_id' => $category->id,
+                    'name' => $design->name,
+                    'preview_image_path' => $preview?->image_path,
+                ];
+
+                foreach ($design->images as $image) {
+                    $images[] = [
+                        'id' => $image->id,
+                        'design_id' => $design->id,
+                        'color_id' => $image->color_id,
+                        'color_name' => $image->color?->name,
+                        'color_hex' => $image->color?->code_hex,
+                        'image_path' => $image->image_path,
+                    ];
+                }
+            }
+        }
+
+        $this->categories = $categories;
+        $this->designs = $designs;
+        $this->designImages = $images;
+
+        if ($this->designs === []) {
             $this->design_id = null;
             $this->design_image_id = null;
 
             return;
         }
 
-        $this->design_id = $this->design_id && $this->designOptions->contains('id', $this->design_id)
+        $designIds = array_column($this->designs, 'id');
+
+        $this->design_id = ($this->design_id && in_array($this->design_id, $designIds, true))
             ? $this->design_id
-            : $this->designOptions->first()->id;
+            : $designIds[0];
 
-        $imagesForDesign = $this->designImageOptions->where('design_id', $this->design_id)->values();
+        $imagesForDesign = array_values(array_filter(
+            $this->designImages,
+            fn (array $image) => $image['design_id'] === $this->design_id
+        ));
 
-        $this->design_image_id = $this->design_image_id && $imagesForDesign->contains('id', $this->design_image_id)
+        $imageIds = array_column($imagesForDesign, 'id');
+
+        $this->design_image_id = ($this->design_image_id && in_array($this->design_image_id, $imageIds, true))
             ? $this->design_image_id
-            : $imagesForDesign->first()?->id;
+            : ($imageIds[0] ?? null);
 
-        if ($this->selected_category_id && ! $this->catalog->contains('id', $this->selected_category_id)) {
-            $this->selected_category_id = $this->catalog->first()?->id;
+        $categoryIds = array_column($this->categories, 'id');
+
+        if ($this->selected_category_id && ! in_array($this->selected_category_id, $categoryIds, true)) {
+            $this->selected_category_id = $categoryIds[0] ?? null;
         }
     }
 
     public function render()
     {
-        $selectedPriceItem = $this->colorPrices->firstWhere('color_id', $this->color_id);
-        $unitPrice = $selectedPriceItem?->price ?? $this->product->base_price ?? 0;
-        $totalPrice = (int) $unitPrice * max(1, $this->quantity);
+        $selectedPriceItem = collect($this->colorPrices)->firstWhere('color_id', $this->color_id);
+        $unitPrice = (int) ($selectedPriceItem['price'] ?? $this->basePrice);
+        $totalPrice = $unitPrice * max(1, $this->quantity);
 
         return view('livewire.catalog.product-customizer', [
             'unitPrice' => $unitPrice,
             'totalPrice' => $totalPrice,
-            'selectedColor' => $selectedPriceItem?->color,
+            'selectedColor' => $selectedPriceItem,
         ]);
     }
 }

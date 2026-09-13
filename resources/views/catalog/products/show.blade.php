@@ -59,23 +59,6 @@
                     'selectedColorId' => $selectedColorId,
                 ])
             </div>
-
-            @if($hasCustomization)
-                <div class="space-y-6 lg:col-span-2">
-                    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-gray-900">فهرست طرح‌ها</h2>
-                        <p class="mt-1 text-sm text-gray-500">
-                            @if($selectedColorId)
-                                نمایش طرح‌های سازگار با رنگ انتخاب‌شده.
-                            @else
-                                نمایش تمام طرح‌های فعال.
-                            @endif
-                        </p>
-                    </div>
-
-                    @include('catalog.partials.design-grid', ['catalog' => $designCatalog])
-                </div>
-            @endif
         </div>
     </div>
 @endsection
