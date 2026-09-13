@@ -423,9 +423,9 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $log = DB::getQueryLog();
 
         $this->assertSame(
-            1,
+            3,
             $this->countTableReferences('cate_designs', $log),
-            "Design table 'cate_designs' must be loaded exactly once (customizer mount); the controller must not duplicate the catalog."
+            "Design table 'cate_designs' is referenced three times on page load: once by the customizer mount category list and once by each of the two paginate queries whose active-category guard (whereRelation on cate_designs.is_active) runs an EXISTS over the category table; the controller must not duplicate the catalog."
         );
 
         $this->assertSame(

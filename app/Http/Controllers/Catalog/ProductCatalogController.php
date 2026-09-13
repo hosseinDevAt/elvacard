@@ -8,8 +8,10 @@ use App\Enums\ProductTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Models\CateDesign;
 use App\Models\Color;
+use App\Models\DesignColorCompatibility;
 use App\Models\Product;
 use App\Services\Customization\CustomizationWorkflowRegistry;
+use App\Services\DesignCatalogService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -143,44 +145,40 @@ class ProductCatalogController extends Controller
         $selectedColorId = $request->integer('color_id');
         $categorySlug = $request->query('category');
 
-        $catalog = $this->designCatalogQuery($selectedColorId, $categorySlug);
+        $categoryId = null;
+        $selectedCategoryName = null;
+
+        if (is_string($categorySlug) && $categorySlug !== '') {
+            $category = CateDesign::query()
+                ->active()
+                ->where('slug', $categorySlug)
+                ->first(['id', 'name']);
+
+            if ($category) {
+                $categoryId = (int) $category->id;
+                $selectedCategoryName = $category->name;
+            }
+        }
+
+        $allowedImageIds = null;
+        if ($selectedColorId > 0) {
+            $allowedImageIds = DesignColorCompatibility::query()
+                ->where('card_color_id', $selectedColorId)
+                ->where('is_allowed', true)
+                ->pluck('design_image_id');
+        }
+
+        $catalog = app(DesignCatalogService::class)->paginatePublic(
+            $categoryId,
+            $selectedColorId > 0 ? $selectedColorId : null,
+            $allowedImageIds,
+        )->withQueryString();
 
         return view('catalog.designs.index', [
             'catalog' => $catalog,
-            'selectedColorId' => $selectedColorId,
+            'selectedColorId' => $selectedColorId > 0 ? $selectedColorId : null,
             'selectedCategory' => $categorySlug,
+            'selectedCategoryName' => $selectedCategoryName,
         ]);
-    }
-
-    private function designCatalogQuery(?int $selectedColorId = null, ?string $categorySlug = null)
-    {
-        return CateDesign::query()
-            ->active()
-            ->when($categorySlug, fn ($query) => $query->where('slug', $categorySlug))
-            ->with([
-                'designs' => fn ($designQuery) => $designQuery
-                    ->active()
-                    ->with([
-                        'images' => fn ($imageQuery) => $imageQuery
-                            ->active()
-                            ->when($selectedColorId, function ($query) use ($selectedColorId) {
-                                $query->whereHas('compatibilities', function ($compatibilityQuery) use ($selectedColorId) {
-                                    $compatibilityQuery
-                                        ->where('card_color_id', $selectedColorId)
-                                        ->where('is_allowed', true);
-                                });
-                            })
-                            ->with([
-                                'color' => fn ($colorQuery) => $colorQuery->active(),
-                                'compatibilities' => fn ($compatibilityQuery) => $compatibilityQuery
-                                    ->where('is_allowed', true)
-                                    ->with('cardColor'),
-                            ])
-                            ->orderBy('sort_order'),
-                    ])
-                    ->orderBy('sort_order'),
-            ])
-            ->orderBy('sort_order')
-            ->get();
     }
 }

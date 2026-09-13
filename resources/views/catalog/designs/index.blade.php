@@ -8,7 +8,7 @@
 
             @if($selectedCategory)
                 <p class="mt-2 text-sm text-primary-700">
-                    فیلتر دسته‌بندی فعال: {{ $selectedCategory }}
+                    فیلتر دسته‌بندی فعال: {{ $selectedCategoryName ?: $selectedCategory }}
                 </p>
             @endif
 

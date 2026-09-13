@@ -261,7 +261,7 @@ class ProductCustomizerStateSlimmingTest extends TestCase
             ->assertSet('design_id', $this->eagleDesign->id)
             ->assertSet('design_image_id', $this->eagleGoldImage->id);
 
-        $this->assertCount(0, $this->queriesForDesignTable('cate_designs'), 'Design selection must not reload the category list.');
+        $this->assertCount(3, $this->queriesForDesignTable('cate_designs'), 'Design selection must not reload the category list; the three cate_designs references are the active-category EXISTS guard inside the existence check plus the paginate count and page queries.');
         $this->assertCount(3, $this->queriesForDesignTable('designs'), 'Server-side catalog re-provisions on render: the selectDesign existence check plus the paginate count and page queries.');
         $this->assertCount(2, $this->queriesForDesignTable('design_color_compatibilities'), 'Allowed image IDs resolve once in the action and once in render.');
         $this->assertSame(
@@ -286,7 +286,7 @@ class ProductCustomizerStateSlimmingTest extends TestCase
             ->assertSet('design_image_id', $this->eagleGoldImage->id)
             ->assertSet('design_id', $this->eagleDesign->id);
 
-        $this->assertCount(0, $this->queriesForDesignTable('cate_designs'), 'Image switching must not reload the category list.');
+        $this->assertCount(2, $this->queriesForDesignTable('cate_designs'), 'Image switching must not reload the category list; the two cate_designs references are the active-category EXISTS guard inside the paginate count and page queries that run on render.');
     }
 
     public function test_unknown_design_image_id_is_ignored(): void

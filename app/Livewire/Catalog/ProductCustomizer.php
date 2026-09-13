@@ -110,6 +110,13 @@ class ProductCustomizer extends Component
 
     public function selectCategory(int $categoryId): void
     {
+        // UX defense only: the authoritative visibility guarantee lives in
+        // DesignCatalogService, because selected_category_id is a public
+        // Livewire property that can be hydrated from a crafted payload.
+        if (! in_array($categoryId, array_column($this->categories, 'id'), true)) {
+            return;
+        }
+
         $this->selected_category_id = $categoryId;
         $this->resetPage();
     }
