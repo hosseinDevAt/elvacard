@@ -14,6 +14,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\CartService;
+use App\Services\Customization\CardPresenter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -331,7 +332,7 @@ class ProductCustomizerTest extends TestCase
 
     public function test_fixed_slots_are_defined_for_all_back_card_elements(): void
     {
-        $slots = ProductCustomizer::fixedSlots();
+        $slots = CardPresenter::fixedSlots();
 
         foreach (['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry'] as $element) {
             $this->assertArrayHasKey($element, $slots);
@@ -520,17 +521,17 @@ class ProductCustomizerTest extends TestCase
 
     public function test_present_card_number_groups_digits_by_four(): void
     {
-        $this->assertSame('6274 0512 3456 7890', ProductCustomizer::presentCardNumber('6274051234567890'));
-        $this->assertSame('6274 0512 34', ProductCustomizer::presentCardNumber('6274051234'));
-        $this->assertSame('6274 0512 3456 7890', ProductCustomizer::presentCardNumber('6274-0512-3456-7890'));
-        $this->assertSame('', ProductCustomizer::presentCardNumber(''));
+        $this->assertSame('6274 0512 3456 7890', CardPresenter::presentCardNumber('6274051234567890'));
+        $this->assertSame('6274 0512 34', CardPresenter::presentCardNumber('6274051234'));
+        $this->assertSame('6274 0512 3456 7890', CardPresenter::presentCardNumber('6274-0512-3456-7890'));
+        $this->assertSame('', CardPresenter::presentCardNumber(''));
     }
 
     public function test_present_card_number_preserves_digit_order(): void
     {
         // The group order must never be reversed by RTL/bidi rendering logic:
         // 1234 stays first, 7897 stays last.
-        $this->assertSame('1234 6578 9789 7897', ProductCustomizer::presentCardNumber('1234657897897897'));
+        $this->assertSame('1234 6578 9789 7897', CardPresenter::presentCardNumber('1234657897897897'));
     }
 
     public function test_display_card_number_is_presentation_only_and_never_stored(): void
@@ -550,7 +551,7 @@ class ProductCustomizerTest extends TestCase
         // The snapshot must keep the canonical form; presentation never leaks in.
         $this->assertSame('6274051234567890', $customization['card_number']);
         $this->assertStringNotContainsString(' ', $customization['card_number']);
-        $this->assertSame('6274 0512 3456 7890', ProductCustomizer::presentCardNumber($customization['card_number']));
+        $this->assertSame('6274 0512 3456 7890', CardPresenter::presentCardNumber($customization['card_number']));
     }
 
     public function test_display_card_number_computed_property_formats_live_input(): void

@@ -56,7 +56,7 @@
                 @foreach ($selectedOrder->items as $item)
                     @php
                         $custom = is_array($item->customization_json) ? $item->customization_json : [];
-                        $slots = \App\Livewire\Catalog\ProductCustomizer::fixedSlots();
+                        $slots = \App\Services\Customization\CardPresenter::fixedSlots();
                     @endphp
                     <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
@@ -75,7 +75,7 @@
                                 <div class="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">پارامترهای حکاکی کاربر:</div>
                                 <div><span class="text-gray-400">رنگ کارت:</span> <span class="text-gray-900 font-bold">{{ $item->color_name_snapshot ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">طرح کارت:</span> <span class="text-gray-900 font-bold">{{ $item->design_name_snapshot ?? 'ثبت نشده' }}</span></div>
-                                <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ !empty($custom['card_number']) ? \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($custom['card_number']) : 'ثبت نشده' }}</span></div>
+                                <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ !empty($custom['card_number']) ? \App\Services\Customization\CardPresenter::presentCardNumber($custom['card_number']) : 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">نام دارنده کارت:</span> <span class="text-gray-900 font-bold">{{ $custom['card_holder_name'] ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">متن دلخواه پشت:</span> <span class="text-gray-900 font-bold">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">وضعیت CVV2:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_cvv_enabled']) ? 'فعال (مقدار: ' . ($custom['cvv2'] ?? 'مشخص نشده') . ')' : 'غیرفعال' }}</span></div>
@@ -90,7 +90,7 @@
                                 <div class="relative h-full w-full mt-4 text-[10px]">
                                     @if (!empty($custom['card_number']))
                                         <div class="absolute font-mono font-bold" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;" dir="ltr">
-                                            <span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($custom['card_number']) }}</span>
+                                            <span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Services\Customization\CardPresenter::presentCardNumber($custom['card_number']) }}</span>
                                         </div>
                                     @endif
                                     @if (!empty($custom['card_holder_name']))

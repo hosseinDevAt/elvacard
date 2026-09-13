@@ -5,7 +5,9 @@ namespace App\Livewire\Catalog;
 use App\Enums\CustomizationWorkflowEnum;
 use App\Models\CateDesign;
 use App\Models\Product;
+use App\Services\BankCard\BankCardCustomization;
 use App\Services\CartService;
+use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -153,67 +155,16 @@ class ProductCustomizer extends Component
         }
     }
 
-    private function canonicalizeCardNumber(?string $value): string
-    {
-        if ($value === null || trim($value) === '') {
-            return '';
-        }
-
-        // Presentation separators (spaces/dashes) and Persian/Arabic digit glyphs
-        // are tolerated on input but the canonical snapshot form is exactly 16
-        // ASCII digits without separators.
-        $value = strtr(trim($value), [
-            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
-            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
-            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
-            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
-        ]);
-
-        return preg_replace('/[\s\-]+/', '', $value) ?? '';
-    }
-
     // Presentation-only grouped display (e.g. "6274 0512 3456 7890").
     // Never persisted: the snapshot always keeps the canonical 16 ASCII digits.
     public function getDisplayCardNumberProperty(): string
     {
-        return self::presentCardNumber($this->card_number);
-    }
-
-    public static function presentCardNumber(?string $value): string
-    {
-        $value = strtr(trim((string) $value), [
-            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
-            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
-            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
-            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
-        ]);
-
-        $digits = preg_replace('/\D/', '', $value) ?? '';
-
-        return trim(preg_replace('/(.{4})(?=.)/', '$1 ', $digits) ?? '');
-    }
-
-    // Fixed layout slots for the back card. Presentation-only constants; the
-    // layout is decided by the design, never by the user, so the snapshot
-    // never stores user-controlled positions. Normalized (0.0 - 1.0) so the
-    // fixed positions scale with the card on every viewport.
-    public static function fixedSlots(): array
-    {
-        return [
-            'card_number' => ['x' => 0.08, 'y' => 0.42],
-            'card_holder_name' => ['x' => 0.08, 'y' => 0.78],
-            'back_text' => ['x' => 0.08, 'y' => 0.62],
-            'cvv2' => ['x' => 0.72, 'y' => 0.78],
-            'expiry' => ['x' => 0.48, 'y' => 0.78],
-        ];
+        return CardPresenter::presentCardNumber($this->card_number);
     }
 
     public function addToCart(CartService $cartService): void
     {
-        $this->card_number = $this->canonicalizeCardNumber($this->card_number);
-
-        $currentYearShort = (int) date('y');
-        $yearRange = 'between:'.$currentYearShort.','.($currentYearShort + 10);
+        $this->card_number = BankCardCustomization::canonicalizeCardNumber($this->card_number);
 
         $rules = [
             'product_id' => ['required', 'integer', 'min:1'],
@@ -221,29 +172,12 @@ class ProductCustomizer extends Component
             'design_id' => ['required', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
             'quantity' => ['required', 'integer', 'min:1', 'max:20'],
-            'card_number' => ['nullable', 'string', 'digits:16'],
-            'card_holder_name' => ['nullable', 'string', 'max:100'],
-            'back_text' => ['nullable', 'string', 'max:255'],
-            'security_cvv_enabled' => ['boolean'],
-            'security_expiry_enabled' => ['boolean'],
-        ];
+        ] + BankCardCustomization::rulesFor(
+            $this->security_cvv_enabled,
+            $this->security_expiry_enabled,
+        );
 
-        if ($this->security_cvv_enabled) {
-            $rules['cvv2'] = ['nullable', 'string', 'digits_between:3,4'];
-        }
-
-        if ($this->security_expiry_enabled) {
-            $rules['expiry_month'] = ['nullable', 'string', 'regex:/^(0[1-9]|1[0-2])$/'];
-            $rules['expiry_year'] = ['nullable', 'string', 'integer', 'digits:2', $yearRange];
-        }
-
-        $messages = [
-            'card_number.digits' => 'شماره کارت باید دقیقاً ۱۶ رقمی باشد.',
-            'cvv2.digits_between' => 'CVV2 باید ۳ تا ۴ رقم باشد.',
-            'expiry_month.regex' => 'ماه انقضا باید بین ۰۱ تا ۱۲ باشد.',
-            'expiry_year.digits' => 'سال انقضا باید دو رقم باشد.',
-            'expiry_year.between' => 'سال انقضا باید در بازه معتبر باشد.',
-        ];
+        $messages = BankCardCustomization::messages();
 
         $this->validate($rules, $messages);
 

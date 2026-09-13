@@ -363,7 +363,7 @@
                             @endif
                         </div>
                     @else
-                        @php $slots = \App\Livewire\Catalog\ProductCustomizer::fixedSlots(); @endphp
+                        @php $slots = \App\Services\Customization\CardPresenter::fixedSlots(); @endphp
                         {{-- BACK CARD PREVIEW WITH FIXED LAYOUT SLOTS --}}
                         <div class="relative h-full w-full select-none">
                             {{-- Top Magnetic Stripe --}}

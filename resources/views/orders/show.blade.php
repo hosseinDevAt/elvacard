@@ -50,7 +50,7 @@
                                     @if (is_array($customization))
                                         <div class="grid gap-1.5 sm:grid-cols-2 text-sm">
                                             @if (! empty($customization['card_number']))
-                                                <p class="sm:col-span-2"><span class="font-semibold">شماره کارت:</span> <span dir="ltr" class="font-mono"><span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Livewire\Catalog\ProductCustomizer::presentCardNumber($customization['card_number']) }}</span></span></p>
+                                                <p class="sm:col-span-2"><span class="font-semibold">شماره کارت:</span> <span dir="ltr" class="font-mono"><span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Services\Customization\CardPresenter::presentCardNumber($customization['card_number']) }}</span></span></p>
                                             @endif
                                             @if (! empty($customization['card_holder_name']))
                                                 <p><span class="font-semibold">نام دارنده کارت:</span> {{ $customization['card_holder_name'] }}</p>
