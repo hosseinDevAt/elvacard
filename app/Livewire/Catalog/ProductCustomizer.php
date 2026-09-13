@@ -3,9 +3,9 @@
 namespace App\Livewire\Catalog;
 
 use App\Enums\CustomizationWorkflowEnum;
+use App\Livewire\Forms\BankCardWorkspace;
 use App\Models\CateDesign;
 use App\Models\Product;
-use App\Services\BankCard\BankCardCustomization;
 use App\Services\CartService;
 use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
@@ -31,22 +31,8 @@ class ProductCustomizer extends Component
 
     public string $activeView = 'front'; // 'front' | 'back'
 
-    // Customer customization preferences
-    public string $card_number = '';
-
-    public string $card_holder_name = '';
-
-    public string $back_text = '';
-
-    public string $cvv2 = '';
-
-    public string $expiry_month = '';
-
-    public string $expiry_year = '';
-
-    public bool $security_cvv_enabled = false;
-
-    public bool $security_expiry_enabled = false;
+    // Bank card workspace owns card-specific state, validation, and payload.
+    public BankCardWorkspace $bankCard;
 
     public Product $product;
 
@@ -140,76 +126,39 @@ class ProductCustomizer extends Component
 
     public function toggleCvv(): void
     {
-        $this->security_cvv_enabled = ! $this->security_cvv_enabled;
-        if (! $this->security_cvv_enabled) {
-            $this->cvv2 = '';
-        }
+        $this->bankCard->toggleCvv();
     }
 
     public function toggleExpiry(): void
     {
-        $this->security_expiry_enabled = ! $this->security_expiry_enabled;
-        if (! $this->security_expiry_enabled) {
-            $this->expiry_month = '';
-            $this->expiry_year = '';
-        }
+        $this->bankCard->toggleExpiry();
     }
 
     // Presentation-only grouped display (e.g. "6274 0512 3456 7890").
     // Never persisted: the snapshot always keeps the canonical 16 ASCII digits.
     public function getDisplayCardNumberProperty(): string
     {
-        return CardPresenter::presentCardNumber($this->card_number);
+        return CardPresenter::presentCardNumber($this->bankCard->card_number);
     }
 
-    public function addToCart(CartService $cartService): void
+    protected function rules(): array
     {
-        $this->card_number = BankCardCustomization::canonicalizeCardNumber($this->card_number);
-
-        $rules = [
+        return [
             'product_id' => ['required', 'integer', 'min:1'],
             'color_id' => ['required', 'integer', 'min:1'],
             'design_id' => ['required', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
             'quantity' => ['required', 'integer', 'min:1', 'max:20'],
-        ] + BankCardCustomization::rulesFor(
-            $this->security_cvv_enabled,
-            $this->security_expiry_enabled,
-        );
-
-        $messages = BankCardCustomization::messages();
-
-        $this->validate($rules, $messages);
-
-        $customizationJson = [
-            'security_cvv_enabled' => $this->security_cvv_enabled,
-            'security_expiry_enabled' => $this->security_expiry_enabled,
         ];
+    }
 
-        if (trim($this->card_number) !== '') {
-            $customizationJson['card_number'] = trim($this->card_number);
-        }
+    public function addToCart(CartService $cartService): void
+    {
+        $this->bankCard->canonicalize();
 
-        if (trim($this->card_holder_name) !== '') {
-            $customizationJson['card_holder_name'] = trim($this->card_holder_name);
-        }
-
-        if (trim($this->back_text) !== '') {
-            $customizationJson['back_text'] = trim($this->back_text);
-        }
-
-        if ($this->security_cvv_enabled && trim($this->cvv2) !== '') {
-            $customizationJson['cvv2'] = trim($this->cvv2);
-        }
-
-        if ($this->security_expiry_enabled) {
-            if (trim($this->expiry_month) !== '') {
-                $customizationJson['expiry_month'] = trim($this->expiry_month);
-            }
-            if (trim($this->expiry_year) !== '') {
-                $customizationJson['expiry_year'] = trim($this->expiry_year);
-            }
-        }
+        // Commerce rules plus the bank card workspace rules run in one validate
+        // call (Livewire Form sub-validation owns the card-specific rules).
+        $this->validate();
 
         $cartService->addItem([
             'product_id' => $this->product_id,
@@ -217,7 +166,7 @@ class ProductCustomizer extends Component
             'design_id' => $this->design_id,
             'design_image_id' => $this->design_image_id,
             'quantity' => $this->quantity,
-            'customization_json' => $customizationJson,
+            'customization_json' => $this->bankCard->customizationJson(),
         ]);
 
         session()->flash('success', 'محصول با موفقیت به سبد خرید اضافه شد.');

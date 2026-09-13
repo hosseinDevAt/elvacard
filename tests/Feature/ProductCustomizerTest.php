@@ -92,10 +92,10 @@ class ProductCustomizerTest extends TestCase
     public function test_customizer_initializes_with_clean_default_state(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->assertSet('card_holder_name', '')
-            ->assertSet('back_text', '')
-            ->assertSet('security_cvv_enabled', false)
-            ->assertSet('security_expiry_enabled', false)
+            ->assertSet('bankCard.card_holder_name', '')
+            ->assertSet('bankCard.back_text', '')
+            ->assertSet('bankCard.security_cvv_enabled', false)
+            ->assertSet('bankCard.security_expiry_enabled', false)
             ->assertSet('step', 1)
             ->assertSet('activeView', 'front');
     }
@@ -106,18 +106,18 @@ class ProductCustomizerTest extends TestCase
 
         // Toggle CVV only
         $component->call('toggleCvv')
-            ->assertSet('security_cvv_enabled', true)
-            ->assertSet('security_expiry_enabled', false);
+            ->assertSet('bankCard.security_cvv_enabled', true)
+            ->assertSet('bankCard.security_expiry_enabled', false);
 
         // Toggle Expiry only
         $component->call('toggleExpiry')
-            ->assertSet('security_cvv_enabled', true)
-            ->assertSet('security_expiry_enabled', true);
+            ->assertSet('bankCard.security_cvv_enabled', true)
+            ->assertSet('bankCard.security_expiry_enabled', true);
 
         // Untoggle CVV
         $component->call('toggleCvv')
-            ->assertSet('security_cvv_enabled', false)
-            ->assertSet('security_expiry_enabled', true);
+            ->assertSet('bankCard.security_cvv_enabled', false)
+            ->assertSet('bankCard.security_expiry_enabled', true);
     }
 
     public function test_add_to_cart_with_clean_defaults_produces_clean_snapshot(): void
@@ -143,8 +143,8 @@ class ProductCustomizerTest extends TestCase
     public function test_add_to_cart_stores_only_user_typed_customizations(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_holder_name', ' HOSSEIN REZAIE ')
-            ->set('back_text', ' BORN TO LEAD ')
+            ->set('bankCard.card_holder_name', ' HOSSEIN REZAIE ')
+            ->set('bankCard.back_text', ' BORN TO LEAD ')
             ->call('toggleExpiry')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
@@ -205,16 +205,16 @@ class ProductCustomizerTest extends TestCase
 
         foreach ($invalidCardNumbers as $cardNumber) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-                ->set('card_number', $cardNumber)
+                ->set('bankCard.card_number', $cardNumber)
                 ->call('addToCart')
-                ->assertHasErrors(['card_number' => 'digits']);
+                ->assertHasErrors(['bankCard.card_number' => 'digits']);
         }
     }
 
     public function test_card_number_is_canonicalized_before_storage(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_number', ' 6274 0512 3456 7890 ')
+            ->set('bankCard.card_number', ' 6274 0512 3456 7890 ')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -227,9 +227,9 @@ class ProductCustomizerTest extends TestCase
     public function test_card_number_digits_only_rejects_letters(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_number', '6274-0512-3456-789X')
+            ->set('bankCard.card_number', '6274-0512-3456-789X')
             ->call('addToCart')
-            ->assertHasErrors(['card_number' => 'digits']);
+            ->assertHasErrors(['bankCard.card_number' => 'digits']);
     }
 
     public function test_cvv2_must_be_3_to_4_digits_when_enabled(): void
@@ -237,9 +237,9 @@ class ProductCustomizerTest extends TestCase
         foreach (['12', '12A', '12345', 'ABC', '12 3'] as $cvv) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleCvv')
-                ->set('cvv2', $cvv)
+                ->set('bankCard.cvv2', $cvv)
                 ->call('addToCart')
-                ->assertHasErrors(['cvv2' => 'digits_between']);
+                ->assertHasErrors(['bankCard.cvv2' => 'digits_between']);
         }
     }
 
@@ -248,7 +248,7 @@ class ProductCustomizerTest extends TestCase
         foreach (['123', '8080'] as $cvv) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleCvv')
-                ->set('cvv2', $cvv)
+                ->set('bankCard.cvv2', $cvv)
                 ->call('addToCart')
                 ->assertRedirect(route('cart.index'));
 
@@ -262,10 +262,10 @@ class ProductCustomizerTest extends TestCase
     public function test_cvv2_not_validated_when_toggle_disabled(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('cvv2', '12')
+            ->set('bankCard.cvv2', '12')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'))
-            ->assertHasNoErrors(['cvv2']);
+            ->assertHasNoErrors(['bankCard.cvv2']);
 
         $cart = app(CartService::class)->getCart();
         $this->assertArrayNotHasKey('cvv2', $cart['items'][0]['customization_json']);
@@ -276,10 +276,10 @@ class ProductCustomizerTest extends TestCase
         foreach (['00', '13', '99', 'A1'] as $month) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
-                ->set('expiry_month', $month)
-                ->set('expiry_year', (string) ((int) date('y') + 2))
+                ->set('bankCard.expiry_month', $month)
+                ->set('bankCard.expiry_year', (string) ((int) date('y') + 2))
                 ->call('addToCart')
-                ->assertHasErrors(['expiry_month' => 'regex']);
+                ->assertHasErrors(['bankCard.expiry_month' => 'regex']);
         }
     }
 
@@ -292,29 +292,29 @@ class ProductCustomizerTest extends TestCase
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->call('toggleExpiry')
-            ->set('expiry_month', '05')
-            ->set('expiry_year', $validYear)
+            ->set('bankCard.expiry_month', '05')
+            ->set('bankCard.expiry_year', $validYear)
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
         foreach ([$pastYear, $tooFarYear, '1', '2029'] as $year) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
-                ->set('expiry_month', '05')
-                ->set('expiry_year', $year)
+                ->set('bankCard.expiry_month', '05')
+                ->set('bankCard.expiry_year', $year)
                 ->call('addToCart')
-                ->assertHasErrors(['expiry_year']);
+                ->assertHasErrors(['bankCard.expiry_year']);
         }
     }
 
     public function test_expiry_not_validated_when_toggle_disabled(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('expiry_month', '00')
-            ->set('expiry_year', '00')
+            ->set('bankCard.expiry_month', '00')
+            ->set('bankCard.expiry_year', '00')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'))
-            ->assertHasNoErrors(['expiry_month', 'expiry_year']);
+            ->assertHasNoErrors(['bankCard.expiry_month', 'bankCard.expiry_year']);
 
         $cart = app(CartService::class)->getCart();
         $this->assertArrayNotHasKey('expiry_month', $cart['items'][0]['customization_json']);
@@ -375,14 +375,14 @@ class ProductCustomizerTest extends TestCase
     public function test_snapshot_has_no_positions_when_configuration_is_complete(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_number', '1234657897897897')
-            ->set('card_holder_name', 'HOSSEIN REZAIE')
-            ->set('back_text', 'BORN TO LEAD')
+            ->set('bankCard.card_number', '1234657897897897')
+            ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
+            ->set('bankCard.back_text', 'BORN TO LEAD')
             ->call('toggleCvv')
-            ->set('cvv2', '808')
+            ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
-            ->set('expiry_month', '05')
-            ->set('expiry_year', (string) ((int) date('y') + 3))
+            ->set('bankCard.expiry_month', '05')
+            ->set('bankCard.expiry_year', (string) ((int) date('y') + 3))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -401,14 +401,14 @@ class ProductCustomizerTest extends TestCase
     public function test_snapshot_never_contains_qr_code_keys(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_number', '1234657897897897')
-            ->set('card_holder_name', 'HOSSEIN REZAIE')
-            ->set('back_text', 'BORN TO LEAD')
+            ->set('bankCard.card_number', '1234657897897897')
+            ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
+            ->set('bankCard.back_text', 'BORN TO LEAD')
             ->call('toggleCvv')
-            ->set('cvv2', '808')
+            ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
-            ->set('expiry_month', '05')
-            ->set('expiry_year', (string) ((int) date('y') + 3))
+            ->set('bankCard.expiry_month', '05')
+            ->set('bankCard.expiry_year', (string) ((int) date('y') + 3))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -470,14 +470,14 @@ class ProductCustomizerTest extends TestCase
     public function test_end_to_end_snapshot_is_persisted_without_regeneration(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_holder_name', 'HOSSEIN REZAIE')
-            ->set('card_number', ' 6274 0512 3456 7890 ')
-            ->set('back_text', 'BORN TO LEAD')
+            ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
+            ->set('bankCard.card_number', ' 6274 0512 3456 7890 ')
+            ->set('bankCard.back_text', 'BORN TO LEAD')
             ->call('toggleCvv')
-            ->set('cvv2', '808')
+            ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
-            ->set('expiry_month', '05')
-            ->set('expiry_year', (string) ((int) date('y') + 3))
+            ->set('bankCard.expiry_month', '05')
+            ->set('bankCard.expiry_year', (string) ((int) date('y') + 3))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -505,18 +505,18 @@ class ProductCustomizerTest extends TestCase
     public function test_card_number_above_16_digits_is_rejected(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('card_number', '627405123456789012')
+            ->set('bankCard.card_number', '627405123456789012')
             ->call('addToCart')
-            ->assertHasErrors(['card_number' => 'digits']);
+            ->assertHasErrors(['bankCard.card_number' => 'digits']);
     }
 
     public function test_cvv2_above_4_digits_is_rejected(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->call('toggleCvv')
-            ->set('cvv2', '80805')
+            ->set('bankCard.cvv2', '80805')
             ->call('addToCart')
-            ->assertHasErrors(['cvv2' => 'digits_between']);
+            ->assertHasErrors(['bankCard.cvv2' => 'digits_between']);
     }
 
     public function test_present_card_number_groups_digits_by_four(): void
@@ -538,10 +538,10 @@ class ProductCustomizerTest extends TestCase
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        $component->set('card_number', '6274051234567890');
+        $component->set('bankCard.card_number', '6274051234567890');
         $this->assertSame('6274 0512 3456 7890', $component->get('displayCardNumber'));
 
-        $component->set('card_number', '6274 0512 3456 7890')
+        $component->set('bankCard.card_number', '6274 0512 3456 7890')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -558,13 +558,13 @@ class ProductCustomizerTest extends TestCase
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        $component->set('card_number', '6274');
+        $component->set('bankCard.card_number', '6274');
         $this->assertSame('6274', $component->get('displayCardNumber'));
 
-        $component->set('card_number', '62740512');
+        $component->set('bankCard.card_number', '62740512');
         $this->assertSame('6274 0512', $component->get('displayCardNumber'));
 
-        $component->set('card_number', '627405123456');
+        $component->set('bankCard.card_number', '627405123456');
         $this->assertSame('6274 0512 3456', $component->get('displayCardNumber'));
     }
 }

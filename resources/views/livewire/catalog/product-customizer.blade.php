@@ -130,12 +130,12 @@
                             inputmode="numeric"
                             autocomplete="off"
                             maxlength="16"
-                            wire:model.live.debounce.150ms="card_number"
+                            wire:model.live.debounce.150ms="bankCard.card_number"
                             placeholder="6274 0512 3456 7890"
                             oninput="this.value = this.value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9]/g, '').slice(0, 16)"
                             class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white font-mono dir-ltr text-start placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                         >
-                        @error('card_number')
+                        @error('bankCard.card_number')
                             <p class="text-xs text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
@@ -150,11 +150,11 @@
                             type="text"
                             autocomplete="off"
                             maxlength="100"
-                            wire:model.live.debounce.150ms="card_holder_name"
+                            wire:model.live.debounce.150ms="bankCard.card_holder_name"
                             placeholder="AMIR HOSSEIN REZAIE"
                             class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                         >
-                        @error('card_holder_name')
+                        @error('bankCard.card_holder_name')
                             <p class="text-xs text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
@@ -169,11 +169,11 @@
                             type="text"
                             autocomplete="off"
                             maxlength="255"
-                            wire:model.live.debounce.150ms="back_text"
+                            wire:model.live.debounce.150ms="bankCard.back_text"
                             placeholder="مثال: Born to Lead"
                             class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                         >
-                        @error('back_text')
+                        @error('bankCard.back_text')
                             <p class="text-xs text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
@@ -195,15 +195,15 @@
                                     id="toggle-cvv"
                                     type="button"
                                     role="switch"
-                                    aria-checked="{{ $security_cvv_enabled ? 'true' : 'false' }}"
+                                    aria-checked="{{ $bankCard->security_cvv_enabled ? 'true' : 'false' }}"
                                     wire:click="toggleCvv"
-                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $security_cvv_enabled ? 'bg-amber-500' : 'bg-gray-800' }}"
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $bankCard->security_cvv_enabled ? 'bg-amber-500' : 'bg-gray-800' }}"
                                 >
-                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $security_cvv_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $bankCard->security_cvv_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
                                 </button>
                             </div>
 
-                            @if ($security_cvv_enabled)
+                            @if ($bankCard->security_cvv_enabled)
                                 <div class="pt-2">
                                     <label for="cvv2" class="block text-[10px] text-gray-400 mb-1">مقدار CVV2 واقعی</label>
                                     <input
@@ -212,12 +212,12 @@
                                         inputmode="numeric"
                                         autocomplete="off"
                                         maxlength="4"
-                                        wire:model.live.debounce.150ms="cvv2"
+                                        wire:model.live.debounce.150ms="bankCard.cvv2"
                                         placeholder="مثال: 314"
                                         oninput="this.value = this.value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9]/g, '').slice(0, 4)"
                                         class="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white font-mono dir-ltr focus:border-amber-500 focus:outline-none"
                                     >
-                                    @error('cvv2')
+                                    @error('bankCard.cvv2')
                                         <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -234,19 +234,19 @@
                                     id="toggle-expiry"
                                     type="button"
                                     role="switch"
-                                    aria-checked="{{ $security_expiry_enabled ? 'true' : 'false' }}"
+                                    aria-checked="{{ $bankCard->security_expiry_enabled ? 'true' : 'false' }}"
                                     wire:click="toggleExpiry"
-                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $security_expiry_enabled ? 'bg-amber-500' : 'bg-gray-800' }}"
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $bankCard->security_expiry_enabled ? 'bg-amber-500' : 'bg-gray-800' }}"
                                 >
-                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $security_expiry_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $bankCard->security_expiry_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
                                 </button>
                             </div>
 
-                            @if ($security_expiry_enabled)
+                            @if ($bankCard->security_expiry_enabled)
                                 <div class="grid grid-cols-2 gap-2 pt-2">
                                     <div>
                                         <label class="block text-[10px] text-gray-400 mb-1">ماه انقضا</label>
-                                        <select wire:model.live="expiry_month" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
+                                        <select wire:model.live="bankCard.expiry_month" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
                                             <option value="">انتخاب ماه...</option>
                                             @for ($m = 1; $m <= 12; $m++)
                                                 <option value="{{ sprintf('%02d', $m) }}">{{ sprintf('%02d', $m) }}</option>
@@ -255,7 +255,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-[10px] text-gray-400 mb-1">سال انقضا (دو رقم)</label>
-                                        <select wire:model.live="expiry_year" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
+                                        <select wire:model.live="bankCard.expiry_year" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
                                             <option value="">انتخاب سال...</option>
                                             @for ($y = (int) now()->format('y'); $y <= (int) now()->format('y') + 10; $y++)
                                                 <option value="{{ $y }}">{{ $y }}</option>
@@ -370,7 +370,7 @@
                             <div class="absolute top-2 inset-x-0 h-10 bg-gray-950 shadow-inner pointer-events-none"></div>
 
                             {{-- Fixed Slot 1: Card Number --}}
-                            @if ($card_number !== '')
+                            @if ($bankCard->card_number !== '')
                                 <div class="absolute rounded px-1" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;">
                                     <div class="font-mono text-sm font-bold tracking-widest opacity-95" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $this->displayCardNumber }}
@@ -379,39 +379,39 @@
                             @endif
 
                             {{-- Fixed Slot 2: Card Holder Name --}}
-                            @if ($card_holder_name !== '')
+                            @if ($bankCard->card_holder_name !== '')
                                 <div class="absolute rounded px-1" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
                                     <div class="h-7 bg-white/90 rounded px-2.5 flex items-center text-gray-900 font-serif italic text-xs font-bold tracking-wider shadow-inner">
-                                        {{ $card_holder_name }}
+                                        {{ $bankCard->card_holder_name }}
                                     </div>
                                 </div>
                             @endif
 
                             {{-- Fixed Slot 3: Back Text --}}
-                            @if ($back_text !== '')
+                            @if ($bankCard->back_text !== '')
                                 <div class="absolute rounded px-1 max-w-[200px]" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
                                     <div class="text-xs font-medium italic opacity-90 truncate">
-                                        {{ $back_text }}
+                                        {{ $bankCard->back_text }}
                                     </div>
                                 </div>
                             @endif
 
                             {{-- Fixed Slot 4: CVV2 --}}
-                            @if ($security_cvv_enabled && $cvv2 !== '')
+                            @if ($bankCard->security_cvv_enabled && $bankCard->cvv2 !== '')
                                 <div class="absolute rounded px-1" style="left: {{ $slots['cvv2']['x'] * 100 }}%; top: {{ $slots['cvv2']['y'] * 100 }}%;">
                                     <div class="text-[9px] font-bold tracking-widest opacity-75">CVV2</div>
                                     <div class="font-mono font-bold text-xs tracking-widest" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
-                                        {{ $cvv2 }}
+                                        {{ $bankCard->cvv2 }}
                                     </div>
                                 </div>
                             @endif
 
                             {{-- Fixed Slot 5: Expiry Date --}}
-                            @if ($security_expiry_enabled && ($expiry_month !== '' || $expiry_year !== ''))
+                            @if ($bankCard->security_expiry_enabled && ($bankCard->expiry_month !== '' || $bankCard->expiry_year !== ''))
                                 <div class="absolute rounded px-1" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;">
                                     <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
                                     <div class="font-mono font-bold text-xs tracking-wider" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
-                                        {{ $expiry_month ?: '--' }}/{{ $expiry_year ?: '--' }}
+                                        {{ $bankCard->expiry_month ?: '--' }}/{{ $bankCard->expiry_year ?: '--' }}
                                     </div>
                                 </div>
                             @endif
