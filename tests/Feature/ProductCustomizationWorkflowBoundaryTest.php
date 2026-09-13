@@ -429,9 +429,9 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         );
 
         $this->assertSame(
-            1,
+            2,
             $this->countTableReferences('designs', $log),
-            "Design table 'designs' must be loaded exactly once (customizer mount); the controller must not duplicate the catalog."
+            'The server-side paginated catalog loads designs exactly twice (the paginate count query plus the page query); the controller must not duplicate the catalog.'
         );
 
         $this->assertSame(
@@ -441,9 +441,9 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         );
 
         $this->assertSame(
-            2,
+            4,
             $this->countTableReferences('design_images', $log),
-            "Incremental design loading references design_images exactly twice: the correlated per-design preview inside the design-list query, plus only the selected design's image chips - never every design's images at once."
+            "Server-side catalog pagination references design_images four times: the whereExists existence filter in the count query, the correlated per-design preview plus whereExists inside the page query, and only the selected design's image chips - never every design's images at once."
         );
     }
 

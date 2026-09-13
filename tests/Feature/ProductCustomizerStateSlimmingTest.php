@@ -12,6 +12,7 @@ use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
+use App\Services\DesignCatalogService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -156,29 +157,32 @@ class ProductCustomizerStateSlimmingTest extends TestCase
         ));
     }
 
-    public function test_catalog_state_is_slim_scalar_arrays_not_eloquent_models(): void
+    public function test_catalog_is_not_livewire_state_and_service_items_are_flat_scalar_arrays(): void
     {
-        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])->instance();
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        $this->assertIsArray($component->categories);
-        $this->assertIsArray($component->designs);
-        $this->assertIsArray($component->designImages);
-        $this->assertIsArray($component->colorPrices);
+        $vars = get_object_vars($component->instance());
+        $this->assertArrayNotHasKey('designs', $vars, 'The paginated design catalog must never be persisted as Livewire state.');
 
-        $this->assertSame($this->category->id, $component->categories[0]['id']);
-        $this->assertSame($this->category->name, $component->categories[0]['name']);
-        $this->assertSame($this->lionDesign->id, $component->designs[0]['id']);
-        $this->assertSame($this->category->id, $component->designs[0]['category_id']);
-        $this->assertSame('designs/lion-gold.png', $component->designs[0]['preview_image_path']);
+        $catalog = app(DesignCatalogService::class)->paginate(
+            $this->category->id,
+            $this->gold->id,
+            collect([$this->lionGoldImage->id]),
+            CustomizationWorkflowEnum::BANK_CARD,
+        );
 
-        $this->assertSame($this->lionGoldImage->id, $component->designImages[0]['id']);
-        $this->assertSame($this->lionDesign->id, $component->designImages[0]['design_id']);
-        $this->assertSame($this->gold->name, $component->designImages[0]['color_name']);
+        $this->assertSame(1, $catalog->total());
 
-        // The catalog must be flat scalars: no nested collections, no models, no compat payload.
-        $this->assertArrayNotHasKey('images', $component->designs[0]);
-        $this->assertArrayNotHasKey('compatibilities', $component->designImages[0]);
-        $this->assertArrayNotHasKey('card_color', $component->designImages[0]);
+        $item = $catalog->items()[0];
+        $this->assertSame($this->lionDesign->id, $item['id']);
+        $this->assertSame($this->category->id, $item['category_id']);
+        $this->assertSame('طرح شیر', $item['name']);
+        $this->assertSame('designs/lion-gold.png', $item['preview_image_path']);
+
+        // The catalog rows must be flat scalars: no nested collections, no models, no compat payload.
+        $this->assertArrayNotHasKey('images', $item);
+        $this->assertArrayNotHasKey('compatibilities', $item);
+        $this->assertArrayNotHasKey('category', $item);
     }
 
     public function test_legacy_catalog_state_properties_are_not_persisted(): void
@@ -187,7 +191,7 @@ class ProductCustomizerStateSlimmingTest extends TestCase
 
         $vars = get_object_vars($component);
 
-        foreach (['catalog', 'designOptions', 'designImageOptions', 'product'] as $legacy) {
+        foreach (['catalog', 'designOptions', 'designImageOptions', 'designs', 'product'] as $legacy) {
             $this->assertArrayNotHasKey($legacy, $vars, "Property '{$legacy}' must not be persisted as Livewire state.");
         }
     }
@@ -201,7 +205,7 @@ class ProductCustomizerStateSlimmingTest extends TestCase
             ->assertSet('design_image_id', $this->lionGoldImage->id);
     }
 
-    public function test_category_change_switches_available_designs_without_querying_catalog(): void
+    public function test_category_change_switches_rendered_designs_server_side(): void
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
@@ -209,25 +213,21 @@ class ProductCustomizerStateSlimmingTest extends TestCase
         DB::enableQueryLog();
 
         $component->call('selectCategory', $this->secondCategory->id)
-            ->assertSet('selected_category_id', $this->secondCategory->id);
+            ->assertSet('selected_category_id', $this->secondCategory->id)
+            ->assertDontSee('طرح شیر')
+            ->assertSee('طرح عقاب');
 
-        $this->assertCount(0, $this->designTableQueries(), 'Category switching must not re-query the design catalog.');
-
-        $designs = collect($component->get('designs'))->where('category_id', $this->secondCategory->id)->values();
-        $this->assertCount(1, $designs);
-        $this->assertSame($this->eagleDesign->id, $designs[0]['id']);
+        $this->assertGreaterThan(0, count($this->designTableQueries()), 'Category switching must resolve the server-side catalog for the new category.');
     }
 
     public function test_mount_loads_only_selected_design_images_into_state(): void
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        // The full design grid is intentional, but only the SELECTED design's image chips enter the state.
-        $designs = collect($component->get('designs'))->values();
-        $this->assertSame(
-            [$this->lionDesign->id, $this->eagleDesign->id],
-            $designs->pluck('id')->all()
-        );
+        // The first page only contains the sports category: the classic eagle
+        // is neither in state nor rendered until its tab is visited.
+        $component->assertSee('طرح شیر')
+            ->assertDontSee('طرح عقاب');
 
         $designImages = $component->get('designImages');
         $this->assertCount(1, $designImages);
@@ -240,36 +240,43 @@ class ProductCustomizerStateSlimmingTest extends TestCase
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
+        $component->call('selectCategory', $this->secondCategory->id);
         $component->call('selectDesign', $this->eagleDesign->id)
             ->assertSet('design_id', $this->eagleDesign->id)
             ->assertSet('design_image_id', $this->eagleGoldImage->id);
 
-        // Switching designs swaps ONLY the chips: the grid (designs) is untouched and still complete.
-        $this->assertCount(2, $component->get('designs'));
+        // Switching designs swaps ONLY the selected design's image chips.
         $this->assertSame([$this->eagleGoldImage->id], array_column($component->get('designImages'), 'id'));
     }
 
-    public function test_select_design_lazily_queries_only_selected_design_images(): void
+    public function test_select_design_queries_do_not_reload_categories_or_reuse_stale_state(): void
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
+        $component->call('selectCategory', $this->secondCategory->id);
 
         DB::flushQueryLog();
         DB::enableQueryLog();
 
-        $component->call('selectDesign', $this->eagleDesign->id);
+        $component->call('selectDesign', $this->eagleDesign->id)
+            ->assertSet('design_id', $this->eagleDesign->id)
+            ->assertSet('design_image_id', $this->eagleGoldImage->id);
 
         $this->assertCount(0, $this->queriesForDesignTable('cate_designs'), 'Design selection must not reload the category list.');
-        $this->assertCount(0, $this->queriesForDesignTable('designs'), 'Design selection must not reload the full design list.');
-        $this->assertCount(1, $this->queriesForDesignTable('design_images'), "Design selection must query only the selected design's images.");
-        $this->assertCount(1, $this->queriesForDesignTable('design_color_compatibilities'), 'Design selection must perform a single color-compatibility lookup.');
+        $this->assertCount(3, $this->queriesForDesignTable('designs'), 'Server-side catalog re-provisions on render: the selectDesign existence check plus the paginate count and page queries.');
+        $this->assertCount(2, $this->queriesForDesignTable('design_color_compatibilities'), 'Allowed image IDs resolve once in the action and once in render.');
+        $this->assertSame(
+            4,
+            count($this->queriesForDesignTable('design_images')),
+            'The server-side catalog re-provisions on render: existence check, paginate count/page previews, plus only the selected design\'s chips.'
+        );
 
         $this->assertSame([$this->eagleGoldImage->id], array_column($component->get('designImages'), 'id'));
     }
 
-    public function test_image_change_sets_correct_design_without_querying_catalog(): void
+    public function test_image_change_does_not_reload_categories(): void
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
-
+        $component->call('selectCategory', $this->secondCategory->id);
         $component->call('selectDesign', $this->eagleDesign->id);
 
         DB::flushQueryLog();
@@ -279,7 +286,7 @@ class ProductCustomizerStateSlimmingTest extends TestCase
             ->assertSet('design_image_id', $this->eagleGoldImage->id)
             ->assertSet('design_id', $this->eagleDesign->id);
 
-        $this->assertCount(0, $this->designTableQueries(), 'Image switching must not re-query the design catalog.');
+        $this->assertCount(0, $this->queriesForDesignTable('cate_designs'), 'Image switching must not reload the category list.');
     }
 
     public function test_unknown_design_image_id_is_ignored(): void
@@ -305,27 +312,38 @@ class ProductCustomizerStateSlimmingTest extends TestCase
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
+        // Silver has no sports design: the current page of the sports catalog
+        // empties, the previous gold selection is dropped and pagination resets.
         $component->call('selectColor', $this->silver->id)
             ->assertSet('color_id', $this->silver->id)
-            ->assertSet('design_id', $this->eagleDesign->id)
-            ->assertSet('design_image_id', $this->eagleSilverImage->id);
+            ->assertSet('design_id', null)
+            ->assertSet('design_image_id', null)
+            ->assertSet('paginators.page', 1)
+            ->assertSee('رنگ انتخابی موجود نیست')
+            ->assertDontSee('طرح شیر');
 
-        // The gold-only lion image must be dropped: only the silver-compatible design remains.
-        $designs = collect($component->get('designs'))->values();
-        $this->assertCount(1, $designs);
-        $this->assertSame($this->eagleDesign->id, $designs[0]['id']);
+        // Browsing to the classic tab reveals its silver-compatible design.
+        $component->call('selectCategory', $this->secondCategory->id)
+            ->assertSet('design_id', $this->eagleDesign->id)
+            ->assertSet('design_image_id', $this->eagleSilverImage->id)
+            ->assertSee('طرح عقاب')
+            ->assertDontSee('موجود نیست');
     }
 
-    public function test_incompatible_design_is_excluded_from_state(): void
+    public function test_incompatible_design_is_excluded_from_server_catalog(): void
     {
         $forbiddenDesign = $this->createDesign($this->category, 'طرح ممنوعه', 'forbidden', 2);
         $this->createImage($forbiddenDesign, $this->gold, 'designs/forbidden-gold.png', 1, false);
 
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        // Default color is gold => the forbidden design has no allowed image => absent from state.
-        $designs = collect($component->get('designs'))->where('category_id', $this->category->id)->values();
-        $this->assertCount(1, $designs);
-        $this->assertSame($this->lionDesign->id, $designs[0]['id']);
+        // Default color is gold => the forbidden design has no allowed image => excluded server-side.
+        $component->assertSee('طرح شیر')
+            ->assertDontSee('طرح ممنوعه');
+        $this->assertSame($this->lionDesign->id, $component->get('design_id'));
+
+        // A direct select attempt cannot bypass the server-side catalog filter.
+        $component->call('selectDesign', $forbiddenDesign->id)
+            ->assertSet('design_id', $this->lionDesign->id);
     }
 }

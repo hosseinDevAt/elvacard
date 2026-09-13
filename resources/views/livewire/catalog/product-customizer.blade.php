@@ -52,13 +52,8 @@
                     @endif
 
                     {{-- Designs Grid --}}
-                    @php
-                        $activeCategoryId = $selected_category_id ?? ($categories[0]['id'] ?? null);
-                        $designsToDisplay = collect($designs)->where('category_id', $activeCategoryId)->values();
-                    @endphp
-
                     <div class="grid grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pe-1">
-                        @forelse ($designsToDisplay as $design)
+                        @forelse ($designs as $design)
                             <button
                                 type="button"
                                 wire:click="selectDesign({{ $design['id'] }})"
@@ -83,6 +78,12 @@
                             </div>
                         @endforelse
                     </div>
+
+                    @if ($designs->hasPages())
+                        <div class="pt-1">
+                            {{ $designs->links() }}
+                        </div>
+                    @endif
 
                     {{-- Laser Engraving Color Selector --}}
                     @if ($design_id)

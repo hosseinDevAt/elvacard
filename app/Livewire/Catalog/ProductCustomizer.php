@@ -5,19 +5,21 @@ namespace App\Livewire\Catalog;
 use App\Enums\CustomizationWorkflowEnum;
 use App\Livewire\Forms\BankCardWorkspace;
 use App\Models\CateDesign;
-use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Models\Product;
 use App\Services\CartService;
 use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
-use Illuminate\Contracts\View\View;
+use App\Services\DesignCatalogService;
 use Illuminate\Support\Collection;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class ProductCustomizer extends Component
 {
+    use WithPagination;
+
     public int $product_id;
 
     public ?int $color_id = null;
@@ -44,7 +46,7 @@ class ProductCustomizer extends Component
 
     public array $categories = [];
 
-    public array $designs = [];
+    public ?string $workflow = null;
 
     public array $designImages = [];
 
@@ -72,6 +74,7 @@ class ProductCustomizer extends Component
         }
 
         $this->product_id = $productId;
+        $this->workflow = $workflow?->value;
         $this->basePrice = (int) $product->base_price;
 
         $this->colorPrices = collect($product->colorPrices)
@@ -87,12 +90,11 @@ class ProductCustomizer extends Component
         $this->color_id = $this->colorPrices[0]['color_id'] ?? null;
 
         $this->refreshCategories();
-        $allowedImageIds = $this->refreshDesigns();
-        $this->refreshSelectedDesignImages($allowedImageIds);
 
-        if ($this->categories !== []) {
-            $this->selected_category_id = $this->categories[0]['id'];
-        }
+        // The design catalog is never loaded into state: the first page is
+        // resolved server-side during render, which also auto-selects the first
+        // design and its images.
+        $this->selected_category_id = $this->categories[0]['id'] ?? null;
     }
 
     public function setStep(int $step): void
@@ -109,6 +111,7 @@ class ProductCustomizer extends Component
     public function selectCategory(int $categoryId): void
     {
         $this->selected_category_id = $categoryId;
+        $this->resetPage();
     }
 
     public function selectColor(int $colorId): void
@@ -117,15 +120,27 @@ class ProductCustomizer extends Component
         $this->design_id = null;
         $this->design_image_id = null;
 
-        $allowedImageIds = $this->refreshDesigns();
-        $this->refreshSelectedDesignImages($allowedImageIds);
+        // Resets pagination: the render resolves the (already cate-scoped)
+        // first page for the new color and re-selects the first design.
+        $this->resetPage();
     }
 
     public function selectDesign(int $designId): void
     {
+        $allowedImageIds = $this->allowedImageIds();
+
+        if (! app(DesignCatalogService::class)->isDesignInCatalog(
+            $designId,
+            $this->currentCategoryId(),
+            $allowedImageIds,
+            $this->catalogWorkflow(),
+        )) {
+            return;
+        }
+
         $this->design_id = $designId;
 
-        $this->refreshSelectedDesignImages($this->allowedImageIds());
+        $this->refreshSelectedDesignImages($allowedImageIds);
     }
 
     public function selectDesignImage(int $designImageId): void
@@ -205,75 +220,6 @@ class ProductCustomizer extends Component
     }
 
     /**
-     * Loads the lightweight design list (with a preview image per design),
-     * without hydrating every DesignImage of every design into Livewire state.
-     */
-    private function refreshDesigns(): ?Collection
-    {
-        $allowedImageIds = $this->allowedImageIds();
-
-        if ($this->categories === []) {
-            $this->designs = [];
-            $this->design_id = null;
-            $this->design_image_id = null;
-
-            return $allowedImageIds;
-        }
-
-        $preview = DesignImage::query()
-            ->select('image_path')
-            ->whereColumn('design_id', 'designs.id')
-            ->where('is_active', true)
-            ->when($allowedImageIds !== null, fn ($query) => $query->whereIn('id', $allowedImageIds))
-            ->when(
-                $this->color_id !== null,
-                fn ($query) => $query->orderByRaw('(color_id = ?) DESC, sort_order ASC', [$this->color_id]),
-                fn ($query) => $query->orderBy('sort_order')
-            )
-            ->limit(1);
-
-        $designs = Design::query()
-            ->select(['id', 'cate_design_id', 'name'])
-            ->addSelect(['preview_image_path' => $preview])
-            ->whereIn('cate_design_id', array_column($this->categories, 'id'))
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
-
-        $this->designs = $designs
-            ->reject(fn (Design $design) => $design->preview_image_path === null)
-            ->map(fn (Design $design) => [
-                'id' => $design->id,
-                'category_id' => (int) $design->cate_design_id,
-                'name' => $design->name,
-                'preview_image_path' => $design->preview_image_path,
-            ])
-            ->values()
-            ->all();
-
-        if ($this->designs === []) {
-            $this->design_id = null;
-            $this->design_image_id = null;
-
-            return $allowedImageIds;
-        }
-
-        $designIds = array_column($this->designs, 'id');
-
-        $this->design_id = ($this->design_id && in_array($this->design_id, $designIds, true))
-            ? $this->design_id
-            : $designIds[0];
-
-        $categoryIds = array_column($this->categories, 'id');
-
-        if ($this->selected_category_id && ! in_array($this->selected_category_id, $categoryIds, true)) {
-            $this->selected_category_id = $categoryIds[0] ?? null;
-        }
-
-        return $allowedImageIds;
-    }
-
-    /**
      * Loads (and persists in state) only the selected design's images.
      * Previously every compatible image of every design was hydrated here.
      */
@@ -327,8 +273,35 @@ class ProductCustomizer extends Component
             ->pluck('design_image_id');
     }
 
+    private function currentCategoryId(): int
+    {
+        return $this->selected_category_id ?? ($this->categories[0]['id'] ?? 0);
+    }
+
+    private function catalogWorkflow(): ?CustomizationWorkflowEnum
+    {
+        return $this->workflow !== null ? CustomizationWorkflowEnum::tryFrom($this->workflow) : null;
+    }
+
     public function render()
     {
+        $allowedImageIds = $this->allowedImageIds();
+
+        $designs = app(DesignCatalogService::class)->paginate(
+            $this->currentCategoryId(),
+            $this->color_id,
+            $allowedImageIds,
+            $this->catalogWorkflow(),
+        );
+
+        // The catalog is not part of Livewire state, so a null selection is
+        // normalized server-side during render (auto-select the first design
+        // of the current page and load its image chips).
+        if ($this->design_id === null && $designs->isNotEmpty()) {
+            $this->design_id = $designs->items()[0]['id'];
+            $this->refreshSelectedDesignImages($allowedImageIds);
+        }
+
         $selectedPriceItem = collect($this->colorPrices)->firstWhere('color_id', $this->color_id);
         $unitPrice = (int) ($selectedPriceItem['price'] ?? $this->basePrice);
         $totalPrice = $unitPrice * max(1, $this->quantity);
@@ -337,6 +310,7 @@ class ProductCustomizer extends Component
             'unitPrice' => $unitPrice,
             'totalPrice' => $totalPrice,
             'selectedColor' => $selectedPriceItem,
+            'designs' => $designs,
         ]);
     }
 }
