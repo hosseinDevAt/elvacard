@@ -17,6 +17,15 @@ class ProductColorPrice extends Model
         'is_active' => 'boolean',
     ];
 
+    public static function fuelActiveCount(int $productId, ?int $excludeId = null): int
+    {
+        return self::query()
+            ->where('product_id', $productId)
+            ->where('is_active', true)
+            ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
+            ->count();
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

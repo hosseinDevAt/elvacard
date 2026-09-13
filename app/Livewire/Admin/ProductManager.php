@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Models\Product;
+use App\Models\ProductColorPrice;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -76,6 +77,19 @@ class ProductManager extends Component
             $this->addError(
                 'customizationWorkflow',
                 'سرویس کارت سوخت هنوز فعال نشده است؛ محصول قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
+            );
+
+            return;
+        }
+
+        if (
+            $this->customizationWorkflow === CustomizationWorkflowEnum::FUEL_CARD->value
+            && $this->editingId
+            && ProductColorPrice::fuelActiveCount($this->editingId) > 1
+        ) {
+            $this->addError(
+                'customizationWorkflow',
+                'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد؛ ابتدا رنگ‌های اضافی را غیرفعال کنید.'
             );
 
             return;

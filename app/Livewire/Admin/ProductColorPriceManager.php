@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Models\Color;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
@@ -13,12 +14,17 @@ class ProductColorPriceManager extends Component
     use WithPagination;
 
     public ?int $productId = null;
+
     public ?int $colorId = null;
+
     public ?int $price = null;
+
     public bool $isActive = true;
 
     public string $search = '';
+
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected $rules = [
@@ -57,6 +63,18 @@ class ProductColorPriceManager extends Component
 
         if ($duplicate) {
             session()->flash('error', 'قیمت‌گذاری برای این محصول و رنگ از قبل ثبت شده است.');
+
+            return;
+        }
+
+        $product = Product::find($this->productId);
+
+        if (
+            $this->isActive
+            && $product?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD
+            && ProductColorPrice::fuelActiveCount($this->productId, $this->editingId) >= 1
+        ) {
+            session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
 
             return;
         }
