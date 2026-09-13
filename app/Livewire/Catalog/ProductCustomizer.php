@@ -5,16 +5,11 @@ namespace App\Livewire\Catalog;
 use App\Models\CateDesign;
 use App\Models\Product;
 use App\Services\CartService;
-use App\Services\SvgSanitizer;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 class ProductCustomizer extends Component
 {
-    use WithFileUploads;
-
     public int $product_id;
 
     public ?int $color_id = null;
@@ -48,12 +43,6 @@ class ProductCustomizer extends Component
     public bool $security_cvv_enabled = false;
 
     public bool $security_expiry_enabled = false;
-
-    public bool $qr_code_enabled = false;
-
-    public $qr_code_file = null;
-
-    public ?string $qr_code_path = null;
 
     public Product $product;
 
@@ -155,62 +144,6 @@ class ProductCustomizer extends Component
         }
     }
 
-    public function toggleQrCode(): void
-    {
-        $this->qr_code_enabled = ! $this->qr_code_enabled;
-        if (! $this->qr_code_enabled) {
-            $this->removeQrCode();
-        }
-    }
-
-    public function updatedQrCodeFile(): void
-    {
-        if (! $this->qr_code_enabled || ! $this->qr_code_file) {
-            return;
-        }
-
-        $this->validate([
-            'qr_code_file' => ['required', 'file', 'mimes:png,jpg,jpeg,webp,svg', 'max:2048'],
-        ]);
-
-        $extension = strtolower($this->qr_code_file->getClientOriginalExtension());
-        if ($extension === 'svg') {
-            $sanitizer = new SvgSanitizer;
-            $content = file_get_contents($this->qr_code_file->getRealPath());
-            $sanitized = $sanitizer->sanitize($content ?: '');
-            if (! $sanitized) {
-                $this->addError('qr_code_file', 'فایل SVG انتخاب شده نامعتبر یا ناامن است.');
-                $this->qr_code_file = null;
-
-                return;
-            }
-        }
-
-        $this->deleteStoredQrCode();
-
-        // QR codes are user-sensitive content: store on the private "local"
-        // disk (storage/app/private) so they are never publicly served from
-        // the public disk. A signed/session-owned route renders the preview.
-        $storedPath = $this->qr_code_file->store('customizations/qr_codes', 'local');
-        $this->qr_code_path = $storedPath;
-    }
-
-    public function removeQrCode(): void
-    {
-        $this->deleteStoredQrCode();
-        $this->qr_code_file = null;
-        $this->qr_code_enabled = false;
-    }
-
-    private function deleteStoredQrCode(): void
-    {
-        if ($this->qr_code_path && Storage::disk('local')->exists($this->qr_code_path)) {
-            Storage::disk('local')->delete($this->qr_code_path);
-        }
-
-        $this->qr_code_path = null;
-    }
-
     private function canonicalizeCardNumber(?string $value): string
     {
         if ($value === null || trim($value) === '') {
@@ -263,7 +196,6 @@ class ProductCustomizer extends Component
             'back_text' => ['x' => 0.08, 'y' => 0.62],
             'cvv2' => ['x' => 0.72, 'y' => 0.78],
             'expiry' => ['x' => 0.48, 'y' => 0.78],
-            'qr_code' => ['x' => 0.76, 'y' => 0.15],
         ];
     }
 
@@ -285,7 +217,6 @@ class ProductCustomizer extends Component
             'back_text' => ['nullable', 'string', 'max:255'],
             'security_cvv_enabled' => ['boolean'],
             'security_expiry_enabled' => ['boolean'],
-            'qr_code_enabled' => ['boolean'],
         ];
 
         if ($this->security_cvv_enabled) {
@@ -310,7 +241,6 @@ class ProductCustomizer extends Component
         $customizationJson = [
             'security_cvv_enabled' => $this->security_cvv_enabled,
             'security_expiry_enabled' => $this->security_expiry_enabled,
-            'qr_code_enabled' => $this->qr_code_enabled,
         ];
 
         if (trim($this->card_number) !== '') {
@@ -336,10 +266,6 @@ class ProductCustomizer extends Component
             if (trim($this->expiry_year) !== '') {
                 $customizationJson['expiry_year'] = trim($this->expiry_year);
             }
-        }
-
-        if ($this->qr_code_enabled && $this->qr_code_path) {
-            $customizationJson['qr_code_path'] = $this->qr_code_path;
         }
 
         $cartService->addItem([

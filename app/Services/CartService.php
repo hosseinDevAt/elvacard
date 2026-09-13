@@ -331,16 +331,6 @@ class CartService
             }
         }
 
-        if (isset($rawCustomization['qr_code_enabled'])) {
-            $sanitizedCustomization['qr_code_enabled'] = (bool) $rawCustomization['qr_code_enabled'];
-            if ($sanitizedCustomization['qr_code_enabled'] && ! empty($rawCustomization['qr_code_path']) && is_string($rawCustomization['qr_code_path'])) {
-                $qrPath = trim($rawCustomization['qr_code_path']);
-                if (str_starts_with($qrPath, 'customizations/qr_codes/') && ! str_contains($qrPath, '..')) {
-                    $sanitizedCustomization['qr_code_path'] = $qrPath;
-                }
-            }
-        }
-
         $snapshot = array_merge($sanitizedCustomization, [
             'product_id' => $productId,
             'color_id' => $colorId,

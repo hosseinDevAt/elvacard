@@ -78,16 +78,6 @@
                                 <div><span class="text-gray-400">متن دلخواه پشت:</span> <span class="text-gray-900 font-bold">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">وضعیت CVV2:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_cvv_enabled']) ? 'فعال (مقدار: ' . ($custom['cvv2'] ?? 'مشخص نشده') . ')' : 'غیرفعال' }}</span></div>
                                 <div><span class="text-gray-400">وضعیت تاریخ انقضا:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_expiry_enabled']) ? 'فعال (تاریخ: ' . ($custom['expiry_month'] ?? '--') . '/' . ($custom['expiry_year'] ?? '--') . ')' : 'غیرفعال' }}</span></div>
-                                <div><span class="text-gray-400">وضعیت QR Code:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['qr_code_enabled']) ? 'فعال' : 'غیرفعال' }}</span></div>
-                                @if (!empty($custom['qr_code_path']))
-                                    <div class="mt-2 pt-2 border-t border-gray-200 flex items-center gap-2">
-                                        <span class="text-gray-400">تصویر QR:</span>
-                                        <a href="{{ route('admin.orders.qr.show', ['path' => $custom['qr_code_path']]) }}" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                                            <img src="{{ route('admin.orders.qr.show', ['path' => $custom['qr_code_path']]) }}" alt="QR" class="h-6 w-6 object-contain bg-white border rounded">
-                                            <span>مشاهده تصویر QR کامل</span>
-                                        </a>
-                                    </div>
-                                @endif
                             </div>
 
                             {{-- Mini Visual Snapshot Card Preview --}}
@@ -119,11 +109,6 @@
                                     @if (!empty($custom['security_expiry_enabled']) && (!empty($custom['expiry_month']) || !empty($custom['expiry_year'])))
                                         <div class="absolute font-mono text-[9px]" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;" dir="ltr">
                                             EXP: {{ $custom['expiry_month'] ?? '--' }}/{{ $custom['expiry_year'] ?? '--' }}
-                                        </div>
-                                    @endif
-                                    @if (!empty($custom['qr_code_enabled']) && !empty($custom['qr_code_path']))
-                                        <div class="absolute" style="left: {{ $slots['qr_code']['x'] * 100 }}%; top: {{ $slots['qr_code']['y'] * 100 }}%;">
-                                            <img src="{{ route('admin.orders.qr.show', ['path' => $custom['qr_code_path']]) }}" class="h-6 w-6 bg-white p-0.5 rounded">
                                         </div>
                                     @endif
                                 </div>

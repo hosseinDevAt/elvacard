@@ -267,62 +267,6 @@
                         </div>
                     </div>
 
-                    {{-- QR Code Toggle & Upload --}}
-                    <div class="rounded-2xl border border-gray-800 bg-gray-950/60 p-4 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold text-gray-200">افزودن کیوآرکد (QR Code) اختصاصی پشت کارت</span>
-                                <span class="rounded bg-gray-800 px-2 py-0.5 text-[10px] font-semibold text-gray-400">اختیاری</span>
-                            </div>
-                            <button
-                                type="button"
-                                role="switch"
-                                aria-checked="{{ $qr_code_enabled ? 'true' : 'false' }}"
-                                wire:click="toggleQrCode"
-                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $qr_code_enabled ? 'bg-amber-500' : 'bg-gray-800' }}"
-                            >
-                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $qr_code_enabled ? 'translate-x-0' : '-translate-x-5' }}"></span>
-                            </button>
-                        </div>
-
-                        @if ($qr_code_enabled)
-                            <div class="pt-2 border-t border-gray-800 space-y-2">
-                                <label for="qr_code_file" class="block text-xs font-medium text-gray-300">
-                                    آپلود تصویر QR Code (PNG, JPG, WEBP, SVG)
-                                </label>
-                                <input
-                                    id="qr_code_file"
-                                    type="file"
-                                    wire:model="qr_code_file"
-                                    accept=".png,.jpg,.jpeg,.webp,.svg"
-                                    class="w-full text-xs text-gray-400 file:me-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-gray-950 hover:file:bg-amber-400 cursor-pointer"
-                                >
-                                <div wire:loading wire:target="qr_code_file" class="text-xs text-amber-400 flex items-center gap-2">
-                                    <svg class="animate-spin h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>در حال آپلود و اعتبارسنجی QR...</span>
-                                </div>
-                                @error('qr_code_file')
-                                    <p class="text-xs text-red-400">{{ $message }}</p>
-                                @enderror
-
-                                @if ($qr_code_path)
-                                    <div class="flex items-center justify-between rounded-xl bg-gray-900 p-2 border border-gray-800">
-                                        <div class="flex items-center gap-2">
-                                            <img src="{{ \URL::temporarySignedRoute('customizations.qr.preview', now()->addHours(1), ['path' => $qr_code_path]) }}" alt="Uploaded QR" class="h-8 w-8 object-contain bg-white p-0.5 rounded">
-                                            <span class="text-xs text-emerald-400 font-medium">QR آپلود شد</span>
-                                        </div>
-                                        <button type="button" wire:click="removeQrCode" class="text-xs text-red-400 hover:text-red-300 font-medium">
-                                            حذف
-                                        </button>
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-
                     {{-- Notice Box --}}
                     <div class="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-amber-300/90 leading-relaxed flex items-start gap-2.5">
                         <svg class="h-5 w-5 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -468,15 +412,6 @@
                                     <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
                                     <div class="font-mono font-bold text-xs tracking-wider" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $expiry_month ?: '--' }}/{{ $expiry_year ?: '--' }}
-                                    </div>
-                                </div>
-                            @endif
-
-                            {{-- Fixed Slot 6: QR Code --}}
-                            @if ($qr_code_enabled && $qr_code_path)
-                                <div class="absolute rounded p-0.5" style="left: {{ $slots['qr_code']['x'] * 100 }}%; top: {{ $slots['qr_code']['y'] * 100 }}%;">
-                                    <div class="h-10 w-10 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center">
-                                        <img src="{{ \URL::temporarySignedRoute('customizations.qr.preview', now()->addHours(1), ['path' => $qr_code_path]) }}" alt="QR Code" class="h-full w-full object-contain">
                                     </div>
                                 </div>
                             @endif

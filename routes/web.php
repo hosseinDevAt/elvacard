@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\PaymentReceiptController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Catalog\ProductCatalogController;
 use App\Http\Controllers\Checkout\CheckoutController;
@@ -8,11 +9,9 @@ use App\Http\Controllers\Cms\ArticleController;
 use App\Http\Controllers\Cms\FaqController;
 use App\Http\Controllers\Cms\HomepageController;
 use App\Http\Controllers\Cms\PageController;
+use App\Http\Controllers\CustomerDashboardController;
 use App\Http\Controllers\Order\OrderHistoryController;
 use App\Http\Controllers\Order\OrderTrackingController;
-use App\Http\Controllers\Admin\PaymentReceiptController;
-use App\Http\Controllers\Customization\QrCodeController;
-use App\Http\Controllers\CustomerDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Livewire\Admin\AnnouncementManager;
 use App\Livewire\Admin\AppearanceManager;
@@ -25,14 +24,14 @@ use App\Livewire\Admin\DesignColorCompatibilityManager;
 use App\Livewire\Admin\DesignImageManager;
 use App\Livewire\Admin\DesignManager;
 use App\Livewire\Admin\DesignWizard;
-use App\Livewire\Admin\ProductColorPriceManager;
-use App\Livewire\Admin\ProductManager;
 use App\Livewire\Admin\FaqItemManager;
 use App\Livewire\Admin\HomepageSectionManager;
 use App\Livewire\Admin\MenuItemManager;
 use App\Livewire\Admin\MenuManager;
 use App\Livewire\Admin\OrderManager;
 use App\Livewire\Admin\PageManager;
+use App\Livewire\Admin\ProductColorPriceManager;
+use App\Livewire\Admin\ProductManager;
 use App\Livewire\Admin\SiteSettingManager;
 use App\Livewire\Admin\UserManager;
 use Illuminate\Support\Facades\Route;
@@ -63,15 +62,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard/orders', OrderManager::class)->name('admin.orders');
     Route::get('/dashboard/orders/{order}/payments/{payment}/receipt', [PaymentReceiptController::class, 'show'])
         ->name('admin.payments.receipt');
-    Route::get('/dashboard/orders/qr', [QrCodeController::class, 'adminShow'])
-        ->name('admin.orders.qr.show');
     Route::get('/dashboard/users', UserManager::class)->name('admin.users');
 });
 
 Route::get('/catalog/products', [ProductCatalogController::class, 'index'])->name('catalog.products.index');
-Route::get('/customizations/qr-preview', [QrCodeController::class, 'preview'])
-    ->middleware('signed')
-    ->name('customizations.qr.preview');
 Route::get('/catalog/products/{slug}', [ProductCatalogController::class, 'show'])->name('catalog.products.show');
 Route::get('/catalog/designs', [ProductCatalogController::class, 'designCatalog'])->name('catalog.designs.index');
 Route::get('/design', [ProductCatalogController::class, 'designLanding'])->name('custom-card.design');

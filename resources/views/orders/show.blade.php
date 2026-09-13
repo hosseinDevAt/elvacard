@@ -71,15 +71,6 @@
                                             @if (! empty($customization['security_expiry_enabled']))
                                                 <p><span class="font-semibold">تاریخ انقضا:</span> <span dir="ltr">{{ $customization['expiry_month'] ?? '--' }}/{{ $customization['expiry_year'] ?? '--' }}</span></p>
                                             @endif
-                                            @if (! empty($customization['qr_code_enabled']))
-                                                <p class="sm:col-span-2"><span class="font-semibold">کیوآرکد پشت کارت:</span>
-                                                    @if (! empty($customization['qr_code_path']))
-                                                        <a href="{{ \URL::temporarySignedRoute('customizations.qr.preview', now()->addHours(1), ['path' => $customization['qr_code_path']]) }}" target="_blank" class="text-primary-600 hover:text-primary-800 underline">مشاهده QR</a>
-                                                    @else
-                                                        ثبت نشده
-                                                    @endif
-                                                </p>
-                                            @endif
                                         </div>
                                     @endif
                                 </div>

@@ -93,7 +93,6 @@ class ProductCustomizerTest extends TestCase
             ->assertSet('back_text', '')
             ->assertSet('security_cvv_enabled', false)
             ->assertSet('security_expiry_enabled', false)
-            ->assertSet('qr_code_enabled', false)
             ->assertSet('step', 1)
             ->assertSet('activeView', 'front');
     }
@@ -105,26 +104,17 @@ class ProductCustomizerTest extends TestCase
         // Toggle CVV only
         $component->call('toggleCvv')
             ->assertSet('security_cvv_enabled', true)
-            ->assertSet('security_expiry_enabled', false)
-            ->assertSet('qr_code_enabled', false);
+            ->assertSet('security_expiry_enabled', false);
 
         // Toggle Expiry only
         $component->call('toggleExpiry')
             ->assertSet('security_cvv_enabled', true)
-            ->assertSet('security_expiry_enabled', true)
-            ->assertSet('qr_code_enabled', false);
-
-        // Toggle QR Code
-        $component->call('toggleQrCode')
-            ->assertSet('security_cvv_enabled', true)
-            ->assertSet('security_expiry_enabled', true)
-            ->assertSet('qr_code_enabled', true);
+            ->assertSet('security_expiry_enabled', true);
 
         // Untoggle CVV
         $component->call('toggleCvv')
             ->assertSet('security_cvv_enabled', false)
-            ->assertSet('security_expiry_enabled', true)
-            ->assertSet('qr_code_enabled', true);
+            ->assertSet('security_expiry_enabled', true);
     }
 
     public function test_add_to_cart_with_clean_defaults_produces_clean_snapshot(): void
@@ -141,7 +131,6 @@ class ProductCustomizerTest extends TestCase
 
         $this->assertFalse($customization['security_cvv_enabled']);
         $this->assertFalse($customization['security_expiry_enabled']);
-        $this->assertFalse($customization['qr_code_enabled']);
         $this->assertArrayNotHasKey('card_holder_name', $customization);
         $this->assertArrayNotHasKey('back_text', $customization);
         $this->assertArrayNotHasKey('expiry_month', $customization);
@@ -165,7 +154,6 @@ class ProductCustomizerTest extends TestCase
         $this->assertSame('BORN TO LEAD', $customization['back_text']);
         $this->assertTrue($customization['security_expiry_enabled']);
         $this->assertFalse($customization['security_cvv_enabled']);
-        $this->assertFalse($customization['qr_code_enabled']);
         $this->assertArrayNotHasKey('expiry_month', $customization);
         $this->assertArrayNotHasKey('expiry_year', $customization);
     }
@@ -187,6 +175,8 @@ class ProductCustomizerTest extends TestCase
                 'sample_cvv' => '123',
                 'expiry_month' => '05',
                 'expiry_year' => '29',
+                'qr_code_enabled' => true,
+                'qr_code_path' => 'customizations/qr_codes/legacy.png',
                 'random_injected_field' => 'hacked',
             ],
         ];
@@ -201,6 +191,8 @@ class ProductCustomizerTest extends TestCase
         $this->assertArrayNotHasKey('sample_cvv', $customization);
         $this->assertArrayNotHasKey('expiry_month', $customization);
         $this->assertArrayNotHasKey('expiry_year', $customization);
+        $this->assertArrayNotHasKey('qr_code_enabled', $customization);
+        $this->assertArrayNotHasKey('qr_code_path', $customization);
         $this->assertArrayNotHasKey('random_injected_field', $customization);
     }
 
@@ -339,7 +331,7 @@ class ProductCustomizerTest extends TestCase
     {
         $slots = ProductCustomizer::fixedSlots();
 
-        foreach (['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry', 'qr_code'] as $element) {
+        foreach (['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry'] as $element) {
             $this->assertArrayHasKey($element, $slots);
             $this->assertArrayHasKey('x', $slots[$element]);
             $this->assertArrayHasKey('y', $slots[$element]);
@@ -388,8 +380,6 @@ class ProductCustomizerTest extends TestCase
             ->call('toggleExpiry')
             ->set('expiry_month', '05')
             ->set('expiry_year', (string) ((int) date('y') + 3))
-            ->call('toggleQrCode')
-            ->set('qr_code_path', 'customizations/qr_codes/test.png')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -400,8 +390,33 @@ class ProductCustomizerTest extends TestCase
         $this->assertSame('BORN TO LEAD', $customization['back_text']);
         $this->assertSame('808', $customization['cvv2']);
         $this->assertSame('05', $customization['expiry_month']);
-        $this->assertArrayHasKey('qr_code_path', $customization);
+        $this->assertArrayNotHasKey('qr_code_enabled', $customization);
+        $this->assertArrayNotHasKey('qr_code_path', $customization);
         $this->assertArrayNotHasKey('positions', $customization);
+    }
+
+    public function test_snapshot_never_contains_qr_code_keys(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->set('card_number', '1234657897897897')
+            ->set('card_holder_name', 'HOSSEIN REZAIE')
+            ->set('back_text', 'BORN TO LEAD')
+            ->call('toggleCvv')
+            ->set('cvv2', '808')
+            ->call('toggleExpiry')
+            ->set('expiry_month', '05')
+            ->set('expiry_year', (string) ((int) date('y') + 3))
+            ->call('addToCart')
+            ->assertRedirect(route('cart.index'));
+
+        $cart = app(CartService::class)->getCart();
+        $this->assertCount(1, $cart['items']);
+
+        $customization = $cart['items'][0]['customization_json'];
+
+        foreach (array_keys($customization) as $key) {
+            $this->assertStringNotContainsString('qr_code', strtolower((string) $key));
+        }
     }
 
     public function test_cart_service_rejects_invalid_card_number_and_cvv2(): void
