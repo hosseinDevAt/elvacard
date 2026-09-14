@@ -182,7 +182,7 @@ class CartService
                     $order = new Order;
                     $order->user_id = $userId;
                     $order->customer_name = $customerData['customer_name'];
-                    $order->customer_phone = $customerData['customer_phone'];
+                    $order->customer_phone = normalize_phone((string) $customerData['customer_phone']);
                     $order->shipping_address = $customerData['shipping_address'] ?? null;
                     $order->shipping_postal_code = $customerData['shipping_postal_code'] ?? null;
                     $order->shipping_plaque = $customerData['shipping_plaque'] ?? null;

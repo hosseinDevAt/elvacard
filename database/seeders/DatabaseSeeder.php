@@ -272,7 +272,10 @@ class DatabaseSeeder extends Seeder
             ['is_allowed' => false]
         );
 
-        $this->call(CmsContentSeeder::class);
+        $this->call([
+            ManualPaymentSettingSeeder::class,
+            CmsContentSeeder::class,
+        ]);
 
         echo "\nSeed completed!\n";
         echo "Users: admin (09000000000/password), customer (09000000001/password)\n";

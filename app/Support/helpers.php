@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\SiteSetting;
+use App\Services\IconManager;
 use Illuminate\Support\Facades\Cache;
 
 if (! function_exists('site_setting')) {
@@ -62,20 +63,53 @@ if (! function_exists('safe_url')) {
 
 if (! function_exists('normalize_phone')) {
     /**
-     * Normalize a phone number: strip separators and convert Persian/Arabic
-     * digits to ASCII. Used to keep OTP/rate-limit keys consistent.
+     * Normalize a phone number: strip separators, convert Persian/Arabic digits
+     * to ASCII, and translate common Iranian international prefixes to the
+     * local canonical form. The result is NOT validated — use
+     * {@see is_valid_iranian_mobile()} for that.
+     *
+     * Prefix handling:
+     *  +98…  → 0…
+     *  0098… → 0…
      */
     function normalize_phone(string $phone): string
     {
         $phone = trim($phone);
         $phone = str_replace([' ', '-', '(', ')'], '', $phone);
 
-        return strtr($phone, [
+        $phone = strtr($phone, [
             '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
             '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
             '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
             '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
         ]);
+
+        if (str_starts_with($phone, '+98')) {
+            $phone = '0'.substr($phone, 3);
+        } elseif (str_starts_with($phone, '0098')) {
+            $phone = '0'.substr($phone, 4);
+        }
+
+        return $phone;
+    }
+}
+
+if (! function_exists('is_valid_iranian_mobile')) {
+    /**
+     * Whether the given (possibly non-canonical) phone number normalizes into
+     * the canonical Iranian mobile form: exactly 11 ASCII digits starting with
+     * "09" (e.g. "09123456789").
+     *
+     * Normalization is applied before the check — it will NOT fabricate
+     * validity from garbage inputs.
+     */
+    function is_valid_iranian_mobile(?string $phone): bool
+    {
+        if (! is_string($phone) || trim($phone) === '') {
+            return false;
+        }
+
+        return preg_match('/^09\d{9}$/', normalize_phone($phone)) === 1;
     }
 }
 
@@ -87,7 +121,7 @@ if (! function_exists('site_icon_variant')) {
      */
     function site_icon_variant(string $key): string
     {
-        return app(\App\Services\IconManager::class)->variant($key);
+        return app(IconManager::class)->variant($key);
     }
 }
 
@@ -98,7 +132,7 @@ if (! function_exists('site_icon_enabled')) {
      */
     function site_icon_enabled(string $key): bool
     {
-        return app(\App\Services\IconManager::class)->enabled($key);
+        return app(IconManager::class)->enabled($key);
     }
 }
 

@@ -7,19 +7,18 @@ use App\Http\Controllers\Controller;
 use App\Models\ManualPaymentSetting;
 use App\Models\Order;
 use App\Services\CartService;
+use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 use InvalidArgumentException;
 
 class CheckoutController extends Controller
 {
-    public function __construct(private readonly CartService $cartService)
-    {
-    }
+    public function __construct(private readonly CartService $cartService) {}
 
     public function index()
     {
@@ -62,9 +61,17 @@ class CheckoutController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'customer_phone' => normalize_phone((string) $request->input('customer_phone')),
+        ]);
+
         $payload = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['required', 'string', 'max:20'],
+            'customer_phone' => ['required', 'string', function (string $attribute, mixed $value, Closure $fail): void {
+                if (! is_valid_iranian_mobile($value)) {
+                    $fail('شماره موبایل معتبر نیست. نمونه صحیح: 09123456789');
+                }
+            }],
             'shipping_address' => ['required', 'string', 'max:1000'],
             'shipping_postal_code' => ['required', 'string', 'regex:/^[0-9]{10}$/'],
             'shipping_plaque' => ['nullable', 'string', 'max:50'],
