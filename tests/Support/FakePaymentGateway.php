@@ -20,6 +20,12 @@ final class FakePaymentGateway implements PaymentGateway
 
     public bool $failOnVerify = false;
 
+    public ?int $verificationAmountOverride = null;
+
+    public int $initiateCalls = 0;
+
+    public int $verifyCalls = 0;
+
     public ?PaymentInitiationRequest $lastInitiationRequest = null;
 
     public ?string $lastProviderReference = null;
@@ -36,6 +42,7 @@ final class FakePaymentGateway implements PaymentGateway
 
     public function initiate(PaymentInitiationRequest $request): PaymentInitiationResult
     {
+        $this->initiateCalls++;
         $this->lastInitiationRequest = $request;
 
         if ($this->failOnInitiate) {
@@ -46,13 +53,14 @@ final class FakePaymentGateway implements PaymentGateway
 
         return PaymentInitiationResult::success(
             redirectUrl: "https://redir.example.test/pay/{$request->orderReference}",
-            providerReference: "REF-{$request->orderReference}",
+            providerReference: "REF-{$request->orderReference}-{$this->initiateCalls}",
             metadata: ['provider' => $this->providerName],
         );
     }
 
     public function verify(PaymentInitiationRequest $request, string $providerReference, array $callbackData): PaymentVerificationResult
     {
+        $this->verifyCalls++;
         $this->lastProviderReference = $providerReference;
         $this->lastCallbackData = $callbackData;
 
@@ -63,7 +71,7 @@ final class FakePaymentGateway implements PaymentGateway
         }
 
         return PaymentVerificationResult::success(
-            amount: $request->amount,
+            amount: $this->verificationAmountOverride ?? $request->amount,
             providerReference: $providerReference,
             providerTransactionId: "TXN-{$providerReference}",
             metadata: ['raw_status' => $callbackData['status'] ?? 'OK'],

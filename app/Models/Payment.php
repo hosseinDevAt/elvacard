@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,5 +39,19 @@ class Payment extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Payments that represent an in-progress active attempt: a gateway payment
+     * still pending at the provider, a manual receipt awaiting review, or an
+     * already successful payment. These must block a new payment attempt.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            PaymentStatus::PENDING->value,
+            PaymentStatus::PENDING_REVIEW->value,
+            PaymentStatus::SUCCESS->value,
+        ]);
     }
 }

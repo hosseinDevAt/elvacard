@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\PaymentReceiptController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Catalog\ProductCatalogController;
 use App\Http\Controllers\Checkout\CheckoutController;
+use App\Http\Controllers\Checkout\GatewayPaymentController;
 use App\Http\Controllers\Checkout\ManualTransferPaymentController;
 use App\Http\Controllers\Cms\ArticleController;
 use App\Http\Controllers\Cms\FaqController;
@@ -90,6 +91,19 @@ Route::post('/checkout/payment/{order:token}', [ManualTransferPaymentController:
     ->where('order', '[A-Za-z0-9]{16,64}')
     ->middleware('throttle:10,1')
     ->name('checkout.payment.store');
+
+Route::post('/checkout/payment/gateway/{order:token}', [GatewayPaymentController::class, 'initiate'])
+    ->where('order', '[A-Za-z0-9]{16,64}')
+    ->middleware('throttle:10,1')
+    ->name('checkout.payment.gateway.initiate');
+
+Route::post('/checkout/payment/callback/{gateway}', [GatewayPaymentController::class, 'callback'])
+    ->where('gateway', '[a-z0-9_-]{1,64}')
+    ->name('checkout.payment.callback');
+
+Route::get('/checkout/payment/{order:token}/return', [GatewayPaymentController::class, 'return'])
+    ->where('order', '[A-Za-z0-9]{16,64}')
+    ->name('checkout.payment.return');
 
 Route::get('/order-tracking', [OrderTrackingController::class, 'create'])->name('order-tracking.index');
 Route::post('/order-tracking', [OrderTrackingController::class, 'store'])->middleware('throttle:5,1')->name('order-tracking.check');

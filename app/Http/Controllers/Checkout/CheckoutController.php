@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Checkout;
 
-use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ManualPaymentSetting;
 use App\Models\Order;
@@ -133,9 +132,7 @@ class CheckoutController extends Controller
 
     private function duplicateOrderRedirect(Order $order): RedirectResponse
     {
-        $hasActivePayment = $order->payments()
-            ->whereIn('status', [PaymentStatus::PENDING_REVIEW->value, PaymentStatus::SUCCESS->value])
-            ->exists();
+        $hasActivePayment = $order->payments()->active()->exists();
 
         $route = $hasActivePayment ? 'checkout.success' : 'checkout.payment';
 

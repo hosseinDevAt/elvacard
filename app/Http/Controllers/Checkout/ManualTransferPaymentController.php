@@ -102,7 +102,7 @@ class ManualTransferPaymentController extends Controller
     {
         return Payment::query()
             ->where('order_id', $order->id)
-            ->whereIn('status', [PaymentStatus::PENDING_REVIEW->value, PaymentStatus::SUCCESS->value])
+            ->active()
             ->exists();
     }
 

@@ -6,6 +6,8 @@ use App\Services\IconManager;
 use App\Services\PaymentGatewayManager;
 use App\Services\SmsManager;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\View as ViewFacade;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        ViewFacade::composer('checkout.payment', function (View $view): void {
+            if (! $view->offsetExists('gateways')) {
+                $view->with('gateways', app(PaymentGatewayManager::class)->names());
+            }
+        });
     }
 }
