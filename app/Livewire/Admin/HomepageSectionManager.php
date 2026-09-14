@@ -3,10 +3,10 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\HomepageSectionTypeEnum;
-use App\Models\Design;
 use App\Models\FaqItem;
 use App\Models\HomepageSection;
 use App\Models\Product;
+use App\Services\DesignCatalogService;
 use Livewire\Component;
 
 class HomepageSectionManager extends Component
@@ -14,22 +14,33 @@ class HomepageSectionManager extends Component
     public string $search = '';
 
     public string $sectionType = 'hero';
+
     public ?string $title = null;
+
     public ?string $content = null;
+
     public int $sortOrder = 0;
+
     public bool $isActive = true;
 
     public array $productIds = [];
+
     public array $designIds = [];
+
     public ?int $faqLimit = null;
+
     public ?int $limit = null;
 
     public ?string $backgroundColor = null;
+
     public ?string $backgroundImage = null;
+
     public ?string $ctaText = null;
+
     public ?string $ctaUrl = null;
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     private const SETTING_CHEAT_SHEET = [
@@ -78,6 +89,7 @@ class HomepageSectionManager extends Component
 
                     if (str_starts_with(strtolower($value), '//')) {
                         $fail('لینک پروتکل‌نسبی (//...) مجاز نیست.');
+
                         return;
                     }
 
@@ -235,8 +247,8 @@ class HomepageSectionManager extends Component
                 ->orderBy('id')
                 ->get(),
             'sectionTypes' => HomepageSectionTypeEnum::cases(),
-            'products' => Product::query()->active()->orderBy('name')->get(),
-            'designs' => Design::query()->active()->orderBy('name')->get(),
+            'products' => Product::query()->active()->purchasable()->orderBy('name')->get(),
+            'designs' => app(DesignCatalogService::class)->visibleDesigns()->sortBy('name')->values(),
             'faqsCount' => FaqItem::query()->active()->count(),
             'settingCheatSheet' => self::SETTING_CHEAT_SHEET,
         ])->layout('layouts.admin')->title('مدیریت صفحه اصلی');

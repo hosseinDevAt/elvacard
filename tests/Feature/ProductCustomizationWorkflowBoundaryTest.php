@@ -56,7 +56,10 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
 
     private function createFuelProduct(): Product
     {
-        return Product::create([
+        $color = $this->createColor();
+        $this->createDesign($color);
+
+        $product = Product::create([
             'type' => ProductTypeEnum::FUEL->value,
             'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
             'name' => 'کارت سوخت تست',
@@ -64,6 +67,15 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
             'base_price' => 450000,
             'is_active' => true,
         ]);
+
+        ProductColorPrice::create([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'price' => 480000,
+            'is_active' => true,
+        ]);
+
+        return $product;
     }
 
     private function createDesign(Color $color): array
@@ -430,27 +442,27 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         $log = DB::getQueryLog();
 
         $this->assertSame(
-            3,
+            5,
             $this->countTableReferences('cate_designs', $log),
-            "Design table 'cate_designs' is referenced three times on page load: once by the customizer mount category list and once by each of the two paginate queries whose active-category guard (whereRelation on cate_designs.is_active) runs an EXISTS over the category table; the controller must not duplicate the catalog."
-        );
-
-        $this->assertSame(
-            2,
-            $this->countTableReferences('designs', $log),
-            'The server-side paginated catalog loads designs exactly twice (the paginate count query plus the page query); the controller must not duplicate the catalog.'
-        );
-
-        $this->assertSame(
-            1,
-            $this->countTableReferences('design_color_compatibilities', $log),
-            'Color compatibility must be resolved with a single allowed-image lookup.'
+            "Design table 'cate_designs' is referenced five times on page load: once by the customizer mount category list, once by each of the two paginate queries whose active-category guard (whereRelation on cate_designs.is_active) runs an EXISTS over the category table, and once by each of the two storefront purchaseability witnesses (controller detail gate and customizer mount) whose purchasable-design check runs the same active-category guard; the controller must not duplicate the catalog."
         );
 
         $this->assertSame(
             4,
+            $this->countTableReferences('designs', $log),
+            'The server-side paginated catalog loads designs exactly twice (the paginate count query plus the page query) and each purchaseability witness confirms a purchasable design with a single EXISTS; the controller must not duplicate the catalog.'
+        );
+
+        $this->assertSame(
+            3,
+            $this->countTableReferences('design_color_compatibilities', $log),
+            'Color compatibility must be resolved once by the allowed-image lookup and once by each purchaseability witness.'
+        );
+
+        $this->assertSame(
+            6,
             $this->countTableReferences('design_images', $log),
-            "Server-side catalog pagination references design_images four times: the whereExists existence filter in the count query, the correlated per-design preview plus whereExists inside the page query, and only the selected design's image chips - never every design's images at once."
+            "Server-side catalog pagination references design_images four times: the whereExists existence filter in the count query, the correlated per-design preview plus whereExists inside the page query, and only the selected design's image chips - never every design's images at once. Each purchaseability witness adds one existence reference (and these witnesses never hydrate image collections)."
         );
     }
 

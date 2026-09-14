@@ -7,7 +7,11 @@ use App\Enums\ProductTypeEnum;
 use App\Livewire\Catalog\ProductCustomizer;
 use App\Livewire\Forms\BankCardWorkspace;
 use App\Livewire\Forms\FuelCardWorkspace;
+use App\Models\CateDesign;
 use App\Models\Color;
+use App\Models\Design;
+use App\Models\DesignColorCompatibility;
+use App\Models\DesignImage;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\BankCard\BankCardCustomization;
@@ -33,8 +37,43 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
         ]);
     }
 
+    private function purchasableDesignPath(Color $color, string $suffix): void
+    {
+        $category = CateDesign::create([
+            'name' => 'دسته تست '.$suffix,
+            'slug' => 'fuel-workspace-cat-'.$suffix,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $design = Design::create([
+            'cate_design_id' => $category->id,
+            'name' => 'طرح تست '.$suffix,
+            'slug' => 'fuel-workspace-design-'.$suffix,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $image = DesignImage::create([
+            'design_id' => $design->id,
+            'color_id' => $color->id,
+            'image_path' => 'designs/fuel-workspace-'.$suffix.'.png',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        DesignColorCompatibility::create([
+            'design_image_id' => $image->id,
+            'card_color_id' => $color->id,
+            'is_allowed' => true,
+        ]);
+    }
+
     private function createBankProduct(): Product
     {
+        $color = $this->createColor();
+        $this->purchasableDesignPath($color, 'bank');
+
         $product = Product::create([
             'type' => ProductTypeEnum::BANK->value,
             'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD->value,
@@ -46,7 +85,7 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
 
         ProductColorPrice::create([
             'product_id' => $product->id,
-            'color_id' => $this->createColor()->id,
+            'color_id' => $color->id,
             'price' => 700000,
             'is_active' => true,
         ]);
@@ -56,7 +95,10 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
 
     private function createFuelProduct(): Product
     {
-        return Product::create([
+        $color = $this->createColor();
+        $this->purchasableDesignPath($color, 'fuel');
+
+        $product = Product::create([
             'type' => ProductTypeEnum::FUEL->value,
             'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
             'name' => 'کارت سوخت تست',
@@ -64,6 +106,15 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
             'base_price' => 450000,
             'is_active' => true,
         ]);
+
+        ProductColorPrice::create([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'price' => 480000,
+            'is_active' => true,
+        ]);
+
+        return $product;
     }
 
     public function test_sanitize_accepts_empty_payload_as_valid(): void

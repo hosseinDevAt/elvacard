@@ -3,6 +3,7 @@
 namespace App\Services\Customization;
 
 use App\Enums\CustomizationWorkflowEnum;
+use App\Enums\ProductTypeEnum;
 use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\Design;
@@ -15,6 +16,52 @@ use Illuminate\Support\Collection;
 
 class ProductPurchaseabilityService
 {
+    /**
+     * Whether the given product can actually be bought right now: it must have
+     * the same price and design path the checkout will require. This is the
+     * storefront detail gate. Product::scopePurchasable() mirrors the same
+     * rules at the query level for the catalog, homepage, menus and admin
+     * dropdowns.
+     */
+    public static function isPurchasable(int $productId): bool
+    {
+        $product = Product::query()->find($productId);
+
+        if ($product === null) {
+            return false;
+        }
+
+        // Read the raw value: casting an unknown/legacy workflow to the enum
+        // would throw, and such a row must simply be unpurchasable, never a
+        // broken page.
+        $workflowRaw = $product->getRawOriginal('customization_workflow');
+        $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
+
+        if ($workflowRaw === null) {
+            return $product->base_price !== null || self::activeCardColors($product->id) !== [];
+        }
+
+        if ($workflow === null || ! CustomizationWorkflowRegistry::isActive($workflow)) {
+            return false;
+        }
+
+        if ($product->type === ProductTypeEnum::FUEL) {
+            $activePrices = ProductColorPrice::query()
+                ->where('product_id', $productId)
+                ->where('is_active', true)
+                ->whereHas('color', fn ($query) => $query->where('is_active', true))
+                ->count();
+
+            if ($activePrices !== 1) {
+                return false;
+            }
+        }
+
+        $colors = self::activeCardColors($productId);
+
+        return $colors !== [] && self::hasPurchasableDesignForColors($colors);
+    }
+
     /**
      * Activation gate for customization products. Reads the database only, so
      * no client-hydrated property can vouch for readiness. An empty result

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\ArticleStatusEnum;
 use App\Enums\MenuItemTypeEnum;
+use App\Services\DesignCatalogService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -81,7 +83,7 @@ class MenuItem extends Model
             return null;
         }
 
-        $page = \App\Models\Page::query()
+        $page = Page::query()
             ->active()
             ->find($this->target_id);
 
@@ -94,8 +96,9 @@ class MenuItem extends Model
             return null;
         }
 
-        $product = \App\Models\Product::query()
+        $product = Product::query()
             ->active()
+            ->purchasable()
             ->find($this->target_id);
 
         return $product ? route('catalog.products.show', $product->slug) : null;
@@ -107,11 +110,15 @@ class MenuItem extends Model
             return null;
         }
 
-        $design = \App\Models\Design::query()
+        $design = Design::query()
             ->active()
             ->find($this->target_id);
 
-        return $design ? route('catalog.designs.index', ['category' => $design->category?->slug]) . '#design-' . $design->id : null;
+        if ($design === null || ! app(DesignCatalogService::class)->isDesignVisible($design->id)) {
+            return null;
+        }
+
+        return route('catalog.designs.index', ['category' => $design->category?->slug]).'#design-'.$design->id;
     }
 
     private function resolveArticleUrl(): ?string
@@ -120,11 +127,11 @@ class MenuItem extends Model
             return null;
         }
 
-        $article = \App\Models\Article::query()
-            ->where('status', \App\Enums\ArticleStatusEnum::PUBLISHED->value)
+        $article = Article::query()
+            ->where('status', ArticleStatusEnum::PUBLISHED->value)
             ->where(function ($q) {
                 $q->whereNull('published_at')
-                  ->orWhere('published_at', '<=', now());
+                    ->orWhere('published_at', '<=', now());
             })
             ->find($this->target_id);
 

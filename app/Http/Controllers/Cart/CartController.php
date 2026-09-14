@@ -41,14 +41,14 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Item added to cart.');
+        return redirect()->route('cart.index')->with('success', 'به سبد خرید اضافه شد.');
     }
 
     public function remove(string $id): RedirectResponse
     {
         $this->cartService->removeItem($id);
 
-        return redirect()->route('cart.index')->with('success', 'Item removed from cart.');
+        return redirect()->route('cart.index')->with('success', 'از سبد خرید حذف شد.');
     }
 
     public function update(Request $request, string $id): RedirectResponse
@@ -65,13 +65,13 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Cart item updated.');
+        return redirect()->route('cart.index')->with('success', 'سبد خرید به‌روزرسانی شد.');
     }
 
     public function empty(): RedirectResponse
     {
         $this->cartService->clear();
 
-        return redirect()->route('cart.index')->with('success', 'Cart cleared.');
+        return redirect()->route('cart.index')->with('success', 'سبد خرید خالی شد.');
     }
 }

@@ -80,6 +80,42 @@ class DesignCatalogService
     }
 
     /**
+     * Returns every design currently visible in the public catalog (active,
+     * in an active category, with at least one active image), optionally
+     * restricted to the given ids. Homepage featured sections and admin
+     * dropdowns use this so the storefront and the CMS share one
+     * design-visibility truth.
+     */
+    public function visibleDesigns(array $ids = []): Collection
+    {
+        return $this->baseQuery(null, null)
+            ->when(
+                $ids !== [],
+                fn ($query) => $query->whereIn(
+                    'id',
+                    collect($ids)
+                        ->map(fn ($id) => (int) $id)
+                        ->unique()
+                        ->values()
+                        ->all()
+                )
+            )
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Whether a single design is currently visible in the public catalog.
+     */
+    public function isDesignVisible(int $designId): bool
+    {
+        return $this->baseQuery(null, null)
+            ->whereKey($designId)
+            ->exists();
+    }
+
+    /**
      * The single source of design visibility: active design, active category,
      * and at least one active image within the allowed set.
      */

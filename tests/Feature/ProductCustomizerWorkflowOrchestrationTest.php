@@ -134,6 +134,12 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
     public function test_fuel_workflow_branch_mounts_fuel_workspace(): void
     {
         $product = $this->createFuelProduct();
+        ProductColorPrice::create([
+            'product_id' => $product->id,
+            'color_id' => $this->color->id,
+            'price' => 480000,
+            'is_active' => true,
+        ]);
 
         $this->assertSame(
             [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
@@ -213,6 +219,12 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
     public function test_bank_product_page_never_renders_bank_forms_for_fuel(): void
     {
         $fuelProduct = $this->createFuelProduct();
+        ProductColorPrice::create([
+            'product_id' => $fuelProduct->id,
+            'color_id' => $this->color->id,
+            'price' => 480000,
+            'is_active' => true,
+        ]);
         $bankProduct = $this->createBankProduct([$this->color]);
 
         $fuelResponse = $this->get(route('catalog.products.show', $fuelProduct->slug));

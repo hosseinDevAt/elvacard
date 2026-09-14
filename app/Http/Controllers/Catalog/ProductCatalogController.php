@@ -11,6 +11,7 @@ use App\Models\Color;
 use App\Models\DesignColorCompatibility;
 use App\Models\Product;
 use App\Services\Customization\CustomizationWorkflowRegistry;
+use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\DesignCatalogService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -32,7 +33,8 @@ class ProductCatalogController extends Controller
         }
 
         $query = Product::query()
-            ->active();
+            ->active()
+            ->purchasable();
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -52,25 +54,32 @@ class ProductCatalogController extends Controller
             });
         }
 
+        // The effective price is the lowest active color price when one exists,
+        // otherwise the base price: exactly what the product card shows.
+        $effectivePrice = 'COALESCE(
+            (SELECT MIN(pcp.price) FROM product_color_prices AS pcp
+             WHERE pcp.product_id = products.id AND pcp.is_active = 1),
+            products.base_price)';
+
         if ($minPrice > 0 || $maxPrice > 0) {
-            $query->whereHas('colorPrices', function ($q) use ($minPrice, $maxPrice) {
-                $q->where('is_active', true);
+            $query->where(function ($q) use ($effectivePrice, $minPrice, $maxPrice) {
+                $q->whereRaw($effectivePrice.' IS NOT NULL');
                 if ($minPrice > 0) {
-                    $q->where('price', '>=', $minPrice);
+                    $q->whereRaw($effectivePrice.' >= '.$minPrice);
                 }
                 if ($maxPrice > 0) {
-                    $q->where('price', '<=', $maxPrice);
+                    $q->whereRaw($effectivePrice.' <= '.$maxPrice);
                 }
             });
         }
 
         switch ($sort) {
             case 'cheapest':
-                $query->orderByRaw('(SELECT MIN(pcp.price) FROM product_color_prices AS pcp WHERE pcp.product_id = products.id AND pcp.is_active = 1) ASC');
+                $query->orderByRaw($effectivePrice.' ASC');
                 break;
 
             case 'expensive':
-                $query->orderByRaw('(SELECT MIN(pcp.price) FROM product_color_prices AS pcp WHERE pcp.product_id = products.id AND pcp.is_active = 1) DESC');
+                $query->orderByRaw($effectivePrice.' DESC');
                 break;
 
             case 'popular':
@@ -131,12 +140,25 @@ class ProductCatalogController extends Controller
 
         $workflowRaw = $product->getRawOriginal('customization_workflow');
         $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
+        $hasCustomization = $workflowRaw !== null;
+        $customizationAvailable = $workflow !== null && CustomizationWorkflowRegistry::isActive($workflow);
+
+        // The storefront must never render a product the checkout cannot charge
+        // (broken price path, missing design path, broken fuel readiness). The
+        // only exception is the "not launched yet" amber state, which is itself
+        // a non-actionable page kept deliberately visible.
+        $purchasable = false;
+        if (! $hasCustomization || $customizationAvailable) {
+            $purchasable = ProductPurchaseabilityService::isPurchasable($product->id);
+            abort_unless($purchasable, 404);
+        }
 
         return view('catalog.products.show', [
             'product' => $product,
             'selectedColorId' => $selectedColorId,
-            'hasCustomization' => $workflow !== null,
-            'customizationAvailable' => CustomizationWorkflowRegistry::isActive($workflow),
+            'hasCustomization' => $hasCustomization,
+            'customizationAvailable' => $customizationAvailable,
+            'purchasable' => $purchasable,
         ]);
     }
 

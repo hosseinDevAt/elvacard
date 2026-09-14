@@ -4,11 +4,11 @@ namespace App\Livewire\Admin;
 
 use App\Enums\ArticleStatusEnum;
 use App\Models\Article;
-use App\Models\Design;
 use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\Page;
 use App\Models\Product;
+use App\Services\DesignCatalogService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,18 +17,27 @@ class MenuItemManager extends Component
     use WithPagination;
 
     public string $search = '';
+
     public ?int $filterMenuId = null;
 
     public ?int $menuId = null;
+
     public string $itemType = 'url';
+
     public string $title = '';
+
     public ?int $targetId = null;
+
     public ?string $customUrl = null;
+
     public string $target = '_self';
+
     public int $sortOrder = 0;
+
     public bool $isActive = true;
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     private const ALLOWED_TYPES = ['url', 'page', 'product', 'design', 'article'];
@@ -56,6 +65,7 @@ class MenuItemManager extends Component
 
                     if (str_starts_with(strtolower($value), '//')) {
                         $fail('لینک پروتکل‌نسبی (//...) مجاز نیست.');
+
                         return;
                     }
 
@@ -111,6 +121,7 @@ class MenuItemManager extends Component
 
             if ($existing?->route_key) {
                 session()->flash('error', 'این آیتم منو سیستمی است و فقط از طریق «ظاهر سایت» تغییر می‌کند.');
+
                 return;
             }
         }
@@ -161,6 +172,7 @@ class MenuItemManager extends Component
 
         if ($item?->route_key) {
             session()->flash('error', 'این آیتم منو سیستمی است و قابل حذف نیست.');
+
             return;
         }
 
@@ -197,8 +209,8 @@ class MenuItemManager extends Component
                 ->paginate(15),
             'menus' => Menu::query()->orderBy('name')->get(),
             'pages' => Page::query()->active()->orderBy('title')->get(),
-            'products' => Product::query()->active()->orderBy('name')->get(),
-            'designs' => Design::query()->active()->orderBy('name')->get(),
+            'products' => Product::query()->active()->purchasable()->orderBy('name')->get(),
+            'designs' => app(DesignCatalogService::class)->visibleDesigns()->sortBy('name')->values(),
             'articles' => Article::query()
                 ->where('status', ArticleStatusEnum::PUBLISHED->value)
                 ->where(function ($query) {

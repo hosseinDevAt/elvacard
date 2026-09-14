@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Cms;
 use App\Enums\ArticleStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
-use App\Models\Design;
 use App\Models\FaqItem;
 use App\Models\HomepageSection;
 use App\Models\Product;
+use App\Services\DesignCatalogService;
 use Illuminate\Contracts\View\View;
 
 class HomepageController extends Controller
@@ -58,37 +58,24 @@ class HomepageController extends Controller
 
         $newestProducts = $this->newestProducts($newestLimit);
 
-        $designs = collect();
-        if ($designIds) {
-            $designs = Design::query()
-                ->active()
-                ->whereIn('id', array_unique($designIds))
-                ->with([
-                    'images' => fn ($q) => $q
-                        ->active()
-                        ->with(['color' => fn ($cq) => $cq->active()])
-                        ->orderBy('sort_order'),
-                    'category' => fn ($cq) => $cq->active(),
-                ])
-                ->get()
-                ->keyBy('id')
-                ->mapWithKeys(fn ($d, $id) => [$id => $d]);
-        } else {
-            $designs = Design::query()
-                ->active()
-                ->with([
-                    'images' => fn ($q) => $q
-                        ->active()
-                        ->with(['color' => fn ($cq) => $cq->active()])
-                        ->orderBy('sort_order'),
-                    'category' => fn ($cq) => $cq->active(),
-                ])
-                ->orderBy('sort_order')
-                ->orderByDesc('id')
-                ->when($featuredDesignsLimit, fn ($q) => $q->limit($featuredDesignsLimit))
-                ->get()
-                ->keyBy('id');
+        $designs = app(DesignCatalogService::class)
+            ->visibleDesigns($designIds)
+            ->load([
+                'images' => fn ($q) => $q
+                    ->active()
+                    ->with(['color' => fn ($cq) => $cq->active()])
+                    ->orderBy('sort_order'),
+                'category' => fn ($cq) => $cq->active(),
+            ]);
+
+        if ($designIds === []) {
+            $designs = $designs
+                ->sortBy(fn ($design) => [$design->sort_order, -$design->id])
+                ->when($featuredDesignsLimit, fn ($collection) => $collection->take((int) $featuredDesignsLimit))
+                ->values();
         }
+
+        $designs = $designs->keyBy('id');
 
         $faqs = $this->faqs($faqLimit);
 
@@ -124,6 +111,7 @@ class HomepageController extends Controller
 
         return Product::query()
             ->active()
+            ->purchasable()
             ->whereIn('id', array_unique($productIds))
             ->withCatalog()
             ->get()
@@ -134,6 +122,7 @@ class HomepageController extends Controller
     {
         return Product::query()
             ->active()
+            ->purchasable()
             ->withCatalog()
             ->when($limit, fn ($q) => $q->limit($limit))
             ->get();

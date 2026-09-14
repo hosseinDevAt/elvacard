@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Services\CartService;
 use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
+use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\DesignCatalogService;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -75,6 +76,13 @@ class ProductCustomizer extends Component
         $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
 
         if (! CustomizationWorkflowRegistry::isActive($workflow)) {
+            abort(404);
+        }
+
+        // Re-check purchaseability server-side: a launched-workflow product that
+        // lost its price path, design path, or fuel readiness must never mount a
+        // working customization surface (or a misleading "0 تومان" price).
+        if (! ProductPurchaseabilityService::isPurchasable($productId)) {
             abort(404);
         }
 

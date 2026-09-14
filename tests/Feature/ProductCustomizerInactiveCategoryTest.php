@@ -8,6 +8,7 @@ use App\Livewire\Catalog\ProductCustomizer;
 use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\Design;
+use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
@@ -65,10 +66,16 @@ class ProductCustomizerInactiveCategoryTest extends TestCase
         ]);
 
         $visibleDesign = $this->createDesign($this->activeCategory, 'طرح قابل مشاهده', 'visible', 1);
-        $this->createImage($visibleDesign);
+        $visibleImage = $this->createImage($visibleDesign);
 
         $this->hiddenDesign = $this->createDesign($this->inactiveCategory, 'طرح پنهان', 'hidden', 1);
         $this->createImage($this->hiddenDesign);
+
+        DesignColorCompatibility::create([
+            'design_image_id' => $visibleImage->id,
+            'card_color_id' => $this->gold->id,
+            'is_allowed' => true,
+        ]);
 
         $this->product = Product::create([
             'type' => ProductTypeEnum::STANDARD->value,

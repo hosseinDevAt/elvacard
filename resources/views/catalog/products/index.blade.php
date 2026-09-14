@@ -57,7 +57,6 @@
                             </div>
                             @if($selectedType)
                                 <a href="{{ route('catalog.products.index', array_filter(['search' => $search ?: null, 'sort' => $sort])) }}" wire:navigate
-                                   class="mt-2 inline-block text-xs text-primary-600 underline">حذف فیلتر نوع</a> wire:navigate
                                    class="mt-2 inline-block text-xs text-primary-600 underline">حذف فیلتر نوع</a>
                             @endif
                         </div>
