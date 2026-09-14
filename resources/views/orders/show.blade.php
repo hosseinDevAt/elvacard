@@ -104,7 +104,7 @@
                     <p class="text-gray-400 text-sm">پرداختی ثبت نشده است.</p>
                 @endforelse
 
-                @if ($order->payment_status?->value !== 'paid' && $order->payments()->where('status', 'failed')->exists())
+                @if ($canRetryPayment)
                     <a href="{{ route('checkout.payment', $order->token) }}" wire:navigate class="mt-3 inline-block rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">پرداخت مجدد</a>
                 @endif
             </div>

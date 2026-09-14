@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Enums\OrderStatusEnum;
 use App\Exceptions\InvalidOrderTransitionException;
+use App\Exceptions\OrderLifecycleConstraintException;
 use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\PaymentReviewException;
 use App\Models\Order;
@@ -64,6 +65,10 @@ class OrderManager extends Component
 
         try {
             $stateMachine->transition($order, OrderStatusEnum::from($status));
+        } catch (OrderLifecycleConstraintException $e) {
+            session()->flash('error', $e->getMessage());
+
+            return;
         } catch (InvalidOrderTransitionException $e) {
             $from = $e->from->label();
             $to = $e->to->label();
