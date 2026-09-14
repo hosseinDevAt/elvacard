@@ -26,6 +26,7 @@ use App\Livewire\Admin\DesignManager;
 use App\Livewire\Admin\DesignWizard;
 use App\Livewire\Admin\FaqItemManager;
 use App\Livewire\Admin\HomepageSectionManager;
+use App\Livewire\Admin\ManualPaymentSettingManager;
 use App\Livewire\Admin\MenuItemManager;
 use App\Livewire\Admin\MenuManager;
 use App\Livewire\Admin\OrderManager;
@@ -60,6 +61,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard/appearance', AppearanceManager::class)->name('admin.appearance');
     Route::get('/dashboard/homepage-sections', HomepageSectionManager::class)->name('admin.homepage-sections');
     Route::get('/dashboard/orders', OrderManager::class)->name('admin.orders');
+    Route::get('/dashboard/manual-payment', ManualPaymentSettingManager::class)->name('admin.manual-payment');
     Route::get('/dashboard/orders/{order}/payments/{payment}/receipt', [PaymentReceiptController::class, 'show'])
         ->name('admin.payments.receipt');
     Route::get('/dashboard/users', UserManager::class)->name('admin.users');

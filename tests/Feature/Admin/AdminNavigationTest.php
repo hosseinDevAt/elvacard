@@ -49,7 +49,7 @@ class AdminNavigationTest extends TestCase
 
     public function test_admin_can_access_misc_pages(): void
     {
-        foreach (['admin.dashboard', 'admin.orders', 'admin.users', 'admin.site-settings'] as $route) {
+        foreach (['admin.dashboard', 'admin.orders', 'admin.users', 'admin.site-settings', 'admin.manual-payment'] as $route) {
             $this->actingAs($this->admin())
                 ->get(route($route))
                 ->assertStatus(200);
@@ -81,7 +81,7 @@ class AdminNavigationTest extends TestCase
             'admin.dashboard', 'admin.products', 'admin.colors', 'admin.designs',
             'admin.pages', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements',
             'admin.appearance', 'admin.menus', 'admin.menu-items', 'admin.homepage-sections',
-            'admin.orders', 'admin.users', 'admin.site-settings',
+            'admin.orders', 'admin.users', 'admin.site-settings', 'admin.manual-payment',
         ] as $route) {
             $this->assertStringContainsString(
                 'href="'.route($route).'" wire:navigate',
