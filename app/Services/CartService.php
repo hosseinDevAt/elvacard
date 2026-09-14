@@ -386,34 +386,33 @@ class CartService
             throw new InvalidArgumentException('Invalid product/color/design selection.');
         }
 
-        $design = Design::query()->active()->find($designId);
+        $design = Design::query()
+            ->active()
+            ->whereRelation('category', fn ($query) => $query->where('is_active', true))
+            ->find($designId);
 
         if (! $design) {
             throw new InvalidArgumentException('Selected design is not available.');
         }
 
-        $designImage = null;
+        $designImage = DesignImage::query()->active()->find($designImageId);
 
-        if ($designImageId !== null) {
-            $designImage = DesignImage::query()->active()->find($designImageId);
+        if (! $designImage) {
+            throw new InvalidArgumentException('Selected design image is not available.');
+        }
 
-            if (! $designImage) {
-                throw new InvalidArgumentException('Selected design image is not available.');
-            }
+        if ((int) $designImage->design_id !== $designId) {
+            throw new InvalidArgumentException('Design image does not belong to selected design.');
+        }
 
-            if ((int) $designImage->design_id !== $designId) {
-                throw new InvalidArgumentException('Design image does not belong to selected design.');
-            }
+        $compatible = DesignColorCompatibility::query()
+            ->where('design_image_id', $designImageId)
+            ->where('card_color_id', $colorPrice->color_id)
+            ->where('is_allowed', true)
+            ->exists();
 
-            $compatible = DesignColorCompatibility::query()
-                ->where('design_image_id', $designImageId)
-                ->where('card_color_id', $colorPrice->color_id)
-                ->where('is_allowed', true)
-                ->exists();
-
-            if (! $compatible) {
-                throw new InvalidArgumentException('Selected design image is not compatible with selected color.');
-            }
+        if (! $compatible) {
+            throw new InvalidArgumentException('Selected design image is not compatible with selected color.');
         }
 
         return [

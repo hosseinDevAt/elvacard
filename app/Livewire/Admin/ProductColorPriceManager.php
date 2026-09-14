@@ -79,6 +79,19 @@ class ProductColorPriceManager extends Component
             return;
         }
 
+        $currentColorPrice = $this->editingId ? ProductColorPrice::find($this->editingId) : null;
+
+        if (
+            ! $this->isActive
+            && $product?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD
+            && $currentColorPrice?->is_active
+            && ProductColorPrice::fuelActiveCount($this->productId, $this->editingId) === 0
+        ) {
+            session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
+
+            return;
+        }
+
         $data = [
             'product_id' => $this->productId,
             'color_id' => $this->colorId,
@@ -118,10 +131,20 @@ class ProductColorPriceManager extends Component
 
     public function delete(int $id): void
     {
-        $priceItem = ProductColorPrice::find($id);
+        $priceItem = ProductColorPrice::with('product')->find($id);
 
         if (! $priceItem) {
             session()->flash('error', 'قیمت موردنظر یافت نشد');
+
+            return;
+        }
+
+        if (
+            $priceItem->product?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD
+            && $priceItem->is_active
+            && ProductColorPrice::fuelActiveCount($priceItem->product_id, $id) === 0
+        ) {
+            session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
 
             return;
         }

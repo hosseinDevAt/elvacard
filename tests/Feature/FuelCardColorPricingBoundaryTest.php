@@ -178,26 +178,43 @@ class FuelCardColorPricingBoundaryTest extends TestCase
         $this->assertSame(1, ProductColorPrice::fuelActiveCount($product->id));
     }
 
-    public function test_deactivating_sole_active_row_is_allowed_but_leaves_product_not_activation_eligible(): void
+    public function test_deactivating_sole_active_fuel_row_is_rejected(): void
     {
         $product = $this->createFuelProduct();
         $color = $this->createColor();
         $row = $this->createPrice($product, $color, 800000, true);
 
-        $this->fillPriceForm($product, $color, 800000, false, $row->id)
+        Livewire::actingAs($this->admin())
+            ->test(ProductColorPriceManager::class)
+            ->set('editingId', $row->id)
+            ->set('productId', $product->id)
+            ->set('colorId', $color->id)
+            ->set('price', 800000)
+            ->set('isActive', false)
             ->call('save')
             ->assertHasNoErrors();
 
-        $this->assertSame(0, ProductColorPrice::fuelActiveCount($product->id));
-
-        $this->fillProductForm($product, CustomizationWorkflowEnum::FUEL_CARD->value, true)
-            ->call('save')
-            ->assertHasErrors('customizationWorkflow');
-
-        $this->assertFalse($product->fresh()->is_active);
+        $this->assertTrue($row->fresh()->is_active, 'The sole active fuel row must survive a rejected deactivation.');
+        $this->assertSame(1, ProductColorPrice::fuelActiveCount($product->id));
     }
 
-    public function test_deleting_sole_active_row_is_permitted_but_leaves_invalid_zero_active_state(): void
+    public function test_fuel_product_allows_deactivating_a_non_sole_active_row(): void
+    {
+        $product = $this->createFuelProduct();
+        $colorA = $this->createColor('A');
+        $colorB = $this->createColor('B');
+        $this->createPrice($product, $colorA, 800000, true);
+        $inactive = $this->createPrice($product, $colorB, 900000, false);
+
+        $this->fillPriceForm($product, $colorB, 900000, false, $inactive->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertFalse($inactive->fresh()->is_active);
+        $this->assertSame(1, ProductColorPrice::fuelActiveCount($product->id));
+    }
+
+    public function test_deleting_sole_active_fuel_row_is_rejected(): void
     {
         $product = $this->createFuelProduct();
         $color = $this->createColor();
@@ -208,8 +225,59 @@ class FuelCardColorPricingBoundaryTest extends TestCase
             ->call('delete', $row->id)
             ->assertHasNoErrors();
 
-        $this->assertDatabaseCount('product_color_prices', 0);
-        $this->assertSame(0, ProductColorPrice::fuelActiveCount($product->id));
+        $this->assertDatabaseHas('product_color_prices', ['id' => $row->id]);
+        $this->assertSame(1, ProductColorPrice::fuelActiveCount($product->id));
+    }
+
+    public function test_deleting_a_non_sole_active_fuel_row_is_permitted(): void
+    {
+        $product = $this->createFuelProduct();
+        $colorA = $this->createColor('A');
+        $colorB = $this->createColor('B');
+        $this->createPrice($product, $colorA, 800000, true);
+        $inactive = $this->createPrice($product, $colorB, 900000, false);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductColorPriceManager::class)
+            ->call('delete', $inactive->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('product_color_prices', ['id' => $inactive->id]);
+        $this->assertSame(1, ProductColorPrice::fuelActiveCount($product->id));
+    }
+
+    public function test_bank_active_color_row_deletion_is_unchanged(): void
+    {
+        $product = $this->createBankProduct();
+        $colorA = $this->createColor('A');
+        $colorB = $this->createColor('B');
+        $rejected = $this->createPrice($product, $colorA, 700000, true);
+        $this->createPrice($product, $colorB, 750000, true);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductColorPriceManager::class)
+            ->call('delete', $rejected->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('product_color_prices', ['id' => $rejected->id]);
+        $this->assertSame(1, ProductColorPrice::where('product_id', $product->id)->where('is_active', true)->count());
+    }
+
+    public function test_commerce_active_color_row_deletion_is_unchanged(): void
+    {
+        $product = $this->createProduct('commerce-delete-boundary', ProductTypeEnum::STANDARD);
+        $colorA = $this->createColor('A');
+        $colorB = $this->createColor('B');
+        $rejected = $this->createPrice($product, $colorA, 300000, true);
+        $this->createPrice($product, $colorB, 350000, true);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductColorPriceManager::class)
+            ->call('delete', $rejected->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('product_color_prices', ['id' => $rejected->id]);
+        $this->assertSame(1, ProductColorPrice::where('product_id', $product->id)->where('is_active', true)->count());
     }
 
     public function test_product_manager_rejects_switching_to_fuel_when_two_active_prices_exist(): void

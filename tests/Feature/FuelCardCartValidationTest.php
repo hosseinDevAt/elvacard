@@ -45,10 +45,10 @@ class FuelCardCartValidationTest extends TestCase
         ]);
     }
 
-    private function createDesign(Color $color, bool $allowed = true): array
+    private function createDesign(Color $color, bool $allowed = true, ?CateDesign $category = null): array
     {
         $design = Design::create([
-            'cate_design_id' => $this->createCategory()->id,
+            'cate_design_id' => $category?->id ?? $this->createCategory()->id,
             'name' => 'طرح تست',
             'slug' => 'fuel-cart-design-'.uniqid(),
             'is_active' => true,
@@ -621,5 +621,113 @@ class FuelCardCartValidationTest extends TestCase
         $this->assertStringContainsString('default:', $source);
         $this->assertStringNotContainsString('container->make', $source);
         $this->assertStringNotContainsString('instanceof', $source);
+    }
+
+    public function test_fuel_missing_design_image_id_rejected(): void
+    {
+        $color = $this->createColor();
+        $designData = $this->createDesign($color);
+        $product = $this->createFuelProduct([
+            ['color_id' => $color->id, 'price' => 480000, 'is_active' => true],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Selected design image is not available');
+
+        $this->fuelValidation($product, [
+            'product_id' => $product->id,
+            'design_id' => $designData['design']->id,
+            'quantity' => 1,
+        ]);
+    }
+
+    public function test_bank_missing_design_image_id_rejected(): void
+    {
+        $color = $this->createColor();
+        $designData = $this->createDesign($color);
+        $product = $this->createBankProduct([$color]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Selected design image is not available');
+
+        app(CartService::class)->addItem([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'design_id' => $designData['design']->id,
+            'quantity' => 1,
+            'customization_json' => ['card_number' => '6274000000000000'],
+        ]);
+    }
+
+    public function test_fuel_design_from_inactive_category_rejected(): void
+    {
+        $color = $this->createColor();
+        $category = CateDesign::create([
+            'name' => 'دسته غیرفعال',
+            'slug' => 'fuel-cart-inactive-cat-'.uniqid(),
+            'is_active' => false,
+            'sort_order' => 1,
+        ]);
+        $designData = $this->createDesign($color, category: $category);
+        $product = $this->createFuelProduct([
+            ['color_id' => $color->id, 'price' => 480000, 'is_active' => true],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Selected design is not available');
+
+        $this->fuelValidation($product, [
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'design_id' => $designData['design']->id,
+            'design_image_id' => $designData['designImage']->id,
+            'quantity' => 1,
+        ]);
+    }
+
+    public function test_bank_design_from_inactive_category_rejected(): void
+    {
+        $color = $this->createColor();
+        $category = CateDesign::create([
+            'name' => 'دسته غیرفعال بانک',
+            'slug' => 'fuel-cart-inactive-bank-cat-'.uniqid(),
+            'is_active' => false,
+            'sort_order' => 1,
+        ]);
+        $designData = $this->createDesign($color, category: $category);
+        $product = $this->createBankProduct([$color]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Selected design is not available');
+
+        app(CartService::class)->addItem([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'design_id' => $designData['design']->id,
+            'design_image_id' => $designData['designImage']->id,
+            'quantity' => 1,
+            'customization_json' => ['card_number' => '6274000000000000'],
+        ]);
+    }
+
+    public function test_commerce_without_workflow_accepts_payload_without_design_image(): void
+    {
+        $product = Product::create([
+            'type' => ProductTypeEnum::STANDARD->value,
+            'customization_workflow' => null,
+            'name' => 'کالای معمولی',
+            'slug' => 'fuel-cart-commerce-'.uniqid(),
+            'base_price' => 120000,
+            'is_active' => true,
+        ]);
+
+        $cart = app(CartService::class)->addItem([
+            'product_id' => $product->id,
+            'quantity' => 2,
+        ]);
+
+        $this->assertSame(2, $cart['items'][0]['quantity']);
+        $this->assertNull($cart['items'][0]['design_image_id']);
+        $this->assertSame(240000, $cart['items'][0]['final_price']);
     }
 }

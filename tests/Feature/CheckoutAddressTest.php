@@ -7,6 +7,8 @@ use App\Enums\ProductTypeEnum;
 use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\Design;
+use App\Models\DesignColorCompatibility;
+use App\Models\DesignImage;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
@@ -20,7 +22,7 @@ class CheckoutAddressTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @return array{product: Product, color: Color, design: Design} */
+    /** @return array{product: Product, color: Color, design: Design, designImage: DesignImage} */
     private function registerCartCatalog(): array
     {
         $category = CateDesign::create(['name' => 'تست', 'slug' => 'test-category', 'is_active' => true]);
@@ -56,7 +58,21 @@ class CheckoutAddressTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        return ['product' => $product, 'color' => $color, 'design' => $design];
+        $designImage = DesignImage::create([
+            'design_id' => $design->id,
+            'color_id' => $color->id,
+            'image_path' => 'designs/test-design.png',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        DesignColorCompatibility::create([
+            'design_image_id' => $designImage->id,
+            'card_color_id' => $color->id,
+            'is_allowed' => true,
+        ]);
+
+        return ['product' => $product, 'color' => $color, 'design' => $design, 'designImage' => $designImage];
     }
 
     private function addToCart(array $catalog): void
@@ -65,6 +81,7 @@ class CheckoutAddressTest extends TestCase
             'product_id' => $catalog['product']->id,
             'color_id' => $catalog['color']->id,
             'design_id' => $catalog['design']->id,
+            'design_image_id' => $catalog['designImage']->id,
             'quantity' => 1,
             'customization_json' => [],
         ]);
