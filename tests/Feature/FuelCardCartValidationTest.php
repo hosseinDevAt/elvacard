@@ -127,7 +127,6 @@ class FuelCardCartValidationTest extends TestCase
             isset($payload['design_image_id']) && $payload['design_image_id'] !== '' ? (int) $payload['design_image_id'] : null,
             (int) ($payload['quantity'] ?? 1),
             $payload,
-            false,
         );
     }
 

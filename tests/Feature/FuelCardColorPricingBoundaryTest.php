@@ -77,12 +77,21 @@ class FuelCardColorPricingBoundaryTest extends TestCase
             ->set('isActive', $isActive);
     }
 
+    private function typeForWorkflow(string $workflow): string
+    {
+        return match ($workflow) {
+            CustomizationWorkflowEnum::BANK_CARD->value => ProductTypeEnum::BANK->value,
+            CustomizationWorkflowEnum::FUEL_CARD->value => ProductTypeEnum::FUEL->value,
+            default => ProductTypeEnum::STANDARD->value,
+        };
+    }
+
     private function fillProductForm(Product $product, string $workflow, bool $isActive)
     {
         return Livewire::actingAs($this->admin())
             ->test(ProductManager::class)
             ->set('editingId', $product->id)
-            ->set('type', $product->getRawOriginal('type'))
+            ->set('type', $this->typeForWorkflow($workflow))
             ->set('customizationWorkflow', $workflow)
             ->set('name', $product->name)
             ->set('isActive', $isActive);

@@ -3,6 +3,7 @@
 namespace App\Services\Customization;
 
 use App\Enums\CustomizationWorkflowEnum;
+use App\Enums\ProductTypeEnum;
 
 class CustomizationWorkflowRegistry
 {
@@ -22,6 +23,38 @@ class CustomizationWorkflowRegistry
         }
 
         return in_array($workflow, self::ACTIVE_WORKFLOWS, true);
+    }
+
+    /**
+     * The only legal product type for a given customization workflow. A card
+     * products always carries its own workflow and a plain commerce product
+     * always carries none. Mirrors the historical backfill in migration
+     * 2026_09_13_000002 (bank→bank_card, fuel→fuel_card, standard→null).
+     */
+    public static function expectedType(?CustomizationWorkflowEnum $workflow): ProductTypeEnum
+    {
+        return match ($workflow) {
+            CustomizationWorkflowEnum::BANK_CARD => ProductTypeEnum::BANK,
+            CustomizationWorkflowEnum::FUEL_CARD => ProductTypeEnum::FUEL,
+            null => ProductTypeEnum::STANDARD,
+        };
+    }
+
+    public static function typeIsConsistent(string $type, ?string $workflowRaw): bool
+    {
+        $typeEnum = ProductTypeEnum::tryFrom($type);
+
+        if ($typeEnum === null) {
+            return false;
+        }
+
+        $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom($workflowRaw) : null;
+
+        if ($workflowRaw !== null && $workflow === null) {
+            return false;
+        }
+
+        return self::expectedType($workflow) === $typeEnum;
     }
 
     public static function classifyLegacyCustomization(array $customization): ?CustomizationWorkflowEnum

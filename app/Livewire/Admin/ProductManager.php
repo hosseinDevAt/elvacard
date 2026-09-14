@@ -77,6 +77,15 @@ class ProductManager extends Component
     {
         $this->validate();
 
+        if (! CustomizationWorkflowRegistry::typeIsConsistent($this->type, $this->customizationWorkflow)) {
+            $this->addError(
+                'customizationWorkflow',
+                'نوع محصول و فرآیند شخصی‌سازی باید هماهنگ باشند: محصول استاندارد بدون شخصی‌سازی، کارت بانکی با فرآیند کارت بانکی، کارت سوخت با فرآیند کارت سوخت.'
+            );
+
+            return;
+        }
+
         if (
             $this->customizationWorkflow === CustomizationWorkflowEnum::FUEL_CARD->value
             && $this->editingId
