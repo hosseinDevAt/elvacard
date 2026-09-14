@@ -12,6 +12,7 @@ use App\Services\PaymentGatewayManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class GatewayPaymentController extends Controller
@@ -62,7 +63,18 @@ class GatewayPaymentController extends Controller
             return response()->json(['status' => 'unknown_payment'], 404);
         }
 
-        $status = $this->paymentCore->handleCallback($payment, $request->except(['reference']));
+        try {
+            $status = $this->paymentCore->handleCallback($payment, $request->except(['reference']));
+        } catch (\Throwable $e) {
+            Log::error('Unhandled gateway callback failure', [
+                'payment_id' => $payment->id,
+                'order_id' => $payment->order_id,
+                'gateway' => $gateway,
+                'exception' => $e->getMessage(),
+            ]);
+
+            return response()->json(['status' => 'failed']);
+        }
 
         return response()->json(['status' => $status->value]);
     }

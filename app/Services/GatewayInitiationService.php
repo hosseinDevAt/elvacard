@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Support\GatewayInitiationResult;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -76,10 +77,30 @@ final class GatewayInitiationService
             callbackUrl: route('checkout.payment.callback', $gateway->name()),
         );
 
-        $result = $gateway->initiate($request);
+        try {
+            $result = $gateway->initiate($request);
+        } catch (\Throwable $e) {
+            $this->markInitiationFailed($payment, 'provider_exception');
+
+            Log::error('Gateway provider exception during payment initiation', [
+                'payment_id' => $payment->id,
+                'order_id' => $order->id,
+                'gateway' => $gateway->name(),
+                'exception' => $e->getMessage(),
+            ]);
+
+            return GatewayInitiationResult::unavailable('امکان شروع پرداخت وجود ندارد. لطفاً بعداً تلاش کنید.');
+        }
 
         if (! $result->success || ! $this->isSafeRedirectUrl($result->redirectUrl)) {
             $this->markInitiationFailed($payment);
+
+            Log::warning('Gateway initiation rejected', [
+                'payment_id' => $payment->id,
+                'order_id' => $order->id,
+                'gateway' => $gateway->name(),
+                'reason' => 'initiation_failed',
+            ]);
 
             return GatewayInitiationResult::unavailable('امکان شروع پرداخت وجود ندارد. لطفاً بعداً تلاش کنید.');
         }
@@ -90,9 +111,9 @@ final class GatewayInitiationService
         return GatewayInitiationResult::success($payment, (string) $result->redirectUrl);
     }
 
-    private function markInitiationFailed(Payment $payment): void
+    private function markInitiationFailed(Payment $payment, string $reason = 'initiation_failed'): void
     {
-        DB::transaction(function () use ($payment) {
+        DB::transaction(function () use ($payment, $reason) {
             $locked = $this->lockPayment($payment->id);
 
             if ($locked->status !== PaymentStatus::PENDING) {
@@ -100,7 +121,7 @@ final class GatewayInitiationService
             }
 
             $locked->status = PaymentStatus::FAILED;
-            $locked->metadata = array_merge($locked->metadata ?? [], ['reason' => 'initiation_failed']);
+            $locked->metadata = array_merge($locked->metadata ?? [], ['reason' => $reason]);
             $locked->save();
         });
     }

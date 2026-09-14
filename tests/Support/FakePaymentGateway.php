@@ -20,6 +20,10 @@ final class FakePaymentGateway implements PaymentGateway
 
     public bool $failOnVerify = false;
 
+    public bool $throwOnInitiate = false;
+
+    public bool $throwOnVerify = false;
+
     public ?int $verificationAmountOverride = null;
 
     public int $initiateCalls = 0;
@@ -45,6 +49,10 @@ final class FakePaymentGateway implements PaymentGateway
         $this->initiateCalls++;
         $this->lastInitiationRequest = $request;
 
+        if ($this->throwOnInitiate) {
+            throw new \RuntimeException("Provider unreachable for {$this->providerName}.");
+        }
+
         if ($this->failOnInitiate) {
             return PaymentInitiationResult::failure('امکان شروع پرداخت وجود ندارد.', [
                 'provider' => $this->providerName,
@@ -63,6 +71,10 @@ final class FakePaymentGateway implements PaymentGateway
         $this->verifyCalls++;
         $this->lastProviderReference = $providerReference;
         $this->lastCallbackData = $callbackData;
+
+        if ($this->throwOnVerify) {
+            throw new \RuntimeException("Provider unreachable during verification for {$this->providerName}.");
+        }
 
         if ($this->failOnVerify) {
             return PaymentVerificationResult::failure('تأیید پرداخت ناموفق بود.', [

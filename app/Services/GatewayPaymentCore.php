@@ -13,6 +13,7 @@ use App\Exceptions\UnknownPaymentGatewayException;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Provider-agnostic gateway callback orchestration.
@@ -51,17 +52,49 @@ final class GatewayPaymentCore
             callbackUrl: route('checkout.payment.callback', $payment->gateway),
         );
 
-        $verification = $gateway->verify(
-            $request,
-            (string) $payment->transaction_id,
-            $callbackData,
-        );
+        try {
+            $verification = $gateway->verify(
+                $request,
+                (string) $payment->transaction_id,
+                $callbackData,
+            );
+        } catch (\Throwable $e) {
+            $this->fail($payment, [
+                'reason' => 'provider_exception',
+                'detail' => $e->getMessage(),
+            ]);
+
+            Log::error('Gateway provider exception during payment verification', [
+                'payment_id' => $payment->id,
+                'order_id' => $order->id,
+                'gateway' => $gateway->name(),
+                'exception' => $e->getMessage(),
+            ]);
+
+            return PaymentStatus::FAILED;
+        }
 
         if (! $verification->success) {
+            Log::warning('Gateway verification failed', [
+                'payment_id' => $payment->id,
+                'order_id' => $order->id,
+                'gateway' => $gateway->name(),
+                'reason' => 'provider_verification_failed',
+            ]);
+
             return $this->fail($payment, ['reason' => 'provider_verification_failed']);
         }
 
         if ((int) $verification->amount !== (int) $payment->amount) {
+            Log::warning('Gateway verification amount mismatch', [
+                'payment_id' => $payment->id,
+                'order_id' => $order->id,
+                'gateway' => $gateway->name(),
+                'reason' => 'amount_mismatch',
+                'expected_amount' => (int) $payment->amount,
+                'returned_amount' => (int) $verification->amount,
+            ]);
+
             return $this->fail($payment, [
                 'reason' => 'amount_mismatch',
                 'expected_amount' => (int) $payment->amount,
@@ -115,6 +148,13 @@ final class GatewayPaymentCore
             if ($this->stateMachine->canTransition($order, OrderStatusEnum::CONFIRMED)) {
                 $this->stateMachine->transition($order, OrderStatusEnum::CONFIRMED);
             }
+
+            Log::info('Gateway payment success', [
+                'payment_id' => $locked->id,
+                'order_id' => $locked->order_id,
+                'gateway' => $locked->gateway,
+                'amount' => (int) $locked->amount,
+            ]);
 
             return PaymentStatus::SUCCESS;
         });

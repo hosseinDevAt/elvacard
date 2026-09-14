@@ -140,6 +140,25 @@ class GatewayPaymentCoreTest extends TestCase
         $this->assertNull($payment->paid_amount);
     }
 
+    public function test_initiation_provider_exception_marks_payment_failed_without_500(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->throwOnInitiate = true;
+        $order = $this->createOrder(total: 140000);
+
+        $response = $this->initiateViaHttp($order);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('payment');
+        $this->assertNotSame("https://redir.example.test/pay/{$order->reference}", $response->headers->get('Location'));
+
+        $payment = $this->latestGatewayPayment($order);
+        $this->assertNotNull($payment);
+        $this->assertSame(PaymentStatus::FAILED, $payment->status);
+        $this->assertSame('provider_exception', $payment->metadata['reason'] ?? null);
+        $this->assertNull($payment->paid_amount);
+    }
+
     public function test_empty_gateway_registry_degrades_gracefully(): void
     {
         $order = $this->createOrder();
@@ -269,6 +288,31 @@ class GatewayPaymentCoreTest extends TestCase
         $payment->refresh();
         $this->assertSame(PaymentStatus::FAILED, $payment->status);
         $this->assertSame('provider_verification_failed', $payment->metadata['reason'] ?? null);
+        $this->assertNull($payment->paid_amount);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::UNPAID, $order->payment_status);
+        $this->assertSame(OrderStatusEnum::PENDING, $order->status);
+    }
+
+    public function test_callback_provider_exception_marks_payment_failed_and_returns_controlled_response(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->throwOnVerify = true;
+        $order = $this->createOrder();
+
+        $this->initiateViaHttp($order);
+        $payment = $this->latestGatewayPayment($order);
+        $this->assertNotNull($payment);
+
+        $response = $this->callbackViaHttp($payment, ['status' => 'OK']);
+
+        $response->assertOk();
+        $response->assertExactJson(['status' => 'failed']);
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::FAILED, $payment->status);
+        $this->assertSame('provider_exception', $payment->metadata['reason'] ?? null);
         $this->assertNull($payment->paid_amount);
 
         $order->refresh();

@@ -8,6 +8,7 @@ use App\Exceptions\InvalidOrderTransitionException;
 use App\Exceptions\OrderLifecycleConstraintException;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderStateMachine
 {
@@ -71,8 +72,16 @@ class OrderStateMachine
         $this->assertStructuralTransition($locked, $to);
         $this->assertPaymentTransition($locked, $to);
 
+        $from = $locked->status;
         $locked->status = $to;
         $locked->save();
+
+        Log::info('Order status changed', [
+            'order_id' => $locked->id,
+            'from' => $from instanceof OrderStatusEnum ? $from->value : (string) $from,
+            'to' => $to->value,
+            'admin_id' => auth()->id(),
+        ]);
     }
 
     /**

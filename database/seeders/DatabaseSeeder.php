@@ -16,6 +16,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production') || config('app.env') === 'production') {
+            throw new \RuntimeException(
+                'Refusing to seed development credentials in production. Create the admin account manually.'
+            );
+        }
         // === Users ===
         // role and email_verified_at are $guarded: firstOrCreate silently drops them,
         // so they are force-filled explicitly after creation.
