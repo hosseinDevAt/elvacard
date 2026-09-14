@@ -4,28 +4,40 @@ namespace App\Livewire\Admin;
 
 use App\Models\CateDesign;
 use App\Models\Design;
+use App\Services\Customization\ProductPurchaseabilityService;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class DesignManager extends Component
 {
-    use WithPagination;
     use GeneratesUniqueSlug;
+    use WithPagination;
 
     public ?int $cateDesignId = null;
+
     public string $name = '';
+
     public ?string $description = null;
+
     public ?string $metaTitle = null;
+
     public ?string $metaDescription = null;
+
     public ?string $canonicalUrl = null;
+
     public bool $robotsIndex = true;
+
     public ?string $seoContent = null;
+
     public bool $isActive = true;
+
     public int $sortOrder = 0;
 
     public string $search = '';
+
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected $rules = [
@@ -49,6 +61,16 @@ class DesignManager extends Component
     public function save(): void
     {
         $this->validate();
+
+        if ($this->editingId && ! $this->isActive) {
+            $blocker = ProductPurchaseabilityService::designDeactivationBlocker($this->editingId);
+
+            if ($blocker !== null) {
+                session()->flash('error', $blocker);
+
+                return;
+            }
+        }
 
         $slug = $this->uniqueSlug($this->name, Design::class, $this->editingId, 'design');
 

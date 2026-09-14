@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignImage;
+use App\Services\Customization\ProductPurchaseabilityService;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -115,6 +116,14 @@ class DesignImageManager extends Component
 
         if (! $image) {
             session()->flash('error', 'تصویر موردنظر یافت نشد');
+
+            return;
+        }
+
+        $removalBlocker = ProductPurchaseabilityService::designImageRemovalBlocker($id);
+
+        if ($removalBlocker !== null) {
+            session()->flash('error', $removalBlocker);
 
             return;
         }

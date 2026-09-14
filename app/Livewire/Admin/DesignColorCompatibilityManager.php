@@ -6,6 +6,8 @@ use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
+use App\Services\Customization\ProductPurchaseabilityService;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class DesignColorCompatibilityManager extends Component
@@ -42,6 +44,16 @@ class DesignColorCompatibilityManager extends Component
             ->first();
 
         if ($existing) {
+            if ($existing->is_allowed) {
+                $removalBlocker = ProductPurchaseabilityService::compatibilityRemovalBlocker($designImageId, $colorId);
+
+                if ($removalBlocker !== null) {
+                    session()->flash('error', $removalBlocker);
+
+                    return;
+                }
+            }
+
             $existing->update(['is_allowed' => ! $existing->is_allowed]);
             session()->flash('success', 'وضعیت سازگاری با موفقیت تغییر کرد');
         } else {
@@ -54,7 +66,7 @@ class DesignColorCompatibilityManager extends Component
         }
     }
 
-    public function getDesignOptionsProperty(): \Illuminate\Support\Collection
+    public function getDesignOptionsProperty(): Collection
     {
         return Design::query()->orderBy('name')->get(['id', 'name']);
     }

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Color;
+use App\Services\Customization\ProductPurchaseabilityService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -11,11 +12,17 @@ class ColorManager extends Component
     use WithPagination;
 
     public string $name = '';
+
     public string $colorCode = '#000000';
+
     public ?string $previewImage = null;
+
     public bool $isActive = true;
+
     public int $sortOrder = 0;
+
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected $rules = [
@@ -34,6 +41,16 @@ class ColorManager extends Component
     public function save(): void
     {
         $this->validate();
+
+        if ($this->editingId && ! $this->isActive) {
+            $blocker = ProductPurchaseabilityService::colorDeactivationBlocker($this->editingId);
+
+            if ($blocker !== null) {
+                session()->flash('error', $blocker);
+
+                return;
+            }
+        }
 
         $data = [
             'name' => $this->name,

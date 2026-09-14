@@ -6,6 +6,7 @@ use App\Enums\CustomizationWorkflowEnum;
 use App\Models\Color;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
+use App\Services\Customization\ProductPurchaseabilityService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -92,6 +93,19 @@ class ProductColorPriceManager extends Component
             return;
         }
 
+        $priceRowBlocker = ProductPurchaseabilityService::priceRowChangeBlocker(
+            $this->productId,
+            $this->editingId,
+            $this->colorId,
+            $this->isActive,
+        );
+
+        if ($priceRowBlocker !== null) {
+            session()->flash('error', $priceRowBlocker);
+
+            return;
+        }
+
         $data = [
             'product_id' => $this->productId,
             'color_id' => $this->colorId,
@@ -145,6 +159,19 @@ class ProductColorPriceManager extends Component
             && ProductColorPrice::fuelActiveCount($priceItem->product_id, $id) === 0
         ) {
             session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
+
+            return;
+        }
+
+        $priceRowBlocker = ProductPurchaseabilityService::priceRowChangeBlocker(
+            $priceItem->product_id,
+            $id,
+            null,
+            false,
+        );
+
+        if ($priceRowBlocker !== null) {
+            session()->flash('error', $priceRowBlocker);
 
             return;
         }

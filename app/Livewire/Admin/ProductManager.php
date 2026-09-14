@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\Customization\FuelCardActivationService;
+use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\DesignCatalogService;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
@@ -116,6 +117,34 @@ class ProductManager extends Component
             if ($this->getErrorBag()->has('customizationWorkflow')) {
                 return;
             }
+        }
+
+        if ($this->customizationWorkflow === CustomizationWorkflowEnum::BANK_CARD->value && $this->isActive) {
+            if (! CustomizationWorkflowRegistry::isActive(CustomizationWorkflowEnum::BANK_CARD)) {
+                $this->addError(
+                    'customizationWorkflow',
+                    'سرویس کارت بانکی هنوز فعال نشده است؛ محصول قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
+                );
+
+                return;
+            }
+
+            foreach (ProductPurchaseabilityService::activationBlockers($this->editingId) as $blocker) {
+                $this->addError('customizationWorkflow', $blocker);
+            }
+
+            if ($this->getErrorBag()->has('customizationWorkflow')) {
+                return;
+            }
+        }
+
+        if ($this->type === ProductTypeEnum::STANDARD->value && $this->isActive && $this->basePrice === null) {
+            $this->addError(
+                'basePrice',
+                'محصول استاندارد فعال باید قیمت پایه داشته باشد؛ بدون قیمت پایه قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
+            );
+
+            return;
         }
 
         $slug = $this->uniqueSlug($this->name, Product::class, $this->editingId, 'product');

@@ -3,18 +3,22 @@
 namespace App\Livewire\Admin;
 
 use App\Models\CateDesign;
+use App\Services\Customization\ProductPurchaseabilityService;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class CateDesignManager extends Component
 {
-    use WithPagination;
     use GeneratesUniqueSlug;
+    use WithPagination;
 
     public string $name = '';
+
     public bool $isActive = true;
+
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected $rules = [
@@ -25,6 +29,16 @@ class CateDesignManager extends Component
     public function save(): void
     {
         $this->validate();
+
+        if ($this->editingId && ! $this->isActive) {
+            $blocker = ProductPurchaseabilityService::categoryDeactivationBlocker($this->editingId);
+
+            if ($blocker !== null) {
+                session()->flash('error', $blocker);
+
+                return;
+            }
+        }
 
         $slug = $this->uniqueSlug($this->name, CateDesign::class, $this->editingId ? (int) $this->editingId : null);
 
