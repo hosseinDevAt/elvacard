@@ -8,7 +8,9 @@ use App\Contracts\Payments\PaymentVerificationResult;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentStatusEnum;
+use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\UnknownPaymentGatewayException;
+use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +27,7 @@ final class GatewayPaymentCore
     public function __construct(
         private readonly PaymentGatewayManager $gatewayManager,
         private readonly OrderStateMachine $stateMachine,
+        private readonly PaymentConstraintService $constraints,
     ) {}
 
     public function handleCallback(Payment $payment, array $callbackData): PaymentStatus
@@ -71,11 +74,30 @@ final class GatewayPaymentCore
 
     private function succeed(Payment $payment, PaymentVerificationResult $verification): PaymentStatus
     {
-        DB::transaction(function () use ($payment, $verification) {
+        return DB::transaction(function () use ($payment, $verification): PaymentStatus {
             $locked = $this->lockPayment($payment->id);
 
             if ($locked->status !== PaymentStatus::PENDING) {
-                return;
+                return $locked->status;
+            }
+
+            $order = $this->lockOrder($locked->order_id);
+
+            // The order might have been cancelled or completed while the payment
+            // was pending at the provider, or another payment may have already
+            // settled it. CANCELLED + PAID / COMPLETED + PAID / double-success
+            // are forbidden states, so the success transition is rejected and
+            // the attempt is marked failed instead.
+            try {
+                $this->constraints->assertPayable($order);
+                $this->constraints->assertSingleSuccessfulPayment($order);
+            } catch (PaymentConstraintViolationException $e) {
+                $this->reject($locked, [
+                    'reason' => 'order_not_payable',
+                    'detail' => $e->getMessage(),
+                ]);
+
+                return PaymentStatus::FAILED;
             }
 
             $locked->status = PaymentStatus::SUCCESS;
@@ -87,16 +109,22 @@ final class GatewayPaymentCore
             ]);
             $locked->save();
 
-            $order = $locked->order;
             $order->payment_status = PaymentStatusEnum::PAID;
             $order->save();
 
             if ($this->stateMachine->canTransition($order, OrderStatusEnum::CONFIRMED)) {
                 $this->stateMachine->transition($order, OrderStatusEnum::CONFIRMED);
             }
-        });
 
-        return PaymentStatus::SUCCESS;
+            return PaymentStatus::SUCCESS;
+        });
+    }
+
+    private function reject(Payment $payment, array $reasonMetadata): void
+    {
+        $payment->status = PaymentStatus::FAILED;
+        $payment->metadata = array_merge($payment->metadata ?? [], $reasonMetadata);
+        $payment->save();
     }
 
     private function fail(Payment $payment, array $reasonMetadata): PaymentStatus
@@ -144,5 +172,17 @@ final class GatewayPaymentCore
 
         return $query->first()
             ?? throw new \RuntimeException('Payment not found.');
+    }
+
+    private function lockOrder(int $orderId): Order
+    {
+        $query = Order::query()->where('id', $orderId);
+
+        if (DB::getDriverName() === 'mysql') {
+            $query->lockForUpdate();
+        }
+
+        return $query->first()
+            ?? throw new \RuntimeException('Order not found.');
     }
 }

@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Checkout;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\PaymentRetryException;
 use App\Http\Controllers\Controller;
 use App\Models\ManualPaymentSetting;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\ManualPaymentCreationService;
 use App\Services\ManualPaymentRetryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class ManualTransferPaymentController extends Controller
         }
 
         $lastFailedPayment = $order->payments()
+            ->where('method', PaymentMethod::MANUAL_TRANSFER->value)
             ->where('status', PaymentStatus::FAILED->value)
             ->latest()
             ->first();
@@ -60,8 +63,12 @@ class ManualTransferPaymentController extends Controller
 
         $receiptPath = $request->file('receipt_image')->store('payment_receipts', 'local');
 
+        // A retry is only ever a repeat of a FAILED manual transfer attempt;
+        // a failed online gateway attempt is not a manual retry and therefore
+        // never blocks a first-time manual transfer.
         $isRetry = Payment::query()
             ->where('order_id', $order->id)
+            ->where('method', PaymentMethod::MANUAL_TRANSFER->value)
             ->where('status', PaymentStatus::FAILED->value)
             ->exists();
 
@@ -71,28 +78,24 @@ class ManualTransferPaymentController extends Controller
             return back()->withErrors(['payment' => 'پرداخت مجدد برای سفارش مهمان امکان‌پذیر نیست.']);
         }
 
-        if ($isRetry) {
-            try {
+        try {
+            if ($isRetry) {
                 app(ManualPaymentRetryService::class)->createRetryPayment($order, [
                     'receipt_path' => $receiptPath,
                     'tracking_number' => $validated['tracking_number'] ?? null,
                     'note' => $validated['note'] ?? null,
                 ]);
-            } catch (PaymentRetryException $e) {
-                Storage::disk('local')->delete($receiptPath);
-
-                return back()->withErrors(['payment' => $e->getMessage()]);
+            } else {
+                app(ManualPaymentCreationService::class)->createPayment($order, [
+                    'receipt_path' => $receiptPath,
+                    'tracking_number' => $validated['tracking_number'] ?? null,
+                    'note' => $validated['note'] ?? null,
+                ]);
             }
-        } else {
-            Payment::create([
-                'order_id' => $order->id,
-                'method' => PaymentMethod::MANUAL_TRANSFER->value,
-                'status' => PaymentStatus::PENDING_REVIEW->value,
-                'amount' => (int) $order->total_price,
-                'tracking_code' => $validated['tracking_number'] ?? null,
-                'receipt_path' => $receiptPath,
-                'metadata' => ['note' => $validated['note'] ?? null],
-            ]);
+        } catch (PaymentRetryException|PaymentConstraintViolationException $e) {
+            Storage::disk('local')->delete($receiptPath);
+
+            return back()->withErrors(['payment' => $e->getMessage()]);
         }
 
         return redirect()->route('checkout.success', $order->token);

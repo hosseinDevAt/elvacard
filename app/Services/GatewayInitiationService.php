@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\Payments\PaymentInitiationRequest;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\UnknownPaymentGatewayException;
 use App\Models\Order;
 use App\Models\Payment;
@@ -24,6 +25,7 @@ final class GatewayInitiationService
 {
     public function __construct(
         private readonly PaymentGatewayManager $gatewayManager,
+        private readonly PaymentConstraintService $constraints,
     ) {}
 
     public function initiate(Order $order, string $gatewayName): GatewayInitiationResult
@@ -36,22 +38,32 @@ final class GatewayInitiationService
 
         $amount = (int) $order->total_price;
 
-        $payment = DB::transaction(function () use ($order, $gateway, $amount) {
-            $lockedOrder = $this->lockOrder($order->id);
+        try {
+            $this->constraints->assertPayable($order);
 
-            if ($lockedOrder->payments()->active()->exists()) {
-                return null;
-            }
+            $payment = DB::transaction(function () use ($order, $gateway, $amount) {
+                $lockedOrder = $this->lockOrder($order->id);
 
-            return Payment::create([
-                'order_id' => $lockedOrder->id,
-                'method' => PaymentMethod::GATEWAY->value,
-                'status' => PaymentStatus::PENDING->value,
-                'amount' => $amount,
-                'gateway' => $gateway->name(),
-                'metadata' => [],
-            ]);
-        });
+                // Re-check against the locked row so a cancellation that lands
+                // between the request and the row lock still blocks payment.
+                $this->constraints->assertPayable($lockedOrder);
+
+                if ($lockedOrder->payments()->active()->exists()) {
+                    return null;
+                }
+
+                return Payment::create([
+                    'order_id' => $lockedOrder->id,
+                    'method' => PaymentMethod::GATEWAY->value,
+                    'status' => PaymentStatus::PENDING->value,
+                    'amount' => $amount,
+                    'gateway' => $gateway->name(),
+                    'metadata' => [],
+                ]);
+            });
+        } catch (PaymentConstraintViolationException $e) {
+            return GatewayInitiationResult::unavailable($e->getMessage());
+        }
 
         if ($payment === null) {
             return GatewayInitiationResult::unavailable('پرداخت فعالی برای این سفارش وجود دارد.');

@@ -13,9 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class ManualPaymentReviewService
 {
-    public function __construct(private readonly OrderStateMachine $stateMachine)
-    {
-    }
+    public function __construct(
+        private readonly OrderStateMachine $stateMachine,
+        private readonly PaymentConstraintService $constraints,
+    ) {}
 
     public function approve(Payment $payment): void
     {
@@ -24,7 +25,12 @@ class ManualPaymentReviewService
 
             $this->assertReviewable($payment);
 
-            if ((int) $payment->amount !== (int) $payment->order->total_price) {
+            $order = $this->lockOrder($payment->order_id);
+
+            $this->constraints->assertPayable($order);
+            $this->constraints->assertSingleSuccessfulPayment($order);
+
+            if ((int) $payment->amount !== (int) $order->total_price) {
                 throw new PaymentReviewException('Payment amount does not match the order total.');
             }
 
@@ -33,7 +39,6 @@ class ManualPaymentReviewService
             $payment->paid_at = now();
             $payment->save();
 
-            $order = $payment->order;
             $order->payment_status = PaymentStatusEnum::PAID;
             $order->save();
 
@@ -81,5 +86,17 @@ class ManualPaymentReviewService
 
         return $query->first()
             ?? throw new PaymentReviewException('Payment not found.');
+    }
+
+    private function lockOrder(int $orderId): Order
+    {
+        $query = Order::query()->where('id', $orderId);
+
+        if (DB::getDriverName() === 'mysql') {
+            $query->lockForUpdate();
+        }
+
+        return $query->first()
+            ?? throw new PaymentReviewException('Order not found.');
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\OrderStatusEnum;
+use App\Exceptions\InvalidOrderTransitionException;
+use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\PaymentReviewException;
 use App\Models\Order;
 use App\Models\Payment;
@@ -62,7 +64,7 @@ class OrderManager extends Component
 
         try {
             $stateMachine->transition($order, OrderStatusEnum::from($status));
-        } catch (\App\Exceptions\InvalidOrderTransitionException $e) {
+        } catch (InvalidOrderTransitionException $e) {
             $from = $e->from->label();
             $to = $e->to->label();
 
@@ -110,7 +112,7 @@ class OrderManager extends Component
                 $service->reject($payment);
                 session()->flash('success', 'پرداخت رد شد');
             }
-        } catch (PaymentReviewException $e) {
+        } catch (PaymentReviewException|PaymentConstraintViolationException $e) {
             session()->flash('error', $e->getMessage());
 
             return;

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentStatusEnum;
@@ -502,36 +503,40 @@ class PaymentRetryTest extends TestCase
         $this->assertDatabaseCount('payments', 1);
     }
 
-    public function test_cancelled_order_behavior_verified(): void
+    public function test_cancelled_order_cannot_retry_manual_payment(): void
     {
         Storage::fake('local');
         $customer = $this->createCustomer();
         $order = $this->createCustomerOrder($customer);
-        $order->status = \App\Enums\OrderStatusEnum::CANCELLED;
+        $order->status = OrderStatusEnum::CANCELLED;
         $order->save();
         $this->createFailedPayment($order);
         $this->createActiveSetting();
 
-        $this->actingAs($customer)
+        $response = $this->actingAs($customer)
             ->post(route('checkout.payment.store', $order), $this->retryPayload());
 
-        $this->assertDatabaseCount('payments', 2);
+        $response->assertSessionHasErrors('payment');
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertSame(PaymentStatusEnum::UNPAID, $order->fresh()->payment_status);
     }
 
-    public function test_completed_order_behavior_verified(): void
+    public function test_completed_order_cannot_retry_manual_payment(): void
     {
         Storage::fake('local');
         $customer = $this->createCustomer();
         $order = $this->createCustomerOrder($customer);
-        $order->status = \App\Enums\OrderStatusEnum::COMPLETED;
+        $order->status = OrderStatusEnum::COMPLETED;
         $order->save();
         $this->createFailedPayment($order);
         $this->createActiveSetting();
 
-        $this->actingAs($customer)
+        $response = $this->actingAs($customer)
             ->post(route('checkout.payment.store', $order), $this->retryPayload());
 
-        $this->assertDatabaseCount('payments', 2);
+        $response->assertSessionHasErrors('payment');
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertSame(PaymentStatusEnum::UNPAID, $order->fresh()->payment_status);
     }
 
     public function test_concurrent_retry_blocked_when_active_payment_appears(): void

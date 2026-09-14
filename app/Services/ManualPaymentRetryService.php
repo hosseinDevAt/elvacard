@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class ManualPaymentRetryService
 {
+    public function __construct(private readonly ManualPaymentCreationService $creationService) {}
+
     public function createRetryPayment(Order $order, array $data): Payment
     {
         return DB::transaction(function () use ($order, $data) {
@@ -19,15 +21,7 @@ class ManualPaymentRetryService
 
             $this->assertRetryable($lockedOrder);
 
-            return Payment::create([
-                'order_id' => $lockedOrder->id,
-                'method' => PaymentMethod::MANUAL_TRANSFER->value,
-                'status' => PaymentStatus::PENDING_REVIEW->value,
-                'amount' => (int) $lockedOrder->total_price,
-                'tracking_code' => $data['tracking_number'] ?? null,
-                'receipt_path' => $data['receipt_path'],
-                'metadata' => ['note' => $data['note'] ?? null],
-            ]);
+            return $this->creationService->createPayment($lockedOrder, $data);
         });
     }
 

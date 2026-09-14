@@ -6,6 +6,7 @@ use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentStatusEnum;
+use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\PaymentReviewException;
 use App\Livewire\Admin\OrderManager;
 use App\Models\Order;
@@ -13,7 +14,6 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Services\ManualPaymentReviewService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -170,7 +170,7 @@ class PaymentReviewTest extends TestCase
         $this->assertSame(OrderStatusEnum::CONFIRMED, $order->status);
     }
 
-    public function test_approval_does_not_force_illegal_lifecycle_transition(): void
+    public function test_approval_is_blocked_for_completed_order(): void
     {
         $order = $this->createOrder();
         $order->status = OrderStatusEnum::COMPLETED;
@@ -178,11 +178,15 @@ class PaymentReviewTest extends TestCase
 
         $payment = $this->createPendingReviewPayment($order);
 
+        $this->expectException(PaymentConstraintViolationException::class);
         app(ManualPaymentReviewService::class)->approve($payment);
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::PENDING_REVIEW, $payment->status);
 
         $order->refresh();
         $this->assertSame(OrderStatusEnum::COMPLETED, $order->status);
-        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+        $this->assertSame(PaymentStatusEnum::UNPAID, $order->payment_status);
     }
 
     public function test_admin_can_reject_payment(): void
