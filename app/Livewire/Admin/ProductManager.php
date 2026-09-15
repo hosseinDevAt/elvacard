@@ -15,12 +15,14 @@ use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class ProductManager extends Component
 {
     use AuthorizesAdminActions;
     use GeneratesUniqueSlug;
+    use WithFileUploads;
     use WithPagination;
 
     public string $type = 'bank';
@@ -32,6 +34,8 @@ class ProductManager extends Component
     public ?string $description = null;
 
     public ?string $mainImage = null;
+
+    public $mainImageUpload;
 
     public ?int $basePrice = null;
 
@@ -49,11 +53,17 @@ class ProductManager extends Component
 
     public ?string $ogImage = null;
 
+    public $ogImageUpload;
+
     public ?string $seoContent = null;
 
     public bool $isActive = true;
 
     public string $search = '';
+
+    public string $typeFilter = '';
+
+    public string $workflowFilter = '';
 
     public ?int $editingId = null;
 
@@ -65,6 +75,7 @@ class ProductManager extends Component
         'name' => 'required|string|min:1|max:255',
         'description' => 'nullable|string',
         'mainImage' => 'nullable|string|max:255',
+        'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
         'basePrice' => 'nullable|integer|min:0',
         'supportsChipSelection' => 'boolean',
         'designConfig' => 'nullable|json',
@@ -72,6 +83,7 @@ class ProductManager extends Component
         'metaDescription' => 'nullable|string|max:255',
         'canonicalUrl' => 'nullable|string|max:255',
         'ogImage' => 'nullable|string|max:255',
+        'ogImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
         'seoContent' => 'nullable|string',
         'robotsIndex' => 'boolean',
         'isActive' => 'boolean',
@@ -150,6 +162,25 @@ class ProductManager extends Component
             return;
         }
 
+        $previousMainImage = null;
+        $previousOgImage = null;
+
+        if ($this->editingId) {
+            $existing = Product::find($this->editingId);
+            $previousMainImage = $existing?->main_image;
+            $previousOgImage = $existing?->og_image;
+        }
+
+        if ($this->mainImageUpload) {
+            $this->mainImage = $this->mainImageUpload->store('products', 'public');
+            $this->mainImageUpload = null;
+        }
+
+        if ($this->ogImageUpload) {
+            $this->ogImage = $this->ogImageUpload->store('products', 'public');
+            $this->ogImageUpload = null;
+        }
+
         $slug = $this->uniqueSlug($this->name, Product::class, $this->editingId, 'product');
 
         $data = [
@@ -178,6 +209,13 @@ class ProductManager extends Component
             Product::create($data);
             session()->flash('success', 'محصول با موفقیت اضافه شد');
         }
+
+        $this->cleanupReplacedProductImages(
+            $previousMainImage,
+            $previousOgImage,
+            $this->mainImage,
+            $this->ogImage,
+        );
 
         $this->resetForm();
         $this->showForm = false;
@@ -242,6 +280,32 @@ class ProductManager extends Component
         session()->flash('success', 'محصول با موفقیت حذف شد');
     }
 
+    /**
+     * Deletes the image files that an edit replaced, as long as no other
+     * product still references them. A replaced path that is still shared is
+     * preserved, and files never referenced by a saved product are untouched.
+     */
+    private function cleanupReplacedProductImages(?string $previousMainImage, ?string $previousOgImage, ?string $currentMainImage, ?string $currentOgImage): void
+    {
+        $stale = array_values(array_filter([
+            $previousMainImage !== $currentMainImage ? $previousMainImage : null,
+            $previousOgImage !== $currentOgImage ? $previousOgImage : null,
+        ]));
+
+        if ($stale === []) {
+            return;
+        }
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            $stale,
+            fn (string $path): bool => Product::query()
+                ->where(function ($query) use ($path) {
+                    $query->where('main_image', $path)->orWhere('og_image', $path);
+                })
+                ->exists(),
+        );
+    }
+
     public function resetForm(): void
     {
         $this->type = 'bank';
@@ -249,6 +313,7 @@ class ProductManager extends Component
         $this->name = '';
         $this->description = null;
         $this->mainImage = null;
+        $this->mainImageUpload = null;
         $this->basePrice = null;
         $this->supportsChipSelection = false;
         $this->designConfig = null;
@@ -257,6 +322,7 @@ class ProductManager extends Component
         $this->canonicalUrl = null;
         $this->robotsIndex = true;
         $this->ogImage = null;
+        $this->ogImageUpload = null;
         $this->seoContent = null;
         $this->isActive = true;
         $this->editingId = null;
@@ -302,17 +368,65 @@ class ProductManager extends Component
         return $items;
     }
 
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTypeFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedWorkflowFilter(): void
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
         $products = Product::query()
             ->withCount('colorPrices')
+            ->withMin('activeColorPrices', 'price')
             ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
+            ->when($this->typeFilter !== '', fn ($query) => $query->where('type', $this->typeFilter))
+            ->when($this->workflowFilter === 'none', fn ($query) => $query->whereNull('customization_workflow'))
+            ->when(
+                in_array($this->workflowFilter, [
+                    CustomizationWorkflowEnum::BANK_CARD->value,
+                    CustomizationWorkflowEnum::FUEL_CARD->value,
+                ], true),
+                fn ($query) => $query->where('customization_workflow', $this->workflowFilter)
+            )
             ->orderByDesc('id')
             ->paginate(15);
 
+        $pageProductIds = $products->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        $purchasableIds = Product::query()
+            ->whereIn('id', $pageProductIds)
+            ->purchasable()
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         return view('livewire.admin.product-manager', [
             'products' => $products,
+            'purchasableIds' => $purchasableIds,
             'typeOptions' => ProductTypeEnum::options(),
+            'typeFilterOptions' => array_merge(
+                [['value' => '', 'label' => 'همه انواع']],
+                array_map(
+                    fn (ProductTypeEnum $case) => ['value' => $case->value, 'label' => $case->faLabel()],
+                    ProductTypeEnum::cases()
+                ),
+            ),
+            'workflowFilterOptions' => [
+                ['value' => '', 'label' => 'همه فرآیندها'],
+                ['value' => 'none', 'label' => 'بدون شخصی‌سازی'],
+                ['value' => CustomizationWorkflowEnum::BANK_CARD->value, 'label' => CustomizationWorkflowEnum::BANK_CARD->faLabel()],
+                ['value' => CustomizationWorkflowEnum::FUEL_CARD->value, 'label' => CustomizationWorkflowEnum::FUEL_CARD->faLabel()],
+            ],
             'workflowOptions' => [
                 ['value' => '', 'label' => 'بدون شخصی‌سازی'],
                 ['value' => CustomizationWorkflowEnum::BANK_CARD->value, 'label' => CustomizationWorkflowEnum::BANK_CARD->faLabel()],

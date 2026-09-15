@@ -69,9 +69,16 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">تصویر اصلی (Path)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">تصویر اصلی</label>
                         <input type="text" wire:model="mainImage" placeholder="products/card.jpg" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <input type="file" wire:model="mainImageUpload" accept="image/*" class="block w-full mt-2 text-sm text-gray-600 file:me-3 file:border-0 file:bg-yellow-50 file:px-4 file:py-2 file:text-yellow-700 file:cursor-pointer">
                         @error('mainImage') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('mainImageUpload') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @if($mainImageUpload)
+                            <img src="{{ $mainImageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                        @elseif($mainImage)
+                            <img src="{{ asset('storage/'.$mainImage) }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                        @endif
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">قیمت پایه (اختیاری)</label>
@@ -122,9 +129,16 @@
                             @error('canonicalUrl') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">تصویر Open Graph (Path)</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">تصویر Open Graph</label>
                             <input type="text" wire:model="ogImage" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                            <input type="file" wire:model="ogImageUpload" accept="image/*" class="block w-full mt-2 text-sm text-gray-600 file:me-3 file:border-0 file:bg-yellow-50 file:px-4 file:py-2 file:text-yellow-700 file:cursor-pointer">
                             @error('ogImage') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            @error('ogImageUpload') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            @if($ogImageUpload)
+                                <img src="{{ $ogImageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                            @elseif($ogImage)
+                                <img src="{{ asset('storage/'.$ogImage) }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                            @endif
                         </div>
                     </div>
                     <div class="mt-4">
@@ -142,8 +156,18 @@
         </div>
     @endif
 
-    <div class="mb-4">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
         <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در نام محصول..." class="w-full sm:w-80 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+        <select wire:model.live="typeFilter" class="px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+            @foreach($typeFilterOptions as $option)
+                <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+            @endforeach
+        </select>
+        <select wire:model.live="workflowFilter" class="px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+            @foreach($workflowFilterOptions as $option)
+                <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+            @endforeach
+        </select>
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
@@ -169,17 +193,24 @@
                         <td class="px-4 py-3 text-gray-500 text-xs" dir="ltr">{{ $product->type?->value }}</td>
                         <td class="px-4 py-3 text-gray-500 text-xs">
                             {{ $product->customization_workflow?->faLabel() ?? '-' }}
-                            @if($product->customization_workflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
-                                <span class="text-amber-600">(قابل فروش نیست)</span>
-                            @endif
                         </td>
                         <td class="px-4 py-3">
+                            @if($product->active_color_prices_min_price !== null)
+                                <div class="text-xs text-gray-600 mb-1">از {{ number_format($product->active_color_prices_min_price) }} تومان</div>
+                            @endif
                             <a href="{{ route('admin.product-colors', ['product' => $product->id]) }}" class="inline-flex items-center gap-1 text-yellow-600 hover:text-yellow-800 text-xs">
                                 قیمت رنگ‌ها ({{ $product->color_prices_count }})
                             </a>
                         </td>
                         <td class="px-4 py-3">
                             <span class="{{ $product->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $product->is_active ? 'فعال' : 'غیرفعال' }}</span>
+                            @if($product->is_active)
+                                @if(in_array($product->id, $purchasableIds, true))
+                                    <span class="ms-2 text-green-600">قابل فروش</span>
+                                @else
+                                    <span class="ms-2 text-red-500">قابل فروش نیست</span>
+                                @endif
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <button wire:click="edit({{ $product->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
@@ -187,7 +218,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">محصولی یافت نشد</td></tr>
+                    <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">محصولی یافت نشد</td></tr>
                 @endforelse
             </tbody>
         </table>

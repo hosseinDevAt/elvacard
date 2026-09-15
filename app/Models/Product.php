@@ -43,6 +43,11 @@ class Product extends Model
         return $this->hasMany(ProductColorPrice::class);
     }
 
+    public function activeColorPrices()
+    {
+        return $this->hasMany(ProductColorPrice::class)->where('is_active', true);
+    }
+
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
