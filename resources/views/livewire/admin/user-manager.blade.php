@@ -11,10 +11,20 @@
         <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ session('error') }}</div>
     @endif
 
+    @if (session('success'))
+        <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
+    @endif
+
     @if ($selectedUser)
         <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                <h2 class="text-lg font-bold text-gray-900 min-w-0">مشخصات مشتری <span class="text-gray-500">{{ $selectedUser->displayName() }}</span></h2>
+                <h2 class="text-lg font-bold text-gray-900 min-w-0">مشخصات مشتری <span class="text-gray-500">{{ $selectedUser->displayName() }}</span>
+                    @if ($selectedUser->is_active)
+                        <span class="inline-block ms-2 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">فعال</span>
+                    @else
+                        <span class="inline-block ms-2 px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">مسدود</span>
+                    @endif
+                </h2>
                 <button wire:click="closeUserDetail" class="px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200">بازگشت به لیست</button>
             </div>
 
@@ -78,6 +88,42 @@
                 </div>
             @endif
 
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="font-bold text-gray-900 text-sm mb-3">وضعیت حساب</h3>
+
+                @if ($selectedUser->is_active)
+                    <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">دلیل مسدودسازی (اختیاری)</label>
+                            <textarea wire:model="blockReason" rows="2" maxlength="255"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"
+                                placeholder="اختیاری"></textarea>
+                            @error('blockReason')
+                                <span class="text-xs text-red-600">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <button type="button" wire:click="blockUser({{ $selectedUser->id }})"
+                            wire:confirm="آیا از مسدودسازی حساب این کاربر مطمئن هستید؟"
+                            class="px-4 py-2 rounded-lg text-sm bg-red-600 hover:bg-red-700 text-white">مسدودسازی حساب</button>
+                    </div>
+                @else
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div class="flex-1 text-sm">
+                            <div class="text-red-700">حساب این کاربر مسدود است.</div>
+                            @if ($selectedUser->blocked_at)
+                                <div class="text-gray-600 mt-1">تاریخ مسدودی: {{ $selectedUser->blocked_at->format('Y-m-d H:i') }}</div>
+                            @endif
+                            @if ($selectedUser->blocked_reason)
+                                <div class="text-gray-600 mt-1">دلیل: {{ $selectedUser->blocked_reason }}</div>
+                            @endif
+                        </div>
+                        <button type="button" wire:click="unblockUser({{ $selectedUser->id }})"
+                            wire:confirm="آیا از رفع مسدودی حساب این کاربر مطمئن هستید؟"
+                            class="px-4 py-2 rounded-lg text-sm bg-green-600 hover:bg-green-700 text-white">رفع مسدودی</button>
+                    </div>
+                @endif
+            </div>
+
             <div class="px-6 py-4">
                 <h3 class="font-bold text-gray-900 text-sm mb-3">سابقه سفارشات کاربر</h3>
                 <div class="rounded-xl border border-gray-200 overflow-x-auto">
@@ -111,6 +157,44 @@
                     </table>
                 </div>
             </div>
+
+            <div class="px-6 py-4 border-t border-gray-100">
+                <h3 class="font-bold text-gray-900 text-sm mb-3">سفارشات مهمان با این شماره تماس</h3>
+                <div class="rounded-xl border border-gray-200 overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-start font-medium text-gray-500">کد سفارش</th>
+                                <th class="px-4 py-3 text-start font-medium text-gray-500">نوع حساب</th>
+                                <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
+                                <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت پرداخت</th>
+                                <th class="px-4 py-3 text-start font-medium text-gray-500">مبلغ</th>
+                                <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse ($guestOrders as $order)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ $order->reference }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800">مهمان</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-xs px-2 py-1 rounded-full {{ $order->status->value === 'completed' ? 'bg-green-100 text-green-800' : ($order->status->value === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700') }}">
+                                            {{ $order->status->faLabel() }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-xs">{{ $order->payment_status->faLabel() }}</td>
+                                    <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
+                                    <td class="px-4 py-3 text-xs text-gray-500">{{ $order->created_at->format('Y-m-d H:i') }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">سفارش مهمانی با این شماره تماس یافت نشد</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     @endif
 
@@ -123,6 +207,7 @@
                     <th class="px-4 py-3 text-start font-medium text-gray-500">تلفن</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">آدرس</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">تعداد سفارش</th>
+                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ عضویت</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">جزئیات</th>
                 </tr>
@@ -135,13 +220,20 @@
                         <td class="px-4 py-3 font-mono" dir="ltr">{{ $user->phone }}</td>
                         <td class="px-4 py-3 text-gray-500 text-xs max-w-[200px] truncate">{{ $user->address ?? '-' }}</td>
                         <td class="px-4 py-3">{{ $user->orders_count }}</td>
+                        <td class="px-4 py-3">
+                            @if ($user->is_active)
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">فعال</span>
+                            @else
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">مسدود</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-gray-500 text-xs">{{ $user->created_at->diffForHumans() }}</td>
                         <td class="px-4 py-3">
                             <button wire:click="viewUser({{ $user->id }})" class="text-xs px-2 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white">جزئیات</button>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">کاربری یافت نشد</td></tr>
+                    <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">کاربری یافت نشد</td></tr>
                 @endforelse
             </tbody>
         </table>

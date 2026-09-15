@@ -23,6 +23,8 @@ class UserManager extends Component
 
     public ?int $selectedUserId = null;
 
+    public string $blockReason = '';
+
     public function viewUser(int $userId): void
     {
         $user = User::find($userId);
@@ -34,11 +36,55 @@ class UserManager extends Component
         }
 
         $this->selectedUserId = $user->id;
+        $this->blockReason = '';
     }
 
     public function closeUserDetail(): void
     {
         $this->selectedUserId = null;
+        $this->blockReason = '';
+    }
+
+    public function blockUser(int $userId): void
+    {
+        $user = $this->findCustomer($userId);
+
+        if (! $user) {
+            return;
+        }
+
+        $this->validate([
+            'blockReason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($user->is_active) {
+            $user->update([
+                'is_active' => false,
+                'blocked_at' => now(),
+                'blocked_reason' => trim($this->blockReason) ?: null,
+            ]);
+
+            session()->flash('success', 'حساب کاربر مسدود شد');
+        }
+    }
+
+    public function unblockUser(int $userId): void
+    {
+        $user = $this->findCustomer($userId);
+
+        if (! $user) {
+            return;
+        }
+
+        if (! $user->is_active) {
+            $user->update([
+                'is_active' => true,
+                'blocked_at' => null,
+                'blocked_reason' => null,
+            ]);
+
+            session()->flash('success', 'مسدودی حساب کاربر برداشته شد');
+        }
     }
 
     public function render()
@@ -62,6 +108,7 @@ class UserManager extends Component
 
         $customerStats = null;
         $recentOrders = collect();
+        $guestOrders = collect();
 
         if ($selectedUser) {
             $userId = $selectedUser->id;
@@ -83,6 +130,18 @@ class UserManager extends Component
                 ->latest()
                 ->limit(10)
                 ->get();
+
+            $canonicalPhone = normalize_phone((string) $selectedUser->phone);
+            $phoneVariant = ltrim($canonicalPhone, '0');
+
+            $guestOrders = Order::whereNull('user_id')
+                ->where(function ($q) use ($canonicalPhone, $phoneVariant) {
+                    $q->where('customer_phone', $canonicalPhone)
+                        ->orWhere('customer_phone', $phoneVariant);
+                })
+                ->latest()
+                ->limit(10)
+                ->get();
         }
 
         return view('livewire.admin.user-manager', [
@@ -90,6 +149,20 @@ class UserManager extends Component
             'selectedUser' => $selectedUser,
             'customerStats' => $customerStats,
             'recentOrders' => $recentOrders,
+            'guestOrders' => $guestOrders,
         ])->layout('layouts.admin')->title('مدیریت کاربران');
+    }
+
+    private function findCustomer(int $userId): ?User
+    {
+        $user = User::find($userId);
+
+        if (! $user || $user->role !== 'customer') {
+            session()->flash('error', 'کاربر یافت نشد');
+
+            return null;
+        }
+
+        return $user;
     }
 }

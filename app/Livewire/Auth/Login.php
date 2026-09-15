@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Auth;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -11,6 +10,7 @@ use Livewire\Component;
 class Login extends Component
 {
     public string $phone = '';
+
     public string $password = '';
 
     protected $rules = [
@@ -38,6 +38,20 @@ class Login extends Component
         }
 
         if (! Auth::attempt(['phone' => $this->phone, 'password' => $this->password])) {
+            RateLimiter::hit($throttleKey, 120);
+            session()->flash('error', 'شماره تلفن یا رمز عبور صحیح نیست.');
+
+            return;
+        }
+
+        $user = Auth::user();
+
+        // Deactivated customers must not authenticate. Staff (role === 'admin')
+        // are never gated by customer status; the literal admin role mechanism
+        // stays authoritative. The response stays identical to a failed login
+        // so account status is not disclosed.
+        if ($user->role !== 'admin' && ! (bool) $user->is_active) {
+            Auth::logout();
             RateLimiter::hit($throttleKey, 120);
             session()->flash('error', 'شماره تلفن یا رمز عبور صحیح نیست.');
 

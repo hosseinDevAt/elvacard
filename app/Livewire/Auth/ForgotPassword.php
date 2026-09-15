@@ -81,7 +81,7 @@ class ForgotPassword extends Component
 
         $user = User::query()->where('phone', $this->phone)->first();
 
-        if ($user) {
+        if ($user && (bool) $user->is_active) {
             try {
                 app(OtpService::class)->issue($this->phone, OtpPurpose::PASSWORD_RESET);
             } catch (SmsSendingFailedException) {
@@ -160,7 +160,7 @@ class ForgotPassword extends Component
 
         $user = User::query()->where('phone', $authorization['phone'])->first();
 
-        if (! $user) {
+        if (! $user || ! (bool) $user->is_active) {
             Session::forget('reset.authorization');
             $this->step = 1;
             $this->addError('phone', 'این شماره در سیستم ثبت نشده است.');

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\Admin;
+use App\Http\Middleware\EnsurePasswordSession;
+use App\Http\Middleware\EnsureUserStatus;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => Admin::class,
+        ]);
+
+        $middleware->web(append: [
+            EnsurePasswordSession::class,
+            EnsureUserStatus::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
