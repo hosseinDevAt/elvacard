@@ -112,8 +112,7 @@ class PaymentReviewTest extends TestCase
 
         Livewire::actingAs($this->createCustomer())
             ->test(OrderManager::class)
-            ->set('selectedOrderId', $order->id)
-            ->call('approvePayment', $payment->id);
+            ->assertStatus(403);
 
         $this->assertDatabaseHas('payments', [
             'id' => $payment->id,
@@ -130,8 +129,7 @@ class PaymentReviewTest extends TestCase
 
         Livewire::actingAs($this->createCustomer())
             ->test(OrderManager::class)
-            ->set('selectedOrderId', $order->id)
-            ->call('rejectPayment', $payment->id);
+            ->assertStatus(403);
 
         $this->assertDatabaseHas('payments', [
             'id' => $payment->id,

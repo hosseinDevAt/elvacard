@@ -7,6 +7,7 @@ use App\Models\MenuItem;
 use App\Models\SiteSetting;
 use App\Services\IconManager;
 use App\Services\SvgSanitizer;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -14,41 +15,64 @@ use Livewire\WithFileUploads;
 
 class AppearanceManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithFileUploads;
 
     // Identity
     public ?string $siteName = null;
+
     public $siteLogo;
+
     public $siteFavicon;
+
     public ?string $siteLogoPath = null;
+
     public ?string $siteFaviconPath = null;
 
     // Homepage banners
     public ?string $bannerTitle1 = null;
+
     public ?string $bannerSubtitle1 = null;
+
     public ?string $bannerCtaText1 = null;
+
     public ?string $bannerCtaUrl1 = null;
+
     public $bannerImage1;
+
     public ?string $bannerImagePath1 = null;
 
     public ?string $bannerTitle2 = null;
+
     public ?string $bannerSubtitle2 = null;
+
     public ?string $bannerCtaText2 = null;
+
     public ?string $bannerCtaUrl2 = null;
+
     public $bannerImage2;
+
     public ?string $bannerImagePath2 = null;
 
     public ?string $bannerTitle3 = null;
+
     public ?string $bannerSubtitle3 = null;
+
     public ?string $bannerCtaText3 = null;
+
     public ?string $bannerCtaUrl3 = null;
+
     public $bannerImage3;
+
     public ?string $bannerImagePath3 = null;
 
     // Footer
     public ?string $footerAboutText = null;
+
     public ?string $contactPhone = null;
+
     public ?string $contactEmail = null;
+
     public ?string $contactAddress = null;
 
     // Icons (slot key => ['variant' => string, 'enabled' => bool])
@@ -94,6 +118,7 @@ class AppearanceManager extends Component
 
                 if (! app(IconManager::class)->has($key)) {
                     $fail('تنظیم آیکون نامعتبر است.');
+
                     return;
                 }
 
@@ -128,6 +153,7 @@ class AppearanceManager extends Component
 
             if (str_starts_with(strtolower($value), '//')) {
                 $fail('لینک پروتکل‌نسبی (//...) مجاز نیست.');
+
                 return;
             }
 

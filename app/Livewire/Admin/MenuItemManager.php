@@ -9,11 +9,13 @@ use App\Models\MenuItem;
 use App\Models\Page;
 use App\Models\Product;
 use App\Services\DesignCatalogService;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class MenuItemManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public string $search = '';

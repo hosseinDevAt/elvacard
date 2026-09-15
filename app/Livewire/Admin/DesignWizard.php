@@ -7,6 +7,8 @@ use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
+use App\Services\StoredFileManager;
+use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -23,39 +25,60 @@ use Livewire\Component;
  */
 class DesignWizard extends Component
 {
+    use AuthorizesAdminActions;
     use GeneratesUniqueSlug;
 
     public const TOTAL_STEPS = 5;
 
     public ?int $designId = null;
+
     public int $step = 1;
 
     // Step 1 — basic information
     public ?int $cateDesignId = null;
+
     public string $name = '';
+
     public ?string $description = null;
+
     public ?string $metaTitle = null;
+
     public ?string $metaDescription = null;
+
     public ?string $canonicalUrl = null;
+
     public bool $robotsIndex = true;
+
     public ?string $seoContent = null;
+
     public bool $isActive = true;
+
     public int $sortOrder = 0;
 
     // Step 1 — quick category creation
     public bool $showCategoryForm = false;
+
     public string $newCategoryName = '';
 
     // Step 2 — image form
     public ?int $colorId = null;
+
     public string $imagePath = '';
+
     public ?string $altText = null;
+
     public ?string $imageTitle = null;
+
     public ?string $optimizedFilename = null;
+
     public ?string $seoCaption = null;
+
     public bool $imageIsActive = true;
+
     public int $imageSortOrder = 0;
+
     public ?int $editingImageId = null;
+
     public bool $showImageForm = false;
 
     public function mount(?int $designId = null): void
@@ -208,6 +231,12 @@ class DesignWizard extends Component
         }
 
         $image->delete();
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            [$image->image_path],
+            fn (string $path): bool => DesignImage::query()->where('image_path', $path)->exists(),
+        );
+
         session()->flash('success', 'تصویر طرح به همراه سازگاری‌هایش حذف شد.');
     }
 

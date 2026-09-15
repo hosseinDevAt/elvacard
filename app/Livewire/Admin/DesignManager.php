@@ -4,13 +4,17 @@ namespace App\Livewire\Admin;
 
 use App\Models\CateDesign;
 use App\Models\Design;
+use App\Models\DesignImage;
 use App\Services\Customization\ProductPurchaseabilityService;
+use App\Services\StoredFileManager;
+use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class DesignManager extends Component
 {
+    use AuthorizesAdminActions;
     use GeneratesUniqueSlug;
     use WithPagination;
 
@@ -140,7 +144,15 @@ class DesignManager extends Component
             return;
         }
 
+        $imagePaths = $design->images()->pluck('image_path')->all();
+
         $design->delete();
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            $imagePaths,
+            fn (string $path): bool => DesignImage::query()->where('image_path', $path)->exists(),
+        );
+
         session()->flash('success', 'طرح با موفقیت حذف شد');
     }
 

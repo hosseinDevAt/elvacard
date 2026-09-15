@@ -7,11 +7,14 @@ use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Services\Customization\ProductPurchaseabilityService;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class DesignColorCompatibilityManager extends Component
 {
+    use AuthorizesAdminActions;
+
     public ?int $designFilter = null;
 
     public function toggle(int $designImageId, int $colorId): void

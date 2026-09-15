@@ -6,6 +6,8 @@ use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignImage;
 use App\Services\Customization\ProductPurchaseabilityService;
+use App\Services\StoredFileManager;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -13,6 +15,7 @@ use Livewire\WithPagination;
 
 class DesignImageManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public ?int $designId = null;
@@ -129,6 +132,12 @@ class DesignImageManager extends Component
         }
 
         $image->delete();
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            [$image->image_path],
+            fn (string $path): bool => DesignImage::query()->where('image_path', $path)->exists(),
+        );
+
         session()->flash('success', 'تصویر طرح به همراه سازگاری‌هایش حذف شد');
     }
 

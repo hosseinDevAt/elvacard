@@ -3,12 +3,14 @@
 namespace App\Livewire\Admin;
 
 use App\Models\ArticleCategory;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class ArticleCategoryManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public string $search = '';
@@ -16,6 +18,7 @@ class ArticleCategoryManager extends Component
     public string $name = '';
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected function rules(): array

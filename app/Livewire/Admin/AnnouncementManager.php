@@ -3,25 +3,35 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Announcement;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class AnnouncementManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public string $search = '';
 
     public string $title = '';
+
     public string $content = '';
+
     public ?string $link = null;
+
     public ?string $backgroundColor = null;
+
     public ?string $textColor = null;
+
     public bool $isActive = true;
+
     public ?string $startDate = null;
+
     public ?string $endDate = null;
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected function rules(): array
@@ -42,6 +52,7 @@ class AnnouncementManager extends Component
 
                     if (str_starts_with(strtolower($value), '//')) {
                         $fail('لینک پروتکل‌نسبی (//...) مجاز نیست.');
+
                         return;
                     }
 
@@ -64,6 +75,7 @@ class AnnouncementManager extends Component
 
                     if ($this->startDate === null || trim($this->startDate) === '') {
                         $fail('تاریخ پایان بدون تاریخ شروع مجاز نیست.');
+
                         return;
                     }
 

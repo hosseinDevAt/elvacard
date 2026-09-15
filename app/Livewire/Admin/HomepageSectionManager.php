@@ -7,10 +7,13 @@ use App\Models\FaqItem;
 use App\Models\HomepageSection;
 use App\Models\Product;
 use App\Services\DesignCatalogService;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 
 class HomepageSectionManager extends Component
 {
+    use AuthorizesAdminActions;
+
     public string $search = '';
 
     public string $sectionType = 'hero';

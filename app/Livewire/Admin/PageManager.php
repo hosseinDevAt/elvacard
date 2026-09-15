@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Page;
+use App\Services\StoredFileManager;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -10,23 +12,34 @@ use Livewire\WithPagination;
 
 class PageManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithFileUploads;
     use WithPagination;
 
     public string $search = '';
 
     public string $pageType = '';
+
     public string $title = '';
+
     public string $content = '';
+
     public $imageUpload;
+
     public ?string $imagePath = null;
+
     public ?string $metaTitle = null;
+
     public ?string $metaDescription = null;
+
     public ?string $canonicalUrl = null;
+
     public bool $robotsIndex = true;
+
     public bool $isActive = true;
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected function rules(): array
@@ -51,6 +64,7 @@ class PageManager extends Component
 
                     if (str_starts_with(strtolower($value), '//')) {
                         $fail('لینک پروتکل‌نسبی (//...) مجاز نیست.');
+
                         return;
                     }
 
@@ -146,7 +160,23 @@ class PageManager extends Component
 
     public function delete(int $id): void
     {
-        Page::find($id)->delete();
+        $page = Page::find($id);
+
+        if (! $page) {
+            session()->flash('error', 'صفحه موردنظر یافت نشد');
+
+            return;
+        }
+
+        $imagePath = $page->image_path;
+
+        $page->delete();
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            [$imagePath],
+            fn (string $path): bool => Page::query()->where('image_path', $path)->exists(),
+        );
+
         session()->flash('success', 'صفحه با موفقیت حذف شد');
     }
 

@@ -5,13 +5,19 @@ namespace App\Livewire\Admin;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 
 class Dashboard extends Component
 {
+    use AuthorizesAdminActions;
+
     public int $totalUsers = 0;
+
     public int $totalOrders = 0;
+
     public int $pendingOrders = 0;
+
     public int $totalProducts = 0;
 
     public function mount(): void

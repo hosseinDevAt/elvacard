@@ -3,21 +3,27 @@
 namespace App\Livewire\Admin;
 
 use App\Models\FaqItem;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class FaqItemManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public string $search = '';
 
     public string $question = '';
+
     public string $answer = '';
+
     public int $sortOrder = 0;
+
     public bool $isActive = true;
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected function rules(): array

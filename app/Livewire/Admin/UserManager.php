@@ -3,11 +3,13 @@
 namespace App\Livewire\Admin;
 
 use App\Models\User;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class UserManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public string $search = '';
@@ -19,7 +21,7 @@ class UserManager extends Component
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('name', 'like', "%{$this->search}%")
-                  ->orWhere('phone', 'like', "%{$this->search}%");
+                    ->orWhere('phone', 'like', "%{$this->search}%");
             });
         }
 

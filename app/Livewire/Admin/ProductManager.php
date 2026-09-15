@@ -11,12 +11,15 @@ use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\Customization\FuelCardActivationService;
 use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\DesignCatalogService;
+use App\Services\StoredFileManager;
+use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class ProductManager extends Component
 {
+    use AuthorizesAdminActions;
     use GeneratesUniqueSlug;
     use WithPagination;
 
@@ -226,6 +229,16 @@ class ProductManager extends Component
         }
 
         $product->delete();
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            [$product->main_image, $product->og_image],
+            fn (string $path): bool => Product::query()
+                ->where(function ($query) use ($path) {
+                    $query->where('main_image', $path)->orWhere('og_image', $path);
+                })
+                ->exists(),
+        );
+
         session()->flash('success', 'محصول با موفقیت حذف شد');
     }
 

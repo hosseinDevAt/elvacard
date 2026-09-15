@@ -5,29 +5,43 @@ namespace App\Livewire\Admin;
 use App\Enums\ArticleStatusEnum;
 use App\Models\Article;
 use App\Models\ArticleCategory;
+use App\Services\StoredFileManager;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class ArticleManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public string $search = '';
 
     public ?int $articleCategoryId = null;
+
     public string $title = '';
+
     public ?string $excerpt = null;
+
     public string $content = '';
+
     public ?string $coverImage = null;
+
     public string $status = ArticleStatusEnum::DRAFT->value;
+
     public ?string $publishedAt = null;
+
     public ?string $metaTitle = null;
+
     public ?string $metaDescription = null;
+
     public ?string $canonicalUrl = null;
+
     public bool $robotsIndex = true;
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     protected function rules(): array
@@ -55,6 +69,7 @@ class ArticleManager extends Component
 
                     if (str_starts_with(strtolower($value), '//')) {
                         $fail('لینک پروتکل‌نسبی (//...) مجاز نیست.');
+
                         return;
                     }
 
@@ -152,7 +167,23 @@ class ArticleManager extends Component
 
     public function delete(int $id): void
     {
-        Article::find($id)->delete();
+        $article = Article::find($id);
+
+        if (! $article) {
+            session()->flash('error', 'مقاله موردنظر یافت نشد');
+
+            return;
+        }
+
+        $coverImage = $article->cover_image;
+
+        $article->delete();
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            [$coverImage],
+            fn (string $path): bool => Article::query()->where('cover_image', $path)->exists(),
+        );
+
         session()->flash('success', 'مقاله با موفقیت حذف شد');
     }
 

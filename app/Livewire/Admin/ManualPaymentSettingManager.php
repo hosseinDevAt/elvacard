@@ -3,11 +3,14 @@
 namespace App\Livewire\Admin;
 
 use App\Models\ManualPaymentSetting;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class ManualPaymentSettingManager extends Component
 {
+    use AuthorizesAdminActions;
+
     public ?int $settingId = null;
 
     public ?string $card_number = null;

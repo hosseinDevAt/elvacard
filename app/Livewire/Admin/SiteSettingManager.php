@@ -3,20 +3,28 @@
 namespace App\Livewire\Admin;
 
 use App\Models\SiteSetting;
-use Livewire\Component;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Validation\Rule;
+use Livewire\Component;
 
 class SiteSettingManager extends Component
 {
+    use AuthorizesAdminActions;
+
     public string $search = '';
 
     public string $key = '';
+
     public string $value = '';
+
     public string $type = 'string';
+
     public string $group = 'general';
+
     public bool $isPublic = false;
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     private const SUPPORTED_TYPES = ['string', 'integer', 'boolean', 'json'];

@@ -7,11 +7,13 @@ use App\Models\Color;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\Customization\ProductPurchaseabilityService;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class ProductColorPriceManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public ?int $productId = null;

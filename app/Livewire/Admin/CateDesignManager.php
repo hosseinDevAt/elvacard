@@ -4,12 +4,14 @@ namespace App\Livewire\Admin;
 
 use App\Models\CateDesign;
 use App\Services\Customization\ProductPurchaseabilityService;
+use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class CateDesignManager extends Component
 {
+    use AuthorizesAdminActions;
     use GeneratesUniqueSlug;
     use WithPagination;
 

@@ -3,19 +3,23 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Menu;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class MenuManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public string $search = '';
 
     public string $name = '';
+
     public string $location = 'header';
 
     public ?int $editingId = null;
+
     public bool $showForm = false;
 
     private const ALLOWED_LOCATIONS = ['header', 'footer'];

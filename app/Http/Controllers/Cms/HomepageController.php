@@ -30,31 +30,40 @@ class HomepageController extends Controller
 
     private function loadSectionData($sections): array
     {
+        $limits = [
+            'featured_products' => 8,
+            'featured_designs' => 8,
+            'faq' => 8,
+            'newest_products' => 8,
+            'articles' => 3,
+        ];
+
         $productIds = [];
         $designIds = [];
-        $faqLimit = null;
-        $newestLimit = null;
-        $articlesLimit = null;
-        $featuredDesignsLimit = null;
 
         foreach ($sections as $section) {
             $settings = is_array($section->settings) ? $section->settings : [];
 
-            match ($section->section_type?->value) {
+            $type = $section->section_type?->value;
+
+            if ($type !== null && array_key_exists($type, $limits)) {
+                $limits[$type] = (int) ($settings['limit'] ?? $limits[$type]);
+            }
+
+            match ($type) {
                 'featured_products' => $productIds = array_merge($productIds, (array) ($settings['product_ids'] ?? [])),
                 'featured_designs' => $designIds = array_merge($designIds, (array) ($settings['design_ids'] ?? [])),
-                'faq' => $faqLimit = $settings['limit'] ?? null,
-                'newest_products' => $newestLimit = $settings['limit'] ?? null,
-                'articles' => $articlesLimit = $settings['limit'] ?? null,
                 default => null,
             };
-
-            if ($section->section_type?->value === 'featured_designs') {
-                $featuredDesignsLimit = $settings['limit'] ?? null;
-            }
         }
 
-        $products = $this->productsByIds($productIds);
+        $featuredProductsLimit = $limits['featured_products'];
+        $featuredDesignsLimit = $limits['featured_designs'];
+        $faqLimit = $limits['faq'];
+        $newestLimit = $limits['newest_products'];
+        $articlesLimit = $limits['articles'];
+
+        $products = $this->productsByIds($productIds)->take($featuredProductsLimit);
 
         $newestProducts = $this->newestProducts($newestLimit);
 
@@ -71,7 +80,7 @@ class HomepageController extends Controller
         if ($designIds === []) {
             $designs = $designs
                 ->sortBy(fn ($design) => [$design->sort_order, -$design->id])
-                ->when($featuredDesignsLimit, fn ($collection) => $collection->take((int) $featuredDesignsLimit))
+                ->take($featuredDesignsLimit)
                 ->values();
         }
 
@@ -79,20 +88,17 @@ class HomepageController extends Controller
 
         $faqs = $this->faqs($faqLimit);
 
-        $articles = collect();
-        if ($articlesLimit !== null) {
-            $articles = Article::query()
-                ->where('status', ArticleStatusEnum::PUBLISHED->value)
-                ->where(function ($q) {
-                    $q->whereNull('published_at')
-                        ->orWhere('published_at', '<=', now());
-                })
-                ->with('category')
-                ->orderBy('published_at', 'desc')
-                ->orderBy('id', 'desc')
-                ->when($articlesLimit, fn ($q) => $q->limit($articlesLimit))
-                ->get();
-        }
+        $articles = Article::query()
+            ->where('status', ArticleStatusEnum::PUBLISHED->value)
+            ->where(function ($q) {
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            })
+            ->with('category')
+            ->orderBy('published_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->limit($articlesLimit)
+            ->get();
 
         return [
             'featured_products' => ['products' => $products],
@@ -124,7 +130,7 @@ class HomepageController extends Controller
             ->active()
             ->purchasable()
             ->withCatalog()
-            ->when($limit, fn ($q) => $q->limit($limit))
+            ->limit((int) $limit)
             ->get();
     }
 
@@ -133,7 +139,7 @@ class HomepageController extends Controller
         return FaqItem::query()
             ->active()
             ->orderBy('sort_order')
-            ->when($faqLimit, fn ($q) => $q->limit($faqLimit))
+            ->limit((int) $faqLimit)
             ->get();
     }
 }

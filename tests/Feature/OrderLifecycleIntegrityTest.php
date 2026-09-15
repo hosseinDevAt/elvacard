@@ -142,7 +142,7 @@ class OrderLifecycleIntegrityTest extends TestCase
 
         Livewire::actingAs($this->customer())
             ->test(OrderManager::class)
-            ->call('updateStatus', $order->id, 'confirmed');
+            ->assertStatus(403);
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'pending']);
     }

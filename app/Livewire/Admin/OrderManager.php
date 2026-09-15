@@ -11,12 +11,14 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Services\ManualPaymentReviewService;
 use App\Services\OrderStateMachine;
+use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class OrderManager extends Component
 {
+    use AuthorizesAdminActions;
     use WithPagination;
 
     public ?string $statusFilter = null;

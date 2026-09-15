@@ -7,6 +7,7 @@ use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignImage;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -15,6 +16,11 @@ use Tests\TestCase;
 class DesignImageManagerOptionsTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function admin(): User
+    {
+        return User::factory()->create(['role' => 'admin']);
+    }
 
     private function category(): CateDesign
     {
@@ -75,7 +81,8 @@ class DesignImageManagerOptionsTest extends TestCase
         DB::flushQueryLog();
         DB::enableQueryLog();
 
-        Livewire::test(DesignImageManager::class)
+        Livewire::actingAs($this->admin())
+            ->test(DesignImageManager::class)
             ->assertSee('طرح اصلی')
             ->assertSee('بنفش');
 
@@ -94,7 +101,8 @@ class DesignImageManagerOptionsTest extends TestCase
         $this->image($first, $color, 'designs/one.png');
         $this->image($second, $color, 'designs/two.png');
 
-        Livewire::test(DesignImageManager::class)
+        Livewire::actingAs($this->admin())
+            ->test(DesignImageManager::class)
             ->assertSee('designs/one.png')
             ->assertSee('designs/two.png')
             ->set('designFilter', $first->id)
@@ -109,7 +117,8 @@ class DesignImageManagerOptionsTest extends TestCase
         $color = $this->color('آبی', '#0000FF');
         $image = $this->image($inactive, $color, 'designs/inactive.png');
 
-        Livewire::test(DesignImageManager::class)
+        Livewire::actingAs($this->admin())
+            ->test(DesignImageManager::class)
             ->assertSee('طرح فعال')
             ->assertDontSee('طرح غیرفعال (غیرفعال)')
             ->call('edit', $image->id)
