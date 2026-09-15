@@ -112,6 +112,7 @@ class StoredFileCleanupTest extends TestCase
         Storage::disk('public')->put('designs/wizard.png', 'data');
 
         $design = $this->design();
+        $this->image('designs/keep-wizard.png', $design);
         $image = $this->image('designs/wizard.png', $design);
 
         Livewire::actingAs($this->admin())

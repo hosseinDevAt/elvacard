@@ -7,11 +7,13 @@ use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
+use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Illuminate\Support\Collection;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
  * Unified 5-step workflow for creating and editing a Design.
@@ -27,6 +29,7 @@ class DesignWizard extends Component
 {
     use AuthorizesAdminActions;
     use GeneratesUniqueSlug;
+    use WithFileUploads;
 
     public const TOTAL_STEPS = 5;
 
@@ -64,6 +67,8 @@ class DesignWizard extends Component
     public ?int $colorId = null;
 
     public string $imagePath = '';
+
+    public $imageUpload;
 
     public ?string $altText = null;
 
@@ -114,7 +119,10 @@ class DesignWizard extends Component
     {
         if ($this->step === 1) {
             $this->validate($this->stepOneRules());
-            $this->persistDesign();
+
+            if (! $this->persistDesign()) {
+                return;
+            }
         }
 
         if ($this->step < self::TOTAL_STEPS) {
@@ -128,7 +136,9 @@ class DesignWizard extends Component
             $this->validate($this->stepOneRules());
         }
 
-        $this->persistDesign();
+        if (! $this->persistDesign()) {
+            return;
+        }
 
         session()->flash('success', 'طرح با موفقیت ذخیره شد.');
 
@@ -158,7 +168,8 @@ class DesignWizard extends Component
     {
         $this->validate([
             'colorId' => 'required|integer|exists:colors,id',
-            'imagePath' => 'required|string|max:255',
+            'imagePath' => 'nullable|string|max:255',
+            'imageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'altText' => 'nullable|string|max:255',
             'imageTitle' => 'nullable|string|max:255',
             'optimizedFilename' => 'nullable|string|max:255',
@@ -173,9 +184,22 @@ class DesignWizard extends Component
             return;
         }
 
+        $path = $this->imagePath;
+
+        if ($this->imageUpload) {
+            $path = $this->imageUpload->store('designs', 'public');
+            $this->imageUpload = null;
+        }
+
+        if ($path === '') {
+            $this->addError('imagePath', 'مسیر تصویر را وارد کنید یا یک فایل تصویری آپلود کنید.');
+
+            return;
+        }
+
         $data = [
             'color_id' => $this->colorId,
-            'image_path' => $this->imagePath,
+            'image_path' => $path,
             'alt_text' => $this->altText ?: null,
             'image_title' => $this->imageTitle ?: null,
             'optimized_filename' => $this->optimizedFilename ?: null,
@@ -185,10 +209,22 @@ class DesignWizard extends Component
         ];
 
         if ($this->editingImageId) {
-            DesignImage::query()
+            $existing = DesignImage::query()
                 ->where('id', $this->editingImageId)
                 ->where('design_id', $this->designId)
-                ->update($data);
+                ->first();
+
+            if (! $existing) {
+                session()->flash('error', 'تصویر موردنظر یافت نشد.');
+
+                return;
+            }
+
+            $previousPath = $existing->image_path;
+
+            $existing->update($data);
+            $this->cleanupReplacedDesignImage($previousPath, $path);
+
             session()->flash('success', 'تصویر طرح با موفقیت ویرایش شد.');
         } else {
             DesignImage::create(array_merge($data, ['design_id' => $this->designId]));
@@ -196,6 +232,23 @@ class DesignWizard extends Component
         }
 
         $this->resetImageForm();
+    }
+
+    /**
+     * Deletes the image file an edit replaced, as long as no other design
+     * image still references it. A replaced path that is still shared is
+     * preserved, and files never referenced by a saved image are untouched.
+     */
+    private function cleanupReplacedDesignImage(?string $previous, string $current): void
+    {
+        if ($previous === null || $previous === $current) {
+            return;
+        }
+
+        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
+            [$previous],
+            fn (string $path): bool => DesignImage::query()->where('image_path', $path)->exists(),
+        );
     }
 
     public function editImage(int $id): void
@@ -217,6 +270,7 @@ class DesignWizard extends Component
         $this->seoCaption = $image->seo_caption;
         $this->imageIsActive = (bool) $image->is_active;
         $this->imageSortOrder = (int) $image->sort_order;
+        $this->imageUpload = null;
         $this->showImageForm = true;
     }
 
@@ -226,6 +280,14 @@ class DesignWizard extends Component
 
         if (! $image || (int) $image->design_id !== (int) $this->designId) {
             session()->flash('error', 'تصویر موردنظر یافت نشد.');
+
+            return;
+        }
+
+        $removalBlocker = ProductPurchaseabilityService::designImageRemovalBlocker($id);
+
+        if ($removalBlocker !== null) {
+            session()->flash('error', $removalBlocker);
 
             return;
         }
@@ -262,6 +324,16 @@ class DesignWizard extends Component
             ->first();
 
         if ($existing) {
+            if ($existing->is_allowed) {
+                $removalBlocker = ProductPurchaseabilityService::compatibilityRemovalBlocker($designImageId, $colorId);
+
+                if ($removalBlocker !== null) {
+                    session()->flash('error', $removalBlocker);
+
+                    return;
+                }
+            }
+
             $existing->update(['is_allowed' => ! $existing->is_allowed]);
             session()->flash('success', 'وضعیت سازگاری با موفقیت تغییر کرد.');
         } else {
@@ -285,6 +357,7 @@ class DesignWizard extends Component
         $this->imageIsActive = true;
         $this->imageSortOrder = 0;
         $this->editingImageId = null;
+        $this->imageUpload = null;
         $this->showImageForm = true;
     }
 
@@ -304,7 +377,7 @@ class DesignWizard extends Component
         ];
     }
 
-    protected function persistDesign(): void
+    protected function persistDesign(): bool
     {
         $data = [
             'cate_design_id' => $this->cateDesignId,
@@ -320,14 +393,26 @@ class DesignWizard extends Component
         ];
 
         if ($this->designId) {
+            if (! $this->isActive) {
+                $blocker = ProductPurchaseabilityService::designDeactivationBlocker($this->designId);
+
+                if ($blocker !== null) {
+                    session()->flash('error', $blocker);
+
+                    return false;
+                }
+            }
+
             Design::whereKey($this->designId)->update($data);
 
-            return;
+            return true;
         }
 
         $data['slug'] = $this->uniqueSlug($this->name, Design::class, null, 'design');
 
         $this->designId = (int) Design::create($data)->id;
+
+        return true;
     }
 
     /**
