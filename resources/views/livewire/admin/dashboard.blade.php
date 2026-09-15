@@ -20,6 +20,21 @@
         </div>
     </div>
 
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="text-sm text-gray-500 mb-1">پرداخت‌های در انتظار بررسی</div>
+            <div class="text-2xl font-bold text-amber-600">{{ number_format($pendingReviewPayments) }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="text-sm text-gray-500 mb-1">پرداخت‌های موفق</div>
+            <div class="text-2xl font-bold text-green-700">{{ number_format($successfulPayments) }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="text-sm text-gray-500 mb-1">مجموع درآمد (پرداخت‌های موفق)</div>
+            <div class="text-2xl font-bold text-gray-900 font-mono">{{ number_format($totalRevenue) }} تومان</div>
+        </div>
+    </div>
+
     <div class="space-y-8">
         {{-- فروشگاه --}}
         <div>
@@ -91,15 +106,20 @@
         </div>
 
         {{-- سفارشات / کاربران / تنظیمات --}}
-        <div class="grid lg:grid-cols-3 gap-4">
+        <div class="grid lg:grid-cols-4 gap-4">
             <a href="{{ route('admin.orders') }}" wire:navigate class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
                 <h3 class="font-bold text-gray-900 mb-1">مدیریت سفارشات</h3>
                 <p class="text-sm text-gray-500">مشاهده، پرداخت‌ها و تغییر وضعیت سفارشات</p>
+            </a>
+            <a href="{{ route('admin.payments') }}" wire:navigate class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
+                <h3 class="font-bold text-gray-900 mb-1">مدیریت پرداخت‌ها</h3>
+                <p class="text-sm text-gray-500">مشاهده تمام پرداخت‌ها، بررسی و رد/تأیید</p>
             </a>
             <a href="{{ route('admin.users') }}" wire:navigate class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
                 <h3 class="font-bold text-gray-900 mb-1">کاربران</h3>
                 <p class="text-sm text-gray-500">مشاهده کاربران و تعداد سفارشات</p>
             </a>
+        </div>
             <a href="{{ route('admin.site-settings') }}" wire:navigate class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
                 <h3 class="font-bold text-gray-900 mb-1">تنظیمات سایت</h3>
                 <p class="text-sm text-gray-500">مدیریت تنظیمات عمومی سایت</p>

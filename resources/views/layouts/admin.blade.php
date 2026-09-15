@@ -142,6 +142,10 @@
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.orders') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     سفارشات
                 </a>
+                <a href="{{ route('admin.payments') }}" wire:navigate
+                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.payments') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                    پرداخت‌ها
+                </a>
                 <a href="{{ route('admin.manual-payment') }}" wire:navigate
                     class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.manual-payment') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                     تنظیمات پرداخت

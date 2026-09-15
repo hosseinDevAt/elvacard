@@ -14,6 +14,7 @@ use App\Livewire\Admin\MenuItemManager;
 use App\Livewire\Admin\MenuManager;
 use App\Livewire\Admin\OrderManager;
 use App\Livewire\Admin\PageManager;
+use App\Livewire\Admin\PaymentManager;
 use App\Livewire\Admin\ProductColorPriceManager;
 use App\Livewire\Admin\ProductManager;
 use App\Livewire\Admin\SiteSettingManager;
@@ -50,6 +51,7 @@ class AdminLivewireAuthorizationTest extends TestCase
             MenuManager::class,
             OrderManager::class,
             PageManager::class,
+            PaymentManager::class,
             ProductColorPriceManager::class,
             ProductManager::class,
             SiteSettingManager::class,
