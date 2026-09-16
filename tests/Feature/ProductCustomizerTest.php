@@ -289,10 +289,10 @@ class ProductCustomizerTest extends TestCase
     public function test_expiry_year_must_be_in_valid_range(): void
     {
         $dates = app(DateService::class);
-        $currentYear = $dates->jalaliYearRange()[0];
-        $validYear = (string) ($currentYear + 5);
-        $pastYear = (string) ($currentYear - 2);
-        $tooFarYear = (string) ($currentYear + 12);
+        [$minYear, $maxYear] = $dates->jalaliYearRange();
+        $validYear = (string) ($minYear + 5);
+        $pastYear = (string) ($minYear - 1);
+        $tooFarYear = (string) ($maxYear + 1);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->call('toggleExpiry')
@@ -308,6 +308,32 @@ class ProductCustomizerTest extends TestCase
                 ->set('bankCard.expiry_year', $year)
                 ->call('addToCart')
                 ->assertHasErrors(['bankCard.expiry_year']);
+        }
+    }
+
+    public function test_selector_is_rendered_from_1400_without_1415_cap(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('toggleExpiry')
+            ->call('setStep', 2)
+            ->assertSeeHtml('<option value="1400">۱۴۰۰</option>')
+            ->assertSeeHtml('<option value="1430">۱۴۳۰</option>')
+            ->assertDontSeeHtml('<option value="1431">');
+    }
+
+    public function test_expiry_year_boundaries_1400_and_1430_accepted(): void
+    {
+        $dates = app(DateService::class);
+
+        foreach (['1400', '1430'] as $year) {
+            Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+                ->call('toggleExpiry')
+                ->set('bankCard.expiry_month', '05')
+                ->set('bankCard.expiry_year', $year)
+                ->call('addToCart')
+                ->assertRedirect(route('cart.index'));
+
+            $this->assertNotNull($dates->jalaliExpiryToGregorian('05', $year));
         }
     }
 
@@ -480,7 +506,7 @@ class ProductCustomizerTest extends TestCase
     public function test_end_to_end_snapshot_is_persisted_without_regeneration(): void
     {
         $dates = app(DateService::class);
-        $expiry = $dates->jalaliExpiryToGregorian('05', (string) ($dates->jalaliYearRange()[0] + 3));
+        $expiry = $dates->jalaliExpiryToGregorian('05', (string) ($dates->currentJalaliYear() + 2));
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
@@ -490,7 +516,7 @@ class ProductCustomizerTest extends TestCase
             ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) ($dates->jalaliYearRange()[0] + 3))
+            ->set('bankCard.expiry_year', (string) ($dates->currentJalaliYear() + 2))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 

@@ -20,9 +20,12 @@ return [
     | Jalali calendar parameters
     |--------------------------------------------------------------------------
     |
-    | Range of Jalali expiration years offered/validated for bank card
-    | customization (relative to the current Tehran-local Jalali year).
+    | Absolute (inclusive) bounds of Jalali expiration years offered and
+    | validated for bank card customization in the custom-design flow.
+    | The selector must start at 1400 and must not be artificially capped
+    | at 1415 (the previous relative "current year + 10" ceiling).
     |
     */
-    'card_expiry_max_years' => 10,
+    'card_expiry_min_year' => 1400,
+    'card_expiry_max_year' => 1430,
 ];

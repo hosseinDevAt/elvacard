@@ -172,12 +172,13 @@ class BankCardCustomizationTest extends TestCase
         $this->assertSame(['nullable', 'string', 'integer', 'digits:4', $expectedYearRange], $rules['expiry_year']);
     }
 
-    public function test_expiry_year_range_spans_current_to_plus_ten(): void
+    public function test_expiry_year_range_starts_at_1400_without_1415_cap(): void
     {
         [$from, $to] = app(DateService::class)->jalaliYearRange();
 
         $this->assertSame([$from, $to], BankCardCustomization::expiryYearRange());
-        $this->assertSame(10, $to - $from);
+        $this->assertSame(1400, $from);
+        $this->assertGreaterThan(1415, $to);
     }
 
     public function test_messages_cover_all_card_fields(): void

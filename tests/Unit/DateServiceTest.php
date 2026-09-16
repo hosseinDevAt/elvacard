@@ -221,17 +221,21 @@ class DateServiceTest extends TestCase
         $this->assertNull($this->dates->jalaliExpiryToGregorian('13', '1404'));
     }
 
-    public function test_jalali_year_range_spans_current_to_plus_ten(): void
+    public function test_jalali_year_range_starts_at_1400_and_not_capped_at_1415(): void
     {
         [$from, $to] = $this->dates->jalaliYearRange();
-        $this->assertSame($this->dates->currentJalaliYear(), $from);
-        $this->assertSame($from + 10, $to);
+
+        $this->assertSame(1400, $from);
+        $this->assertSame(config('dates.card_expiry_max_year', 1430), $to);
+        $this->assertGreaterThan(1415, $to);
     }
 
-    public function test_jalali_year_range_custom_max(): void
+    public function test_jalali_year_range_custom_bounds(): void
     {
-        [$from, $to] = $this->dates->jalaliYearRange(5);
-        $this->assertSame($from + 5, $to);
+        [$from, $to] = $this->dates->jalaliYearRange(1400, 1412);
+
+        $this->assertSame(1400, $from);
+        $this->assertSame(1412, $to);
     }
 
     public function test_day_start_canonical_returns_utc_midnight(): void

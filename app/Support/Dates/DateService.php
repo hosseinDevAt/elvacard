@@ -144,14 +144,15 @@ class DateService
 
     // ─────────────────────────────────────────────
     // Jalali range for bank card expiry year selects
+    // (absolute bounds, not relative to the current year)
     // ─────────────────────────────────────────────
 
-    public function jalaliYearRange(?int $maxYears = null): array
+    public function jalaliYearRange(?int $minYear = null, ?int $maxYear = null): array
     {
-        $maxYears ??= config('dates.card_expiry_max_years', 10);
-        $current = $this->currentJalaliYear();
+        $minYear ??= config('dates.card_expiry_min_year', 1400);
+        $maxYear ??= config('dates.card_expiry_max_year', 1430);
 
-        return [$current, $current + $maxYears];
+        return [$minYear, $maxYear];
     }
 
     // ─────────────────────────────────────────────
@@ -249,10 +250,10 @@ class DateService
         $jy = (int) $y;
         $jm = (int) $m;
 
-        $maxYears = config('dates.card_expiry_max_years', 10);
-        $currentYear = $this->currentJalaliYear();
+        $minYear = config('dates.card_expiry_min_year', 1400);
+        $maxYear = config('dates.card_expiry_max_year', 1430);
 
-        if ($jy < $currentYear || $jy > $currentYear + $maxYears) {
+        if ($jy < $minYear || $jy > $maxYear) {
             return null;
         }
 

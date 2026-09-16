@@ -347,6 +347,28 @@ class AdminReportsTest extends TestCase
             ->assertHasErrors(['toDate']);
     }
 
+    public function test_max_range_exactly366_days_accepted(): void
+    {
+        // 1403 is a leap Jalali year: Farvardin 1 .. Esfand 30 = 366 inclusive days
+        Livewire::actingAs($this->admin())
+            ->test(Reports::class)
+            ->set('fromDate', '1403/01/01')
+            ->set('toDate', '1403/12/30')
+            ->call('applyFilter')
+            ->assertHasNoErrors(['toDate']);
+    }
+
+    public function test_max_range_367_days_rejected(): void
+    {
+        // 1403 is leap (366 days) + Farvardin 1 of 1404 = 367 inclusive days
+        Livewire::actingAs($this->admin())
+            ->test(Reports::class)
+            ->set('fromDate', '1403/01/01')
+            ->set('toDate', '1404/01/01')
+            ->call('applyFilter')
+            ->assertHasErrors(['toDate']);
+    }
+
     // --- Top products ---
 
     public function test_top_products_aggregate_quantity_and_amount(): void

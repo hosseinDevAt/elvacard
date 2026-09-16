@@ -67,7 +67,7 @@ class Reports extends Component
             return;
         }
 
-        if ($dates->dayStartCanonical($from)->diffInDays($dates->dayEndCanonical($to), false) > 365) {
+        if ($dates->dayStartCanonical($from)->diffInDays($dates->dayEndCanonical($to), false) > 366) {
             $this->addError('toDate', 'بازه زمانی نباید بیش از یک سال باشد.');
 
             return;
