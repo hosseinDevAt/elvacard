@@ -79,13 +79,24 @@ class RefundConstraintService
     }
 
     /**
-     * Compute the refundable amount for a payment:
-     * refundable = paid_amount − SUM(completed + pending refunds).
+     * Compute the raw (signed) refundable balance.
+     *
+     * A negative result indicates an over-refund (integrity incident) and is
+     * never treated as a valid full-refund condition.
      */
-    public function refundableAmount(Payment $payment): int
+    public function rawRefundableBalance(Payment $payment): int
     {
         $paid = (int) ($payment->paid_amount ?? 0);
 
+        return $paid - $this->reservedAmount($payment);
+    }
+
+    /**
+     * Compute the total reserved (consumed) amount for a payment:
+     * PENDING + COMPLETED refund amounts.
+     */
+    public function reservedAmount(Payment $payment): int
+    {
         $refunded = Refund::where('payment_id', $payment->id)
             ->whereIn('status', [
                 RefundStatus::PENDING->value,
@@ -93,15 +104,28 @@ class RefundConstraintService
             ])
             ->sum('amount');
 
-        return max(0, $paid - (int) $refunded);
+        return (int) $refunded;
+    }
+
+    /**
+     * Compute the refundable amount for a payment (clamped to zero):
+     * refundable = max(0, paid_amount − SUM(completed + pending refunds)).
+     */
+    public function refundableAmount(Payment $payment): int
+    {
+        return max(0, $this->rawRefundableBalance($payment));
     }
 
     /**
      * Check whether a payment is fully refunded.
+     *
+     * Uses the raw balance (not clamped) to avoid masking an over-refund
+     * as "fully refunded." An exact zero raw balance with a positive paid
+     * amount is the only valid full-refund condition.
      */
     public function isFullyRefunded(Payment $payment): bool
     {
-        return $this->refundableAmount($payment) === 0
+        return $this->rawRefundableBalance($payment) === 0
             && (int) ($payment->paid_amount ?? 0) > 0;
     }
 

@@ -19,26 +19,21 @@ use Illuminate\Support\Facades\Log;
 /**
  * Provider-agnostic refund orchestration for gateway payments.
  *
- * Mirrors GatewayPaymentCore: the provider refund call is always made outside
- * the database transaction so a slow or failing provider cannot hold a
- * database lock. The refund only becomes COMPLETED after a successful
- * provider call AND a successful transactional state update.
+ * Reservation acquires the payment row lock BEFORE validation and row
+ * creation, so concurrent refund requests are serialized at the database
+ * level. The provider call is made outside the database transaction.
+ * Completion re-validates the raw aggregate under a payment lock before
+ * declaring full refund.
  */
 final class RefundCore
 {
     public function __construct(
         private readonly PaymentGatewayManager $gatewayManager,
         private readonly RefundConstraintService $constraints,
-        private readonly OrderStateMachine $stateMachine,
     ) {}
 
     /**
      * Process a refund for a gateway payment.
-     *
-     * 1. Validate refundability inside a locked transaction
-     * 2. Create PENDING refund record
-     * 3. Call provider outside the transaction
-     * 4. Mark COMPLETED or FAILED inside a second transaction
      *
      * @throws RefundConstraintViolationException
      */
@@ -48,24 +43,56 @@ final class RefundCore
             throw new RefundException('بازگشت وجه درگاهی برای این روش پرداخت قابل استفاده نیست.');
         }
 
-        $this->constraints->assertRefundable($payment, $amount);
-
-        $refund = $this->createPendingRefund($payment, $amount, $reason);
+        $refund = $this->reserveRefund($payment, $amount, $reason);
 
         $gateway = $this->resolveGateway((string) $payment->gateway);
 
         if ($gateway === null) {
-            $this->markFailed($refund, [
+            return $this->markFailed($refund, [
                 'reason' => 'unknown_gateway',
                 'detail' => 'درگاه پرداخت یافت نشد.',
             ]);
-
-            return $refund->fresh();
         }
+
+        $this->runProviderAttempt($refund, $gateway);
+
+        return $refund->fresh();
+    }
+
+    /**
+     * Authoritative reservation: acquire the payment row lock, re-validate
+     * constraints, and create a PENDING refund inside the same transaction.
+     */
+    private function reserveRefund(Payment $payment, int $amount, ?string $reason): Refund
+    {
+        return DB::transaction(function () use ($payment, $amount, $reason) {
+            $locked = $this->lockPayment($payment->id);
+
+            $this->constraints->assertSuccessfulPayment($locked);
+            $this->constraints->assertPositiveAmount($amount);
+            $this->constraints->assertAmountWithinRefundable($locked, $amount);
+            $this->constraints->assertNoInFlightRefund($locked);
+
+            return Refund::create([
+                'payment_id' => $locked->id,
+                'amount' => $amount,
+                'status' => RefundStatus::PENDING,
+                'reason' => $reason,
+                'metadata' => [],
+            ]);
+        });
+    }
+
+    /**
+     * Invoke the provider gateway for the refund and handle the result.
+     */
+    private function runProviderAttempt(Refund $refund, PaymentGateway $gateway): void
+    {
+        $payment = Payment::findOrFail($refund->payment_id);
 
         $request = new PaymentRefundRequest(
             orderId: $payment->order_id,
-            amount: $amount,
+            amount: (int) $refund->amount,
             paymentTransactionId: (string) $payment->transaction_id,
             paymentProviderTransactionId: $payment->metadata['provider_transaction_id'] ?? null,
         );
@@ -86,7 +113,7 @@ final class RefundCore
                 'exception' => $e->getMessage(),
             ]);
 
-            return $refund->fresh();
+            return;
         }
 
         if (! $result->success) {
@@ -102,43 +129,60 @@ final class RefundCore
                 'gateway' => $gateway->name(),
             ]);
 
-            return $refund->fresh();
+            return;
         }
 
         $this->completeRefund($refund, [
             'provider_refund_id' => $result->providerRefundId,
         ]);
-
-        Log::info('Gateway refund completed', [
-            'refund_id' => $refund->id,
-            'payment_id' => $payment->id,
-            'order_id' => $payment->order_id,
-            'amount' => $amount,
-            'admin_id' => auth()->id(),
-        ]);
-
-        return $refund->fresh();
     }
 
-    private function createPendingRefund(Payment $payment, int $amount, ?string $reason): Refund
-    {
-        return DB::transaction(function () use ($payment, $amount, $reason) {
-            return Refund::create([
-                'payment_id' => $payment->id,
-                'amount' => $amount,
-                'status' => RefundStatus::PENDING,
-                'reason' => $reason,
-                'metadata' => [],
-            ]);
-        });
-    }
-
+    /**
+     * Complete a refund reservation under a payment lock with a raw aggregate
+     * integrity re-check.
+     *
+     * If the raw balance is negative after excluding this refund, the provider
+     * may have already moved money — the refund is marked COMPLETED with an
+     * integrity_violation flag but the order is NOT marked REFUNDED.
+     */
     private function completeRefund(Refund $refund, array $metadata): void
     {
         DB::transaction(function () use ($refund, $metadata) {
+            $payment = $this->lockPayment($refund->payment_id);
             $locked = $this->lockRefund($refund->id);
 
             if ($locked->status !== RefundStatus::PENDING) {
+                return;
+            }
+
+            $reservedExcludingSelf = Refund::where('payment_id', $payment->id)
+                ->where('id', '!=', $locked->id)
+                ->whereIn('status', [
+                    RefundStatus::PENDING->value,
+                    RefundStatus::COMPLETED->value,
+                ])
+                ->sum('amount');
+
+            $rawBalance = (int) $payment->paid_amount - (int) $reservedExcludingSelf - (int) $locked->amount;
+
+            if ($rawBalance < 0) {
+                $locked->status = RefundStatus::COMPLETED;
+                $locked->refunded_at = now();
+                $locked->metadata = array_merge($locked->metadata ?? [], $metadata, [
+                    'integrity_violation' => true,
+                    'integrity_reason' => 'completed_refund_exceeds_received_amount',
+                    'raw_balance_after' => $rawBalance,
+                ]);
+                $locked->save();
+
+                Log::critical('Gateway refund COMPLETED despite negative raw balance; provider may have moved money', [
+                    'refund_id' => $locked->id,
+                    'payment_id' => $payment->id,
+                    'order_id' => $payment->order_id,
+                    'amount' => (int) $locked->amount,
+                    'raw_balance' => $rawBalance,
+                ]);
+
                 return;
             }
 
@@ -147,17 +191,15 @@ final class RefundCore
             $locked->metadata = array_merge($locked->metadata ?? [], $metadata);
             $locked->save();
 
-            $payment = $this->lockPayment($locked->payment_id);
-            $order = $this->lockOrder($payment->order_id);
-
             if ($this->constraints->isFullyRefunded($payment)) {
+                $order = $this->lockOrder($payment->order_id);
                 $order->payment_status = PaymentStatusEnum::REFUNDED;
                 $order->save();
             }
         });
     }
 
-    private function markFailed(Refund $refund, array $reasonMetadata): void
+    private function markFailed(Refund $refund, array $reasonMetadata): Refund
     {
         DB::transaction(function () use ($refund, $reasonMetadata) {
             $locked = $this->lockRefund($refund->id);
@@ -170,6 +212,8 @@ final class RefundCore
             $locked->metadata = array_merge($locked->metadata ?? [], $reasonMetadata);
             $locked->save();
         });
+
+        return $refund->fresh();
     }
 
     private function resolveGateway(string $gatewayName): ?PaymentGateway
