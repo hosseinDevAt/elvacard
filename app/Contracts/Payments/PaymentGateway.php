@@ -39,4 +39,17 @@ interface PaymentGateway
      * Payment Core.
      */
     public function verify(PaymentInitiationRequest $request, string $providerReference, array $callbackData): PaymentVerificationResult;
+
+    /**
+     * Initiate a refund for a previously successful payment.
+     *
+     * $request carries the trusted order context. $providerReference is the
+     * payment's transaction_id. $paymentProviderTransactionId is the original
+     * provider transaction id stored in payment metadata.
+     *
+     * As with initiate() and verify(), this method only reports the provider
+     * result. Applying the result to Refund state is the responsibility of
+     * the Refund Core.
+     */
+    public function refund(PaymentRefundRequest $request): PaymentRefundResult;
 }

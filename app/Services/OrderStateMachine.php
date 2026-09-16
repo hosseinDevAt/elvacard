@@ -35,9 +35,9 @@ class OrderStateMachine
     ];
 
     /**
-     * A paid order may only be cancelled through an explicit refund lifecycle
-     * which does not exist yet, so cancellation stays blocked. An unpaid order
-     * may not be completed.
+     * A paid order may only be cancelled through an explicit refund lifecycle.
+     * Once fully refunded (payment_status = REFUNDED), cancellation is
+     * permitted. An unpaid order may not be completed.
      *
      * PROCESSING deliberately does not require payment: PaymentConstraintService
      * still accepts money for confirmed/processing orders, so an unpaid order can

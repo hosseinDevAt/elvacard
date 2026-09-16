@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\RefundStatus;
 use App\Models\Payment;
+use App\Models\Refund;
 use App\Support\Dates\DateService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -22,6 +24,10 @@ class ReportingService
             ->where('status', PaymentStatus::SUCCESS->value)
             ->whereBetween('paid_at', [$from, $to])
             ->sum('paid_amount');
+
+        $refunded = $this->refundedAmount($from, $to);
+
+        $totalRefunds = $this->completedRefundCount($from, $to);
 
         $totalOrders = DB::table('orders')
             ->whereBetween('created_at', [$from, $to])
@@ -54,7 +60,9 @@ class ReportingService
             ->count('user_id');
 
         return [
-            'revenue' => $revenue,
+            'revenue' => $revenue - $refunded,
+            'refunded' => $refunded,
+            'totalRefunds' => $totalRefunds,
             'totalOrders' => $totalOrders,
             'completedOrders' => $completedOrders,
             'cancelledOrders' => $cancelledOrders,
@@ -62,6 +70,28 @@ class ReportingService
             'pendingReviewPayments' => $pendingReviewPayments,
             'activeCustomerCount' => $activeCustomerCount,
         ];
+    }
+
+    /**
+     * Sum of completed refunds refunded inside the given window.
+     */
+    private function refundedAmount(CarbonInterface $from, CarbonInterface $to): int
+    {
+        return (int) Refund::query()
+            ->where('status', RefundStatus::COMPLETED->value)
+            ->whereBetween('refunded_at', [$from, $to])
+            ->sum('amount');
+    }
+
+    /**
+     * Count of completed refunds refunded inside the given window.
+     */
+    private function completedRefundCount(CarbonInterface $from, CarbonInterface $to): int
+    {
+        return Refund::query()
+            ->where('status', RefundStatus::COMPLETED->value)
+            ->whereBetween('refunded_at', [$from, $to])
+            ->count();
     }
 
     public function revenueTrend(CarbonInterface $from, CarbonInterface $to): array
@@ -78,6 +108,11 @@ class ReportingService
             ->where('status', PaymentStatus::SUCCESS->value)
             ->whereBetween('paid_at', [$from, $to])
             ->get(['paid_at', 'paid_amount']);
+
+        $refunds = Refund::query()
+            ->where('status', RefundStatus::COMPLETED->value)
+            ->whereBetween('refunded_at', [$from, $to])
+            ->get(['refunded_at', 'amount']);
 
         $filled = [];
         $cursor = $businessFrom->copy();
@@ -100,6 +135,15 @@ class ReportingService
 
             $filled[$key]['revenue'] += (int) ($payment->paid_amount ?? 0);
             $filled[$key]['count'] += 1;
+        }
+
+        foreach ($refunds as $refund) {
+            $key = $dates->ascii($dates->jDate($refund->refunded_at));
+            if (! $daily) {
+                $key = substr($key, 0, 7);
+            }
+
+            $filled[$key]['revenue'] -= (int) $refund->amount;
         }
 
         return array_values($filled);
@@ -168,6 +212,18 @@ class ReportingService
                 ->whereBetween('paid_at', [$from, $to])
                 ->sum('paid_amount');
 
+            $refundedRevenue = (int) Refund::query()
+                ->where('status', RefundStatus::COMPLETED->value)
+                ->whereBetween('refunded_at', [$from, $to])
+                ->whereHas('payment', fn ($q) => $q->where('method', $method->value))
+                ->sum('amount');
+
+            $refundCount = Refund::query()
+                ->where('status', RefundStatus::COMPLETED->value)
+                ->whereBetween('refunded_at', [$from, $to])
+                ->whereHas('payment', fn ($q) => $q->where('method', $method->value))
+                ->count();
+
             $successCount = DB::table('payments')
                 ->where('method', $method->value)
                 ->where('status', PaymentStatus::SUCCESS->value)
@@ -195,7 +251,9 @@ class ReportingService
             $results[$method->value] = [
                 'label' => $method->faLabel(),
                 'success_count' => $successCount,
-                'success_revenue' => $successRevenue,
+                'success_revenue' => $successRevenue - $refundedRevenue,
+                'refund_count' => $refundCount,
+                'refunded_revenue' => $refundedRevenue,
                 'pending_review_count' => $pendingReviewCount,
                 'failed_count' => $failedCount,
                 'cancelled_count' => $cancelledCount,

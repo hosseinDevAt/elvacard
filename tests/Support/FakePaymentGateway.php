@@ -5,6 +5,8 @@ namespace Tests\Support;
 use App\Contracts\Payments\PaymentGateway;
 use App\Contracts\Payments\PaymentInitiationRequest;
 use App\Contracts\Payments\PaymentInitiationResult;
+use App\Contracts\Payments\PaymentRefundRequest;
+use App\Contracts\Payments\PaymentRefundResult;
 use App\Contracts\Payments\PaymentVerificationResult;
 
 /**
@@ -26,9 +28,17 @@ final class FakePaymentGateway implements PaymentGateway
 
     public ?int $verificationAmountOverride = null;
 
+    public bool $failOnRefund = false;
+
+    public bool $throwOnRefund = false;
+
     public int $initiateCalls = 0;
 
     public int $verifyCalls = 0;
+
+    public int $refundCalls = 0;
+
+    public ?PaymentRefundRequest $lastRefundRequest = null;
 
     public ?PaymentInitiationRequest $lastInitiationRequest = null;
 
@@ -87,6 +97,27 @@ final class FakePaymentGateway implements PaymentGateway
             providerReference: $providerReference,
             providerTransactionId: "TXN-{$providerReference}",
             metadata: ['raw_status' => $callbackData['status'] ?? 'OK'],
+        );
+    }
+
+    public function refund(PaymentRefundRequest $request): PaymentRefundResult
+    {
+        $this->refundCalls++;
+        $this->lastRefundRequest = $request;
+
+        if ($this->throwOnRefund) {
+            throw new \RuntimeException("Provider unreachable during refund for {$this->providerName}.");
+        }
+
+        if ($this->failOnRefund) {
+            return PaymentRefundResult::failure('بازگشت وجه ناموفق بود.', [
+                'provider' => $this->providerName,
+            ]);
+        }
+
+        return PaymentRefundResult::success(
+            providerRefundId: "RFN-{$request->paymentTransactionId}",
+            metadata: ['provider' => $this->providerName],
         );
     }
 }

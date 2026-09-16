@@ -3,14 +3,19 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\OrderStatusEnum;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Exceptions\OrderLifecycleConstraintException;
 use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\PaymentReviewException;
+use App\Exceptions\RefundConstraintViolationException;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\ManualPaymentReviewService;
+use App\Services\ManualRefundService;
 use App\Services\OrderStateMachine;
+use App\Services\RefundCore;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -91,6 +96,45 @@ class OrderManager extends Component
     public function rejectPayment(int $paymentId, ManualPaymentReviewService $service): void
     {
         $this->reviewPayment($paymentId, $service, 'reject');
+    }
+
+    public function refundPayment(int $paymentId, int $amount, ?string $reason = null): void
+    {
+        $order = Order::find($this->selectedOrderId);
+
+        if (! $order || ! Gate::allows('updateStatus', $order)) {
+            session()->flash('error', 'شما مجاز به بازگشت وجه این سفارش نیستید');
+
+            return;
+        }
+
+        $payment = Payment::find($paymentId);
+
+        if (! $payment || (int) $payment->order_id !== (int) $order->id) {
+            session()->flash('error', 'پرداخت یافت نشد');
+
+            return;
+        }
+
+        if ($payment->status !== PaymentStatus::SUCCESS) {
+            session()->flash('error', 'تنها پرداخت‌های موفق قابل بازگشت هستند');
+
+            return;
+        }
+
+        try {
+            if ($payment->method === PaymentMethod::MANUAL_TRANSFER) {
+                $service = app(ManualRefundService::class);
+                $service->refund($payment, $amount, $reason);
+            } else {
+                $service = app(RefundCore::class);
+                $service->processRefund($payment, $amount, $reason);
+            }
+
+            session()->flash('success', 'بازگشت وجه با موفقیت انجام شد');
+        } catch (RefundConstraintViolationException $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     private function reviewPayment(int $paymentId, ManualPaymentReviewService $service, string $action): void

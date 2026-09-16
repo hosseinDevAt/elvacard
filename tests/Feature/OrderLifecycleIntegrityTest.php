@@ -88,7 +88,7 @@ class OrderLifecycleIntegrityTest extends TestCase
         $this->adminStateMachine()->transition($order, OrderStatusEnum::CONFIRMED);
     }
 
-    public function test_paid_confirmed_order_cannot_be_cancelled(): void
+    public function test_paid_confirmed_order_cannot_be_cancelled_without_full_refund(): void
     {
         $order = $this->createOrder(OrderStatusEnum::CONFIRMED, PaymentStatusEnum::PAID, $this->customer()->id);
 
@@ -105,6 +105,29 @@ class OrderLifecycleIntegrityTest extends TestCase
         }
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'confirmed', 'payment_status' => 'paid']);
+    }
+
+    public function test_only_fully_refunded_paid_order_can_be_cancelled(): void
+    {
+        $order = $this->createOrder(OrderStatusEnum::CONFIRMED, PaymentStatusEnum::REFUNDED, $this->customer()->id);
+
+        $stateMachine = $this->adminStateMachine();
+
+        $this->assertTrue($stateMachine->canTransition($order, OrderStatusEnum::CANCELLED));
+        $this->assertContains(OrderStatusEnum::CANCELLED, $stateMachine->allowedTargets($order));
+
+        $stateMachine->transition($order, OrderStatusEnum::CANCELLED);
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'cancelled', 'payment_status' => 'refunded']);
+    }
+
+    public function test_unpaid_confirmed_order_can_be_cancelled(): void
+    {
+        $order = $this->createOrder(OrderStatusEnum::CONFIRMED, PaymentStatusEnum::UNPAID, $this->customer()->id);
+
+        $stateMachine = $this->adminStateMachine();
+
+        $this->assertTrue($stateMachine->canTransition($order, OrderStatusEnum::CANCELLED));
     }
 
     public function test_unpaid_processing_order_cannot_be_completed(): void
@@ -134,6 +157,17 @@ class OrderLifecycleIntegrityTest extends TestCase
             ->call('updateStatus', $order->id, 'cancelled');
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'confirmed', 'payment_status' => 'paid']);
+    }
+
+    public function test_admin_can_cancel_fully_refunded_order_through_the_ui(): void
+    {
+        $order = $this->createOrder(OrderStatusEnum::CONFIRMED, PaymentStatusEnum::REFUNDED, $this->customer()->id);
+
+        Livewire::actingAs($this->admin())
+            ->test(OrderManager::class)
+            ->call('updateStatus', $order->id, 'cancelled');
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'cancelled', 'payment_status' => 'refunded']);
     }
 
     public function test_non_admin_cannot_update_status(): void

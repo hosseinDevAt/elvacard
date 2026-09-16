@@ -3,9 +3,11 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\PaymentStatus;
+use App\Enums\RefundStatus;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\Refund;
 use App\Models\User;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
@@ -37,7 +39,8 @@ class Dashboard extends Component
 
         $this->pendingReviewPayments = Payment::where('status', PaymentStatus::PENDING_REVIEW->value)->count();
         $this->successfulPayments = Payment::where('status', PaymentStatus::SUCCESS->value)->count();
-        $this->totalRevenue = (int) Payment::where('status', PaymentStatus::SUCCESS->value)->sum('paid_amount');
+        $this->totalRevenue = (int) Payment::where('status', PaymentStatus::SUCCESS->value)->sum('paid_amount')
+            - (int) Refund::where('status', RefundStatus::COMPLETED->value)->sum('amount');
     }
 
     public function render()

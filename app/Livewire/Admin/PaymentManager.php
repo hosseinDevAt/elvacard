@@ -6,8 +6,11 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\PaymentReviewException;
+use App\Exceptions\RefundConstraintViolationException;
 use App\Models\Payment;
 use App\Services\ManualPaymentReviewService;
+use App\Services\ManualRefundService;
+use App\Services\RefundCore;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Dates\DateService;
 use Illuminate\Support\Facades\Gate;
@@ -50,6 +53,37 @@ class PaymentManager extends Component
     public function rejectPayment(int $paymentId, ManualPaymentReviewService $service): void
     {
         $this->reviewPayment($paymentId, $service, 'reject');
+    }
+
+    public function refundPayment(int $paymentId, int $amount, ?string $reason = null): void
+    {
+        $payment = Payment::with('order')->find($paymentId);
+
+        if (! $payment || ! Gate::allows('updateStatus', $payment->order)) {
+            session()->flash('error', 'شما مجاز به بازگشت وجه نیستید');
+
+            return;
+        }
+
+        if ($payment->status !== PaymentStatus::SUCCESS) {
+            session()->flash('error', 'تنها پرداخت‌های موفق قابل بازگشت هستند');
+
+            return;
+        }
+
+        try {
+            if ($payment->method === PaymentMethod::MANUAL_TRANSFER) {
+                $service = app(ManualRefundService::class);
+                $service->refund($payment, $amount, $reason);
+            } else {
+                $service = app(RefundCore::class);
+                $service->processRefund($payment, $amount, $reason);
+            }
+
+            session()->flash('success', 'بازگشت وجه با موفقیت انجام شد');
+        } catch (RefundConstraintViolationException $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     private function reviewPayment(int $paymentId, ManualPaymentReviewService $service, string $action): void

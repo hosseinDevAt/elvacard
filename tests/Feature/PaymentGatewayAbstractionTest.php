@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Contracts\Payments\PaymentGateway;
 use App\Contracts\Payments\PaymentInitiationRequest;
 use App\Contracts\Payments\PaymentInitiationResult;
+use App\Contracts\Payments\PaymentRefundRequest;
+use App\Contracts\Payments\PaymentRefundResult;
 use App\Contracts\Payments\PaymentVerificationResult;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
@@ -124,6 +126,68 @@ class PaymentGatewayAbstractionTest extends TestCase
         $this->assertSame($initiated->providerReference, $result->providerReference);
         $this->assertSame(225000, $result->amount);
         $this->assertIsArray($result->metadata);
+    }
+
+    public function test_gateway_can_refund_and_return_provider_refund_id(): void
+    {
+        $gateway = new FakePaymentGateway;
+
+        $result = $gateway->refund(new PaymentRefundRequest(
+            orderId: 42,
+            amount: 150000,
+            paymentTransactionId: 'REF-ORIGINAL',
+            paymentProviderTransactionId: 'TXN-REF-ORIGINAL',
+        ));
+
+        $this->assertInstanceOf(PaymentRefundResult::class, $result);
+        $this->assertTrue($result->success);
+        $this->assertNotNull($result->providerRefundId);
+        $this->assertSame(1, $gateway->refundCalls);
+        $this->assertSame('REF-ORIGINAL', $gateway->lastRefundRequest->paymentTransactionId);
+        $this->assertSame(150000, $gateway->lastRefundRequest->amount);
+    }
+
+    public function test_refund_failure_is_represented_as_safe_normalized_result(): void
+    {
+        $gateway = new FakePaymentGateway;
+        $gateway->failOnRefund = true;
+
+        $result = $gateway->refund(new PaymentRefundRequest(
+            orderId: 7,
+            amount: 50000,
+            paymentTransactionId: 'REF-ORIGINAL',
+        ));
+
+        $this->assertFalse($result->success);
+        $this->assertNull($result->providerRefundId);
+        $this->assertNotEmpty($result->message);
+        $this->assertIsArray($result->metadata);
+    }
+
+    public function test_refund_interaction_does_not_mutate_payment_or_order_state(): void
+    {
+        $order = $this->createOrder();
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'method' => PaymentMethod::GATEWAY->value,
+            'status' => PaymentStatus::SUCCESS->value,
+            'amount' => (int) $order->total_price,
+            'paid_amount' => (int) $order->total_price,
+            'paid_at' => now(),
+            'gateway' => 'fake',
+            'transaction_id' => 'REF-ORIGINAL',
+        ]);
+        $gateway = new FakePaymentGateway;
+        $gateway->refund(new PaymentRefundRequest(
+            orderId: $order->id,
+            amount: (int) ($order->total_price / 2),
+            paymentTransactionId: 'REF-ORIGINAL',
+        ));
+
+        $this->assertSame(PaymentStatus::SUCCESS, $payment->fresh()->status);
+        $this->assertSame(PaymentStatusEnum::UNPAID, $order->fresh()->payment_status);
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertDatabaseCount('refunds', 0);
     }
 
     public function test_verification_failure_does_not_leak_provider_details(): void

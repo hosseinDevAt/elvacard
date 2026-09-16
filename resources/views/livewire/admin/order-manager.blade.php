@@ -277,6 +277,18 @@
                                 <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="px-4 py-2 rounded-lg text-sm bg-red-600 hover:bg-red-700 text-white">رد پرداخت</button>
                             </div>
                         @endif
+
+                        @if ($payment->status === \App\Enums\PaymentStatus::SUCCESS)
+                            @php
+                                $refundableAmount = $payment->paid_amount - $payment->refunds->where('status', 'completed')->sum('amount') - $payment->refunds->where('status', 'pending')->sum('amount');
+                                $refundableAmount = max(0, $refundableAmount);
+                            @endphp
+                            @if ($refundableAmount > 0)
+                                <div class="mt-4 flex items-center gap-2">
+                                    <button wire:click="refundPayment({{ $payment->id }}, {{ $refundableAmount }})" wire:confirm="آیا از بازگشت {{ number_format($refundableAmount) }} تومان مطمئن هستید؟" class="px-4 py-2 rounded-lg text-sm bg-amber-600 hover:bg-amber-700 text-white">بازگشت وجه ({{ number_format($refundableAmount) }} تومان)</button>
+                                </div>
+                            @endif
+                        @endif
                     </div>
                 @endforeach
             @else
