@@ -74,6 +74,9 @@ final class RefundCore
      * 2. Idempotent same-key retry (if supported and lookup unknown).
      * 3. Otherwise remain REVIEW and throw.
      *
+     * Records the reconciliation attempt and, on terminal resolution, the
+     * resolving admin and timestamp in the refund metadata.
+     *
      * @throws RefundConstraintViolationException
      */
     public function retryReviewRefund(int $refundId): Refund
@@ -85,31 +88,58 @@ final class RefundCore
         }
 
         $payment = Payment::findOrFail($refund->payment_id);
+
+        $resolverId = auth()->id();
+        $attemptMetadata = [
+            'resolved_by' => $resolverId,
+            'resolved_at' => now()->toIso8601String(),
+        ];
+
+        $this->bumpReconciliationAttempts($refund);
+        $refund = $refund->fresh();
+
+        Log::info('Refund reconciliation attempt initiated', [
+            'refund_id' => $refund->id,
+            'payment_id' => $refund->payment_id,
+            'order_id' => $payment->order_id,
+            'gateway' => (string) $payment->gateway,
+            'amount' => (int) $refund->amount,
+            'resolver_admin_id' => $resolverId,
+            'reconciliation_attempts' => (int) ($refund->metadata['reconciliation_attempts'] ?? 1),
+            'method' => 'admin_lookup_or_retry',
+        ]);
+
         $gateway = $this->resolveGateway((string) $payment->gateway);
 
         if ($gateway === null) {
             throw new RefundConstraintViolationException('درگاه پرداخت یافت نشد.');
         }
 
-        if ($gateway instanceof RefundLookupAwarePaymentGateway) {
-            $lookup = $this->tryLookup($gateway, $payment, $refund);
+        $lookup = $gateway instanceof RefundLookupAwarePaymentGateway
+            ? $this->tryLookup($gateway, $payment, $refund)
+            : null;
 
-            if ($lookup !== null) {
-                return match ($lookup->status) {
-                    RefundLookupStatus::SUCCESS => $this->completeRefund($refund, [
-                        'provider_refund_id' => $lookup->providerRefundId,
-                        'reconciled_via' => 'provider_lookup',
-                    ]),
-                    RefundLookupStatus::CONFIRMED_FAILURE => $this->markFailed($refund, [
-                        'reason' => 'confirmed_by_lookup',
-                        'detail' => $lookup->message,
-                    ]),
-                    default => $this->attemptIdempotentRetryOrRemainReview($refund, $gateway),
-                };
-            }
+        if ($lookup !== null) {
+            $resolved = match ($lookup->status) {
+                RefundLookupStatus::SUCCESS => $this->completeRefund($refund, [
+                    'provider_refund_id' => $lookup->providerRefundId,
+                    'reconciled_via' => 'provider_lookup',
+                    ...$attemptMetadata,
+                ]),
+                RefundLookupStatus::CONFIRMED_FAILURE => $this->markFailed($refund, [
+                    'reason' => 'confirmed_by_lookup',
+                    'detail' => $lookup->message,
+                    ...$attemptMetadata,
+                ]),
+                default => $this->attemptIdempotentRetryOrRemainReview($refund, $gateway, $attemptMetadata),
+            };
+        } else {
+            $resolved = $this->attemptIdempotentRetryOrRemainReview($refund, $gateway, $attemptMetadata);
         }
 
-        return $this->attemptIdempotentRetryOrRemainReview($refund, $gateway);
+        $this->logReconciliationOutcome($refund, $resolved, $resolverId);
+
+        return $resolved;
     }
 
     /**
@@ -117,10 +147,10 @@ final class RefundCore
      *
      * @throws RefundConstraintViolationException
      */
-    private function attemptIdempotentRetryOrRemainReview(Refund $refund, PaymentGateway $gateway): Refund
+    private function attemptIdempotentRetryOrRemainReview(Refund $refund, PaymentGateway $gateway, array $extraMetadata = []): Refund
     {
         if ($gateway instanceof IdempotentRefundAwarePaymentGateway && $gateway->supportsIdempotentRefundRetry()) {
-            return $this->runProviderAttempt($refund, $gateway);
+            return $this->runProviderAttempt($refund, $gateway, $extraMetadata);
         }
 
         Log::warning('Refund remains under review: outcome unknown and safe retry unavailable', [
@@ -166,6 +196,8 @@ final class RefundCore
                 'reason' => $reason,
                 'metadata' => [
                     'idempotency_key' => Str::uuid()->toString(),
+                    'created_by' => auth()->id(),
+                    'created_at' => now()->toIso8601String(),
                 ],
             ]);
         });
@@ -174,7 +206,7 @@ final class RefundCore
     /**
      * Invoke the provider gateway for the refund and handle the result.
      */
-    private function runProviderAttempt(Refund $refund, PaymentGateway $gateway): Refund
+    private function runProviderAttempt(Refund $refund, PaymentGateway $gateway, array $extraMetadata = []): Refund
     {
         $payment = Payment::findOrFail($refund->payment_id);
         $key = $refund->metadata['idempotency_key'] ?? '';
@@ -210,6 +242,7 @@ final class RefundCore
             $this->markFailed($refund, [
                 'reason' => 'provider_refund_failed',
                 'detail' => $result->message,
+                ...$extraMetadata,
             ]);
 
             Log::warning('Gateway refund failed (confirmed)', [
@@ -224,6 +257,7 @@ final class RefundCore
 
         return $this->completeRefund($refund, [
             'provider_refund_id' => $result->providerRefundId,
+            ...$extraMetadata,
         ]);
     }
 
@@ -324,6 +358,36 @@ final class RefundCore
         });
 
         return $refund->fresh();
+    }
+
+    private function bumpReconciliationAttempts(Refund $refund): void
+    {
+        DB::transaction(function () use ($refund) {
+            $locked = $this->lockRefund($refund->id);
+
+            if ($locked->status !== RefundStatus::REVIEW) {
+                return;
+            }
+
+            $attempts = (int) ($locked->metadata['reconciliation_attempts'] ?? 0);
+
+            $locked->metadata = array_merge($locked->metadata ?? [], [
+                'reconciliation_attempts' => $attempts + 1,
+            ]);
+            $locked->save();
+        });
+    }
+
+    private function logReconciliationOutcome(Refund $refund, Refund $resolved, int|string|null $resolverId): void
+    {
+        Log::info('Refund reconciliation resolved', [
+            'refund_id' => $refund->id,
+            'payment_id' => $refund->payment_id,
+            'status' => $resolved->status->value,
+            'resolver_admin_id' => $resolverId,
+            'reconciled_via' => $resolved->metadata['reconciled_via'] ?? null,
+            'reconciliation_attempts' => (int) ($resolved->metadata['reconciliation_attempts'] ?? 1),
+        ]);
     }
 
     private function tryLookup(

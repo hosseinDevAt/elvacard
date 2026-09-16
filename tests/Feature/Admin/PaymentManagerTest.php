@@ -2,17 +2,24 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Contracts\Payments\RefundRetrieveResult;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentStatusEnum;
+use App\Enums\RefundStatus;
 use App\Livewire\Admin\PaymentManager;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Refund;
 use App\Models\User;
+use App\Services\PaymentGatewayManager;
+use App\Services\RefundCore;
 use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Support\BasicFakePaymentGateway;
+use Tests\Support\FakePaymentGateway;
 use Tests\TestCase;
 
 class PaymentManagerTest extends TestCase
@@ -50,6 +57,39 @@ class PaymentManagerTest extends TestCase
             'status' => $status->value,
             'amount' => $order->total_price,
         ], $overrides));
+    }
+
+    private function markOrderPaid(Order $order): Order
+    {
+        $order->payment_status = PaymentStatusEnum::PAID;
+        $order->status = OrderStatusEnum::CONFIRMED;
+        $order->save();
+
+        return $order;
+    }
+
+    private function registerFakeGateway(): FakePaymentGateway
+    {
+        $fake = new FakePaymentGateway;
+
+        $this->app->singleton(FakePaymentGateway::class, fn (): FakePaymentGateway => $fake);
+        $this->app->instance(PaymentGatewayManager::class, new PaymentGatewayManager($this->app, [
+            'fake' => FakePaymentGateway::class,
+        ]));
+
+        return $fake;
+    }
+
+    private function registerBasicGateway(): BasicFakePaymentGateway
+    {
+        $fake = new BasicFakePaymentGateway('fake');
+
+        $this->app->singleton(BasicFakePaymentGateway::class, fn (): BasicFakePaymentGateway => $fake);
+        $this->app->instance(PaymentGatewayManager::class, new PaymentGatewayManager($this->app, [
+            'fake' => BasicFakePaymentGateway::class,
+        ]));
+
+        return $fake;
     }
 
     public function test_guest_is_rejected_when_mounting_payment_manager(): void
@@ -264,5 +304,155 @@ class PaymentManagerTest extends TestCase
         Livewire::actingAs($this->admin())
             ->test(PaymentManager::class)
             ->assertSee($url);
+    }
+
+    // --- Payment detail + refund reconciliation ---
+
+    public function test_admin_can_view_payment_detail_and_see_refund_rows(): void
+    {
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-DETAIL',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+
+        Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 50000,
+            'status' => RefundStatus::COMPLETED->value,
+            'refunded_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->assertOk()
+            ->assertSee('TXN-DETAIL')
+            ->assertSee('50,000')
+            ->assertSee(RefundStatus::COMPLETED->faLabel());
+    }
+
+    public function test_admin_can_reconcile_review_refund_through_payment_manager(): void
+    {
+        $admin = $this->admin();
+        $fake = $this->registerFakeGateway();
+        $fake->lookupResult = RefundRetrieveResult::success('RFN-UI-RECON');
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-RECON',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $refund = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => $order->total_price,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'ui-reconcile-key'],
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertHasNoErrors();
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::COMPLETED, $refund->status);
+        $this->assertSame('RFN-UI-RECON', $refund->metadata['provider_refund_id'] ?? null);
+        $this->assertSame('provider_lookup', $refund->metadata['reconciled_via'] ?? null);
+        $this->assertSame(1, $refund->metadata['reconciliation_attempts'] ?? null);
+        $this->assertSame($admin->id, $refund->metadata['resolved_by'] ?? null);
+        $this->assertArrayHasKey('resolved_at', $refund->metadata);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::REFUNDED, $order->payment_status);
+    }
+
+    public function test_reconcile_completed_refund_is_rejected(): void
+    {
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-DONE',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+
+        $refund = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 50000,
+            'status' => RefundStatus::COMPLETED->value,
+            'refunded_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertHasNoErrors();
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::COMPLETED, $refund->status);
+    }
+
+    public function test_reconcile_with_unknown_outcome_keeps_refund_in_review(): void
+    {
+        $fake = $this->registerBasicGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-STILL',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+
+        $refund = app(RefundCore::class)->processRefund($payment, 100000);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertHasNoErrors();
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+        $this->assertSame(1, $refund->metadata['reconciliation_attempts'] ?? null);
+        $this->assertSame(1, $fake->refundCalls, 'No blind second refund() call when outcome is unknown.');
+    }
+
+    public function test_reconcile_review_refund_from_unknown_payment_is_safe(): void
+    {
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'unknown-gw',
+            'transaction_id' => 'TXN-NOGW',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+
+        $refund = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 50000,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'no-gateway'],
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertHasNoErrors();
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
     }
 }

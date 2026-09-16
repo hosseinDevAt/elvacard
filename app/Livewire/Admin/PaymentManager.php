@@ -4,10 +4,12 @@ namespace App\Livewire\Admin;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\RefundStatus;
 use App\Exceptions\PaymentConstraintViolationException;
 use App\Exceptions\PaymentReviewException;
 use App\Exceptions\RefundConstraintViolationException;
 use App\Models\Payment;
+use App\Models\Refund;
 use App\Services\ManualPaymentReviewService;
 use App\Services\ManualRefundService;
 use App\Services\RefundCore;
@@ -21,9 +23,10 @@ use Livewire\WithPagination;
  * Payment operations surface for the admin panel.
  *
  * Read-only exploration of every payment attempt (manual and gateway) with
- * filtering. The only mutating actions are approve/reject, which delegate to
- * the ManualPaymentReviewService; this component never writes payment status
- * directly.
+ * filtering. Mutations delegate to services: approve/reject to
+ * ManualPaymentReviewService, refunds to ManualRefundService / RefundCore,
+ * and REVIEW reconciliation to RefundCore; this component never writes
+ * payment or refund state directly.
  */
 class PaymentManager extends Component
 {
@@ -40,9 +43,29 @@ class PaymentManager extends Component
 
     public ?string $reference = null;
 
+    public ?int $selectedPaymentId = null;
+
     public function resetFilters(): void
     {
         $this->reset('statusFilter', 'methodFilter', 'fromDate', 'toDate', 'reference');
+    }
+
+    public function viewPayment(int $paymentId): void
+    {
+        $payment = Payment::find($paymentId);
+
+        if (! $payment) {
+            session()->flash('error', 'پرداخت یافت نشد');
+
+            return;
+        }
+
+        $this->selectedPaymentId = $payment->id;
+    }
+
+    public function closePaymentDetail(): void
+    {
+        $this->selectedPaymentId = null;
     }
 
     public function approvePayment(int $paymentId, ManualPaymentReviewService $service): void
@@ -81,6 +104,42 @@ class PaymentManager extends Component
             }
 
             session()->flash('success', 'بازگشت وجه با موفقیت انجام شد');
+        } catch (RefundConstraintViolationException $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    public function reconcileReviewRefund(int $refundId): void
+    {
+        $refund = Refund::with('payment.order')->find($refundId);
+
+        if (! $refund) {
+            session()->flash('error', 'بازگشت وجه یافت نشد');
+
+            return;
+        }
+
+        if ($refund->status !== RefundStatus::REVIEW) {
+            session()->flash('error', 'تنها بازگشت‌های در حال بررسی قابل بررسی مجدد هستند');
+
+            return;
+        }
+
+        if (! $refund->payment || ! Gate::allows('updateStatus', $refund->payment->order)) {
+            session()->flash('error', 'شما مجاز به بررسی مجدد این بازگشت نیستید');
+
+            return;
+        }
+
+        try {
+            $result = app(RefundCore::class)->retryReviewRefund($refundId);
+
+            session()->flash(
+                'success',
+                $result->status === RefundStatus::COMPLETED
+                    ? 'بازگشت وجه تکمیل شد'
+                    : 'بازگشت وجه ناموفق اعلام شد',
+            );
         } catch (RefundConstraintViolationException $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -152,8 +211,17 @@ class PaymentManager extends Component
 
         $payments = $query->latest()->paginate(15);
 
+        $selectedPayment = $this->selectedPaymentId
+            ? Payment::with(['order.user', 'refunds'])->find($this->selectedPaymentId)
+            : null;
+
+        if ($this->selectedPaymentId && ! $selectedPayment) {
+            $this->selectedPaymentId = null;
+        }
+
         return view('livewire.admin.payment-manager', [
             'payments' => $payments,
+            'selectedPayment' => $selectedPayment,
             'statusCases' => PaymentStatus::cases(),
             'methodCases' => PaymentMethod::cases(),
         ])->layout('layouts.admin')->title('مدیریت پرداخت‌ها');

@@ -280,7 +280,7 @@
 
                         @if ($payment->status === \App\Enums\PaymentStatus::SUCCESS)
                             @php
-                                $refundableAmount = $payment->paid_amount - $payment->refunds->where('status', 'completed')->sum('amount') - $payment->refunds->where('status', 'pending')->sum('amount');
+                                $refundableAmount = $payment->paid_amount - $payment->refunds->whereIn('status', ['completed', 'pending', 'review'])->sum('amount');
                                 $refundableAmount = max(0, $refundableAmount);
                             @endphp
                             @if ($refundableAmount > 0)

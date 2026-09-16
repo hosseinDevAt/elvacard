@@ -12,6 +12,7 @@ use App\Exceptions\RefundConstraintViolationException;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Refund;
+use App\Models\User;
 use App\Services\PaymentGatewayManager;
 use App\Services\RefundConstraintService;
 use App\Services\RefundCore;
@@ -562,5 +563,99 @@ class RefundFinancialIntegrityTest extends TestCase
         $this->assertSame(1000 - 300, $summary['revenue']);
         $this->assertSame(300, $summary['refunded']);
         $this->assertSame(1, $summary['totalRefunds']);
+    }
+
+    // =========================================================================
+    // RECONCILIATION AUDIT TRAIL
+    // =========================================================================
+
+    public function test_gateway_refund_records_created_by_in_metadata(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin);
+        $this->registerFakeGateway();
+
+        $order = $this->createOrder();
+        $payment = $this->createSuccessfulPayment($order, 1000);
+        $this->markOrderPaid($order);
+
+        $refund = app(RefundCore::class)->processRefund($payment, 700);
+
+        $this->assertSame($admin->id, $refund->metadata['created_by'] ?? null);
+        $this->assertArrayHasKey('created_at', $refund->metadata);
+        $this->assertArrayHasKey('idempotency_key', $refund->metadata);
+    }
+
+    public function test_reconciliation_records_attempts_and_resolver_on_resolution(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $fake = $this->registerFakeGateway();
+
+        $order = $this->createOrder();
+        $payment = $this->createSuccessfulPayment($order, 1000);
+        $this->markOrderPaid($order);
+
+        $openReview = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 1000,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'attempt-audit-key'],
+        ]);
+
+        // First reconcile: lookup unknown → idempotent retry of the same key →
+        // the pre-recorded provider outcome is returned and the refund completes.
+        $fake->lookupResult = RefundRetrieveResult::success('RFN-AUDIT-RECON');
+
+        $result = app(RefundCore::class)->retryReviewRefund($openReview->id);
+
+        $this->assertSame(RefundStatus::COMPLETED, $result->status);
+        $this->assertSame(1, $result->metadata['reconciliation_attempts'] ?? null);
+        $this->assertSame($admin->id, $result->metadata['resolved_by'] ?? null);
+        $this->assertArrayHasKey('resolved_at', $result->metadata);
+        $this->assertSame('provider_lookup', $result->metadata['reconciled_via'] ?? null);
+    }
+
+    public function test_reconciliation_attempts_increment_across_failed_attempts(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $fake = $this->registerBasicGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createSuccessfulPayment($order, 1000);
+        $this->markOrderPaid($order);
+
+        $refund = app(RefundCore::class)->processRefund($payment, 700);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+
+        // First reconcile: no lookup, no idempotent retry → stays REVIEW.
+        try {
+            app(RefundCore::class)->retryReviewRefund($refund->id);
+            $this->fail('Expected RefundConstraintViolationException.');
+        } catch (RefundConstraintViolationException $e) {
+            // Expected.
+        }
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+        $this->assertSame(1, $refund->metadata['reconciliation_attempts'] ?? null);
+
+        // Second reconcile: still unverifiable → attempt counter increments again.
+        try {
+            app(RefundCore::class)->retryReviewRefund($refund->id);
+            $this->fail('Expected RefundConstraintViolationException.');
+        } catch (RefundConstraintViolationException $e) {
+            // Expected.
+        }
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+        $this->assertSame(2, $refund->metadata['reconciliation_attempts'] ?? null);
+        $this->assertSame(1, $fake->refundCalls, 'Never re-invokes the provider without idempotency support.');
     }
 }
