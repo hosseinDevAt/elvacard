@@ -35,6 +35,7 @@ use App\Livewire\Admin\PageManager;
 use App\Livewire\Admin\PaymentManager;
 use App\Livewire\Admin\ProductColorPriceManager;
 use App\Livewire\Admin\ProductManager;
+use App\Livewire\Admin\Reports;
 use App\Livewire\Admin\SiteSettingManager;
 use App\Livewire\Admin\UserManager;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard/site-settings', SiteSettingManager::class)->name('admin.site-settings');
     Route::get('/dashboard/appearance', AppearanceManager::class)->name('admin.appearance');
     Route::get('/dashboard/homepage-sections', HomepageSectionManager::class)->name('admin.homepage-sections');
+    Route::get('/dashboard/reports', Reports::class)->name('admin.reports');
     Route::get('/dashboard/orders', OrderManager::class)->name('admin.orders');
     Route::get('/dashboard/payments', PaymentManager::class)->name('admin.payments');
     Route::get('/dashboard/manual-payment', ManualPaymentSettingManager::class)->name('admin.manual-payment');
