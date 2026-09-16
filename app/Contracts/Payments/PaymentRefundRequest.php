@@ -8,6 +8,9 @@ namespace App\Contracts\Payments;
  * The amount and order context are provided by the Refund Core through
  * $request and must never be read from the browser/request by an
  * implementation.
+ *
+ * $idempotencyKey is generated once per logical refund attempt and persisted
+ * before the provider call. Retrying the same logical Refund reuses the same key.
  */
 final readonly class PaymentRefundRequest
 {
@@ -16,5 +19,6 @@ final readonly class PaymentRefundRequest
         public int $amount,
         public string $paymentTransactionId,
         public ?string $paymentProviderTransactionId = null,
+        public string $idempotencyKey = '',
     ) {}
 }

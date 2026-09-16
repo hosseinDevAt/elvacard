@@ -137,6 +137,7 @@ class PaymentGatewayAbstractionTest extends TestCase
             amount: 150000,
             paymentTransactionId: 'REF-ORIGINAL',
             paymentProviderTransactionId: 'TXN-REF-ORIGINAL',
+            idempotencyKey: 'idem-test-1',
         ));
 
         $this->assertInstanceOf(PaymentRefundResult::class, $result);
@@ -145,6 +146,7 @@ class PaymentGatewayAbstractionTest extends TestCase
         $this->assertSame(1, $gateway->refundCalls);
         $this->assertSame('REF-ORIGINAL', $gateway->lastRefundRequest->paymentTransactionId);
         $this->assertSame(150000, $gateway->lastRefundRequest->amount);
+        $this->assertSame('idem-test-1', $gateway->lastRefundRequest->idempotencyKey);
     }
 
     public function test_refund_failure_is_represented_as_safe_normalized_result(): void
@@ -156,6 +158,7 @@ class PaymentGatewayAbstractionTest extends TestCase
             orderId: 7,
             amount: 50000,
             paymentTransactionId: 'REF-ORIGINAL',
+            idempotencyKey: 'idem-test-2',
         ));
 
         $this->assertFalse($result->success);
@@ -182,6 +185,7 @@ class PaymentGatewayAbstractionTest extends TestCase
             orderId: $order->id,
             amount: (int) ($order->total_price / 2),
             paymentTransactionId: 'REF-ORIGINAL',
+            idempotencyKey: 'idem-test-3',
         ));
 
         $this->assertSame(PaymentStatus::SUCCESS, $payment->fresh()->status);

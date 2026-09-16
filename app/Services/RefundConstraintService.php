@@ -20,6 +20,15 @@ use App\Models\Refund;
 class RefundConstraintService
 {
     /**
+     * Refund statuses that financially reserve (consume) the paid amount.
+     */
+    private const RESERVATION_STATES = [
+        RefundStatus::PENDING,
+        RefundStatus::REVIEW,
+        RefundStatus::COMPLETED,
+    ];
+
+    /**
      * @throws RefundConstraintViolationException
      */
     public function assertRefundable(Payment $payment, int $amount): void
@@ -70,7 +79,10 @@ class RefundConstraintService
     public function assertNoInFlightRefund(Payment $payment): void
     {
         $hasInFlight = Refund::where('payment_id', $payment->id)
-            ->where('status', RefundStatus::PENDING->value)
+            ->whereIn('status', [
+                RefundStatus::PENDING->value,
+                RefundStatus::REVIEW->value,
+            ])
             ->exists();
 
         if ($hasInFlight) {
@@ -79,10 +91,25 @@ class RefundConstraintService
     }
 
     /**
+     * Compute the total reserved (consumed) amount for a payment:
+     * PENDING + REVIEW + COMPLETED refund amounts.
+     */
+    public function reservedAmount(Payment $payment): int
+    {
+        $sum = Refund::where('payment_id', $payment->id)
+            ->whereIn('status', array_map(
+                fn (RefundStatus $s) => $s->value,
+                self::RESERVATION_STATES,
+            ))
+            ->sum('amount');
+
+        return (int) $sum;
+    }
+
+    /**
      * Compute the raw (signed) refundable balance.
      *
-     * A negative result indicates an over-refund (integrity incident) and is
-     * never treated as a valid full-refund condition.
+     * A negative result indicates an over-refund (integrity incident).
      */
     public function rawRefundableBalance(Payment $payment): int
     {
@@ -92,24 +119,9 @@ class RefundConstraintService
     }
 
     /**
-     * Compute the total reserved (consumed) amount for a payment:
-     * PENDING + COMPLETED refund amounts.
-     */
-    public function reservedAmount(Payment $payment): int
-    {
-        $refunded = Refund::where('payment_id', $payment->id)
-            ->whereIn('status', [
-                RefundStatus::PENDING->value,
-                RefundStatus::COMPLETED->value,
-            ])
-            ->sum('amount');
-
-        return (int) $refunded;
-    }
-
-    /**
-     * Compute the refundable amount for a payment (clamped to zero):
-     * refundable = max(0, paid_amount − SUM(completed + pending refunds)).
+     * Compute the refundable amount for a payment (clamped to zero).
+     *
+     * refundable = max(0, paid_amount − SUM(PENDING + REVIEW + COMPLETED refunds)).
      */
     public function refundableAmount(Payment $payment): int
     {

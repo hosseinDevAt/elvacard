@@ -263,18 +263,19 @@ class RefundTest extends TestCase
         $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
     }
 
-    public function test_gateway_refund_provider_exception_marks_refund_failed(): void
+    public function test_gateway_refund_provider_timeout_marks_refund_review(): void
     {
         $fake = $this->registerFakeGateway();
-        $fake->throwOnRefund = true;
+        $fake->timeoutOnRefund = true;
         $order = $this->createOrder();
         $payment = $this->createSuccessfulPayment($order);
         $this->markOrderPaid($order);
 
         $refund = app(RefundCore::class)->processRefund($payment, 150000);
 
-        $this->assertSame(RefundStatus::FAILED, $refund->status);
-        $this->assertSame('provider_exception', $refund->metadata['reason'] ?? null);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+        $this->assertSame('provider_unknown', $refund->metadata['reason'] ?? null);
+        $this->assertArrayNotHasKey('integrity_violation', $refund->metadata ?? []);
 
         $order->refresh();
         $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
@@ -315,6 +316,24 @@ class RefundTest extends TestCase
             'payment_id' => $payment->id,
             'amount' => 50000,
             'status' => RefundStatus::PENDING->value,
+        ]);
+        $payment->refresh();
+
+        $this->expectException(RefundConstraintViolationException::class);
+        app(RefundCore::class)->processRefund($payment, 40000);
+    }
+
+    public function test_open_review_blocks_new_refund(): void
+    {
+        $this->registerFakeGateway();
+        $order = $this->createOrder();
+        $payment = $this->createSuccessfulPayment($order);
+        $this->markOrderPaid($order);
+
+        Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 50000,
+            'status' => RefundStatus::REVIEW->value,
         ]);
         $payment->refresh();
 
