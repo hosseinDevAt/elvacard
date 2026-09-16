@@ -38,7 +38,7 @@
             <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                 @if ($article->published_at)
                     <time datetime="{{ $article->published_at->toISOString() }}">
-                        {{ $article->published_at->format('Y/m/d') }}
+                        {{ jalali_date($article->published_at, 'date') }}
                     </time>
                 @endif
             </div>

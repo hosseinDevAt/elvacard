@@ -7,7 +7,7 @@
 
             <div class="mt-6 grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
                 <p><span class="font-semibold">شماره سفارش:</span> {{ $order->reference }}</p>
-                <p><span class="font-semibold">تاریخ ثبت:</span> {{ $order->created_at?->format('Y-m-d H:i') }}</p>
+                <p><span class="font-semibold">تاریخ ثبت:</span> {{ jalali_date($order->created_at, 'datetime') }}</p>
                 <p><span class="font-semibold">وضعیت سفارش:</span> {{ $order->status?->faLabel() ?? $order->status }}</p>
                 <p><span class="font-semibold">وضعیت پرداخت:</span> {{ $order->payment_status?->faLabel() ?? $order->payment_status }}</p>
                 <p><span class="font-semibold">مبلغ کل:</span> {{ number_format($order->total_price) }} تومان</p>

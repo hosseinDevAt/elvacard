@@ -4,6 +4,4 @@ namespace App\Exceptions;
 
 use InvalidArgumentException;
 
-class UnknownSmsProviderException extends InvalidArgumentException
-{
-}
+class UnknownSmsProviderException extends InvalidArgumentException {}

@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class PaymentTest extends TestCase
@@ -82,7 +83,7 @@ class PaymentTest extends TestCase
         $this->assertSame(PaymentStatus::SUCCESS, $fresh->status);
         $this->assertIsArray($fresh->metadata);
         $this->assertSame('کارت‌به‌کارت', $fresh->metadata['tracking_label']);
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $fresh->paid_at);
+        $this->assertInstanceOf(Carbon::class, $fresh->paid_at);
     }
 
     public function test_payment_cascade_deletes_with_order(): void

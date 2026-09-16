@@ -10,6 +10,7 @@ use App\Livewire\Admin\PaymentManager;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -169,9 +170,12 @@ class PaymentManagerTest extends TestCase
         $old->created_at = now()->subDays(5);
         $old->save();
 
+        $dates = app(DateService::class);
+        $fromJalali = $dates->ascii($dates->jDate($recent->created_at->copy()->subDay()));
+
         Livewire::actingAs($this->admin())
             ->test(PaymentManager::class)
-            ->set('fromDate', now()->subDay()->toDateString())
+            ->set('fromDate', $fromJalali)
             ->assertSee('TXN-RECENT')
             ->assertDontSee('TXN-OLD');
     }

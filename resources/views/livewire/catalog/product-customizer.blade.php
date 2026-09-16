@@ -264,7 +264,7 @@
                                 <div class="absolute rounded px-1" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;">
                                     <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
                                     <div class="font-mono font-bold text-xs tracking-wider" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
-                                        {{ $bankCard->expiry_month ?: '--' }}/{{ $bankCard->expiry_year ?: '--' }}
+                                        {{ $bankCard->expiry_month ? fa_digits($bankCard->expiry_month) : '--' }}/{{ $bankCard->expiry_year ? fa_digits($bankCard->expiry_year) : '--' }}
                                     </div>
                                 </div>
                             @endif

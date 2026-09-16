@@ -12,7 +12,7 @@
 
                 <div class="grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
                     <p><span class="font-semibold">شماره سفارش:</span> {{ $order->reference ?? ('#'.$order->id) }}</p>
-                    <p><span class="font-semibold">تاریخ ثبت:</span> {{ $order->created_at?->format('Y-m-d H:i') }}</p>
+                    <p><span class="font-semibold">تاریخ ثبت:</span> {{ jalali_date($order->created_at, 'datetime') }}</p>
                     <p><span class="font-semibold">وضعیت سفارش:</span> {{ $order->status?->faLabel() ?? $order->status }}</p>
                     <p><span class="font-semibold">وضعیت پرداخت:</span> {{ $order->payment_status?->faLabel() ?? $order->payment_status }}</p>
                     <p><span class="font-semibold">نام مشتری:</span> {{ $order->customer_name }}</p>
@@ -97,7 +97,7 @@
                             <p><span class="font-semibold">مبلغ:</span> {{ number_format($payment->amount) }} تومان</p>
                             <p><span class="font-semibold">کد پیگیری:</span> <span dir="ltr" class="break-all">{{ $payment->tracking_code ?? '-' }}</span></p>
                             <p class="break-words"><span class="font-semibold">توضیحات:</span> {{ $payment->metadata['note'] ?? '-' }}</p>
-                            <p><span class="font-semibold">تاریخ:</span> {{ $payment->created_at->format('Y-m-d H:i') }}</p>
+                            <p><span class="font-semibold">تاریخ:</span> {{ jalali_date($payment->created_at, 'datetime') }}</p>
                         </div>
                     </div>
                 @empty

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\BankCard\BankCardCustomization;
+use App\Support\Dates\DateService;
 use Tests\TestCase;
 
 class BankCardCustomizationTest extends TestCase
@@ -166,16 +167,17 @@ class BankCardCustomizationTest extends TestCase
         $this->assertSame(['nullable', 'string', 'digits_between:3,4'], $rules['cvv2']);
         $this->assertSame(['nullable', 'string', 'regex:/^(0[1-9]|1[0-2])$/'], $rules['expiry_month']);
 
-        $currentShort = (int) date('y');
-        $expectedYearRange = "between:{$currentShort},".($currentShort + 10);
-        $this->assertSame(['nullable', 'string', 'integer', 'digits:2', $expectedYearRange], $rules['expiry_year']);
+        [$from, $to] = app(DateService::class)->jalaliYearRange();
+        $expectedYearRange = "between:{$from},{$to}";
+        $this->assertSame(['nullable', 'string', 'integer', 'digits:4', $expectedYearRange], $rules['expiry_year']);
     }
 
     public function test_expiry_year_range_spans_current_to_plus_ten(): void
     {
-        $currentShort = (int) date('y');
+        [$from, $to] = app(DateService::class)->jalaliYearRange();
 
-        $this->assertSame([$currentShort, $currentShort + 10], BankCardCustomization::expiryYearRange());
+        $this->assertSame([$from, $to], BankCardCustomization::expiryYearRange());
+        $this->assertSame(10, $to - $from);
     }
 
     public function test_messages_cover_all_card_fields(): void

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\OtpPurpose;
 use App\Exceptions\SmsSendingFailedException;
+use App\Exceptions\UnknownSmsProviderException;
 use App\Models\OtpCode;
 use Illuminate\Support\Facades\Hash;
 
@@ -19,7 +20,7 @@ final class OtpService
      * and no unusable code is stored.
      *
      * @throws SmsSendingFailedException
-     * @throws \App\Exceptions\UnknownSmsProviderException
+     * @throws UnknownSmsProviderException
      */
     public function issue(string $phone, OtpPurpose $purpose): void
     {

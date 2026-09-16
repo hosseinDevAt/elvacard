@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\CartService;
 use App\Services\Customization\CardPresenter;
+use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -273,11 +274,13 @@ class ProductCustomizerTest extends TestCase
 
     public function test_expiry_month_must_be_between_01_and_12(): void
     {
+        $validYear = (string) (app(DateService::class)->jalaliYearRange()[0] + 2);
+
         foreach (['00', '13', '99', 'A1'] as $month) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
                 ->set('bankCard.expiry_month', $month)
-                ->set('bankCard.expiry_year', (string) ((int) date('y') + 2))
+                ->set('bankCard.expiry_year', $validYear)
                 ->call('addToCart')
                 ->assertHasErrors(['bankCard.expiry_month' => 'regex']);
         }
@@ -285,10 +288,11 @@ class ProductCustomizerTest extends TestCase
 
     public function test_expiry_year_must_be_in_valid_range(): void
     {
-        $currentShort = (int) date('y');
-        $validYear = (string) ($currentShort + 5);
-        $pastYear = (string) ($currentShort - 2);
-        $tooFarYear = (string) ($currentShort + 12);
+        $dates = app(DateService::class);
+        $currentYear = $dates->jalaliYearRange()[0];
+        $validYear = (string) ($currentYear + 5);
+        $pastYear = (string) ($currentYear - 2);
+        $tooFarYear = (string) ($currentYear + 12);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->call('toggleExpiry')
@@ -297,7 +301,7 @@ class ProductCustomizerTest extends TestCase
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
-        foreach ([$pastYear, $tooFarYear, '1', '2029'] as $year) {
+        foreach ([$pastYear, $tooFarYear, '1', '8888'] as $year) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
                 ->set('bankCard.expiry_month', '05')
@@ -374,6 +378,9 @@ class ProductCustomizerTest extends TestCase
 
     public function test_snapshot_has_no_positions_when_configuration_is_complete(): void
     {
+        $dates = app(DateService::class);
+        $expiry = $dates->jalaliExpiryToGregorian('05', (string) ($dates->jalaliYearRange()[0] + 3));
+
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_number', '1234657897897897')
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
@@ -382,7 +389,7 @@ class ProductCustomizerTest extends TestCase
             ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) ((int) date('y') + 3))
+            ->set('bankCard.expiry_year', (string) ($dates->jalaliYearRange()[0] + 3))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -392,7 +399,8 @@ class ProductCustomizerTest extends TestCase
         $this->assertSame('HOSSEIN REZAIE', $customization['card_holder_name']);
         $this->assertSame('BORN TO LEAD', $customization['back_text']);
         $this->assertSame('808', $customization['cvv2']);
-        $this->assertSame('05', $customization['expiry_month']);
+        $this->assertSame($expiry['expiry_month'], $customization['expiry_month']);
+        $this->assertSame($expiry['expiry_year'], $customization['expiry_year']);
         $this->assertArrayNotHasKey('qr_code_enabled', $customization);
         $this->assertArrayNotHasKey('qr_code_path', $customization);
         $this->assertArrayNotHasKey('positions', $customization);
@@ -400,6 +408,8 @@ class ProductCustomizerTest extends TestCase
 
     public function test_snapshot_never_contains_qr_code_keys(): void
     {
+        $validYear = (string) (app(DateService::class)->jalaliYearRange()[0] + 3);
+
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_number', '1234657897897897')
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
@@ -408,7 +418,7 @@ class ProductCustomizerTest extends TestCase
             ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) ((int) date('y') + 3))
+            ->set('bankCard.expiry_year', $validYear)
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -469,6 +479,9 @@ class ProductCustomizerTest extends TestCase
 
     public function test_end_to_end_snapshot_is_persisted_without_regeneration(): void
     {
+        $dates = app(DateService::class);
+        $expiry = $dates->jalaliExpiryToGregorian('05', (string) ($dates->jalaliYearRange()[0] + 3));
+
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
             ->set('bankCard.card_number', ' 6274 0512 3456 7890 ')
@@ -477,7 +490,7 @@ class ProductCustomizerTest extends TestCase
             ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) ((int) date('y') + 3))
+            ->set('bankCard.expiry_year', (string) ($dates->jalaliYearRange()[0] + 3))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -501,7 +514,8 @@ class ProductCustomizerTest extends TestCase
 
         $this->assertSame('6274051234567890', $orderItem->customization_json['card_number']);
         $this->assertSame('808', $orderItem->customization_json['cvv2']);
-        $this->assertSame('05', $orderItem->customization_json['expiry_month']);
+        $this->assertSame($expiry['expiry_month'], $orderItem->customization_json['expiry_month']);
+        $this->assertSame($expiry['expiry_year'], $orderItem->customization_json['expiry_year']);
         $this->assertArrayNotHasKey('positions', $orderItem->customization_json);
     }
 

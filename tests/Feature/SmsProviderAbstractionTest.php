@@ -10,8 +10,8 @@ use App\Models\OtpCode;
 use App\Services\OtpService;
 use App\Services\SmsManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Tests\Support\RecordingSmsProvider;
+use Tests\TestCase;
 
 class SmsProviderAbstractionTest extends TestCase
 {
@@ -61,7 +61,7 @@ class SmsProviderAbstractionTest extends TestCase
 
     public function test_recording_provider_implements_the_contract(): void
     {
-        $recording = new RecordingSmsProvider();
+        $recording = new RecordingSmsProvider;
 
         $this->assertInstanceOf(SmsProvider::class, $recording);
 
@@ -85,7 +85,7 @@ class SmsProviderAbstractionTest extends TestCase
 
     public function test_consumed_and_expired_otps_are_not_reusable_via_service(): void
     {
-        $recording = new RecordingSmsProvider();
+        $recording = new RecordingSmsProvider;
         $this->app->instance(RecordingSmsProvider::class, $recording);
         $this->app->instance(SmsManager::class, new SmsManager($this->app, [
             'recording' => RecordingSmsProvider::class,

@@ -134,7 +134,7 @@ $contactAddress = site_setting('contact_address');
 
         <div class="mt-10 pt-6 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <div class="text-center md:text-start">
-                © <span>{{ date('Y') }}</span>
+                © <span>{{ jalali_now('year') }}</span>
                 {{ $siteName }}. تمامی حقوق محفوظ است.
             </div>
             <div class="text-center">

@@ -4,6 +4,4 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-class PaymentReviewException extends RuntimeException
-{
-}
+class PaymentReviewException extends RuntimeException {}

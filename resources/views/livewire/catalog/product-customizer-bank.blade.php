@@ -129,22 +129,25 @@
             </div>
 
             @if ($bankCard->security_expiry_enabled)
+                @php
+                    [$expiryYearFrom, $expiryYearTo] = \App\Services\BankCard\BankCardCustomization::expiryYearRange();
+                @endphp
                 <div class="grid grid-cols-2 gap-2 pt-2">
                     <div>
-                        <label class="block text-[10px] text-gray-400 mb-1">ماه انقضا</label>
+                        <label class="block text-[10px] text-gray-400 mb-1">ماه انقضا (شمسی)</label>
                         <select wire:model.live="bankCard.expiry_month" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
                             <option value="">انتخاب ماه...</option>
                             @for ($m = 1; $m <= 12; $m++)
-                                <option value="{{ sprintf('%02d', $m) }}">{{ sprintf('%02d', $m) }}</option>
+                                <option value="{{ sprintf('%02d', $m) }}">{{ fa_digits(sprintf('%02d', $m)) }}</option>
                             @endfor
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[10px] text-gray-400 mb-1">سال انقضا (دو رقم)</label>
+                        <label class="block text-[10px] text-gray-400 mb-1">سال انقضا (شمسی)</label>
                         <select wire:model.live="bankCard.expiry_year" class="w-full rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none">
                             <option value="">انتخاب سال...</option>
-                            @for ($y = (int) now()->format('y'); $y <= (int) now()->format('y') + 10; $y++)
-                                <option value="{{ $y }}">{{ $y }}</option>
+                            @for ($y = $expiryYearFrom; $y <= $expiryYearTo; $y++)
+                                <option value="{{ $y }}">{{ fa_digits($y) }}</option>
                             @endfor
                         </select>
                     </div>

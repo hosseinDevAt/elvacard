@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\ArticleCategory;
 use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
+use App\Support\Dates\DateService;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -53,7 +54,18 @@ class ArticleManager extends Component
             'content' => 'required|string|min:1',
             'coverImage' => 'nullable|string|max:2048',
             'status' => 'required|in:'.implode(',', array_column(ArticleStatusEnum::cases(), 'value')),
-            'publishedAt' => 'nullable|date',
+            'publishedAt' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value === null || trim($value) === '') {
+                        return;
+                    }
+
+                    if (! app(DateService::class)->isValidDate($value)) {
+                        $fail('تاریخ انتشار نامعتبر است.');
+                    }
+                },
+            ],
             'metaTitle' => 'nullable|string|max:255',
             'metaDescription' => 'nullable|string',
             'canonicalUrl' => [
@@ -120,6 +132,8 @@ class ArticleManager extends Component
         $this->metaDescription = $this->metaDescription !== null && trim($this->metaDescription) !== '' ? trim($this->metaDescription) : null;
         $this->canonicalUrl = $this->canonicalUrl !== null && trim($this->canonicalUrl) !== '' ? trim($this->canonicalUrl) : null;
 
+        $dates = app(DateService::class);
+
         $data = [
             'article_category_id' => $this->articleCategoryId,
             'title' => $this->title,
@@ -128,7 +142,7 @@ class ArticleManager extends Component
             'content' => $this->content,
             'cover_image' => $this->coverImage,
             'status' => $this->status,
-            'published_at' => $this->publishedAt,
+            'published_at' => $this->publishedAt !== null ? $dates->fromJalali($this->publishedAt) : null,
             'meta_title' => $this->metaTitle,
             'meta_description' => $this->metaDescription,
             'canonical_url' => $this->canonicalUrl,
@@ -150,6 +164,7 @@ class ArticleManager extends Component
     public function edit(int $id): void
     {
         $article = Article::find($id);
+        $dates = app(DateService::class);
         $this->editingId = $id;
         $this->articleCategoryId = $article->article_category_id;
         $this->title = $article->title;
@@ -157,7 +172,7 @@ class ArticleManager extends Component
         $this->content = $article->content;
         $this->coverImage = $article->cover_image;
         $this->status = $article->status->value;
-        $this->publishedAt = $article->published_at?->format('Y-m-d\TH:i');
+        $this->publishedAt = $article->published_at ? $dates->ascii($dates->jDateTime($article->published_at)) : null;
         $this->metaTitle = $article->meta_title;
         $this->metaDescription = $article->meta_description;
         $this->canonicalUrl = $article->canonical_url;

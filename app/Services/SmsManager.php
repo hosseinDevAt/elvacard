@@ -47,7 +47,7 @@ final class SmsManager
     /**
      * Resolve the active provider (default unless a name is given).
      *
-     * @throws \App\Exceptions\UnknownSmsProviderException
+     * @throws UnknownSmsProviderException
      */
     public function provider(?string $name = null): SmsProvider
     {

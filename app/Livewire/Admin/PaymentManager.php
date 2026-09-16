@@ -9,6 +9,7 @@ use App\Exceptions\PaymentReviewException;
 use App\Models\Payment;
 use App\Services\ManualPaymentReviewService;
 use App\Support\Concerns\AuthorizesAdminActions;
+use App\Support\Dates\DateService;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -91,11 +92,23 @@ class PaymentManager extends Component
         }
 
         if ($this->fromDate !== null && $this->fromDate !== '') {
-            $query->whereDate('created_at', '>=', $this->fromDate);
+            $dates = app(DateService::class);
+
+            if (! $dates->isValidDate($this->fromDate)) {
+                $this->addError('fromDate', 'تاریخ شروع نامعتبر است');
+            } else {
+                $query->where('created_at', '>=', $dates->fromJalali($this->fromDate));
+            }
         }
 
         if ($this->toDate !== null && $this->toDate !== '') {
-            $query->whereDate('created_at', '<=', $this->toDate);
+            $dates = app(DateService::class);
+
+            if (! $dates->isValidDate($this->toDate)) {
+                $this->addError('toDate', 'تاریخ پایان نامعتبر است');
+            } else {
+                $query->where('created_at', '<=', $dates->dayEndCanonical($dates->fromJalali($this->toDate)));
+            }
         }
 
         if ($this->reference !== null && trim($this->reference) !== '') {

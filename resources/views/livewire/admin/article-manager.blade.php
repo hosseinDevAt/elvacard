@@ -53,7 +53,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">تاریخ انتشار (اختیاری)</label>
-                        <input type="datetime-local" wire:model="publishedAt" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <x-jalali-date-input mode="datetime" wire:model="publishedAt" id="article_published_at" />
                         @error('publishedAt') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -118,7 +118,7 @@
                                 {{ $article->status->faLabel() }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $article->published_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $article->published_at ? jalali_date($article->published_at, 'datetime') : '—' }}</td>
                         <td class="px-4 py-3">
                             <button wire:click="edit({{ $article->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
                             <button wire:click="delete({{ $article->id }})" wire:confirm="آیا از حذف این مقاله مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>

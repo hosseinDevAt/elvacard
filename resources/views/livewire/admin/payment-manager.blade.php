@@ -34,11 +34,17 @@
             </div>
             <div>
                 <label class="block text-xs text-gray-400 mb-1">از تاریخ</label>
-                <input type="date" wire:model.live="fromDate" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                <x-jalali-date-input wire:model.live="fromDate" id="payment_from_date" />
+                @error('fromDate')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             <div>
                 <label class="block text-xs text-gray-400 mb-1">تا تاریخ</label>
-                <input type="date" wire:model.live="toDate" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                <x-jalali-date-input wire:model.live="toDate" id="payment_to_date" />
+                @error('toDate')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             <div>
                 <label class="block text-xs text-gray-400 mb-1">کد سفارش</label>
@@ -135,9 +141,9 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500">
-                            <div>ایجاد: {{ $payment->created_at->format('Y-m-d H:i') }}</div>
+                            <div>ایجاد: {{ jalali_date($payment->created_at, 'datetime') }}</div>
                             @if ($payment->paid_at)
-                                <div class="text-green-700">پرداخت: {{ $payment->paid_at->format('Y-m-d H:i') }}</div>
+                                <div class="text-green-700">پرداخت: {{ jalali_date($payment->paid_at, 'datetime') }}</div>
                             @endif
                         </td>
                         <td class="px-4 py-3">

@@ -16,7 +16,7 @@ class OrderAuthorizationTest extends TestCase
 
     private function createOrderForUser(User $user): Order
     {
-        $order = new Order();
+        $order = new Order;
         foreach ([
             'user_id' => $user->id,
             'customer_name' => $user->displayName(),

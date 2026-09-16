@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Announcement;
 use App\Support\Concerns\AuthorizesAdminActions;
+use App\Support\Dates\DateService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -64,22 +65,40 @@ class AnnouncementManager extends Component
             'backgroundColor' => 'nullable|string|max:100|regex:/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/',
             'textColor' => 'nullable|string|max:100|regex:/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/',
             'isActive' => 'boolean',
-            'startDate' => 'nullable|date',
-            'endDate' => [
+            'startDate' => [
                 'nullable',
-                'date',
                 function ($attribute, $value, $fail) {
                     if ($value === null || trim($value) === '') {
                         return;
                     }
 
-                    if ($this->startDate === null || trim($this->startDate) === '') {
-                        $fail('تاریخ پایان بدون تاریخ شروع مجاز نیست.');
+                    if (! app(DateService::class)->isValidDate($value)) {
+                        $fail('تاریخ شروع نامعتبر است.');
+                    }
+                },
+            ],
+            'endDate' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value === null || trim($value) === '') {
+                        return;
+                    }
+
+                    $dates = app(DateService::class);
+
+                    if (! $dates->isValidDate($value)) {
+                        $fail('تاریخ پایان نامعتبر است.');
 
                         return;
                     }
 
-                    if (strtotime($value) < strtotime($this->startDate)) {
+                    if ($this->startDate === null || trim($this->startDate) === '' || ! $dates->isValidDate($this->startDate)) {
+                        $fail('تاریخ پایان بدون تاریخ شروع معتبر مجاز نیست.');
+
+                        return;
+                    }
+
+                    if ($dates->fromJalali($value)->lessThan($dates->fromJalali($this->startDate))) {
                         $fail('تاریخ پایان باید بزرگ‌تر یا مساوی تاریخ شروع باشد.');
                     }
                 },
@@ -96,6 +115,8 @@ class AnnouncementManager extends Component
     {
         $this->validate();
 
+        $dates = app(DateService::class);
+
         $this->link = $this->link !== null && trim($this->link) !== '' ? trim($this->link) : null;
         $this->backgroundColor = $this->backgroundColor !== null && trim($this->backgroundColor) !== '' ? trim($this->backgroundColor) : null;
         $this->textColor = $this->textColor !== null && trim($this->textColor) !== '' ? trim($this->textColor) : null;
@@ -109,8 +130,8 @@ class AnnouncementManager extends Component
             'background_color' => $this->backgroundColor,
             'text_color' => $this->textColor,
             'is_active' => $this->isActive,
-            'start_date' => $this->startDate,
-            'end_date' => $this->endDate,
+            'start_date' => $this->startDate !== null ? $dates->fromJalali($this->startDate) : null,
+            'end_date' => $this->endDate !== null ? $dates->fromJalali($this->endDate) : null,
         ];
 
         if ($this->editingId) {
@@ -128,6 +149,7 @@ class AnnouncementManager extends Component
     public function edit(int $id): void
     {
         $announcement = Announcement::find($id);
+        $dates = app(DateService::class);
         $this->editingId = $id;
         $this->title = $announcement->title;
         $this->content = $announcement->content;
@@ -135,8 +157,8 @@ class AnnouncementManager extends Component
         $this->backgroundColor = $announcement->background_color;
         $this->textColor = $announcement->text_color;
         $this->isActive = $announcement->is_active;
-        $this->startDate = $announcement->start_date?->format('Y-m-d\TH:i');
-        $this->endDate = $announcement->end_date?->format('Y-m-d\TH:i');
+        $this->startDate = $announcement->start_date ? $dates->ascii($dates->jDateTime($announcement->start_date)) : null;
+        $this->endDate = $announcement->end_date ? $dates->ascii($dates->jDateTime($announcement->end_date)) : null;
         $this->showForm = true;
     }
 

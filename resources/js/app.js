@@ -1,4 +1,5 @@
 import collapse from '@alpinejs/collapse';
+import jalaliCalendar from './jalali-calendar';
 
 document.addEventListener('alpine:init', () => {
     if (!window.Alpine) {
@@ -6,6 +7,7 @@ document.addEventListener('alpine:init', () => {
     }
 
     window.Alpine.plugin(collapse);
+    window.Alpine.data('jalaliCalendar', jalaliCalendar);
 
     window.Alpine.data('bannerSlider', (count) => ({
         count: count,

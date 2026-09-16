@@ -6,6 +6,7 @@ use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
+use App\Support\Dates\DateService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -14,10 +15,8 @@ class ReportingService
 {
     public function summary(CarbonInterface $from, CarbonInterface $to): array
     {
-        $tz = config('app.timezone');
-
-        $from = Carbon::parse($from, $tz)->startOfDay();
-        $to = Carbon::parse($to, $tz)->endOfDay();
+        $from = Carbon::instance($from);
+        $to = Carbon::instance($to);
 
         $revenue = (int) Payment::query()
             ->where('status', PaymentStatus::SUCCESS->value)
@@ -67,79 +66,40 @@ class ReportingService
 
     public function revenueTrend(CarbonInterface $from, CarbonInterface $to): array
     {
-        $tz = config('app.timezone');
+        $from = Carbon::instance($from);
+        $to = Carbon::instance($to);
 
-        $from = Carbon::parse($from, $tz)->startOfDay();
-        $to = Carbon::parse($to, $tz)->endOfDay();
+        $dates = app(DateService::class);
+        $businessFrom = $dates->toBusiness($from)->copy()->startOfDay();
+        $businessTo = $dates->toBusiness($to)->copy()->startOfDay();
+        $daily = $businessFrom->diffInDays($businessTo, false) <= 31;
 
-        $daily = $from->diffInDays($to) <= 31;
-
-        if ($daily) {
-            $rows = DB::table('payments')
-                ->where('status', PaymentStatus::SUCCESS->value)
-                ->whereBetween('paid_at', [$from, $to])
-                ->select(
-                    DB::raw('DATE(paid_at) as period'),
-                    DB::raw('SUM(paid_amount) as revenue'),
-                    DB::raw('COUNT(*) as count')
-                )
-                ->groupBy('period')
-                ->orderBy('period')
-                ->get();
-
-            $filled = [];
-            $cursor = $from->copy()->startOfDay();
-
-            while ($cursor->lte($to)) {
-                $key = $cursor->format('Y-m-d');
-                $filled[$key] = ['period' => $key, 'revenue' => 0, 'count' => 0];
-                $cursor->addDay();
-            }
-
-            foreach ($rows as $row) {
-                $filled[$row->period] = [
-                    'period' => $row->period,
-                    'revenue' => (int) $row->revenue,
-                    'count' => (int) $row->count,
-                ];
-            }
-
-            return array_values($filled);
-        }
-
-        $driver = DB::getDriverName();
-
-        $monthExpr = $driver === 'mysql'
-            ? "DATE_FORMAT(paid_at, '%Y-%m')"
-            : "strftime('%Y-%m', paid_at)";
-
-        $rows = DB::table('payments')
+        $payments = Payment::query()
             ->where('status', PaymentStatus::SUCCESS->value)
             ->whereBetween('paid_at', [$from, $to])
-            ->select(
-                DB::raw("{$monthExpr} as period"),
-                DB::raw('SUM(paid_amount) as revenue'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy('period')
-            ->orderBy('period')
-            ->get();
+            ->get(['paid_at', 'paid_amount']);
 
         $filled = [];
-        $cursor = $from->copy()->startOfMonth();
+        $cursor = $businessFrom->copy();
 
-        while ($cursor->lte($to)) {
-            $key = $cursor->format('Y-m');
+        while ($cursor->lte($businessTo)) {
+            $key = $dates->ascii($dates->jDate($cursor));
+            if (! $daily) {
+                $key = substr($key, 0, 7);
+            }
+
             $filled[$key] = ['period' => $key, 'revenue' => 0, 'count' => 0];
-            $cursor->addMonthNoOverflow();
+            $cursor->addDay();
         }
 
-        foreach ($rows as $row) {
-            $filled[$row->period] = [
-                'period' => $row->period,
-                'revenue' => (int) $row->revenue,
-                'count' => (int) $row->count,
-            ];
+        foreach ($payments as $payment) {
+            $key = $dates->ascii($dates->jDate($payment->paid_at));
+            if (! $daily) {
+                $key = substr($key, 0, 7);
+            }
+
+            $filled[$key]['revenue'] += (int) ($payment->paid_amount ?? 0);
+            $filled[$key]['count'] += 1;
         }
 
         return array_values($filled);
@@ -147,10 +107,8 @@ class ReportingService
 
     public function topProducts(CarbonInterface $from, CarbonInterface $to, int $limit = 10): array
     {
-        $tz = config('app.timezone');
-
-        $from = Carbon::parse($from, $tz)->startOfDay();
-        $to = Carbon::parse($to, $tz)->endOfDay();
+        $from = Carbon::instance($from);
+        $to = Carbon::instance($to);
 
         $rows = DB::table('order_items as oi')
             ->join('orders as o', 'o.id', '=', 'oi.order_id')
@@ -198,10 +156,8 @@ class ReportingService
 
     public function paymentMethodBreakdown(CarbonInterface $from, CarbonInterface $to): array
     {
-        $tz = config('app.timezone');
-
-        $from = Carbon::parse($from, $tz)->startOfDay();
-        $to = Carbon::parse($to, $tz)->endOfDay();
+        $from = Carbon::instance($from);
+        $to = Carbon::instance($to);
 
         $results = [];
 
@@ -251,10 +207,8 @@ class ReportingService
 
     public function orderStatusBreakdown(CarbonInterface $from, CarbonInterface $to): array
     {
-        $tz = config('app.timezone');
-
-        $from = Carbon::parse($from, $tz)->startOfDay();
-        $to = Carbon::parse($to, $tz)->endOfDay();
+        $from = Carbon::instance($from);
+        $to = Carbon::instance($to);
 
         $counts = DB::table('orders')
             ->whereBetween('created_at', [$from, $to])

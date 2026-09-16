@@ -2,6 +2,8 @@
 
 namespace App\Contracts\Sms;
 
+use App\Exceptions\SmsSendingFailedException;
+
 interface SmsProvider
 {
     /**
@@ -15,7 +17,7 @@ interface SmsProvider
      * Implementations must throw SmsSendingFailedException when delivery is
      * impossible — they must never silently pretend the message was sent.
      *
-     * @throws \App\Exceptions\SmsSendingFailedException
+     * @throws SmsSendingFailedException
      */
     public function sendOtp(string $phone, string $code): void;
 }

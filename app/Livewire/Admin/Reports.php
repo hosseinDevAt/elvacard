@@ -3,7 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Services\ReportingService;
-use Illuminate\Support\Carbon;
+use App\Support\Dates\DateService;
+use Carbon\Carbon;
 use Livewire\Component;
 
 class Reports extends Component
@@ -26,39 +27,65 @@ class Reports extends Component
 
     public function mount(): void
     {
-        $this->fromDate = now()->subDays(29)->format('Y-m-d');
-        $this->toDate = now()->format('Y-m-d');
+        $dates = app(DateService::class);
+
+        $this->fromDate = $dates->ascii($dates->jDate($dates->now()->subDays(29)));
+        $this->toDate = $dates->ascii($dates->jDate($dates->now()));
         $this->compute();
     }
 
     public function applyFilter(): void
     {
         $this->validate([
-            'fromDate' => ['required', 'date'],
-            'toDate' => ['required', 'date', 'after_or_equal:fromDate'],
+            'fromDate' => ['required', 'string'],
+            'toDate' => ['required', 'string'],
         ], [
             'fromDate.required' => 'تاریخ شروع الزامی است',
             'toDate.required' => 'تاریخ پایان الزامی است',
-            'toDate.after_or_equal' => 'تاریخ پایان نباید قبل از تاریخ شروع باشد',
         ]);
 
-        $tz = config('app.timezone');
-        $from = Carbon::parse($this->fromDate, $tz)->startOfDay();
-        $to = Carbon::parse($this->toDate, $tz)->endOfDay();
+        $dates = app(DateService::class);
 
-        if ($from->diffInDays($to) > 365) {
+        if (! $dates->isValidDate($this->fromDate)) {
+            $this->addError('fromDate', 'تاریخ شروع نامعتبر است');
+
+            return;
+        }
+
+        if (! $dates->isValidDate($this->toDate)) {
+            $this->addError('toDate', 'تاریخ پایان نامعتبر است');
+
+            return;
+        }
+
+        $from = $dates->fromJalali($this->fromDate);
+        $to = $dates->fromJalali($this->toDate);
+
+        if ($from->greaterThan($to)) {
+            $this->addError('toDate', 'تاریخ پایان نباید قبل از تاریخ شروع باشد');
+
+            return;
+        }
+
+        if ($dates->dayStartCanonical($from)->diffInDays($dates->dayEndCanonical($to), false) > 365) {
             $this->addError('toDate', 'بازه زمانی نباید بیش از یک سال باشد.');
 
             return;
         }
 
-        $this->compute();
+        $this->fromDate = $dates->ascii($dates->jDate($from));
+        $this->toDate = $dates->ascii($dates->jDate($to));
+
+        $this->resetErrorBag();
+        $this->compute($from, $to);
     }
 
     public function clearFilter(): void
     {
-        $this->fromDate = now()->subDays(29)->format('Y-m-d');
-        $this->toDate = now()->format('Y-m-d');
+        $dates = app(DateService::class);
+
+        $this->fromDate = $dates->ascii($dates->jDate($dates->now()->subDays(29)));
+        $this->toDate = $dates->ascii($dates->jDate($dates->now()));
         $this->resetErrorBag();
         $this->compute();
     }
@@ -68,11 +95,25 @@ class Reports extends Component
         return view('livewire.admin.reports')->layout('layouts.admin')->title('گزارش‌ها');
     }
 
-    private function compute(): void
+    private function compute(?Carbon $from = null, ?Carbon $to = null): void
     {
-        $tz = config('app.timezone');
-        $from = Carbon::parse($this->fromDate, $tz)->startOfDay();
-        $to = Carbon::parse($this->toDate, $tz)->endOfDay();
+        $dates = app(DateService::class);
+
+        if ($from === null) {
+            $from = $dates->fromJalali($this->fromDate);
+        }
+
+        if ($to === null) {
+            $to = $this->toDate !== '' ? $dates->fromJalali($this->toDate) : null;
+        }
+
+        if ($from === null || $to === null) {
+            $from = $dates->dayStartCanonical($dates->now()->subDays(29));
+            $to = $dates->dayEndCanonical($dates->now());
+        }
+
+        $from = $dates->dayStartCanonical($from);
+        $to = $dates->dayEndCanonical($to);
 
         $service = app(ReportingService::class);
 

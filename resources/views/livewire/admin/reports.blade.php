@@ -6,13 +6,17 @@
         <form wire:submit="applyFilter" class="flex flex-wrap items-end gap-4">
             <div>
                 <label for="fromDate" class="block text-sm font-medium text-gray-700 mb-1">از تاریخ</label>
-                <input type="date" id="fromDate" wire:model="fromDate"
-                    class="rounded-lg border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm">
+                <x-jalali-date-input wire:model="fromDate" id="fromDate" />
+                @error('fromDate')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             <div>
                 <label for="toDate" class="block text-sm font-medium text-gray-700 mb-1">تا تاریخ</label>
-                <input type="date" id="toDate" wire:model="toDate"
-                    class="rounded-lg border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm">
+                <x-jalali-date-input wire:model="toDate" id="toDate" />
+                @error('toDate')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             <button type="submit"
                 class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition">
@@ -23,9 +27,6 @@
                 پاک کردن فیلتر
             </button>
         </form>
-        @error('toDate')
-            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-        @enderror
     </div>
 
     {{-- Summary KPIs --}}
@@ -69,7 +70,7 @@
         <div class="space-y-2 max-h-80 overflow-y-auto">
             @foreach($revenueTrend as $bucket)
             <div class="flex items-center gap-3 text-sm">
-                <span class="w-24 shrink-0 text-gray-500 text-left">{{ $bucket['period'] }}</span>
+                <span class="w-24 shrink-0 text-gray-500 text-left font-mono">{{ fa_digits($bucket['period']) }}</span>
                 <div class="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
                     <div class="bg-yellow-400 h-full rounded-full transition-all"
                          style="width: {{ $bucket['revenue'] > 0 ? max(1, (int) round(($bucket['revenue'] / $maxTrendRevenue) * 100)) : 0 }}%"></div>

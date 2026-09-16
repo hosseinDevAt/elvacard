@@ -2,6 +2,8 @@
 
 namespace App\Services\BankCard;
 
+use App\Support\Dates\DateService;
+
 class BankCardCustomization
 {
     private const DIGIT_MAP = [
@@ -40,7 +42,7 @@ class BankCardCustomization
             [$from, $to] = self::expiryYearRange();
             $yearRange = 'between:'.$from.','.$to;
             $rules['expiry_month'] = ['nullable', 'string', 'regex:/^(0[1-9]|1[0-2])$/'];
-            $rules['expiry_year'] = ['nullable', 'string', 'integer', 'digits:2', $yearRange];
+            $rules['expiry_year'] = ['nullable', 'string', 'integer', 'digits:4', $yearRange];
         }
 
         return $rules;
@@ -52,16 +54,14 @@ class BankCardCustomization
             'card_number.digits' => 'شماره کارت باید دقیقاً ۱۶ رقمی باشد.',
             'cvv2.digits_between' => 'CVV2 باید ۳ تا ۴ رقم باشد.',
             'expiry_month.regex' => 'ماه انقضا باید بین ۰۱ تا ۱۲ باشد.',
-            'expiry_year.digits' => 'سال انقضا باید دو رقم باشد.',
+            'expiry_year.digits' => 'سال انقضا باید چهار رقم باشد.',
             'expiry_year.between' => 'سال انقضا باید در بازه معتبر باشد.',
         ];
     }
 
     public static function expiryYearRange(): array
     {
-        $currentYearShort = (int) date('y');
-
-        return [$currentYearShort, $currentYearShort + 10];
+        return app(DateService::class)->jalaliYearRange();
     }
 
     public static function sanitize(array $payload): array
@@ -106,17 +106,29 @@ class BankCardCustomization
         if (isset($rawCustomization['security_expiry_enabled'])) {
             $sanitizedCustomization['security_expiry_enabled'] = (bool) $rawCustomization['security_expiry_enabled'];
             if ($sanitizedCustomization['security_expiry_enabled']) {
+                $month = null;
                 if (! empty($rawCustomization['expiry_month']) && is_string($rawCustomization['expiry_month'])) {
-                    $month = substr(trim($rawCustomization['expiry_month']), 0, 2);
+                    $month = mb_substr(trim($rawCustomization['expiry_month']), 0, 2);
                     if (preg_match('/^(0[1-9]|1[0-2])$/', $month) === 1) {
                         $sanitizedCustomization['expiry_month'] = $month;
                     }
                 }
+
                 if (! empty($rawCustomization['expiry_year']) && is_string($rawCustomization['expiry_year'])) {
-                    $year = substr(trim($rawCustomization['expiry_year']), 0, 2);
-                    $currentShort = (int) date('y');
-                    if (preg_match('/^[0-9]{2}$/', $year) === 1 && (int) $year >= $currentShort && (int) $year <= $currentShort + 10) {
-                        $sanitizedCustomization['expiry_year'] = $year;
+                    $dates = app(DateService::class);
+                    $year = $dates->ascii(trim($rawCustomization['expiry_year']));
+
+                    if (preg_match('/^\d{4}$/', $year) === 1) {
+                        $converted = $dates->jalaliExpiryToGregorian($sanitizedCustomization['expiry_month'] ?? null, $year);
+                        if ($converted !== null) {
+                            $sanitizedCustomization['expiry_month'] = $converted['expiry_month'];
+                            $sanitizedCustomization['expiry_year'] = $converted['expiry_year'];
+                        }
+                    } elseif (preg_match('/^\d{2}$/', $year) === 1) {
+                        $currentShort = (int) date('y');
+                        if ((int) $year >= $currentShort && (int) $year <= $currentShort + 10) {
+                            $sanitizedCustomization['expiry_year'] = $year;
+                        }
                     }
                 }
             }

@@ -2,7 +2,65 @@
 
 use App\Models\SiteSetting;
 use App\Services\IconManager;
+use App\Support\Dates\DateService;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Cache;
+
+if (! function_exists('jalali_date')) {
+    /**
+     * Format a Carbon value as a Jalali date in the configured business timezone.
+     *
+     * Supported formats: date, datetime, time, year, month, yearmonth, long.
+     */
+    function jalali_date(CarbonInterface|string|null $value, string $format = 'date'): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        $carbon = $value instanceof CarbonInterface ? $value : Carbon::parse($value);
+
+        return app(DateService::class)->match($carbon, $format);
+    }
+}
+
+if (! function_exists('jalali_relative')) {
+    /**
+     * Persian relative time ("۳ ساعت پیش", "دیروز", "۲ روز پیش").
+     */
+    function jalali_relative(CarbonInterface|string|null $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        $carbon = $value instanceof CarbonInterface ? $value : Carbon::parse($value);
+
+        return app(DateService::class)->relativeForHumans($carbon);
+    }
+}
+
+if (! function_exists('jalali_now')) {
+    /**
+     * Current Jalali date/datetime/time string in business timezone.
+     */
+    function jalali_now(string $format = 'date'): string
+    {
+        return app(DateService::class)->match(Carbon::now(), $format);
+    }
+}
+
+if (! function_exists('fa_digits')) {
+    /**
+     * Convert ASCII digits to Persian (Farsi-Extended) digits.
+     * Only intended for calendar/date UI.
+     */
+    function fa_digits(string|int|float $value): string
+    {
+        return app(DateService::class)->digits($value);
+    }
+}
 
 if (! function_exists('site_setting')) {
     /**

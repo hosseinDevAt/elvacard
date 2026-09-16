@@ -13,7 +13,7 @@ trait UsesRecordingSms
 {
     private function useRecordingSms(): RecordingSmsProvider
     {
-        $recording = new RecordingSmsProvider();
+        $recording = new RecordingSmsProvider;
 
         $this->app->instance(RecordingSmsProvider::class, $recording);
         $this->app->instance(SmsManager::class, new SmsManager($this->app, [

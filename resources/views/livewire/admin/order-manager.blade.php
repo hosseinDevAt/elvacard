@@ -232,9 +232,9 @@
                             </div>
                             <div>
                                 <div class="text-gray-400 text-xs">تاریخ</div>
-                                <div class="text-gray-900">ایجاد: {{ $payment->created_at->format('Y-m-d H:i') }}</div>
+                                <div class="text-gray-900">ایجاد: {{ jalali_date($payment->created_at, 'datetime') }}</div>
                                 @if ($payment->paid_at)
-                                    <div class="text-green-700 text-xs">پرداخت: {{ $payment->paid_at->format('Y-m-d H:i') }}</div>
+                                    <div class="text-green-700 text-xs">پرداخت: {{ jalali_date($payment->paid_at, 'datetime') }}</div>
                                 @endif
                             </div>
                             <div>
@@ -253,7 +253,7 @@
                                 <div class="text-gray-400 text-xs">بررسی</div>
                                 <div class="text-gray-900 text-xs">
                                     @if (isset($payment->metadata['reviewed_by'], $payment->metadata['reviewed_at']))
-                                        توسط #{{ $payment->metadata['reviewed_by'] }} در {{ \Illuminate\Support\Carbon::parse($payment->metadata['reviewed_at'])->format('Y-m-d H:i') }}
+                                        توسط #{{ $payment->metadata['reviewed_by'] }} در {{ jalali_date($payment->metadata['reviewed_at'], 'datetime') }}
                                     @else
                                         — 
                                     @endif
@@ -320,7 +320,7 @@
                                 {{ $order->status->faLabel() }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $order->created_at->diffForHumans() }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">{{ jalali_relative($order->created_at) }}</td>
                         <td class="px-4 py-3">
                             <button wire:click="viewOrder({{ $order->id }})" class="text-xs px-2 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white">جزئیات</button>
                         </td>

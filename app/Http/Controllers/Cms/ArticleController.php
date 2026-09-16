@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers\Cms;
 
+use App\Enums\ArticleStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
-use App\Models\ArticleCategory;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 class ArticleController extends Controller
 {
     public function index(): View
     {
         $articles = Article::query()
-            ->where('status', \App\Enums\ArticleStatusEnum::PUBLISHED->value)
+            ->where('status', ArticleStatusEnum::PUBLISHED->value)
             ->where(function ($q) {
                 $q->whereNull('published_at')
-                  ->orWhere('published_at', '<=', now());
+                    ->orWhere('published_at', '<=', now());
             })
             ->with('category')
             ->latest('published_at')
@@ -31,10 +30,10 @@ class ArticleController extends Controller
     public function show(string $slug): View
     {
         $article = Article::query()
-            ->where('status', \App\Enums\ArticleStatusEnum::PUBLISHED->value)
+            ->where('status', ArticleStatusEnum::PUBLISHED->value)
             ->where(function ($q) {
                 $q->whereNull('published_at')
-                  ->orWhere('published_at', '<=', now());
+                    ->orWhere('published_at', '<=', now());
             })
             ->where('slug', $slug)
             ->with('category')

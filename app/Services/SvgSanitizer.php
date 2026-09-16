@@ -4,8 +4,8 @@ namespace App\Services;
 
 use DOMAttr;
 use DOMDocument;
-use DOMNode;
 use DOMElement;
+use DOMNode;
 
 /**
  * Sanitizes user-uploaded SVG files before they are stored and served.
@@ -57,7 +57,7 @@ final class SvgSanitizer
             return null;
         }
 
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
 
         $internalErrors = libxml_use_internal_errors(true);
 

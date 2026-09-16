@@ -44,7 +44,7 @@
                 </div>
                 <div>
                     <div class="text-gray-400 text-xs">تاریخ عضویت</div>
-                    <div class="text-gray-900">{{ $selectedUser->created_at->format('Y-m-d H:i') }}</div>
+                    <div class="text-gray-900">{{ jalali_date($selectedUser->created_at, 'datetime') }}</div>
                 </div>
             </div>
 
@@ -82,7 +82,7 @@
                     <div class="rounded-xl bg-gray-50 border border-gray-100 p-4">
                         <div class="text-xs text-gray-500 mb-1">آخرین سفارش</div>
                         <div class="text-xl font-bold text-gray-900 text-sm leading-8">
-                            {{ $customerStats['lastOrderAt'] ? \Illuminate\Support\Carbon::parse($customerStats['lastOrderAt'])->format('Y-m-d') : '—' }}
+                            {{ $customerStats['lastOrderAt'] ? jalali_date($customerStats['lastOrderAt'], 'date') : '—' }}
                         </div>
                     </div>
                 </div>
@@ -111,7 +111,7 @@
                         <div class="flex-1 text-sm">
                             <div class="text-red-700">حساب این کاربر مسدود است.</div>
                             @if ($selectedUser->blocked_at)
-                                <div class="text-gray-600 mt-1">تاریخ مسدودی: {{ $selectedUser->blocked_at->format('Y-m-d H:i') }}</div>
+                                <div class="text-gray-600 mt-1">تاریخ مسدودی: {{ jalali_date($selectedUser->blocked_at, 'datetime') }}</div>
                             @endif
                             @if ($selectedUser->blocked_reason)
                                 <div class="text-gray-600 mt-1">دلیل: {{ $selectedUser->blocked_reason }}</div>
@@ -148,7 +148,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-xs">{{ $order->payment_status->faLabel() }}</td>
                                     <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
-                                    <td class="px-4 py-3 text-xs text-gray-500">{{ $order->created_at->format('Y-m-d H:i') }}</td>
+                                    <td class="px-4 py-3 text-xs text-gray-500">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">سفارشی برای این کاربر ثبت نشده است</td></tr>
@@ -186,7 +186,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-xs">{{ $order->payment_status->faLabel() }}</td>
                                     <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
-                                    <td class="px-4 py-3 text-xs text-gray-500">{{ $order->created_at->format('Y-m-d H:i') }}</td>
+                                    <td class="px-4 py-3 text-xs text-gray-500">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">سفارش مهمانی با این شماره تماس یافت نشد</td></tr>
@@ -227,7 +227,7 @@
                                 <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">مسدود</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $user->created_at->diffForHumans() }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">{{ jalali_relative($user->created_at) }}</td>
                         <td class="px-4 py-3">
                             <button wire:click="viewUser({{ $user->id }})" class="text-xs px-2 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white">جزئیات</button>
                         </td>

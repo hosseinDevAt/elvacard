@@ -55,7 +55,7 @@
                         @forelse ($latestOrders as $order)
                             <tr>
                                 <td class="px-4 py-3 text-gray-700">{{ $order->reference ?? ('#'.$order->id) }}</td>
-                                <td class="px-4 py-3 text-gray-500 text-xs">{{ $order->created_at?->format('Y-m-d H:i') }}</td>
+                                <td class="px-4 py-3 text-gray-500 text-xs">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                 <td class="px-4 py-3">{{ $order->status?->faLabel() ?? $order->status }}</td>
                                 <td class="px-4 py-3 font-mono" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
                                 <td class="px-4 py-3">

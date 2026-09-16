@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Services\BankCard\BankCardCustomization;
 use App\Services\CartService;
+use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Form;
 use Livewire\Livewire;
@@ -213,25 +214,35 @@ class BankCardWorkspaceTest extends TestCase
 
     public function test_expiry_enabled_accepts_valid_month_and_year(): void
     {
+        $dates = app(DateService::class);
+        [$from] = $dates->jalaliYearRange();
+        $jalaliYear = (string) ($from + 2);
+
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) ((int) date('y') + 2))
+            ->set('bankCard.expiry_year', $jalaliYear)
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
+        $converted = $dates->jalaliExpiryToGregorian('05', $jalaliYear);
+
         $customization = app(CartService::class)->getCart()['items'][0]['customization_json'];
-        $this->assertSame('05', $customization['expiry_month']);
-        $this->assertSame((string) ((int) date('y') + 2), $customization['expiry_year']);
+        $this->assertSame($converted['expiry_month'], $customization['expiry_month']);
+        $this->assertSame($converted['expiry_year'], $customization['expiry_year']);
     }
 
     public function test_invalid_expiry_month_rejected(): void
     {
+        $dates = app(DateService::class);
+        [$from] = $dates->jalaliYearRange();
+        $validYear = (string) ($from + 2);
+
         foreach (['00', '13', '99', 'A1'] as $month) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
                 ->set('bankCard.expiry_month', $month)
-                ->set('bankCard.expiry_year', (string) ((int) date('y') + 2))
+                ->set('bankCard.expiry_year', $validYear)
                 ->call('addToCart')
                 ->assertHasErrors(['bankCard.expiry_month' => 'regex']);
         }
@@ -239,9 +250,10 @@ class BankCardWorkspaceTest extends TestCase
 
     public function test_invalid_expiry_year_rejected(): void
     {
-        $currentShort = (int) date('y');
+        $dates = app(DateService::class);
+        [$currentYear] = $dates->jalaliYearRange();
 
-        foreach ([$currentShort - 2, $currentShort + 12, '1', '2029'] as $year) {
+        foreach ([$currentYear - 2, $currentYear + 12, '1', '8888'] as $year) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
                 ->set('bankCard.expiry_month', '05')
@@ -302,7 +314,7 @@ class BankCardWorkspaceTest extends TestCase
             ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) ((int) date('y') + 3))
+            ->set('bankCard.expiry_year', (string) (app(DateService::class)->jalaliYearRange()[0] + 3))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 

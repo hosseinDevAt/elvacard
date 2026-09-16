@@ -1,5 +1,8 @@
 <?php
 
+use App\Sms\DisabledSmsProvider;
+use App\Sms\LogSmsProvider;
+
 return [
 
     /*
@@ -65,7 +68,7 @@ return [
     */
 
     'providers' => [
-        'log' => App\Sms\LogSmsProvider::class,
-        'disabled' => App\Sms\DisabledSmsProvider::class,
+        'log' => LogSmsProvider::class,
+        'disabled' => DisabledSmsProvider::class,
     ],
 ];

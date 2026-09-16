@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Livewire\Auth\ForgotPassword;
+use App\Models\OtpCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -114,11 +115,11 @@ class PasswordResetTest extends TestCase
 
         $component->set('code', '000000')->call('verifyCode')->assertSet('step', 2);
 
-        $attemptsBefore = (int) \App\Models\OtpCode::query()->where('phone', $user->phone)->value('attempts');
+        $attemptsBefore = (int) OtpCode::query()->where('phone', $user->phone)->value('attempts');
 
         $component->set('code', '000000')->call('verifyCode');
 
-        $attemptsAfter = (int) \App\Models\OtpCode::query()->where('phone', $user->phone)->value('attempts');
+        $attemptsAfter = (int) OtpCode::query()->where('phone', $user->phone)->value('attempts');
 
         $this->assertSame($attemptsBefore, $attemptsAfter, 'Rate-limited verify must not reach the OTP verification layer.');
     }

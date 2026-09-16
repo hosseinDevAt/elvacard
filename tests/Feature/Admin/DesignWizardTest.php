@@ -9,6 +9,7 @@ use App\Models\Design;
 use App\Models\DesignImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -28,7 +29,7 @@ class DesignWizardTest extends TestCase
 
     private function category(string $name = 'طبیعت'): CateDesign
     {
-        return CateDesign::create(['name' => $name, 'slug' => \Illuminate\Support\Str::slug($name), 'is_active' => true]);
+        return CateDesign::create(['name' => $name, 'slug' => Str::slug($name), 'is_active' => true]);
     }
 
     private function color(): Color

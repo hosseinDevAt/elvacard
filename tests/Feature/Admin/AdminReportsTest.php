@@ -12,6 +12,9 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\Dates\DateService;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -23,6 +26,13 @@ class AdminReportsTest extends TestCase
     private function admin(): User
     {
         return User::factory()->create(['role' => 'admin']);
+    }
+
+    private function jalali(CarbonInterface|string $value): string
+    {
+        $dates = app(DateService::class);
+
+        return $dates->ascii($dates->jDate(Carbon::parse($value)));
     }
 
     private function customer(): User
@@ -246,8 +256,8 @@ class AdminReportsTest extends TestCase
     {
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-12-01')
-            ->set('toDate', '2026-01-01')
+            ->set('fromDate', '1405/12/01')
+            ->set('toDate', '1405/01/01')
             ->call('applyFilter')
             ->assertHasErrors(['toDate']);
     }
@@ -260,10 +270,12 @@ class AdminReportsTest extends TestCase
         $order2 = $this->createOrder();
         $this->createPayment($order2, PaymentStatus::SUCCESS, 200000, paidAt: '2026-06-15 12:00:00');
 
+        $filterDate = $this->jalali('2026-06-15 12:00:00');
+
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-06-01')
-            ->set('toDate', '2026-06-30')
+            ->set('fromDate', $filterDate)
+            ->set('toDate', $filterDate)
             ->call('applyFilter')
             ->assertSet('summary.revenue', 200000);
     }
@@ -273,10 +285,12 @@ class AdminReportsTest extends TestCase
         $order1 = $this->createOrder(overrides: ['created_at' => '2026-03-15 12:00:00']);
         $order2 = $this->createOrder(overrides: ['created_at' => '2026-06-15 12:00:00']);
 
+        $filterDate = $this->jalali('2026-06-15 12:00:00');
+
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-06-01')
-            ->set('toDate', '2026-06-30')
+            ->set('fromDate', $filterDate)
+            ->set('toDate', $filterDate)
             ->call('applyFilter')
             ->assertSet('summary.totalOrders', 1);
     }
@@ -288,8 +302,8 @@ class AdminReportsTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-06-01')
-            ->set('toDate', '2026-06-30')
+            ->set('fromDate', '1400/01/01')
+            ->set('toDate', '1400/01/01')
             ->call('applyFilter')
             ->assertSet('summary.revenue', 0)
             ->assertSet('summary.totalOrders', 0);
@@ -300,31 +314,35 @@ class AdminReportsTest extends TestCase
         $order = $this->createOrder();
         $this->createPayment($order, PaymentStatus::SUCCESS, 100000, paidAt: '2026-06-01 00:00:00');
 
+        $filterDate = $this->jalali('2026-06-01 00:00:00');
+
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-06-01')
-            ->set('toDate', '2026-06-01')
+            ->set('fromDate', $filterDate)
+            ->set('toDate', $filterDate)
             ->call('applyFilter')
             ->assertSet('summary.revenue', 100000);
     }
 
     public function test_clear_filter_resets_to_defaults(): void
     {
+        $dates = app(DateService::class);
+
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-01-01')
-            ->set('toDate', '2026-01-31')
+            ->set('fromDate', '1405/01/01')
+            ->set('toDate', '1405/01/31')
             ->call('clearFilter')
-            ->assertSet('fromDate', now()->subDays(29)->format('Y-m-d'))
-            ->assertSet('toDate', now()->format('Y-m-d'));
+            ->assertSet('fromDate', $dates->ascii($dates->jDate($dates->now()->subDays(29))))
+            ->assertSet('toDate', $dates->ascii($dates->jDate($dates->now())));
     }
 
     public function test_max_range_exceeding_one_year_rejected(): void
     {
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2024-01-01')
-            ->set('toDate', '2026-01-02')
+            ->set('fromDate', '1400/01/01')
+            ->set('toDate', '1403/01/02')
             ->call('applyFilter')
             ->assertHasErrors(['toDate']);
     }
@@ -487,16 +505,18 @@ class AdminReportsTest extends TestCase
         $order = $this->createOrder();
         $this->createPayment($order, PaymentStatus::SUCCESS, 100000, paidAt: '2026-06-01 12:00:00');
 
+        $base = Carbon::parse('2026-06-01 12:00:00');
+
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-06-01')
-            ->set('toDate', '2026-06-03')
+            ->set('fromDate', $this->jalali($base))
+            ->set('toDate', $this->jalali($base->copy()->addDays(2)))
             ->call('applyFilter')
-            ->assertSet('revenueTrend.0.period', '2026-06-01')
+            ->assertSet('revenueTrend.0.period', $this->jalali($base))
             ->assertSet('revenueTrend.0.revenue', 100000)
-            ->assertSet('revenueTrend.1.period', '2026-06-02')
+            ->assertSet('revenueTrend.1.period', $this->jalali($base->copy()->addDay()))
             ->assertSet('revenueTrend.1.revenue', 0)
-            ->assertSet('revenueTrend.2.period', '2026-06-03')
+            ->assertSet('revenueTrend.2.period', $this->jalali($base->copy()->addDays(2)))
             ->assertSet('revenueTrend.2.revenue', 0);
     }
 
@@ -505,15 +525,21 @@ class AdminReportsTest extends TestCase
         $order = $this->createOrder();
         $this->createPayment($order, PaymentStatus::SUCCESS, 50000, paidAt: '2026-03-15 12:00:00');
 
+        $base = Carbon::parse('2026-03-15 12:00:00');
+        $dates = app(DateService::class);
+        $monthKey = $dates->ascii($dates->jYearMonth($base));
+        $nextMonthKey = $dates->ascii($dates->jYearMonth($base->copy()->addDays(35)));
+
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->set('fromDate', '2026-01-01')
-            ->set('toDate', '2026-06-30')
+            ->set('fromDate', $this->jalali($base->copy()->startOfMonth()))
+            ->set('toDate', $this->jalali($base->copy()->addDays(45)))
             ->call('applyFilter')
-            ->assertSet('revenueTrend.0.period', '2026-01')
-            ->assertSet('revenueTrend.0.revenue', 0)
-            ->assertSet('revenueTrend.2.period', '2026-03')
-            ->assertSet('revenueTrend.2.revenue', 50000);
+            ->assertSet('revenueTrend.0.period', $monthKey)
+            ->assertSet('revenueTrend.0.revenue', 50000)
+            ->assertSet('revenueTrend.1.period', $nextMonthKey)
+            ->assertSet('revenueTrend.1.revenue', 0)
+            ->assertSet('revenueTrend.2.revenue', 0);
     }
 
     public function test_trend_excludes_non_success_payments(): void

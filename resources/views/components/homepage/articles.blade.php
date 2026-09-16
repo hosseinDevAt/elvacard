@@ -65,7 +65,7 @@
                             @endif
 
                             <time class="text-xs text-gray-500">
-                                {{ $article->published_at?->format('Y/m/d') ?? $article->created_at->format('Y/m/d') }}
+                                {{ jalali_date($article->published_at ?? $article->created_at, 'date') }}
                             </time>
                         </div>
                     </article>
