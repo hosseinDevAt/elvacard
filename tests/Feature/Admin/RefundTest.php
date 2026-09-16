@@ -532,4 +532,69 @@ class RefundTest extends TestCase
         // Cancellation remains a separate admin decision.
         $this->assertTrue(app(OrderStateMachine::class)->canTransition($order, OrderStatusEnum::CANCELLED));
     }
+
+    public function test_order_manager_completed_refund_shows_success_message(): void
+    {
+        $this->registerFakeGateway();
+
+        $order = $this->createOrder();
+        $payment = $this->createSuccessfulPayment($order);
+        $this->markOrderPaid($order);
+
+        Livewire::actingAs($this->admin())
+            ->test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
+            ->call('refundPayment', $payment->id, 150000)
+            ->assertSee('بازگشت وجه با موفقیت انجام شد.');
+
+        $this->assertDatabaseHas('refunds', [
+            'payment_id' => $payment->id,
+            'amount' => 150000,
+            'status' => RefundStatus::COMPLETED->value,
+        ]);
+    }
+
+    public function test_order_manager_review_refund_shows_unresolved_message_not_success(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createSuccessfulPayment($order);
+        $this->markOrderPaid($order);
+
+        Livewire::actingAs($this->admin())
+            ->test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
+            ->call('refundPayment', $payment->id, 100000)
+            ->assertDontSee('بازگشت وجه با موفقیت انجام شد.')
+            ->assertSee('نتیجه بازگشت وجه نامشخص است و برای بررسی مجدد ثبت شد.');
+
+        $refund = Refund::where('payment_id', $payment->id)->first();
+        $this->assertNotNull($refund);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+    }
+
+    public function test_order_manager_failed_refund_shows_failure_message(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->failOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createSuccessfulPayment($order);
+        $this->markOrderPaid($order);
+
+        Livewire::actingAs($this->admin())
+            ->test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
+            ->call('refundPayment', $payment->id, 150000)
+            ->assertDontSee('بازگشت وجه با موفقیت انجام شد.')
+            ->assertSee('بازگشت وجه ناموفق بود.');
+
+        $this->assertDatabaseHas('refunds', [
+            'payment_id' => $payment->id,
+            'amount' => 150000,
+            'status' => RefundStatus::FAILED->value,
+        ]);
+    }
 }

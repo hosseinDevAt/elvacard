@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\User;
 use App\Services\PaymentGatewayManager;
+use App\Services\RefundConstraintService;
 use App\Services\RefundCore;
 use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -454,5 +455,271 @@ class PaymentManagerTest extends TestCase
 
         $refund->refresh();
         $this->assertSame(RefundStatus::REVIEW, $refund->status);
+    }
+
+    public function test_initial_refund_completed_shows_success_message(): void
+    {
+        $this->registerFakeGateway();
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F1A',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->call('refundPayment', $payment->id, $order->total_price)
+            ->assertSee('بازگشت وجه با موفقیت انجام شد.');
+
+        $this->assertDatabaseHas('refunds', [
+            'payment_id' => $payment->id,
+            'amount' => $order->total_price,
+            'status' => RefundStatus::COMPLETED->value,
+        ]);
+    }
+
+    public function test_initial_refund_failed_shows_failure_message(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->failOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F1B',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->call('refundPayment', $payment->id, $order->total_price)
+            ->assertDontSee('بازگشت وجه با موفقیت انجام شد.')
+            ->assertSee('بازگشت وجه ناموفق بود.');
+
+        $this->assertDatabaseHas('refunds', [
+            'payment_id' => $payment->id,
+            'amount' => $order->total_price,
+            'status' => RefundStatus::FAILED->value,
+        ]);
+    }
+
+    public function test_initial_refund_review_shows_unresolved_message_not_success(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F1C',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->call('refundPayment', $payment->id, 100000)
+            ->assertDontSee('بازگشت وجه با موفقیت انجام شد.')
+            ->assertSee('نتیجه بازگشت وجه نامشخص است و برای بررسی مجدد ثبت شد.');
+
+        $refund = Refund::where('payment_id', $payment->id)->first();
+        $this->assertNotNull($refund);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+
+        // REVIEW still reserves the refundable balance.
+        $payment->refresh();
+        $this->assertSame(50000, app(RefundConstraintService::class)->refundableAmount($payment));
+    }
+
+    public function test_reconcile_completed_shows_success_message(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->lookupResult = RefundRetrieveResult::success('RFN-F2A');
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F2A',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $refund = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => $order->total_price,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'f2a-key'],
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertSee('بازگشت وجه با موفقیت تأیید شد.');
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::COMPLETED, $refund->status);
+    }
+
+    public function test_reconcile_failed_does_not_show_success_message(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->lookupResult = RefundRetrieveResult::confirmedFailure('Provider confirms refund never occurred.');
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F2B',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $refund = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 50000,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'f2b-key'],
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertDontSee('بازگشت وجه با موفقیت تأیید شد.')
+            ->assertSee('بازگشت وجه توسط درگاه ناموفق تأیید شد.');
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::FAILED, $refund->status);
+    }
+
+    public function test_reconcile_review_does_not_show_success_message(): void
+    {
+        $fake = $this->registerBasicGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F2C',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $refund = app(RefundCore::class)->processRefund($payment, 100000);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertDontSee('بازگشت وجه با موفقیت تأیید شد.')
+            ->assertSee('نتیجه بازگشت وجه همچنان نامشخص است و نیاز به بررسی مجدد دارد.');
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+        $this->assertSame(1, $fake->refundCalls, 'No blind second refund() call when outcome is unknown.');
+    }
+
+    public function test_reconcile_idempotent_retry_success_shows_success_message(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F2D',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        // First attempt: timeout → REVIEW; the provider ledger records the eventual success.
+        $refund = app(RefundCore::class)->processRefund($payment, 100000);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+
+        // Reconcile: lookup unknown → safe idempotent retry of the same key → success.
+        $fake->timeoutOnRefund = false;
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertSee('بازگشت وجه با موفقیت تأیید شد.');
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::COMPLETED, $refund->status);
+    }
+
+    public function test_reconcile_idempotent_retry_failure_does_not_show_success_message(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->failOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-F2E',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $refund = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 50000,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'f2e-key'],
+        ]);
+
+        // Lookup unknown → idempotent retry → provider confirms failure.
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $refund->id)
+            ->assertDontSee('بازگشت وجه با موفقیت تأیید شد.')
+            ->assertSee('بازگشت وجه توسط درگاه ناموفق تأیید شد.');
+
+        $refund->refresh();
+        $this->assertSame(RefundStatus::FAILED, $refund->status);
+    }
+
+    public function test_customer_cannot_invoke_reconcile_review_refund(): void
+    {
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-FAUTH',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+
+        $refund = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 50000,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'fauth-key'],
+        ]);
+
+        // The boot guard aborts EVERY hydrate (mount and update) for
+        // non-admins, so the reconcile action can never execute for a customer.
+        Livewire::actingAs($this->customer())
+            ->test(PaymentManager::class)
+            ->assertStatus(403);
+
+        // No reconciliation side effects may occur for a non-admin.
+        $refund->refresh();
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+        $this->assertArrayNotHasKey('reconciliation_attempts', $refund->metadata);
     }
 }

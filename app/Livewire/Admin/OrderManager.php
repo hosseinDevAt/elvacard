@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\RefundStatus;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Exceptions\OrderLifecycleConstraintException;
 use App\Exceptions\PaymentConstraintViolationException;
@@ -12,6 +13,7 @@ use App\Exceptions\PaymentReviewException;
 use App\Exceptions\RefundConstraintViolationException;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Refund;
 use App\Services\ManualPaymentReviewService;
 use App\Services\ManualRefundService;
 use App\Services\OrderStateMachine;
@@ -123,18 +125,26 @@ class OrderManager extends Component
         }
 
         try {
-            if ($payment->method === PaymentMethod::MANUAL_TRANSFER) {
-                $service = app(ManualRefundService::class);
-                $service->refund($payment, $amount, $reason);
-            } else {
-                $service = app(RefundCore::class);
-                $service->processRefund($payment, $amount, $reason);
-            }
-
-            session()->flash('success', 'بازگشت وجه با موفقیت انجام شد');
+            $refund = $payment->method === PaymentMethod::MANUAL_TRANSFER
+                ? app(ManualRefundService::class)->refund($payment, $amount, $reason)
+                : app(RefundCore::class)->processRefund($payment, $amount, $reason);
         } catch (RefundConstraintViolationException $e) {
             session()->flash('error', $e->getMessage());
+
+            return;
         }
+
+        $this->flashRefundOutcome($refund);
+    }
+
+    private function flashRefundOutcome(Refund $refund): void
+    {
+        match ($refund->status) {
+            RefundStatus::COMPLETED => session()->flash('success', 'بازگشت وجه با موفقیت انجام شد.'),
+            RefundStatus::FAILED => session()->flash('error', 'بازگشت وجه ناموفق بود.'),
+            RefundStatus::REVIEW => session()->flash('error', 'نتیجه بازگشت وجه نامشخص است و برای بررسی مجدد ثبت شد.'),
+            default => session()->flash('error', 'وضعیت بازگشت وجه نامشخص است.'),
+        };
     }
 
     private function reviewPayment(int $paymentId, ManualPaymentReviewService $service, string $action): void

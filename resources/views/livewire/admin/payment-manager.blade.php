@@ -260,7 +260,7 @@
                                     <div>
                                         <span class="text-gray-400">نتیجه‌گیری:</span>
                                         <span class="text-gray-900">
-                                            {{ $refund->metadata['reconciled_via'] === 'provider_lookup' ? 'بررسی از درگاه' : ($refund->metadata['reconciled_via'] ?? '') }}
+                                            {{ ($refund->metadata['reconciled_via'] ?? null) === 'provider_lookup' ? 'بررسی از درگاه' : ($refund->metadata['reconciled_via'] ?? '') }}
                                             @if ($refund->metadata['resolved_by'] ?? null)
                                                 توسط #{{ $refund->metadata['resolved_by'] }}
                                             @endif

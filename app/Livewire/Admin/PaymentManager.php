@@ -95,18 +95,16 @@ class PaymentManager extends Component
         }
 
         try {
-            if ($payment->method === PaymentMethod::MANUAL_TRANSFER) {
-                $service = app(ManualRefundService::class);
-                $service->refund($payment, $amount, $reason);
-            } else {
-                $service = app(RefundCore::class);
-                $service->processRefund($payment, $amount, $reason);
-            }
-
-            session()->flash('success', 'بازگشت وجه با موفقیت انجام شد');
+            $refund = $payment->method === PaymentMethod::MANUAL_TRANSFER
+                ? app(ManualRefundService::class)->refund($payment, $amount, $reason)
+                : app(RefundCore::class)->processRefund($payment, $amount, $reason);
         } catch (RefundConstraintViolationException $e) {
             session()->flash('error', $e->getMessage());
+
+            return;
         }
+
+        $this->flashRefundOutcome($refund);
     }
 
     public function reconcileReviewRefund(int $refundId): void
@@ -133,16 +131,27 @@ class PaymentManager extends Component
 
         try {
             $result = app(RefundCore::class)->retryReviewRefund($refundId);
+        } catch (RefundConstraintViolationException) {
+            session()->flash('error', 'نتیجه بازگشت وجه همچنان نامشخص است و نیاز به بررسی مجدد دارد.');
 
-            session()->flash(
-                'success',
-                $result->status === RefundStatus::COMPLETED
-                    ? 'بازگشت وجه تکمیل شد'
-                    : 'بازگشت وجه ناموفق اعلام شد',
-            );
-        } catch (RefundConstraintViolationException $e) {
-            session()->flash('error', $e->getMessage());
+            return;
         }
+
+        match ($result->status) {
+            RefundStatus::COMPLETED => session()->flash('success', 'بازگشت وجه با موفقیت تأیید شد.'),
+            RefundStatus::FAILED => session()->flash('error', 'بازگشت وجه توسط درگاه ناموفق تأیید شد.'),
+            default => session()->flash('error', 'نتیجه بازگشت وجه همچنان نامشخص است و نیاز به بررسی مجدد دارد.'),
+        };
+    }
+
+    private function flashRefundOutcome(Refund $refund): void
+    {
+        match ($refund->status) {
+            RefundStatus::COMPLETED => session()->flash('success', 'بازگشت وجه با موفقیت انجام شد.'),
+            RefundStatus::FAILED => session()->flash('error', 'بازگشت وجه ناموفق بود.'),
+            RefundStatus::REVIEW => session()->flash('error', 'نتیجه بازگشت وجه نامشخص است و برای بررسی مجدد ثبت شد.'),
+            default => session()->flash('error', 'وضعیت بازگشت وجه نامشخص است.'),
+        };
     }
 
     private function reviewPayment(int $paymentId, ManualPaymentReviewService $service, string $action): void
