@@ -3,12 +3,15 @@
 namespace App\Livewire\Admin;
 
 use App\Services\ReportingService;
+use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Dates\DateService;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class Reports extends Component
 {
+    use AuthorizesAdminActions;
+
     public string $fromDate = '';
 
     public string $toDate = '';

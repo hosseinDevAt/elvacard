@@ -17,6 +17,7 @@ use App\Livewire\Admin\PageManager;
 use App\Livewire\Admin\PaymentManager;
 use App\Livewire\Admin\ProductColorPriceManager;
 use App\Livewire\Admin\ProductManager;
+use App\Livewire\Admin\Reports;
 use App\Livewire\Admin\SiteSettingManager;
 use App\Livewire\Admin\UserManager;
 use App\Models\CateDesign;
@@ -24,6 +25,7 @@ use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignImage;
 use App\Models\User;
+use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -54,6 +56,7 @@ class AdminLivewireAuthorizationTest extends TestCase
             PaymentManager::class,
             ProductColorPriceManager::class,
             ProductManager::class,
+            Reports::class,
             SiteSettingManager::class,
             UserManager::class,
         ];
@@ -151,5 +154,37 @@ class AdminLivewireAuthorizationTest extends TestCase
         $component->call('delete', $image->id)->assertStatus(403);
 
         $this->assertDatabaseHas('design_images', ['id' => $image->id]);
+    }
+
+    public function test_reports_rejects_customer_on_direct_livewire_request(): void
+    {
+        Livewire::actingAs($this->customer())
+            ->test(Reports::class)
+            ->assertStatus(403);
+    }
+
+    public function test_admin_can_use_reports(): void
+    {
+        $dates = app(DateService::class);
+
+        Livewire::actingAs($this->admin())
+            ->test(Reports::class)
+            ->assertOk()
+            ->assertSet('fromDate', $dates->ascii($dates->jDate($dates->now()->subDays(29))))
+            ->assertSet('toDate', $dates->ascii($dates->jDate($dates->now())))
+            ->call('applyFilter')
+            ->assertOk()
+            ->assertHasNoErrors();
+    }
+
+    public function test_reports_hydrate_rejects_a_customer_after_role_change(): void
+    {
+        $component = Livewire::actingAs($this->admin())
+            ->test(Reports::class)
+            ->assertOk();
+
+        Testable::actingAs($this->customer());
+
+        $component->call('applyFilter')->assertStatus(403);
     }
 }
