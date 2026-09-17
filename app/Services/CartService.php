@@ -13,6 +13,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
+use App\Models\User;
 use App\Services\BankCard\BankCardCustomization;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\FuelCard\FuelCardCustomization;
@@ -215,6 +216,24 @@ class CartService
         for ($attempt = 1; $attempt <= 3; $attempt++) {
             try {
                 return DB::transaction(function () use ($customerData, $userId, $idempotencyToken) {
+                    // A phone that belongs to a deactivated registered customer must
+                    // not become a new guest order; the account-status restriction
+                    // is enforced at the authoritative order-creation boundary for
+                    // guests. Authenticated requests are protected upstream by the
+                    // session-level account-status middleware.
+                    if ($userId === null) {
+                        $canonicalPhone = normalize_phone((string) ($customerData['customer_phone'] ?? ''));
+
+                        $blockedAccountExists = User::query()
+                            ->where('phone', $canonicalPhone)
+                            ->where('is_active', false)
+                            ->exists();
+
+                        if ($blockedAccountExists) {
+                            throw new InvalidArgumentException('امکان ثبت سفارش با این شماره وجود ندارد.');
+                        }
+                    }
+
                     $validatedItems = $this->getValidatedCheckoutItems(true);
 
                     $order = new Order;
