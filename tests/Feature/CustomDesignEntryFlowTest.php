@@ -127,6 +127,7 @@ class CustomDesignEntryFlowTest extends TestCase
             ->set('fuelCard.vin', 'IRABCDEFGH1234567')
             ->set('fuelCard.system_name', 'سامانه هوشمند سوخت')
             ->set('fuelCard.plate_number', '۱۲ م ۳۴۵ ایران')
+            ->set('fuelCard.chip_info', 'small')
             ->call('addToCart')
             ->assertHasNoErrors()
             ->assertRedirect(route('cart.index'));

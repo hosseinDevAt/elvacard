@@ -138,7 +138,7 @@ class FuelCardCartValidationTest extends TestCase
         return $method->invoke($cartService, $workflow, $payload);
     }
 
-    public function test_fuel_single_active_color_accepted_and_customization_json_is_empty(): void
+    public function test_fuel_single_active_color_accepted_and_valid_chip_preserved(): void
     {
         $color = $this->createColor();
         $designData = $this->createDesign($color);
@@ -153,6 +153,7 @@ class FuelCardCartValidationTest extends TestCase
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
             'customization_json' => [
+                'chip_info' => 'small',
                 'card_number' => '6274051234567890',
                 'cvv2' => '808',
                 'card_holder_name' => 'ALI REZA',
@@ -167,7 +168,53 @@ class FuelCardCartValidationTest extends TestCase
         $this->assertSame($designData['designImage']->image_path, $validated['design_image_path_snapshot']);
         $this->assertSame(480000, $validated['unit_price_snapshot']);
         $this->assertSame(480000, $validated['final_price']);
-        $this->assertSame([], $validated['customization_json']);
+        $this->assertSame(['chip_info' => 'small'], $validated['customization_json']);
+    }
+
+    public function test_fuel_missing_chip_info_rejected_by_cart_service(): void
+    {
+        $color = $this->createColor();
+        $designData = $this->createDesign($color);
+        $product = $this->createFuelProduct([
+            ['color_id' => $color->id, 'price' => 480000, 'is_active' => true],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Selecting a valid fuel card chip size (small or large) is required');
+
+        $this->fuelValidation($product, [
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'design_id' => $designData['design']->id,
+            'design_image_id' => $designData['designImage']->id,
+            'quantity' => 1,
+            'customization_json' => [
+                'owner_name' => 'علی رضایی',
+            ],
+        ]);
+    }
+
+    public function test_fuel_invalid_chip_info_rejected_by_cart_service(): void
+    {
+        $color = $this->createColor();
+        $designData = $this->createDesign($color);
+        $product = $this->createFuelProduct([
+            ['color_id' => $color->id, 'price' => 480000, 'is_active' => true],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Selecting a valid fuel card chip size (small or large) is required');
+
+        $this->fuelValidation($product, [
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'design_id' => $designData['design']->id,
+            'design_image_id' => $designData['designImage']->id,
+            'quantity' => 1,
+            'customization_json' => [
+                'chip_info' => 'medium',
+            ],
+        ]);
     }
 
     public function test_fuel_accepted_color_comes_from_database_not_client(): void
@@ -183,11 +230,15 @@ class FuelCardCartValidationTest extends TestCase
             'design_id' => $designData['design']->id,
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
+            'customization_json' => [
+                'chip_info' => 'large',
+            ],
         ]);
 
         $this->assertSame($color->id, $validated['color_id']);
         $this->assertSame($color->name, $validated['color_name_snapshot']);
         $this->assertSame(480000, $validated['unit_price_snapshot']);
+        $this->assertSame(['chip_info' => 'large'], $validated['customization_json']);
     }
 
     public function test_fuel_zero_active_color_rows_rejected(): void
@@ -429,7 +480,7 @@ class FuelCardCartValidationTest extends TestCase
         $this->assertSame('29', $customization['expiry_year']);
     }
 
-    public function test_fuel_is_active_and_public_cart_accepts_valid_payload(): void
+    public function test_fuel_is_active_and_public_cart_accepts_valid_payload_with_chip(): void
     {
         $this->assertSame(
             [CustomizationWorkflowEnum::BANK_CARD, CustomizationWorkflowEnum::FUEL_CARD],
@@ -451,6 +502,7 @@ class FuelCardCartValidationTest extends TestCase
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
             'customization_json' => [
+                'chip_info' => 'large',
                 'card_number' => '6274051234567890',
                 'cvv2' => '808',
             ],
@@ -460,7 +512,7 @@ class FuelCardCartValidationTest extends TestCase
 
         $this->assertSame($color->id, $item['color_id']);
         $this->assertSame($color->name, $item['color_name_snapshot']);
-        $this->assertSame([], $item['customization_json']);
+        $this->assertSame(['chip_info' => 'large'], $item['customization_json']);
     }
 
     public function test_client_workflow_tampering_is_ignored(): void
@@ -494,7 +546,7 @@ class FuelCardCartValidationTest extends TestCase
         $this->assertArrayNotHasKey('customization_workflow', $item->customization_json);
     }
 
-    public function test_fuel_forged_customization_json_is_stripped_to_empty(): void
+    public function test_fuel_forged_customization_json_without_chip_is_rejected(): void
     {
         $color = $this->createColor();
         $designData = $this->createDesign($color);
@@ -502,7 +554,10 @@ class FuelCardCartValidationTest extends TestCase
             ['color_id' => $color->id, 'price' => 480000, 'is_active' => true],
         ]);
 
-        $validated = $this->fuelValidation($product, [
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Selecting a valid fuel card chip size (small or large) is required');
+
+        $this->fuelValidation($product, [
             'product_id' => $product->id,
             'color_id' => $color->id,
             'design_id' => $designData['design']->id,
@@ -522,8 +577,6 @@ class FuelCardCartValidationTest extends TestCase
                 'injected_field' => 'hacked',
             ],
         ]);
-
-        $this->assertSame([], $validated['customization_json']);
     }
 
     public function test_bank_forged_customization_json_is_stripped_to_allowlisted_fields(): void
@@ -597,13 +650,13 @@ class FuelCardCartValidationTest extends TestCase
     public function test_sanitizer_dispatches_explicitly_per_workflow(): void
     {
         $bankPayload = ['customization_json' => ['card_number' => '6274051234567890']];
-        $fuelPayload = ['customization_json' => ['card_number' => '6274051234567890']];
+        $fuelPayload = ['customization_json' => ['chip_info' => 'small', 'card_number' => '6274051234567890']];
 
         $this->assertSame(BankCardCustomization::sanitize($bankPayload), $this->sanitize(CustomizationWorkflowEnum::BANK_CARD, $bankPayload));
-        $this->assertSame([], $this->sanitize(CustomizationWorkflowEnum::FUEL_CARD, $fuelPayload));
+        $this->assertSame(['chip_info' => 'small'], $this->sanitize(CustomizationWorkflowEnum::FUEL_CARD, $fuelPayload));
         $this->assertSame([], $this->sanitize(null, $fuelPayload));
 
-        $this->assertSame([], FuelCardCustomization::sanitize($fuelPayload));
+        $this->assertSame(['chip_info' => 'small'], FuelCardCustomization::sanitize($fuelPayload));
     }
 
     public function test_cart_service_dispatches_with_static_switch_not_dynamic_resolution(): void
@@ -616,7 +669,6 @@ class FuelCardCartValidationTest extends TestCase
         $this->assertStringContainsString('case CustomizationWorkflowEnum::BANK_CARD:', $source);
         $this->assertStringContainsString('return BankCardCustomization::sanitize($payload);', $source);
         $this->assertStringContainsString('case CustomizationWorkflowEnum::FUEL_CARD:', $source);
-        $this->assertStringContainsString('return FuelCardCustomization::sanitize($payload);', $source);
         $this->assertStringContainsString('default:', $source);
         $this->assertStringNotContainsString('container->make', $source);
         $this->assertStringNotContainsString('instanceof', $source);

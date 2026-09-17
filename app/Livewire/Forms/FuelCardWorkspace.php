@@ -19,7 +19,7 @@ class FuelCardWorkspace extends Form
 
     public string $plate_number = '';
 
-    public string $chip_info = '';
+    public ?string $chip_info = null;
 
     public function rules(): array
     {
@@ -39,7 +39,7 @@ class FuelCardWorkspace extends Form
         $this->system_name = FuelCardCustomization::canonicalizeText($this->system_name, 100);
         $this->system_identifier = FuelCardCustomization::canonicalizeText($this->system_identifier, 64);
         $this->plate_number = FuelCardCustomization::canonicalizePlate($this->plate_number);
-        $this->chip_info = FuelCardCustomization::canonicalizeText($this->chip_info, 100);
+        $this->chip_info = FuelCardCustomization::canonicalizeChipInfo($this->chip_info);
     }
 
     public function customizationJson(): array
@@ -53,11 +53,14 @@ class FuelCardWorkspace extends Form
             'system_name',
             'system_identifier',
             'plate_number',
-            'chip_info',
         ] as $field) {
             if (trim($this->{$field}) !== '') {
                 $customization[$field] = trim($this->{$field});
             }
+        }
+
+        if (in_array($this->chip_info, FuelCardCustomization::VALID_CHIP_SIZES, true)) {
+            $customization['chip_info'] = $this->chip_info;
         }
 
         return $customization;

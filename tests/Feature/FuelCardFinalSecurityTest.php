@@ -99,6 +99,9 @@ class FuelCardFinalSecurityTest extends TestCase
             'design_id' => $this->design->id,
             'design_image_id' => $this->designImage->id,
             'quantity' => 1,
+            'customization_json' => [
+                'chip_info' => 'small',
+            ],
             ...$overrides,
         ]);
     }
@@ -157,7 +160,7 @@ class FuelCardFinalSecurityTest extends TestCase
         $this->assertSame($this->design->id, $item['design_id']);
         $this->assertSame($this->designImage->id, $item['design_image_id']);
         $this->assertSame(480000, $item['unit_price_snapshot']);
-        $this->assertSame([], $item['customization_json']);
+        $this->assertSame(['chip_info' => 'small'], $item['customization_json']);
 
         $order = app(CartService::class)->createDraftOrder([
             'customer_name' => 'حسین',
@@ -169,7 +172,7 @@ class FuelCardFinalSecurityTest extends TestCase
         $this->assertSame(CustomizationWorkflowEnum::FUEL_CARD, $stored->customization_workflow);
         $this->assertSame(CustomizationWorkflowEnum::FUEL_CARD->value, $stored->getRawOriginal('customization_workflow'));
         $this->assertSame($this->designImage->id, $stored->design_image_id);
-        $this->assertSame([], $stored->customization_json);
+        $this->assertSame(['chip_info' => 'small'], $stored->customization_json);
     }
 
     public function test_public_customizer_mounts_fuel_workspace_and_never_bank_fields(): void
@@ -198,6 +201,7 @@ class FuelCardFinalSecurityTest extends TestCase
                 'expiry_month' => '05',
                 'expiry_year' => '29',
                 'positions' => ['card_number' => ['x' => 0.5, 'y' => 0.5]],
+                'chip_info' => 'small',
             ],
         ]);
 
@@ -209,7 +213,7 @@ class FuelCardFinalSecurityTest extends TestCase
         $stored = OrderItem::query()->where('order_id', $order->id)->first();
 
         $this->assertSame(CustomizationWorkflowEnum::FUEL_CARD, $stored->customization_workflow);
-        $this->assertSame([], $stored->customization_json);
+        $this->assertSame(['chip_info' => 'small'], $stored->customization_json);
     }
 
     public function test_client_color_tampering_is_rejected(): void
@@ -301,10 +305,11 @@ class FuelCardFinalSecurityTest extends TestCase
                 'qr_code_path' => '/tmp/hacked.png',
                 'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
                 'injected_field' => 'hacked',
+                'chip_info' => 'small',
             ],
         ]);
 
-        $this->assertSame([], $cart['items'][0]['customization_json']);
+        $this->assertSame(['chip_info' => 'small'], $cart['items'][0]['customization_json']);
     }
 
     public function test_bank_workflow_is_untouched_by_fuel_activation(): void

@@ -228,11 +228,13 @@ class ProductCustomizer extends Component
         switch ($this->authoritativeWorkflow()) {
             case CustomizationWorkflowEnum::BANK_CARD->value:
                 $this->bankCard->canonicalize();
+                $this->bankCard->validate();
                 $customization = $this->bankCard->customizationJson();
                 break;
 
             case CustomizationWorkflowEnum::FUEL_CARD->value:
                 $this->fuelCard->canonicalize();
+                $this->fuelCard->validate();
                 $customization = $this->fuelCard->customizationJson();
                 break;
 
@@ -241,9 +243,13 @@ class ProductCustomizer extends Component
                 break;
         }
 
-        // Commerce rules plus the active workspace rules run in one validate
-        // call (Livewire Form sub-validation owns the card-specific rules).
-        $this->validate();
+        $this->validate([
+            'product_id' => ['required', 'integer', 'min:1'],
+            'color_id' => ['required', 'integer', 'min:1'],
+            'design_id' => ['required', 'integer', 'min:1'],
+            'design_image_id' => ['nullable', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:20'],
+        ]);
 
         $cartService->addItem([
             'product_id' => $this->product_id,

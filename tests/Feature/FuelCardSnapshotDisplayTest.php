@@ -489,12 +489,13 @@ class FuelCardSnapshotDisplayTest extends TestCase
             'design_id' => $this->design->id,
             'design_image_id' => $this->designImage->id,
             'quantity' => 1,
+            'customization_json' => ['chip_info' => 'small'],
         ]);
 
         $item = $cart['items'][0];
 
         $this->assertSame($this->color->id, $item['color_id']);
         $this->assertSame($this->designImage->id, $item['design_image_id']);
-        $this->assertSame([], $item['customization_json']);
+        $this->assertSame(['chip_info' => 'small'], $item['customization_json']);
     }
 }

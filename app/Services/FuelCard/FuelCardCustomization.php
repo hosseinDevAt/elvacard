@@ -4,6 +4,8 @@ namespace App\Services\FuelCard;
 
 class FuelCardCustomization
 {
+    public const VALID_CHIP_SIZES = ['small', 'large'];
+
     private const DIGIT_MAP = [
         '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
         '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
@@ -36,7 +38,7 @@ class FuelCardCustomization
             'system_name' => ['nullable', 'string', 'max:100'],
             'system_identifier' => ['nullable', 'string', 'max:64'],
             'plate_number' => ['nullable', 'string', 'max:20'],
-            'chip_info' => ['nullable', 'string', 'max:100'],
+            'chip_info' => ['required', 'string', 'in:small,large'],
         ];
     }
 
@@ -49,7 +51,8 @@ class FuelCardCustomization
             'system_name.max' => 'نام سامانه سوخت باید حداکثر ۱۰۰ کاراکتر باشد.',
             'system_identifier.max' => 'شناسه سامانه سوخت باید حداکثر ۶۴ کاراکتر باشد.',
             'plate_number.max' => 'شماره پلاک باید حداکثر ۲۰ کاراکتر باشد.',
-            'chip_info.max' => 'اطلاعات چیپ باید حداکثر ۱۰۰ کاراکتر باشد.',
+            'chip_info.required' => 'انتخاب سایز چیپ کارت سوخت الزامی است.',
+            'chip_info.in' => 'سایز چیپ انتخاب‌شده نامعتبر است (فقط کوچک یا بزرگ).',
         ];
     }
 
@@ -67,6 +70,16 @@ class FuelCardCustomization
             }
 
             $value = $rawCustomization[$key];
+
+            if ($key === 'chip_info') {
+                $canonicalChip = self::canonicalizeChipInfo($value);
+
+                if (in_array($canonicalChip, self::VALID_CHIP_SIZES, true)) {
+                    $sanitized[$key] = $canonicalChip;
+                }
+
+                continue;
+            }
 
             if ($key === 'vin') {
                 $canonical = self::canonicalizeVin($value);
@@ -98,6 +111,17 @@ class FuelCardCustomization
         }
 
         return $sanitized;
+    }
+
+    public static function canonicalizeChipInfo(mixed $value): string
+    {
+        if (! is_string($value)) {
+            return '';
+        }
+
+        $chip = strtolower(trim($value));
+
+        return in_array($chip, self::VALID_CHIP_SIZES, true) ? $chip : '';
     }
 
     /**
@@ -150,7 +174,7 @@ class FuelCardCustomization
             'car_info' => 255,
             'system_name' => 100,
             'system_identifier' => 64,
-            'chip_info' => 100,
+            'chip_info' => 10,
             default => 100,
         };
     }

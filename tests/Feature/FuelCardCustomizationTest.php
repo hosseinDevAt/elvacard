@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class FuelCardCustomizationTest extends TestCase
 {
-    public function test_sanitize_accepts_only_the_definitive_fuel_keys(): void
+    public function test_sanitize_accepts_only_the_definitive_fuel_keys_with_valid_chip_size(): void
     {
         $result = FuelCardCustomization::sanitize([
             'customization_json' => [
@@ -17,7 +17,7 @@ class FuelCardCustomizationTest extends TestCase
                 'system_name' => 'سامانه هوشمند سوخت',
                 'system_identifier' => 'REG-12345',
                 'plate_number' => '۱۲ م ۳۴۵ ایران',
-                'chip_info' => 'چیپ استاندارد ملی',
+                'chip_info' => 'small',
             ],
         ]);
 
@@ -28,8 +28,26 @@ class FuelCardCustomizationTest extends TestCase
             'system_name' => 'سامانه هوشمند سوخت',
             'system_identifier' => 'REG-12345',
             'plate_number' => '12 م 345 ایران',
-            'chip_info' => 'چیپ استاندارد ملی',
+            'chip_info' => 'small',
         ], $result);
+    }
+
+    public function test_chip_info_only_accepts_small_or_large(): void
+    {
+        $smallResult = FuelCardCustomization::sanitize([
+            'customization_json' => ['chip_info' => ' SMALL '],
+        ]);
+        $this->assertSame(['chip_info' => 'small'], $smallResult);
+
+        $largeResult = FuelCardCustomization::sanitize([
+            'customization_json' => ['chip_info' => 'LARGE'],
+        ]);
+        $this->assertSame(['chip_info' => 'large'], $largeResult);
+
+        $invalidResult = FuelCardCustomization::sanitize([
+            'customization_json' => ['chip_info' => 'arbitrary text'],
+        ]);
+        $this->assertArrayNotHasKey('chip_info', $invalidResult);
     }
 
     public function test_vin_is_canonicalized_to_ascii_uppercase_without_whitespace(): void

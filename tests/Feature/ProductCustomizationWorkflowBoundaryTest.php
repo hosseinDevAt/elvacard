@@ -379,12 +379,13 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
             ->assertStatus(200)
             ->assertSet('workflow', CustomizationWorkflowEnum::FUEL_CARD->value);
 
-        $cart = app(CartService::class)->addItem(
-            $this->bankAddPayload($product, $color, $designData['design'], $designData['designImage'])
-        );
+        $cart = app(CartService::class)->addItem([
+            ...$this->bankAddPayload($product, $color, $designData['design'], $designData['designImage']),
+            'customization_json' => ['chip_info' => 'small'],
+        ]);
 
         $this->assertSame(700000, $cart['items'][0]['unit_price_snapshot']);
-        $this->assertSame([], $cart['items'][0]['customization_json']);
+        $this->assertSame(['chip_info' => 'small'], $cart['items'][0]['customization_json']);
     }
 
     private function designCatalogQueries(array $log): array

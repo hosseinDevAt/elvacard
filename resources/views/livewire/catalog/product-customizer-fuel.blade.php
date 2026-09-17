@@ -2,7 +2,7 @@
 <div class="space-y-6">
     <div>
         <h2 class="text-lg font-bold text-white mb-1">۲. مشخصات کارت سوخت</h2>
-        <p class="text-xs text-gray-400">مشخصات مالک خودرو و سامانه سوخت را برای حکاکی روی پشت کارت وارد کنید.</p>
+        <p class="text-xs text-gray-400">مشخصات مالک خودرو، سامانه سوخت و سایز چیپ را برای حکاکی روی پشت کارت وارد کنید.</p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -124,22 +124,42 @@
             @enderror
         </div>
 
-        {{-- Chip Info / Size --}}
-        <div class="space-y-1.5 sm:col-span-2">
-            <label for="fuel_chip_info" class="block text-xs font-bold text-gray-300">
-                مشخصات چیپ
+        {{-- Mandatory Chip Size Selection --}}
+        <div class="space-y-2 sm:col-span-2">
+            <label class="block text-xs font-bold text-gray-300">
+                سایز چیپ کارت سوخت <span class="text-amber-400">* (الزامی)</span>
             </label>
-            <input
-                id="fuel_chip_info"
-                type="text"
-                autocomplete="off"
-                maxlength="100"
-                wire:model.live.debounce.150ms="fuelCard.chip_info"
-                placeholder="مثال: چیپ استاندارد ملی (در صورت وجود)"
-                class="w-full rounded-xl border border-gray-800 bg-gray-950 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            >
+            <div class="grid grid-cols-2 gap-3">
+                <label class="cursor-pointer rounded-xl border p-3 flex items-center gap-3 transition {{ $fuelCard->chip_info === 'small' ? 'border-amber-500 bg-amber-500/10 text-white shadow-md' : 'border-gray-800 bg-gray-950 text-gray-400 hover:border-gray-700' }}">
+                    <input
+                        type="radio"
+                        name="fuel_chip_size"
+                        value="small"
+                        wire:model.live="fuelCard.chip_info"
+                        class="text-amber-500 focus:ring-amber-500 h-4 w-4 border-gray-700 bg-gray-900"
+                    >
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white">چیپ کوچک (Small)</span>
+                        <span class="text-[10px] text-gray-400">ابعاد کوچک استاندارد</span>
+                    </div>
+                </label>
+
+                <label class="cursor-pointer rounded-xl border p-3 flex items-center gap-3 transition {{ $fuelCard->chip_info === 'large' ? 'border-amber-500 bg-amber-500/10 text-white shadow-md' : 'border-gray-800 bg-gray-950 text-gray-400 hover:border-gray-700' }}">
+                    <input
+                        type="radio"
+                        name="fuel_chip_size"
+                        value="large"
+                        wire:model.live="fuelCard.chip_info"
+                        class="text-amber-500 focus:ring-amber-500 h-4 w-4 border-gray-700 bg-gray-900"
+                    >
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white">چیپ بزرگ (Large)</span>
+                        <span class="text-[10px] text-gray-400">ابعاد بزرگ قدیمی/خاص</span>
+                    </div>
+                </label>
+            </div>
             @error('fuelCard.chip_info')
-                <p class="text-xs text-red-400">{{ $message }}</p>
+                <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
             @enderror
         </div>
     </div>
@@ -149,6 +169,6 @@
         <svg class="h-5 w-5 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span>توجه: اطلاعات واردشده دقیقاً مطابق دستور شما روی پشت کارت حکاکی می‌شود؛ قبل از ثبت نهایی صحت آن را بررسی کنید.</span>
+        <span>توجه: انتخاب سایز چیپ کارت سوخت الزامی است. اطلاعات واردشده دقیقاً مطابق دستور شما روی کارت حکاکی می‌شود.</span>
     </div>
 </div>

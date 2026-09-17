@@ -512,7 +512,12 @@ class CartService
                 return BankCardCustomization::sanitize($payload);
 
             case CustomizationWorkflowEnum::FUEL_CARD:
-                return FuelCardCustomization::sanitize($payload);
+                $sanitized = FuelCardCustomization::sanitize($payload);
+                if (! isset($sanitized['chip_info']) || ! in_array($sanitized['chip_info'], FuelCardCustomization::VALID_CHIP_SIZES, true)) {
+                    throw new InvalidArgumentException('Selecting a valid fuel card chip size (small or large) is required.');
+                }
+
+                return $sanitized;
 
             default:
                 return [];
