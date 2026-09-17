@@ -25,6 +25,10 @@
             </a>
         </h3>
 
+        @if ($product->category)
+            <p class="mb-1 text-xs text-gray-500">{{ $product->category->name }}</p>
+        @endif
+
         @if ($product->colorPrices && $product->colorPrices->isNotEmpty())
             <p class="mb-4 text-primary-600 font-bold">
                 از {{ number_format($lowestPrice) }} تومان

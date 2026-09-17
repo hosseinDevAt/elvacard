@@ -1,7 +1,7 @@
 ﻿<div>
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900">مدیریت محصولات</h1>
-        <button wire:click="$set('showForm', true)" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
+        <button wire:click="create" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
             + محصول جدید
         </button>
     </div>
@@ -86,6 +86,19 @@
                         @error('basePrice') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
+
+                @if(! $customizationWorkflow)
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی محصول</label>
+                        <select wire:model="productCategoryId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                            <option value="">بدون دسته‌بندی</option>
+                            @foreach($categoryOptions as $option)
+                                <option value="{{ $option->id }}">{{ $option->name }}@if(! $option->is_active) (غیرفعال)@endif</option>
+                            @endforeach
+                        </select>
+                        @error('productCategoryId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                @endif
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">پیکربندی طراحی (JSON، اختیاری)</label>
@@ -188,7 +201,12 @@
                 @forelse($products as $product)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-gray-500">{{ $product->id }}</td>
-                        <td class="px-4 py-3 font-medium">{{ $product->name }}</td>
+                        <td class="px-4 py-3 font-medium">
+                            {{ $product->name }}
+                            @if($product->category)
+                                <span class="block text-xs text-gray-400">{{ $product->category->name }}</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-gray-500 font-mono text-xs" dir="ltr">{{ $product->slug }}</td>
                         <td class="px-4 py-3 text-gray-500 text-xs" dir="ltr">{{ $product->type?->value }}</td>
                         <td class="px-4 py-3 text-gray-500 text-xs">

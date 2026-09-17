@@ -90,6 +90,17 @@ class DesignImageManager extends Component
         $this->showForm = false;
     }
 
+    /**
+     * Opens the form for a brand new design image. Always resets first:
+     * otherwise opening the form right after editing another row keeps the
+     * previous editingId and silently overwrites that image on save.
+     */
+    public function create(): void
+    {
+        $this->resetForm();
+        $this->showForm = true;
+    }
+
     public function edit(int $id): void
     {
         $image = DesignImage::find($id);

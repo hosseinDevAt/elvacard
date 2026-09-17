@@ -75,6 +75,17 @@ class ColorManager extends Component
         $this->showForm = false;
     }
 
+    /**
+     * Opens the form for a brand new color. Always resets first: otherwise
+     * opening the form right after editing another row keeps the previous
+     * editingId and silently overwrites that color on save.
+     */
+    public function create(): void
+    {
+        $this->resetForm();
+        $this->showForm = true;
+    }
+
     public function edit(int $id): void
     {
         $color = Color::find($id);

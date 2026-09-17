@@ -61,6 +61,19 @@
                             @endif
                         </div>
 
+                        {{-- Category filter --}}
+                        @if($categories->isNotEmpty())
+                            <div>
+                                <h3 class="mb-1.5 text-sm font-medium text-gray-700">دسته‌بندی</h3>
+                                <select name="category" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200">
+                                    <option value="">همه دسته‌بندی‌ها</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->slug }}" @selected($selectedCategory === $category->slug)>{{ $category->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
                         {{-- Color filter --}}
                         <div>
                             <h3 class="mb-1.5 text-sm font-medium text-gray-700">رنگ موجود</h3>
@@ -106,7 +119,7 @@
             {{-- Product grid --}}
             <div>
                 {{-- Active filters summary --}}
-                @if($search || $selectedType || $selectedColorId || $minPrice || $maxPrice || $sort !== 'newest')
+                @if($search || $selectedType || $selectedCategory || $selectedColorId || $minPrice || $maxPrice || $sort !== 'newest')
                     <div class="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-primary-50 px-3 py-2.5 text-sm text-primary-700">
                         <span>نتایج فیلتر شده:</span>
                         @if($search)
@@ -114,6 +127,9 @@
                         @endif
                         @if($selectedType)
                             <span class="rounded-full bg-white px-2.5 py-0.5">نوع: {{ $selectedType }}</span>
+                        @endif
+                        @if($selectedCategoryName)
+                            <span class="rounded-full bg-white px-2.5 py-0.5">دسته‌بندی: {{ $selectedCategoryName }}</span>
                         @endif
                         @if($selectedColorId)
                             @php $colorName = $colors->firstWhere('id', $selectedColorId)?->name; @endphp

@@ -6,6 +6,7 @@ use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Models\DesignColorCompatibility;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\ProductColorPrice;
 use App\Models\ProductImage;
 use App\Models\ProductSlugHistory;
@@ -40,6 +41,8 @@ class ProductManager extends Component
     public $mainImageUpload;
 
     public ?int $basePrice = null;
+
+    public ?int $productCategoryId = null;
 
     public bool $supportsChipSelection = false;
 
@@ -79,6 +82,7 @@ class ProductManager extends Component
         'mainImage' => 'nullable|string|max:255',
         'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
         'basePrice' => 'nullable|integer|min:0',
+        'productCategoryId' => 'nullable|integer|exists:product_categories,id',
         'supportsChipSelection' => 'boolean',
         'designConfig' => 'nullable|json',
         'metaTitle' => 'nullable|string|max:255',
@@ -93,6 +97,15 @@ class ProductManager extends Component
 
     public function save(): void
     {
+        $this->customizationWorkflow = CustomizationWorkflowRegistry::normalizeWorkflow($this->customizationWorkflow);
+
+        // Categories describe ordinary Store products only. A customizable card
+        // (Bank/Fuel) is never a categorized commerce item, so a stale selection
+        // carried from another row is dropped before validation.
+        if ($this->customizationWorkflow !== null) {
+            $this->productCategoryId = null;
+        }
+
         $this->validate();
 
         if (! CustomizationWorkflowRegistry::typeIsConsistent($this->type, $this->customizationWorkflow)) {
@@ -206,6 +219,7 @@ class ProductManager extends Component
             'description' => $this->description ?: null,
             'main_image' => $this->mainImage ?: null,
             'base_price' => $this->basePrice,
+            'product_category_id' => $this->productCategoryId,
             'supports_chip_selection' => $this->supportsChipSelection,
             'design_config' => $this->designConfig ? json_decode($this->designConfig, true) : null,
             'meta_title' => $this->metaTitle ?: null,
@@ -236,6 +250,17 @@ class ProductManager extends Component
         $this->showForm = false;
     }
 
+    /**
+     * Opens the form for a brand new product. Always resets first: otherwise
+     * opening the form right after editing another row keeps the previous
+     * editingId and silently overwrites that product on save.
+     */
+    public function create(): void
+    {
+        $this->resetForm();
+        $this->showForm = true;
+    }
+
     public function edit(int $id): void
     {
         $product = Product::find($id);
@@ -253,6 +278,7 @@ class ProductManager extends Component
         $this->description = $product->description;
         $this->mainImage = $product->main_image;
         $this->basePrice = $product->base_price;
+        $this->productCategoryId = $product->product_category_id !== null ? (int) $product->product_category_id : null;
         $this->supportsChipSelection = (bool) $product->supports_chip_selection;
         $this->designConfig = $product->design_config ? json_encode($product->design_config, JSON_UNESCAPED_UNICODE) : null;
         $this->metaTitle = $product->meta_title;
@@ -337,6 +363,7 @@ class ProductManager extends Component
         $this->mainImage = null;
         $this->mainImageUpload = null;
         $this->basePrice = null;
+        $this->productCategoryId = null;
         $this->supportsChipSelection = false;
         $this->designConfig = null;
         $this->metaTitle = null;
@@ -408,6 +435,7 @@ class ProductManager extends Component
     public function render()
     {
         $products = Product::query()
+            ->with('category:id,name')
             ->withCount('colorPrices')
             ->withMin('activeColorPrices', 'price')
             ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
@@ -436,6 +464,10 @@ class ProductManager extends Component
             'products' => $products,
             'purchasableIds' => $purchasableIds,
             'typeOptions' => ProductTypeEnum::options(),
+            'categoryOptions' => ProductCategory::query()
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'is_active']),
             'typeFilterOptions' => array_merge(
                 [['value' => '', 'label' => 'همه انواع']],
                 array_map(

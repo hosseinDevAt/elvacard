@@ -8,6 +8,7 @@ use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Services\Customization\ProductPurchaseabilityService;
+use App\Services\DesignCatalogService;
 use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
@@ -134,6 +135,19 @@ class DesignWizard extends Component
     {
         if ($this->step === 1) {
             $this->validate($this->stepOneRules());
+        }
+
+        // Activation is meaningless when the design cannot surface in the
+        // workspace: the customizer only renders an active design that has an
+        // active image allowed for an active card color. Refuse to save an
+        // active-but-invisible design instead of silently hiding it.
+        if ($this->isActive && $this->designId && ! app(DesignCatalogService::class)->isReadyForWorkspace((int) $this->designId)) {
+            session()->flash(
+                'error',
+                'برای فعال‌سازی، طرح باید حداقل یک تصویر فعال داشته باشد که برای یک رنگ فعال مجاز شده باشد؛ در غیر این صورت در بخش شخصی‌سازی نمایش داده نمی‌شود.'
+            );
+
+            return;
         }
 
         if (! $this->persistDesign()) {
@@ -409,6 +423,12 @@ class DesignWizard extends Component
         }
 
         $data['slug'] = $this->uniqueSlug($this->name, Design::class, null, 'design');
+
+        // A brand-new design cannot have any image yet (images are attached in
+        // step 2), so it can never be ready for the workspace. Keep the
+        // intermediate row inactive; the final save() validates readiness and
+        // writes the administrator's chosen activation state.
+        $data['is_active'] = false;
 
         $this->designId = (int) Design::create($data)->id;
 

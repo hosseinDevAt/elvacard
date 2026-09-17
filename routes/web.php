@@ -34,6 +34,7 @@ use App\Livewire\Admin\MenuManager;
 use App\Livewire\Admin\OrderManager;
 use App\Livewire\Admin\PageManager;
 use App\Livewire\Admin\PaymentManager;
+use App\Livewire\Admin\ProductCategoryManager;
 use App\Livewire\Admin\ProductColorPriceManager;
 use App\Livewire\Admin\ProductManager;
 use App\Livewire\Admin\Reports;
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('admin.dashboard');
     Route::get('/dashboard/colors', ColorManager::class)->name('admin.colors');
     Route::get('/dashboard/products', ProductManager::class)->name('admin.products');
+    Route::get('/dashboard/product-categories', ProductCategoryManager::class)->name('admin.product-categories');
     Route::get('/dashboard/product-colors', ProductColorPriceManager::class)->name('admin.product-colors');
     Route::get('/dashboard/designs', DesignManager::class)->name('admin.designs');
     Route::get('/dashboard/designs/create', DesignWizard::class)->name('admin.designs.create');

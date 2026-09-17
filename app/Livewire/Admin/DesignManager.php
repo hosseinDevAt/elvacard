@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\CateDesign;
 use App\Models\Design;
 use App\Services\Customization\ProductPurchaseabilityService;
+use App\Services\DesignCatalogService;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
@@ -102,6 +103,17 @@ class DesignManager extends Component
         $this->showForm = false;
     }
 
+    /**
+     * Opens the form for a brand new design. Always resets first: otherwise
+     * opening the form right after editing another row keeps the previous
+     * editingId and silently overwrites that design on save.
+     */
+    public function create(): void
+    {
+        $this->resetForm();
+        $this->showForm = true;
+    }
+
     public function edit(int $id): void
     {
         $design = Design::find($id);
@@ -171,8 +183,20 @@ class DesignManager extends Component
             ->orderByDesc('id')
             ->paginate(15);
 
+        // Surface the workspace gate in the list: an active design that is not
+        // ready (missing an active image allowed for an active color, or an
+        // inactive category) never reaches the customizer even though the row
+        // says "فعال". Showing it here is what makes the silent hide visible.
+        $catalog = app(DesignCatalogService::class);
+        $workspaceReady = [];
+
+        foreach ($designs as $design) {
+            $workspaceReady[$design->id] = $catalog->isReadyForWorkspace((int) $design->id);
+        }
+
         return view('livewire.admin.design-manager', [
             'designs' => $designs,
+            'workspaceReady' => $workspaceReady,
             'categories' => CateDesign::query()->orderBy('name')->get(['id', 'name', 'is_active']),
         ])->layout('layouts.admin')->title('مدیریت طرح‌ها');
     }

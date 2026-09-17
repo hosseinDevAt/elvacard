@@ -18,6 +18,7 @@ class Product extends Model
         'description',
         'main_image',
         'base_price',
+        'product_category_id',
         'supports_chip_selection',
         'design_config',
         'meta_title',
@@ -50,6 +51,11 @@ class Product extends Model
                 ProductSlugHistory::query()->firstOrCreate(['slug' => $product->slug]);
             }
         });
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(ProductCategory::class, 'product_category_id');
     }
 
     public function colorPrices()

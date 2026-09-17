@@ -40,6 +40,12 @@ class CustomizationWorkflowRegistry
         };
     }
 
+    /**
+     * A blank workflow comes from the HTML select's empty option (or a cleared
+     * input), so it means "no customization" exactly like null. Treating the
+     * empty string as an unknown workflow instead would reject every ordinary
+     * product save that passed through the select.
+     */
     public static function typeIsConsistent(string $type, ?string $workflowRaw): bool
     {
         $typeEnum = ProductTypeEnum::tryFrom($type);
@@ -48,6 +54,8 @@ class CustomizationWorkflowRegistry
             return false;
         }
 
+        $workflowRaw = self::normalizeWorkflow($workflowRaw);
+
         $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom($workflowRaw) : null;
 
         if ($workflowRaw !== null && $workflow === null) {
@@ -55,6 +63,15 @@ class CustomizationWorkflowRegistry
         }
 
         return self::expectedType($workflow) === $typeEnum;
+    }
+
+    public static function normalizeWorkflow(?string $workflowRaw): ?string
+    {
+        if ($workflowRaw === null || trim($workflowRaw) === '') {
+            return null;
+        }
+
+        return $workflowRaw;
     }
 
     public static function classifyLegacyCustomization(array $customization): ?CustomizationWorkflowEnum

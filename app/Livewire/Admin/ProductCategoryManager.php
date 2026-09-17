@@ -2,14 +2,13 @@
 
 namespace App\Livewire\Admin;
 
-use App\Models\CateDesign;
-use App\Services\Customization\ProductPurchaseabilityService;
+use App\Models\ProductCategory;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-class CateDesignManager extends Component
+class ProductCategoryManager extends Component
 {
     use AuthorizesAdminActions;
     use GeneratesUniqueSlug;
@@ -19,44 +18,34 @@ class CateDesignManager extends Component
 
     public bool $isActive = true;
 
+    public int $sortOrder = 0;
+
     public ?int $editingId = null;
 
     public bool $showForm = false;
 
     protected $rules = [
-        'name' => 'required|string|min:1|max:255',
+        'name' => 'required|string|min:1|max:120',
         'isActive' => 'boolean',
+        'sortOrder' => 'integer|min:0',
     ];
 
     public function save(): void
     {
         $this->validate();
 
-        if ($this->editingId && ! $this->isActive) {
-            $blocker = ProductPurchaseabilityService::categoryDeactivationBlocker($this->editingId);
-
-            if ($blocker !== null) {
-                session()->flash('error', $blocker);
-
-                return;
-            }
-        }
-
-        $slug = $this->uniqueSlug($this->name, CateDesign::class, $this->editingId ? (int) $this->editingId : null);
+        $data = [
+            'name' => $this->name,
+            'slug' => $this->uniqueSlug($this->name, ProductCategory::class, $this->editingId, 'category'),
+            'is_active' => $this->isActive,
+            'sort_order' => $this->sortOrder,
+        ];
 
         if ($this->editingId) {
-            CateDesign::find($this->editingId)->update([
-                'name' => $this->name,
-                'slug' => $slug,
-                'is_active' => $this->isActive,
-            ]);
+            ProductCategory::find($this->editingId)->update($data);
             session()->flash('success', 'دسته‌بندی با موفقیت ویرایش شد');
         } else {
-            CateDesign::create([
-                'name' => $this->name,
-                'slug' => $slug,
-                'is_active' => $this->isActive,
-            ]);
+            ProductCategory::create($data);
             session()->flash('success', 'دسته‌بندی با موفقیت اضافه شد');
         }
 
@@ -77,37 +66,38 @@ class CateDesignManager extends Component
 
     public function edit(int $id): void
     {
-        $cate = CateDesign::find($id);
+        $category = ProductCategory::find($id);
 
-        if (! $cate) {
+        if (! $category) {
             session()->flash('error', 'دسته‌بندی موردنظر یافت نشد');
 
             return;
         }
 
         $this->editingId = $id;
-        $this->name = $cate->name;
-        $this->isActive = (bool) $cate->is_active;
+        $this->name = $category->name;
+        $this->isActive = (bool) $category->is_active;
+        $this->sortOrder = (int) $category->sort_order;
         $this->showForm = true;
     }
 
     public function delete(int $id): void
     {
-        $cate = CateDesign::find($id);
+        $category = ProductCategory::find($id);
 
-        if (! $cate) {
+        if (! $category) {
             session()->flash('error', 'دسته‌بندی موردنظر یافت نشد');
 
             return;
         }
 
-        if ($cate->designs()->exists()) {
-            session()->flash('error', 'این دسته‌بندی دارای طرح است و قابل حذف نیست. ابتدا طرح‌های آن را حذف کنید.');
+        if ($category->products()->exists()) {
+            session()->flash('error', 'این دسته‌بندی در محصولات استفاده شده است و قابل حذف نیست.');
 
             return;
         }
 
-        $cate->delete();
+        $category->delete();
         session()->flash('success', 'دسته‌بندی با موفقیت حذف شد');
     }
 
@@ -115,13 +105,18 @@ class CateDesignManager extends Component
     {
         $this->name = '';
         $this->isActive = true;
+        $this->sortOrder = 0;
         $this->editingId = null;
     }
 
     public function render()
     {
-        return view('livewire.admin.cate-design-manager', [
-            'categories' => CateDesign::with('designs')->orderByDesc('id')->paginate(15),
-        ])->layout('layouts.admin')->title('مدیریت دسته‌بندی طرح‌ها');
+        return view('livewire.admin.product-category-manager', [
+            'categories' => ProductCategory::query()
+                ->withCount('products')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->paginate(15),
+        ])->layout('layouts.admin')->title('مدیریت دسته‌بندی محصولات');
     }
 }

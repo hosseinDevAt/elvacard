@@ -38,6 +38,13 @@
                         <td class="px-4 py-3 text-gray-500">{{ $design->images_count }}</td>
                         <td class="px-4 py-3">
                             <span class="{{ $design->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $design->is_active ? 'فعال' : 'غیرفعال' }}</span>
+                            @if($design->is_active)
+                                @if($workspaceReady[$design->id] ?? false)
+                                    <span class="block text-xs text-green-600">قابل نمایش در شخصی‌سازی</span>
+                                @else
+                                    <span class="block text-xs text-red-500">پنهان از شخصی‌سازی</span>
+                                @endif
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <a href="{{ route('admin.designs.edit', $design->id) }}" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</a>

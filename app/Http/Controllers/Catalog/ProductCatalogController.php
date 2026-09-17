@@ -10,6 +10,7 @@ use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\DesignColorCompatibility;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\ProductSlugHistory;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\Customization\ProductPurchaseabilityService;
@@ -33,6 +34,22 @@ class ProductCatalogController extends Controller
             $sort = 'newest';
         }
 
+        $categorySlug = $request->query('category');
+        $selectedCategoryId = null;
+        $selectedCategoryName = null;
+
+        if (is_string($categorySlug) && $categorySlug !== '') {
+            $category = ProductCategory::query()
+                ->active()
+                ->where('slug', $categorySlug)
+                ->first(['id', 'name']);
+
+            if ($category) {
+                $selectedCategoryId = (int) $category->id;
+                $selectedCategoryName = $category->name;
+            }
+        }
+
         // The Store is the ordinary commerce surface only. Bank/Fuel (and any
         // future custom-design) products have their own /design entry points and
         // must never surface here as ordinary Store items.
@@ -51,6 +68,10 @@ class ProductCatalogController extends Controller
 
         if ($type) {
             $query->ofType($type);
+        }
+
+        if ($selectedCategoryId !== null) {
+            $query->where('product_category_id', $selectedCategoryId);
         }
 
         if ($colorId) {
@@ -99,6 +120,7 @@ class ProductCatalogController extends Controller
         }
 
         $products = $query
+            ->with('category:id,name')
             ->withCatalog()
             ->paginate(12)
             ->withQueryString();
@@ -113,6 +135,13 @@ class ProductCatalogController extends Controller
             'sort' => $sort,
             'types' => ProductTypeEnum::cases(),
             'colors' => Color::query()->active()->orderBy('sort_order')->get(),
+            'categories' => ProductCategory::query()
+                ->active()
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug']),
+            'selectedCategory' => $selectedCategoryId !== null ? $categorySlug : null,
+            'selectedCategoryName' => $selectedCategoryName,
         ]);
     }
 

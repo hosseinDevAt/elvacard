@@ -116,6 +116,42 @@ class DesignCatalogService
     }
 
     /**
+     * Whether an activated design would actually be displayable in the
+     * customization workspace. The workspace only lists a design for a card
+     * color when the design is active, its category is active, and one of its
+     * active images is allowed for that color; a design missing any of those
+     * is saved but silently invisible. This check mirrors that gate (via
+     * ProductCustomizer::allowedImageIds()) but deliberately ignores the
+     * design's own is_active flag so the wizard can validate the activation
+     * before it is written.
+     */
+    public function isReadyForWorkspace(int $designId): bool
+    {
+        return Design::query()
+            ->whereKey($designId)
+            ->whereRelation('category', fn ($query) => $query->where('is_active', true))
+            ->whereExists(function ($query) {
+                $query->select('id')
+                    ->from('design_images')
+                    ->whereColumn('design_images.design_id', 'designs.id')
+                    ->where('design_images.is_active', true)
+                    ->whereExists(function ($compat) {
+                        $compat->select('id')
+                            ->from('design_color_compatibilities')
+                            ->whereColumn('design_color_compatibilities.design_image_id', 'design_images.id')
+                            ->where('design_color_compatibilities.is_allowed', true)
+                            ->whereExists(function ($color) {
+                                $color->select('id')
+                                    ->from('colors')
+                                    ->whereColumn('colors.id', 'design_color_compatibilities.card_color_id')
+                                    ->where('colors.is_active', true);
+                            });
+                    });
+            })
+            ->exists();
+    }
+
+    /**
      * The single source of design visibility: active design, active category,
      * and at least one active image within the allowed set.
      */

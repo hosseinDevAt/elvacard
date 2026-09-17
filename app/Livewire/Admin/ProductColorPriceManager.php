@@ -147,6 +147,17 @@ class ProductColorPriceManager extends Component
         $this->showForm = false;
     }
 
+    /**
+     * Opens the form for a brand new price row. Always resets first: otherwise
+     * opening the form right after editing another row keeps the previous
+     * editingId and silently overwrites that row on save.
+     */
+    public function create(): void
+    {
+        $this->resetForm();
+        $this->showForm = true;
+    }
+
     public function edit(int $id): void
     {
         $priceItem = ProductColorPrice::with('product', 'color')->find($id);

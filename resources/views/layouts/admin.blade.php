@@ -22,7 +22,7 @@
             </div>
             @php
                 $currentRoute = request()->route()?->getName() ?? '';
-                $storeRoutes = ['admin.products', 'admin.colors', 'admin.designs', 'admin.designs.create', 'admin.designs.edit'];
+                $storeRoutes = ['admin.products', 'admin.product-categories', 'admin.colors', 'admin.designs', 'admin.designs.create', 'admin.designs.edit'];
                 $contentRoutes = ['admin.pages', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements'];
                 $appearanceRoutes = ['admin.appearance', 'admin.menus', 'admin.menu-items', 'admin.homepage-sections'];
                 $groups = [
@@ -56,6 +56,10 @@
                         <a href="{{ route('admin.products') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.products') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
                             محصولات
+                        </a>
+                        <a href="{{ route('admin.product-categories') }}" wire:navigate
+                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.product-categories') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
+                            دسته‌بندی محصولات
                         </a>
                         <a href="{{ route('admin.colors') }}" wire:navigate
                             class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.colors') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
