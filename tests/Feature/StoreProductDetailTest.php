@@ -372,4 +372,88 @@ class StoreProductDetailTest extends TestCase
         $this->assertNull($cart['items'][0]['color_id']);
         $this->assertSame(250000, $cart['items'][0]['unit_price_snapshot']);
     }
+
+    public function test_stale_variant_gallery_falls_back_to_the_active_variant_for_selection(): void
+    {
+        $product = $this->commerceProduct();
+        $gold = $this->color('طلایی');
+        $silver = $this->color('نقرهای');
+        $this->variant($product, $gold, 300000);
+        $this->variant($product, $silver, 350000);
+
+        $this->image($product, $gold, 'products/gold-a.png', 1, true);
+        $this->image($product, $gold, 'products/gold-b.png', 2, false);
+        $this->image($product, $gold, 'products/gold-c.png', 3, false);
+        $this->image($product, $silver, 'products/silver-a.png', 1, false);
+        $this->image($product, $silver, 'products/silver-b.png', 2, false);
+
+        $component = Livewire::test(ProductGallery::class, ['productId' => $product->id])
+            ->assertSee(asset('storage/products/gold-a.png'))
+            ->call('selectColor', $gold->id)
+            ->assertSet('color_id', $gold->id);
+
+        // Variant A becomes inactive/stale during the Livewire lifecycle.
+        ProductColorPrice::query()->where('product_id', $product->id)->where('color_id', $gold->id)
+            ->update(['is_active' => false]);
+
+        $component
+            // A fresh interaction re-resolves the product: the stored selection
+            // is left untouched, but the render falls back to silver.
+            ->call('selectImage', 0)
+            ->assertSet('color_id', $gold->id)
+            ->assertDontSee(asset('storage/products/gold-a.png'))
+            ->assertDontSee(asset('storage/products/gold-c.png'))
+            ->assertSee(asset('storage/products/silver-a.png'))
+            // Thumbnail selection operates on silver's effective gallery only,
+            // so an out-of-range index clamps to silver's two images.
+            ->call('selectImage', 5)
+            ->assertSet('selected_image_index', 1)
+            ->assertSee(asset('storage/products/silver-b.png'));
+    }
+
+    public function test_detail_json_ld_uses_the_effective_storefront_gallery_image(): void
+    {
+        $product = $this->commerceProduct(['main_image' => 'products/main.png']);
+        $gold = $this->color('طلایی');
+        $this->variant($product, $gold, 380000);
+        $this->image($product, $gold, 'products/gold-variant.png', 1, true);
+        $this->image($product, $gold, 'products/gold-second.png', 2, false);
+
+        ProductImage::create([
+            'product_id' => $product->id,
+            'color_id' => null,
+            'image_path' => 'products/untinted.png',
+            'sort_order' => 1,
+            'is_primary' => false,
+        ]);
+
+        $html = $this->get(route('catalog.products.show', $product->slug))
+            ->assertOk()
+            ->getContent();
+
+        // The structured-data image must be the effective variant gallery image,
+        // not main_image and not an untinted image.
+        $this->assertStringContainsString('"image":"'.asset('storage/products/gold-variant.png').'"', $html);
+        $this->assertStringNotContainsString('"image":"'.asset('storage/products/main.png').'"', $html);
+        $this->assertStringNotContainsString('"image":"'.asset('storage/products/untinted.png').'"', $html);
+    }
+
+    public function test_detail_json_ld_image_falls_back_to_main_then_og(): void
+    {
+        $withMain = $this->commerceProduct(['main_image' => 'products/only-main.png']);
+
+        $html = $this->get(route('catalog.products.show', $withMain->slug))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('"image":"'.asset('storage/products/only-main.png').'"', $html);
+
+        $ogOnly = $this->commerceProduct(['main_image' => null, 'og_image' => 'products/only-og.png']);
+
+        $html = $this->get(route('catalog.products.show', $ogOnly->slug))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('"image":"'.asset('storage/products/only-og.png').'"', $html);
+    }
 }

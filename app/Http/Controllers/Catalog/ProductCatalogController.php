@@ -120,6 +120,7 @@ class ProductCatalogController extends Controller
             ->active()
             ->where('slug', $slug)
             ->withCatalog()
+            ->with('images')
             ->first();
 
         if ($product === null) {
@@ -151,7 +152,7 @@ class ProductCatalogController extends Controller
             'purchasable' => $purchasable,
             'canonicalUrl' => $canonicalUrl,
             'ogImageUrl' => $this->publicAssetUrl($product->og_image ?: $product->main_image),
-            'schemaJson' => $this->productSchemaJson($product, $purchasable, $canonicalUrl),
+            'schemaJson' => $this->productSchemaJson($product, $purchasable, $canonicalUrl, $selectedColorId),
         ]);
     }
 
@@ -208,7 +209,7 @@ class ProductCatalogController extends Controller
         return asset('storage/'.ltrim($path, '/'));
     }
 
-    private function productSchemaJson(Product $product, bool $purchasable, string $canonicalUrl): string
+    private function productSchemaJson(Product $product, bool $purchasable, string $canonicalUrl, int $selectedColorId): string
     {
         $schema = [
             '@context' => 'https://schema.org',
@@ -223,7 +224,7 @@ class ProductCatalogController extends Controller
             $schema['description'] = $description;
         }
 
-        $imageUrl = $this->publicAssetUrl($product->main_image ?: $product->og_image);
+        $imageUrl = $this->productSchemaImage($product, $selectedColorId);
 
         if ($imageUrl !== null) {
             $schema['image'] = $imageUrl;
@@ -239,6 +240,27 @@ class ProductCatalogController extends Controller
             $schema,
             JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         );
+    }
+
+    /**
+     * A plain Store product's JSON-LD image is the image its Product Gallery
+     * actually presents for the current selection: the requested (or default)
+     * active color's images, else untinted images, else the legacy main image.
+     * Card products and products without any storefront gallery image keep the
+     * existing main_image/og_image fallback, so Bank/Fuel SEO stays untouched.
+     */
+    private function productSchemaImage(Product $product, int $selectedColorId): ?string
+    {
+        $hasWorkflow = $product->getRawOriginal('customization_workflow') !== null;
+
+        if ($hasWorkflow) {
+            return $this->publicAssetUrl($product->main_image ?: $product->og_image);
+        }
+
+        $colorId = $product->effectiveColorId($selectedColorId > 0 ? $selectedColorId : null);
+        $path = $product->galleryPaths($colorId)[0] ?? ($product->main_image ?: $product->og_image);
+
+        return $this->publicAssetUrl($path);
     }
 
     /**

@@ -68,6 +68,50 @@ class Product extends Model
     }
 
     /**
+     * The active color the storefront should present for a requested id: an
+     * explicit valid active color is honored, anything else (including a stale
+     * or foreign id) falls back to the first active variant. Resolved against
+     * the active color-price catalog set provided by the withCatalog() scope.
+     */
+    public function effectiveColorId(?int $requestedColorId = null): ?int
+    {
+        if ($requestedColorId !== null && $this->colorPrices->contains(fn ($colorPrice) => (int) $colorPrice->color_id === $requestedColorId)) {
+            return (int) $requestedColorId;
+        }
+
+        return $this->colorPrices->first() !== null ? (int) $this->colorPrices->first()->color_id : null;
+    }
+
+    /**
+     * The storefront gallery for a color: the color's own ordered images first,
+     * then the product-level (untinted) images, then the legacy main image as
+     * the final fallback. Single authority shared by the Product Gallery
+     * surface and the Product Detail structured data.
+     */
+    public function galleryPaths(?int $colorId): array
+    {
+        $paths = $this->images
+            ->filter(fn ($image) => (int) $image->color_id === $colorId)
+            ->map(fn ($image) => $image->image_path)
+            ->values()
+            ->all();
+
+        if ($paths === []) {
+            $paths = $this->images
+                ->filter(fn ($image) => $image->color_id === null)
+                ->map(fn ($image) => $image->image_path)
+                ->values()
+                ->all();
+        }
+
+        if ($paths === [] && $this->main_image) {
+            $paths = [$this->main_image];
+        }
+
+        return $paths;
+    }
+
+    /**
      * The canonical storefront destination for this product. A plain Store
      * product points at its detail page, while a Bank/Fuel card product routes
      * straight into its standalone Custom Design workflow so the store detail
