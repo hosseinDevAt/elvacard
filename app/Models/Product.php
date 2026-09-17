@@ -62,6 +62,26 @@ class Product extends Model
         return $this->hasMany(ProductColorPrice::class)->where('is_active', true);
     }
 
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * The canonical storefront destination for this product. A plain Store
+     * product points at its detail page, while a Bank/Fuel card product routes
+     * straight into its standalone Custom Design workflow so the store detail
+     * page never becomes the purchase surface for a customizable card.
+     */
+    public function storefrontUrl(): string
+    {
+        return match ($this->customization_workflow) {
+            CustomizationWorkflowEnum::BANK_CARD => route('custom-card.bank'),
+            CustomizationWorkflowEnum::FUEL_CARD => route('custom-card.fuel'),
+            default => route('catalog.products.show', $this->slug),
+        };
+    }
+
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);

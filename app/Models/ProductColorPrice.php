@@ -35,4 +35,12 @@ class ProductColorPrice extends Model
     {
         return $this->belongsTo(Color::class);
     }
+
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class, 'color_id', 'color_id')
+            ->where('product_id', $this->product_id)
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
 }

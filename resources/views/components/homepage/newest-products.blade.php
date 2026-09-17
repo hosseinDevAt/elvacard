@@ -24,7 +24,7 @@
                 @foreach ($products as $product)
                     <article class="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:border-primary-200 transition-all duration-300 group">
                         @if ($product->main_image)
-                            <a href="{{ route('catalog.products.show', $product) }}" wire:navigate
+                            <a href="{{ $product->storefrontUrl() }}" wire:navigate
                                class="block aspect-[4/3] overflow-hidden bg-gray-50">
                                 <img src="{{ asset('storage/' . $product->main_image) }}"
                                      alt="{{ $product->name }}"
@@ -32,7 +32,7 @@
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             </a>
                         @else
-                            <a href="{{ route('catalog.products.show', $product) }}"
+                            <a href="{{ $product->storefrontUrl() }}"
                                class="block aspect-[4/3] bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
 <x-icons.photo-placeholder class="text-primary-300" />
                             </a>
@@ -46,7 +46,7 @@
                             </div>
 
                             <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">
-                                <a href="{{ route('catalog.products.show', $product) }}" class="hover:text-primary-600 transition">
+                                <a href="{{ $product->storefrontUrl() }}" class="hover:text-primary-600 transition">
                                     {{ $product->name }}
                                 </a>
                             </h3>
@@ -61,7 +61,7 @@
                                 </div>
                             @endif
 
-                            <a href="{{ route('catalog.products.show', $product) }}"
+                            <a href="{{ $product->storefrontUrl() }}"
                                class="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 transition">
                                 مشاهده جزئیات
                                 <x-icons.arrow-left class="me-1" />

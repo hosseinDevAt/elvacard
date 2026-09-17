@@ -26,7 +26,7 @@
                 @foreach ($products as $product)
                     <article class="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:border-primary-200 transition-all duration-300 group">
                         @if ($product->main_image)
-                            <a href="{{ route('catalog.products.show', $product) }}" wire:navigate
+                            <a href="{{ $product->storefrontUrl() }}" wire:navigate
                                class="block aspect-[4/3] overflow-hidden bg-gray-50">
                                 <img src="{{ asset('storage/' . $product->main_image) }}"
                                      alt="{{ $product->name }}"
@@ -40,7 +40,7 @@
 
                         <div class="p-5">
                             <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">
-                                <a href="{{ route('catalog.products.show', $product) }}" class="hover:text-primary-600 transition">
+                                <a href="{{ $product->storefrontUrl() }}" class="hover:text-primary-600 transition">
                                     {{ $product->name }}
                                 </a>
                             </h3>
@@ -55,7 +55,7 @@
                                 </div>
                             @endif
 
-                            <a href="{{ route('catalog.products.show', $product) }}" wire:navigate
+                            <a href="{{ $product->storefrontUrl() }}" wire:navigate
                                class="text-sm font-semibold text-primary-600 hover:text-primary-700 transition">
                                 مشاهده بیشتر
                             </a>

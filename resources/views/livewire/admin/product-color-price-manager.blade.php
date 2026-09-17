@@ -44,6 +44,12 @@
                     <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
                     <label for="is_active" class="text-sm text-gray-700">فعال (قابل فروش)</label>
                 </div>
+                <div>
+                    <label for="image_uploads" class="block text-sm font-medium text-gray-700 mb-1">تصاویر این رنگ (اختیاری)</label>
+                    <input type="file" id="image_uploads" wire:model="imageUploads" multiple accept="image/jpeg,image/png,image/jpg,image/webp,image/svg+xml" class="w-full sm:w-96 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                    @error('imageUploads.*') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <p class="text-xs text-gray-400 mt-1">تصاویر جی‌پی‌جی، پی‌ان‌جی، وب‌پی یا اس‌وی‌جی تا ۲ مگابایت؛ اگر این رنگ تصویر اصلی نداشته باشد، اولین تصویر همان می‌شود.</p>
+                </div>
                 <div class="flex items-end gap-4">
                     <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">ذخیره</button>
                     <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition">لغو</button>
@@ -65,6 +71,7 @@
                     <th class="px-4 py-3 text-start font-medium text-gray-500">رنگ</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">قیمت</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
+                    <th class="px-4 py-3 text-start font-medium text-gray-500">تصاویر</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
                 </tr>
             </thead>
@@ -84,12 +91,34 @@
                             <span class="{{ $priceItem->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $priceItem->is_active ? 'فعال' : 'غیرفعال' }}</span>
                         </td>
                         <td class="px-4 py-3">
+                            @if($priceItem->images->isEmpty())
+                                <span class="text-xs text-gray-400">بدون تصویر</span>
+                            @else
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach($priceItem->images as $image)
+                                        <div class="flex flex-col items-center gap-1">
+                                            <div class="relative">
+                                                <img src="{{ asset('storage/' . $image->image_path) }}" alt="" class="h-12 w-12 rounded border border-gray-200 object-cover">
+                                                @if($image->is_primary)
+                                                    <span class="absolute -top-1 -start-1 rounded-full bg-green-500 px-1 text-[8px] font-medium text-white">اصلی</span>
+                                                @endif
+                                            </div>
+                                            @if(! $image->is_primary)
+                                                <button type="button" wire:click="setPrimaryImage({{ $image->id }})" class="text-[10px] text-yellow-500 hover:text-yellow-700">تعیین اصلی</button>
+                                            @endif
+                                            <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-red-600 hover:text-red-800">حذف</button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
                             <button wire:click="edit({{ $priceItem->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
                             <button wire:click="delete({{ $priceItem->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">قیمتی یافت نشد</td></tr>
+                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">قیمتی یافت نشد</td></tr>
                 @endforelse
             </tbody>
         </table>
