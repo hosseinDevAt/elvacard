@@ -277,6 +277,47 @@ class DatabaseSeeder extends Seeder
             ['is_allowed' => false]
         );
 
+        // Every remaining design-image × active product card color is explicitly
+        // allowed (the "all combinations allowed by default" doctrine made real),
+        // so the seeded bank-card and fuel-card have a genuine purchasable design
+        // path out of the box and the storefront purchaseability gate passes.
+        $cardColorIds = Color::query()
+            ->where('is_active', true)
+            ->whereIn(
+                'id',
+                ProductColorPrice::query()
+                    ->where('is_active', true)
+                    ->distinct()
+                    ->pluck('color_id')
+            )
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $forbiddenCombos = [
+            [$di4->id, $black->id],
+            [$di9->id, $white->id],
+            [$di19->id, $white->id],
+            [$di1->id, $gold->id],
+        ];
+
+        $designImages = DesignImage::query()->get(['id']);
+
+        foreach ($designImages as $designImageRow) {
+            foreach ($cardColorIds as $cardColorId) {
+                foreach ($forbiddenCombos as [$forbiddenImageId, $forbiddenColorId]) {
+                    if ((int) $designImageRow->id === (int) $forbiddenImageId && (int) $cardColorId === (int) $forbiddenColorId) {
+                        continue 2;
+                    }
+                }
+
+                DesignColorCompatibility::firstOrCreate(
+                    ['design_image_id' => $designImageRow->id, 'card_color_id' => $cardColorId],
+                    ['is_allowed' => true]
+                );
+            }
+        }
+
         $this->call([
             ManualPaymentSettingSeeder::class,
             CmsContentSeeder::class,

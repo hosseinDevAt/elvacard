@@ -232,6 +232,7 @@ class ProductCustomizer extends Component
                 break;
 
             case CustomizationWorkflowEnum::FUEL_CARD->value:
+                $this->fuelCard->canonicalize();
                 $customization = $this->fuelCard->customizationJson();
                 break;
 

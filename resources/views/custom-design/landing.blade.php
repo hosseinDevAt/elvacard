@@ -46,10 +46,10 @@
                     </div>
                     <h2 class="text-xl font-bold text-gray-900">طراحی کارت سوخت</h2>
                     <p class="mt-2 text-sm leading-relaxed text-gray-600">
-                        سرویس طراحی کارت سوخت اختصاصی در دست راه‌اندازی است و به‌زودی فعال می‌شود.
+                        مشخصات خودرو، شماره شاسی و سامانه سوخت خود را وارد کنید و کارت سوخت اختصاصی سفارش دهید.
                     </p>
                     <span class="mt-5 inline-flex items-center text-sm font-semibold text-primary-600 group-hover:text-primary-700">
-                        مشاهده جزئیات
+                        شروع طراحی
                         <x-icons.arrow-left class="me-0 ms-2 h-4 w-4" />
                     </span>
                 </a>

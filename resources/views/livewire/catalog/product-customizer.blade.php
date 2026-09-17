@@ -270,9 +270,51 @@
                             @endif
                         </div>
                     @else
-                        {{-- Fuel: minimal placeholder back preview (never shipped publicly yet). --}}
-                        <div class="flex h-full w-full items-center justify-center">
-                            <span class="rounded-xl border border-dashed border-gray-700 px-4 py-2 text-xs text-gray-500">پیش‌نمایش پشت کارت سوخت</span>
+                        @php $slots = \App\Services\Customization\CardPresenter::fixedSlots(); @endphp
+                        {{-- FUEL BACK CARD PREVIEW WITH FIXED LAYOUT SLOTS --}}
+                        <div class="relative h-full w-full select-none">
+                            {{-- Top Magnetic Stripe --}}
+                            <div class="absolute top-2 inset-x-0 h-10 bg-gray-950 shadow-inner pointer-events-none"></div>
+
+                            {{-- Fixed Slot: VIN (chassis number) --}}
+                            @if ($fuelCard->vin !== '')
+                                <div class="absolute max-w-[60%] px-1" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;">
+                                    <div class="text-[10px] font-bold tracking-widest opacity-90" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                        {{ $fuelCard->vin }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Fixed Slot: System name + chip info --}}
+                            @if ($fuelCard->system_name !== '' || $fuelCard->chip_info !== '')
+                                <div class="absolute max-w-[60%] px-1" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
+                                    <div class="truncate text-[10px] font-medium italic opacity-90">
+                                        {{ trim($fuelCard->system_name.' · '.$fuelCard->chip_info, ' ·') }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Fixed Slot: Owner Name --}}
+                            @if ($fuelCard->owner_name !== '')
+                                <div class="absolute max-w-[55%] px-1" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
+                                    <div class="truncate text-xs font-serif font-bold italic tracking-wider opacity-95">
+                                        {{ $fuelCard->owner_name }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Fixed Slot: Plate Number --}}
+                            @if ($fuelCard->plate_number !== '')
+                                <div class="absolute max-w-[30%] px-1" style="left: {{ $slots['cvv2']['x'] * 100 }}%; top: {{ $slots['cvv2']['y'] * 100 }}%;">
+                                    <div class="truncate text-xs font-bold tracking-widest opacity-95" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                        {{ $fuelCard->plate_number }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="absolute bottom-3 inset-x-0 text-center text-[10px] text-gray-500">
+                                پیش‌نمایش پشت کارت سوخت
+                            </div>
                         </div>
                     @endif
                 </div>

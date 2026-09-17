@@ -170,10 +170,13 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
         $this->assertSame('[]', json_encode(FuelCardCustomization::sanitize($payload)));
     }
 
-    public function test_rules_and_messages_are_empty_until_fuel_fields_are_defined(): void
+    public function test_rules_and_messages_define_the_fuel_fields(): void
     {
-        $this->assertSame([], FuelCardCustomization::rulesFor());
-        $this->assertSame([], FuelCardCustomization::messages());
+        $this->assertSame(
+            ['owner_name', 'car_info', 'vin', 'system_name', 'system_identifier', 'plate_number', 'chip_info'],
+            array_keys(FuelCardCustomization::rulesFor())
+        );
+        $this->assertNotEmpty(FuelCardCustomization::messages());
     }
 
     public function test_product_customizer_exposes_isolated_fuel_and_bank_workspaces(): void
@@ -191,23 +194,56 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
         $this->assertNotInstanceOf(FuelCardWorkspace::class, $bank);
     }
 
-    public function test_fuel_workspace_contract_is_empty_and_bank_free(): void
+    public function test_fuel_workspace_exposes_only_fuel_fields_and_never_bank_fields(): void
     {
         $product = $this->createBankProduct();
 
         $fuel = Livewire::test(ProductCustomizer::class, ['productId' => $product->id])->get('fuelCard');
 
-        $this->assertSame([], $fuel->rules());
-        $this->assertSame([], $fuel->messages());
+        $this->assertSame(FuelCardCustomization::rulesFor(), $fuel->rules());
+        $this->assertSame(FuelCardCustomization::messages(), $fuel->messages());
         $this->assertSame([], $fuel->customizationJson());
 
         $reflection = new ReflectionClass(FuelCardWorkspace::class);
-        $publicProperties = array_filter(
-            $reflection->getProperties(ReflectionProperty::IS_PUBLIC),
-            fn (ReflectionProperty $property) => ! $property->isStatic()
-        );
+        $publicProperties = collect(
+            $reflection->getProperties(ReflectionProperty::IS_PUBLIC)
+        )
+            ->reject(fn (ReflectionProperty $property) => $property->isStatic())
+            ->map(fn (ReflectionProperty $property) => $property->getName())
+            ->values()
+            ->all();
 
-        $this->assertCount(0, $publicProperties, 'Fuel workspace must not leak any Bank-specific or placeholder fields yet.');
+        $this->assertCount(7, $publicProperties);
+
+        foreach (['owner_name', 'car_info', 'vin', 'system_name', 'system_identifier', 'plate_number', 'chip_info'] as $fuelField) {
+            $this->assertContains($fuelField, $publicProperties);
+        }
+
+        foreach (['card_number', 'card_holder_name', 'back_text', 'cvv2', 'expiry_month', 'expiry_year', 'security_cvv_enabled', 'security_expiry_enabled'] as $bankField) {
+            $this->assertNotContains($bankField, $publicProperties, 'Fuel workspace must never expose any Bank-specific field.');
+        }
+    }
+
+    public function test_fuel_workspace_customization_json_only_contains_filled_fuel_fields(): void
+    {
+        $product = $this->createBankProduct();
+
+        $fuel = Livewire::test(ProductCustomizer::class, ['productId' => $product->id])->get('fuelCard');
+
+        $fuel->owner_name = '  علی رضایی ';
+        $fuel->vin = 'i-rabcdefgh1234567';
+        $fuel->plate_number = '۱۲ م ۳۴۵ ایران';
+
+        $fuel->canonicalize();
+
+        $this->assertSame(
+            [
+                'owner_name' => 'علی رضایی',
+                'vin' => 'IRABCDEFGH1234567',
+                'plate_number' => '12 م 345 ایران',
+            ],
+            $fuel->customizationJson()
+        );
     }
 
     public function test_fuel_boundary_source_has_no_bank_dependency(): void

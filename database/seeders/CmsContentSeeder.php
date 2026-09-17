@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ArticleStatusEnum;
+use App\Models\Article;
+use App\Models\ArticleCategory;
 use App\Models\HomepageSection;
 use App\Models\Menu;
 use App\Models\MenuItem;
@@ -18,6 +21,7 @@ class CmsContentSeeder extends Seeder
         $this->seedFooterMenu();
         $this->seedSiteSettings();
         $this->seedHomepageSections();
+        $this->seedArticles();
     }
 
     private function seedPages(): void
@@ -174,5 +178,53 @@ class CmsContentSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+    }
+
+    private function seedArticles(): void
+    {
+        $category = ArticleCategory::firstOrCreate(
+            ['slug' => 'metal-cards'],
+            ['name' => 'کارت‌های فلزی']
+        );
+
+        $articles = [
+            [
+                'title' => 'راهنمای انتخاب کارت شخصی فلزی',
+                'slug' => 'metal-card-buying-guide',
+                'excerpt' => 'نکته‌هایی که پیش از سفارش کارت فلزی شخصی باید بدانید.',
+                'content' => 'کارت‌های شخصی فلزی با برش و حکاکی لیزری ساخته می‌شوند. انتخاب طرح، رنگ و جنس بر کیفیت نهایی اثر مستقیم دارد.',
+            ],
+            [
+                'title' => 'کارت سوخت شخصی؛ از سفارش تا تحویل',
+                'slug' => 'personal-fuel-card-guide',
+                'excerpt' => 'مراحل طراحی و ثبت کارت سوخت اختصاصی در الواکارت.',
+                'content' => 'کارت سوخت شخصی را می‌توانید با مشخصات خودرو، شماره شاسی و سامانه سوخت خود سفارش دهید و در کمترین زمان تحویل بگیرید.',
+            ],
+            [
+                'title' => 'مزایای حکاکی لیزری روی فلز',
+                'slug' => 'laser-engraving-benefits',
+                'excerpt' => 'چرا حکاکی لیزری بهترین روش شخصی‌سازی کارت فلزی است.',
+                'content' => 'حکاکی لیزری دقت بالا، دوام و وضوح بی‌نظیری دارد و در برابر خط و خش مقاوم است.',
+            ],
+        ];
+
+        foreach ($articles as $article) {
+            Article::firstOrCreate(
+                ['slug' => $article['slug']],
+                [
+                    'article_category_id' => $category->id,
+                    'title' => $article['title'],
+                    'excerpt' => $article['excerpt'],
+                    'content' => $article['content'],
+                    'cover_image' => null,
+                    'status' => ArticleStatusEnum::PUBLISHED,
+                    'published_at' => now(),
+                    'meta_title' => $article['title'].' - الواکارت',
+                    'meta_description' => $article['excerpt'],
+                    'canonical_url' => null,
+                    'robots_index' => true,
+                ]
+            );
+        }
     }
 }

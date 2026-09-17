@@ -30,6 +30,15 @@ class CustomDesignController extends Controller
 
     public function fuel(): View
     {
-        return view('custom-design.fuel');
+        $product = Product::query()
+            ->active()
+            ->purchasable()
+            ->where('customization_workflow', CustomizationWorkflowEnum::FUEL_CARD->value)
+            ->orderBy('id')
+            ->first(['id', 'name']);
+
+        abort_if($product === null, 404, 'هیچ محصول کارت سوخت قابل سفارشی‌سازی فعالی یافت نشد.');
+
+        return view('custom-design.fuel', ['product' => $product]);
     }
 }

@@ -202,11 +202,35 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
         $this->assertStringContainsString('شماره کارت (۱۶ رقمی)', $html);
     }
 
-    public function test_fuel_workspace_view_contains_no_bank_markup(): void
+    public function test_fuel_workspace_view_contains_fuel_fields_and_no_bank_markup(): void
     {
-        $html = view('livewire.catalog.product-customizer-fuel')->render();
+        $fuelCard = new class
+        {
+            public string $owner_name = 'ALI REZA';
 
-        $this->assertStringContainsString('Fuel customization workspace', $html);
+            public string $car_info = 'PEUGEOT 206';
+
+            public string $vin = 'IRABCDEFGH1234567';
+
+            public string $system_name = 'FUEL SYSTEM';
+
+            public string $system_identifier = 'REG-12345';
+
+            public string $plate_number = '12 A 345 IR';
+
+            public string $chip_info = 'NATIONAL CHIP';
+        };
+
+        $html = view('livewire.catalog.product-customizer-fuel', [
+            'fuelCard' => $fuelCard,
+            'errors' => new ViewErrorBag,
+        ])->render();
+
+        $this->assertStringContainsString('مشخصات کارت سوخت', $html);
+        $this->assertStringContainsString('owner_name', $html);
+        $this->assertStringContainsString('vin', $html);
+        $this->assertStringContainsString('plate_number', $html);
+        $this->assertStringContainsString('chip_info', $html);
         $this->assertStringNotContainsString('card_number', $html);
         $this->assertStringNotContainsString('card_holder_name', $html);
         $this->assertStringNotContainsString('cvv', $html);
