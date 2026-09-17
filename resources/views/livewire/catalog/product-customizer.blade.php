@@ -206,12 +206,21 @@
                     <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
 
                     @if ($activeView === 'front')
-                        {{-- FRONT CARD PREVIEW (Clean layout per Figma M.1: No Chip, No Card Number, No Holder Name, No Royal Bank) --}}
+                        {{-- FRONT CARD PREVIEW --}}
                         <div class="relative h-full flex flex-col justify-between items-center">
                             {{-- Design Overlay Image (if selected) --}}
                             @if ($selectedDesignImage && $selectedDesignImage['image_path'])
                                 <div class="absolute inset-0 flex items-center justify-center p-4 opacity-40 pointer-events-none">
                                     <img src="{{ asset('storage/' . $selectedDesignImage['image_path']) }}" alt="Laser Overlay" class="max-h-full max-w-full object-contain">
+                                </div>
+                            @endif
+
+                            {{-- Decorative Sample Chip Element for Fuel Card FRONT --}}
+                            @if ($workflow === $fuelCardWorkflow)
+                                <div class="absolute top-1/2 -translate-y-1/2 start-6 h-9 w-12 rounded-md bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 border border-yellow-100/70 shadow-md flex items-center justify-center pointer-events-none opacity-95">
+                                    <div class="w-full h-[1px] bg-amber-800/40"></div>
+                                    <div class="absolute inset-y-0 w-[1px] bg-amber-800/40"></div>
+                                    <div class="h-4 w-6 rounded-[2px] border border-amber-800/30 bg-amber-400/20"></div>
                                 </div>
                             @endif
                         </div>
@@ -270,87 +279,44 @@
                             @endif
                         </div>
                     @else
-                        {{-- FUEL BACK CARD PREVIEW WITH SPECIFICATION TABLE & PHYSICAL CHIP --}}
-                        <div class="relative h-full w-full select-none p-3 flex flex-col justify-between text-white">
-                            {{-- Header / System Title --}}
-                            <div class="flex items-center justify-between border-b border-white/20 pb-1.5">
-                                <span class="text-xs font-bold tracking-wide text-white">
-                                    {{ $fuelCard->system_name ?: 'سامانه هوشمند سوخت' }}
-                                </span>
-                                @if ($fuelCard->system_identifier)
-                                    <span class="text-[10px] font-mono text-slate-200" dir="ltr">
-                                        {{ $fuelCard->system_identifier }}
-                                    </span>
-                                @endif
-                            </div>
-
+                        {{-- FUEL BACK CARD PREVIEW WITH STRUCTURED SPECIFICATION TABLE --}}
+                        <div class="relative h-full w-full select-none p-4 flex flex-col justify-between text-white">
                             {{-- Structured Specification Table --}}
-                            <div class="my-auto space-y-1">
-                                <table class="w-full text-start border-collapse text-[11px] text-slate-100">
+                            <div class="w-full my-auto overflow-hidden">
+                                <table class="w-full text-start border-collapse text-xs text-slate-100 border border-white/20 rounded-lg overflow-hidden">
                                     <tbody>
-                                        @if ($fuelCard->owner_name !== '')
-                                            <tr class="border-b border-white/10">
-                                                <td class="py-1 text-slate-300 font-medium w-1/3">مالک کارت:</td>
-                                                <td class="py-1 font-bold text-white">{{ $fuelCard->owner_name }}</td>
-                                            </tr>
-                                        @endif
-                                        @if ($fuelCard->car_info !== '')
-                                            <tr class="border-b border-white/10">
-                                                <td class="py-1 text-slate-300 font-medium">خودرو:</td>
-                                                <td class="py-1 text-white">{{ $fuelCard->car_info }}</td>
-                                            </tr>
-                                        @endif
-                                        @if ($fuelCard->vin !== '')
-                                            <tr class="border-b border-white/10">
-                                                <td class="py-1 text-slate-300 font-medium">شماره شاسی (VIN):</td>
-                                                <td class="py-1 font-mono font-bold text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->vin }}</td>
-                                            </tr>
-                                        @endif
-                                        @if ($fuelCard->plate_number !== '')
-                                            <tr class="border-b border-white/10">
-                                                <td class="py-1 text-slate-300 font-medium">پلاک:</td>
-                                                <td class="py-1 font-bold text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->plate_number }}</td>
-                                            </tr>
-                                        @endif
-                                        <tr class="border-b border-white/10">
-                                            <td class="py-1 text-slate-300 font-medium">سایز چیپ:</td>
-                                            <td class="py-1 text-white">
-                                                @if ($fuelCard->chip_info === 'large')
-                                                    <span class="font-bold text-emerald-300">چیپ بزرگ (Large)</span>
-                                                @elseif ($fuelCard->chip_info === 'small')
-                                                    <span class="font-bold text-emerald-300">چیپ کوچک (Small)</span>
-                                                @else
-                                                    <span class="text-slate-400 italic">انتخاب نشده</span>
-                                                @endif
-                                            </td>
+                                        <tr class="border-b border-white/20">
+                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 w-2/5 bg-white/10">نام مالک</th>
+                                            <td class="py-1.5 px-3 font-bold text-white">{{ $fuelCard->owner_name ?: '---' }}</td>
+                                        </tr>
+                                        <tr class="border-b border-white/20">
+                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">اطلاعات خودرو</th>
+                                            <td class="py-1.5 px-3 text-white">{{ $fuelCard->car_info ?: '---' }}</td>
+                                        </tr>
+                                        <tr class="border-b border-white/20">
+                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">شماره شاسی (VIN)</th>
+                                            <td class="py-1.5 px-3 font-mono font-bold text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->vin ?: '---' }}</td>
+                                        </tr>
+                                        <tr class="border-b border-white/20">
+                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">نام سامانه</th>
+                                            <td class="py-1.5 px-3 text-white">{{ $fuelCard->system_name ?: '---' }}</td>
+                                        </tr>
+                                        <tr class="border-b border-white/20">
+                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">شناسه سامانه</th>
+                                            <td class="py-1.5 px-3 font-mono text-slate-200 dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->system_identifier ?: '---' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">شماره پلاک</th>
+                                            <td class="py-1.5 px-3 font-bold text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->plate_number ?: '---' }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
 
-                            {{-- Physical Chip Graphic in Fixed Position (Bottom-Right) --}}
-                            <div class="flex items-end justify-between pt-1.5 border-t border-white/20">
-                                <span class="text-[10px] text-slate-300">پیش‌نمایش پشت کارت سوخت</span>
-
-                                @if ($fuelCard->chip_info === 'large')
-                                    {{-- Large Chip Graphic --}}
-                                    <div class="h-9 w-12 rounded-md bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 border border-yellow-200/60 shadow-md flex items-center justify-center relative overflow-hidden" title="چیپ بزرگ">
-                                        <div class="w-full h-0.5 bg-amber-800/40"></div>
-                                        <div class="absolute inset-y-0 w-0.5 bg-amber-800/40"></div>
-                                        <span class="text-[7px] font-mono text-amber-950 font-black absolute bottom-0.5 right-0.5">LARGE</span>
-                                    </div>
-                                @elseif ($fuelCard->chip_info === 'small')
-                                    {{-- Small Chip Graphic --}}
-                                    <div class="h-6 w-8 rounded-sm bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 border border-yellow-200/60 shadow-sm flex items-center justify-center relative overflow-hidden" title="چیپ کوچک">
-                                        <div class="w-full h-0.5 bg-amber-800/40"></div>
-                                        <span class="text-[6px] font-mono text-amber-950 font-black absolute bottom-0.5 right-0.5">SMALL</span>
-                                    </div>
-                                @else
-                                    {{-- Unselected Placeholder --}}
-                                    <div class="h-7 w-10 rounded-md border border-dashed border-white/40 bg-white/5 flex items-center justify-center text-[9px] text-slate-300 italic">
-                                        بدون چیپ
-                                    </div>
-                                @endif
+                            {{-- Bottom Footer --}}
+                            <div class="flex items-center justify-between pt-1 border-t border-white/20 text-[10px] text-slate-300">
+                                <span>مشخصات کارت سوخت اختصاصی</span>
+                                <span class="font-mono opacity-60">ELVA-FUEL</span>
                             </div>
                         </div>
                     @endif

@@ -183,11 +183,26 @@ class FuelCardFinalSecurityTest extends TestCase
             ->assertSee('انتخاب طرح لیزر روی کارت')
             ->call('setStep', 2)
             ->assertSee('۲. مشخصات کارت سوخت')
-            ->assertSee('پیش‌نمایش پشت کارت سوخت')
             ->assertDontSee('حکاکی CVV2')
             ->assertDontSee('شماره کارت (۱۶ رقمی)')
             ->assertDontSee('مقدار CVV2 واقعی')
             ->assertDontSee('حکاکی تاریخ انقضا');
+    }
+
+    public function test_fuel_preview_presentation_contract(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->fuelProduct->id])
+            ->assertStatus(200)
+            ->call('setActiveView', 'front')
+            ->assertSeeHtml('start-6 h-9 w-12 rounded-md bg-gradient-to-br from-amber-300')
+            ->call('setActiveView', 'back')
+            ->call('setStep', 2)
+            ->set('fuelCard.owner_name', 'حسین رضایی')
+            ->set('fuelCard.chip_info', 'small')
+            ->assertSeeHtml('<table class="w-full text-start border-collapse text-xs text-slate-100')
+            ->assertSee('حسین رضایی')
+            ->assertSee('شماره شاسی (VIN)')
+            ->assertSee('مشخصات کارت سوخت اختصاصی');
     }
 
     public function test_client_workflow_tampering_cannot_turn_fuel_into_bank(): void
