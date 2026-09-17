@@ -38,6 +38,20 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
+    /**
+     * Reserve the product's current slug forever when it is deleted, so a
+     * released products.slug can never be silently reused by another product
+     * while the old public URL still exists somewhere.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Product $product) {
+            if ($product->slug !== null && $product->slug !== '') {
+                ProductSlugHistory::query()->firstOrCreate(['slug' => $product->slug]);
+            }
+        });
+    }
+
     public function colorPrices()
     {
         return $this->hasMany(ProductColorPrice::class);

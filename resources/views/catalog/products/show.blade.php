@@ -1,5 +1,42 @@
 @extends('layouts.app')
 
+@section('meta')
+    <title>{{ $product->meta_title ?: $product->name }} - {{ site_setting('site_name', config('app.name')) }}</title>
+
+    @if ($product->meta_description)
+        <meta name="description" content="{{ $product->meta_description }}">
+    @endif
+
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+
+    <meta name="robots" content="{{ $product->robots_index ? 'index,follow' : 'noindex,follow' }}">
+
+    <meta property="og:type" content="product">
+    <meta property="og:title" content="{{ $product->meta_title ?: $product->name }}">
+    @if ($product->meta_description)
+        <meta property="og:description" content="{{ $product->meta_description }}">
+    @endif
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    @if ($ogImageUrl)
+        <meta property="og:image" content="{{ $ogImageUrl }}">
+    @endif
+
+    @if ($ogImageUrl)
+        <meta name="twitter:card" content="summary_large_image">
+    @else
+        <meta name="twitter:card" content="summary">
+    @endif
+    <meta name="twitter:title" content="{{ $product->meta_title ?: $product->name }}">
+    @if ($product->meta_description)
+        <meta name="twitter:description" content="{{ $product->meta_description }}">
+    @endif
+    @if ($ogImageUrl)
+        <meta name="twitter:image" content="{{ $ogImageUrl }}">
+    @endif
+
+    <script type="application/ld+json">{!! $schemaJson !!}</script>
+@endsection
+
 @section('content')
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="mb-6">
@@ -66,5 +103,13 @@
                 ])
             </div>
         </div>
+
+        @if ($product->seo_content)
+            <section class="mt-8 rounded-xl border border-gray-200 bg-white p-6">
+                <div class="whitespace-pre-line leading-relaxed text-gray-700">
+                    {{ $product->seo_content }}
+                </div>
+            </section>
+        @endif
     </div>
 @endsection

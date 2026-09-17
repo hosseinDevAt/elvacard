@@ -7,6 +7,7 @@ use App\Enums\ProductTypeEnum;
 use App\Models\DesignColorCompatibility;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
+use App\Models\ProductSlugHistory;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\Customization\FuelCardActivationService;
 use App\Services\Customization\ProductPurchaseabilityService;
@@ -81,7 +82,7 @@ class ProductManager extends Component
         'designConfig' => 'nullable|json',
         'metaTitle' => 'nullable|string|max:255',
         'metaDescription' => 'nullable|string|max:255',
-        'canonicalUrl' => 'nullable|string|max:255',
+        'canonicalUrl' => 'nullable|url:http,https|max:255',
         'ogImage' => 'nullable|string|max:255',
         'ogImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
         'seoContent' => 'nullable|string',
@@ -164,11 +165,13 @@ class ProductManager extends Component
 
         $previousMainImage = null;
         $previousOgImage = null;
+        $previousSlug = null;
 
         if ($this->editingId) {
             $existing = Product::find($this->editingId);
             $previousMainImage = $existing?->main_image;
             $previousOgImage = $existing?->og_image;
+            $previousSlug = $existing?->slug;
         }
 
         if ($this->mainImageUpload) {
@@ -181,7 +184,18 @@ class ProductManager extends Component
             $this->ogImageUpload = null;
         }
 
-        $slug = $this->uniqueSlug($this->name, Product::class, $this->editingId, 'product');
+        $slug = $this->uniqueSlug(
+            $this->name,
+            Product::class,
+            $this->editingId,
+            'product',
+            fn (string $candidate): bool => ProductSlugHistory::query()->where('slug', $candidate)->exists(),
+        );
+
+        if ($this->editingId && $previousSlug !== null && $previousSlug !== $slug) {
+            ProductSlugHistory::query()
+                ->firstOrCreate(['slug' => $previousSlug], ['product_id' => $this->editingId]);
+        }
 
         $data = [
             'type' => $this->type,

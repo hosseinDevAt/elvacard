@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 
 trait GeneratesUniqueSlug
 {
-    protected function uniqueSlug(string $name, string $modelClass, ?int $exceptId = null, string $fallback = 'item'): string
+    protected function uniqueSlug(string $name, string $modelClass, ?int $exceptId = null, string $fallback = 'item', ?callable $extraReserved = null): string
     {
         $base = Str::slug($name);
 
@@ -17,7 +17,12 @@ trait GeneratesUniqueSlug
         $slug = $base;
         $counter = 2;
 
-        while ($modelClass::where('slug', $slug)->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))->exists()) {
+        while (
+            $modelClass::where('slug', $slug)
+                ->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))
+                ->exists()
+            || ($extraReserved !== null && $extraReserved($slug))
+        ) {
             $slug = $base.'-'.$counter;
             $counter++;
         }
