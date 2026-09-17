@@ -250,7 +250,7 @@ class HomepageSectionManager extends Component
                 ->orderBy('id')
                 ->get(),
             'sectionTypes' => HomepageSectionTypeEnum::cases(),
-            'products' => Product::query()->active()->purchasable()->orderBy('name')->get(),
+            'products' => Product::query()->active()->whereNull('customization_workflow')->purchasable()->orderBy('name')->get(),
             'designs' => app(DesignCatalogService::class)->visibleDesigns()->sortBy('name')->values(),
             'faqsCount' => FaqItem::query()->active()->count(),
             'settingCheatSheet' => self::SETTING_CHEAT_SHEET,

@@ -283,7 +283,7 @@ class StorefrontPurchaseabilityTest extends TestCase
         $this->assertNotNull($validDesignItem->resolveUrl());
     }
 
-    public function test_purchasable_products_remain_visible_in_catalog_and_detail(): void
+    public function test_store_lists_only_ordinary_products_while_cards_keep_their_design_entry(): void
     {
         $commerce = $this->makeCommerceProduct(120000, 'کالای معمولی سالم');
         $bankColor = $this->makeColor();
@@ -298,16 +298,25 @@ class StorefrontPurchaseabilityTest extends TestCase
             'is_active' => true,
         ]);
 
+        // Store = ordinary commerce only. Bank/Fuel are purchasable card
+        // workflows, but they belong to Custom Design, never to the Store.
         $this->get(route('catalog.products.index'))
             ->assertOk()
             ->assertSee('کالای معمولی سالم')
-            ->assertSee('کارت بانکی کامل')
+            ->assertSee('href="'.route('catalog.products.show', $commerce->slug).'"', false)
+            ->assertDontSee('کارت بانکی کامل')
+            ->assertDontSee('کارت سوخت کامل');
+
+        // Their dedicated Custom Design entry points keep working.
+        $this->get(route('custom-card.bank'))
+            ->assertOk()
+            ->assertSee('کارت بانکی کامل');
+
+        $this->get(route('custom-card.fuel'))
+            ->assertOk()
             ->assertSee('کارت سوخت کامل');
 
-        $this->get(route('catalog.products.show', $commerce->slug))
-            ->assertOk()
-            ->assertSee('افزودن به سبد خرید');
-
+        // Direct store detail URLs for cards still branch into the designer.
         $this->get(route('catalog.products.show', $bank->slug))
             ->assertOk()
             ->assertSee('انتخاب طرح لیزر روی کارت');

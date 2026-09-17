@@ -16,7 +16,7 @@ class HomepageRegressionTest extends TestCase
         $this->get('/')->assertOk();
     }
 
-    public function test_seeded_homepage_renders_the_banner_and_every_configured_section(): void
+    public function test_seeded_homepage_never_exposes_card_workflows_as_store_products(): void
     {
         $this->seed();
 
@@ -25,17 +25,16 @@ class HomepageRegressionTest extends TestCase
         // Banner comes from SiteSettings, not from a hard-coded value.
         $response->assertSee('کارت شخصی فلزی');
 
-        // Each section renders only when its data source is non-empty.
-        $response->assertSee('جدیدترین محصولات');
+        // Sections backed by ordinary data still render.
         $response->assertSee('طرح‌های محبوب');
         $response->assertSee('آخرین مقالات');
 
-        $response->assertSee('کارت بانکی');
-        $response->assertSee('راهنمای انتخاب کارت شخصی فلزی');
-
         $data = $response->viewData('sectionData');
 
-        $this->assertTrue($data['newest_products']['products']->isNotEmpty());
+        // The seed contains only Bank/Fuel card workflows (no ordinary Store
+        // products), so the ordinary Store product section is legitimately
+        // empty instead of leaking card products as Store items.
+        $this->assertTrue($data['newest_products']['products']->isEmpty());
         $this->assertTrue($data['featured_designs']['designs']->isNotEmpty());
         $this->assertTrue($data['articles']['articles']->isNotEmpty());
     }
@@ -57,7 +56,6 @@ class HomepageRegressionTest extends TestCase
 
         $response = $this->get('/')->assertOk();
 
-        $response->assertSee('جدیدترین محصولات');
         $response->assertSee('آخرین مقالات');
 
         $this->assertSame(1, HomepageSection::query()->where('section_type', 'newest_products')->count());

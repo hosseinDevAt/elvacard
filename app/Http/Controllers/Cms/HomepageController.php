@@ -117,6 +117,7 @@ class HomepageController extends Controller
 
         return Product::query()
             ->active()
+            ->whereNull('customization_workflow')
             ->purchasable()
             ->whereIn('id', array_unique($productIds))
             ->withCatalog()
@@ -128,6 +129,7 @@ class HomepageController extends Controller
     {
         return Product::query()
             ->active()
+            ->whereNull('customization_workflow')
             ->purchasable()
             ->withCatalog()
             ->latest('created_at')

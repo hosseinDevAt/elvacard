@@ -99,7 +99,7 @@ class MenuItem extends Model
             ->purchasable()
             ->find($this->target_id);
 
-        return $product ? route('catalog.products.show', $product->slug) : null;
+        return $product ? $product->storefrontUrl() : null;
     }
 
     private function resolveDesignUrl(): ?string

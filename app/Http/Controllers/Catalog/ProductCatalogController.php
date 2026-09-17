@@ -33,8 +33,12 @@ class ProductCatalogController extends Controller
             $sort = 'newest';
         }
 
+        // The Store is the ordinary commerce surface only. Bank/Fuel (and any
+        // future custom-design) products have their own /design entry points and
+        // must never surface here as ordinary Store items.
         $query = Product::query()
             ->active()
+            ->whereNull('customization_workflow')
             ->purchasable();
 
         if ($search !== '') {

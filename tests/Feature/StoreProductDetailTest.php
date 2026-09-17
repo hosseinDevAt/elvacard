@@ -236,18 +236,33 @@ class StoreProductDetailTest extends TestCase
         Livewire::test(ProductGallery::class, ['productId' => $broken->id])->assertStatus(404);
     }
 
-    public function test_product_cards_route_to_workflow_boundary(): void
+    public function test_store_cards_route_only_ordinary_products_to_product_detail(): void
     {
         $commerce = $this->commerceProduct(['name' => 'کیف ساده', 'slug' => 'plain-bag']);
         $bank = $this->makeCard(CustomizationWorkflowEnum::BANK_CARD);
         $fuel = $this->makeCard(CustomizationWorkflowEnum::FUEL_CARD);
 
+        // The routing hub keeps the custom-design destination for card
+        // workflows and the Product Detail destination for ordinary products.
+        $this->assertSame(route('custom-card.bank'), $bank->storefrontUrl());
+        $this->assertSame(route('custom-card.fuel'), $fuel->storefrontUrl());
+        $this->assertSame(route('catalog.products.show', $commerce->slug), $commerce->storefrontUrl());
+
+        // The Store listing is ordinary commerce only: card workflows must not
+        // surface here as ordinary Store product cards.
         $response = $this->get(route('catalog.products.index'));
 
         $response->assertOk();
         $response->assertSee('href="'.route('catalog.products.show', $commerce->slug).'"', false);
-        $response->assertSee('href="'.route('custom-card.bank').'"', false);
-        $response->assertSee('href="'.route('custom-card.fuel').'"', false);
+        $response->assertDontSee('href="'.route('custom-card.bank').'"', false);
+        $response->assertDontSee('href="'.route('custom-card.fuel').'"', false);
+
+        // Opening the ordinary product card renders the Store gallery, never
+        // the Custom Design workspace.
+        $this->get(route('catalog.products.show', $commerce->slug))
+            ->assertOk()
+            ->assertSee('product-gallery', false)
+            ->assertDontSee('product-customizer', false);
     }
 
     public function test_selected_color_from_url_is_honored_by_the_gallery(): void
