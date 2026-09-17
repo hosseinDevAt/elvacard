@@ -3,9 +3,13 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Page;
+use App\Models\PageSlugHistory;
 use App\Services\StoredFileManager;
+use App\Services\SvgSanitizer;
 use App\Support\Concerns\AuthorizesAdminActions;
-use Illuminate\Support\Str;
+use App\Support\Concerns\GeneratesUniqueSlug;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -13,6 +17,7 @@ use Livewire\WithPagination;
 class PageManager extends Component
 {
     use AuthorizesAdminActions;
+    use GeneratesUniqueSlug;
     use WithFileUploads;
     use WithPagination;
 
@@ -48,7 +53,7 @@ class PageManager extends Component
             'pageType' => 'required|string|max:255',
             'title' => 'required|string|min:1|max:255',
             'content' => 'required|string|min:1',
-            'imageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'imageUpload' => 'nullable|image:allow_svg|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'metaTitle' => 'nullable|string|max:255',
             'metaDescription' => 'nullable|string',
             'canonicalUrl' => [
@@ -85,23 +90,13 @@ class PageManager extends Component
 
     private function generateUniqueSlug(string $value, ?int $ignoreId = null): string
     {
-        $base = Str::slug($value);
-
-        if ($base === '') {
-            $base = 'page-'.Str::lower(Str::random(8));
-        }
-
-        $slug = $base;
-
-        while (Page::query()
-            ->where('slug', $slug)
-            ->when($ignoreId !== null, fn ($q) => $q->where('id', '!=', $ignoreId))
-            ->exists()
-        ) {
-            $slug = $base.'-'.Str::lower(Str::random(8));
-        }
-
-        return $slug;
+        return $this->uniqueSlug(
+            $value,
+            Page::class,
+            $ignoreId,
+            'page',
+            fn (string $candidate): bool => PageSlugHistory::query()->where('slug', $candidate)->exists(),
+        );
     }
 
     public function save(): void
@@ -110,6 +105,16 @@ class PageManager extends Component
 
         if ($this->imageUpload) {
             $this->imagePath = $this->imageUpload->store('pages', 'public');
+
+            if (strtolower((string) $this->imageUpload->getClientOriginalExtension()) === 'svg') {
+                $this->sanitizeStoredSvg($this->imagePath, 'imageUpload');
+            }
+        }
+
+        $previousSlug = null;
+
+        if ($this->editingId) {
+            $previousSlug = Page::find($this->editingId)?->slug;
         }
 
         $this->imagePath = $this->imagePath !== null && trim($this->imagePath) !== '' ? trim($this->imagePath) : null;
@@ -117,10 +122,12 @@ class PageManager extends Component
         $this->metaDescription = $this->metaDescription !== null && trim($this->metaDescription) !== '' ? trim($this->metaDescription) : null;
         $this->canonicalUrl = $this->canonicalUrl !== null && trim($this->canonicalUrl) !== '' ? trim($this->canonicalUrl) : null;
 
+        $slug = $this->generateUniqueSlug($this->title, $this->editingId);
+
         $data = [
             'page_type' => $this->pageType,
             'title' => $this->title,
-            'slug' => $this->generateUniqueSlug($this->title, $this->editingId),
+            'slug' => $slug,
             'content' => $this->content,
             'image_path' => $this->imagePath,
             'meta_title' => $this->metaTitle,
@@ -132,6 +139,14 @@ class PageManager extends Component
 
         if ($this->editingId) {
             Page::find($this->editingId)->update($data);
+
+            if ($previousSlug !== null && $previousSlug !== $slug) {
+                PageSlugHistory::query()->firstOrCreate(
+                    ['slug' => $previousSlug],
+                    ['page_id' => $this->editingId],
+                );
+            }
+
             session()->flash('success', 'صفحه با موفقیت ویرایش شد');
         } else {
             Page::create($data);
@@ -140,6 +155,30 @@ class PageManager extends Component
 
         $this->resetForm();
         $this->showForm = false;
+    }
+
+    /**
+     * Re-write a stored SVG through the sanitizer. A dangerous or malformed
+     * SVG is deleted and the upload rejected with a validation error.
+     */
+    private function sanitizeStoredSvg(string $path, string $property): void
+    {
+        $disk = Storage::disk('public');
+        $content = $disk->get($path);
+
+        if (! is_string($content)) {
+            $disk->delete($path);
+            throw ValidationException::withMessages([$property => 'خواندن فایل SVG ممکن نشد.']);
+        }
+
+        $clean = app(SvgSanitizer::class)->sanitize($content);
+
+        if ($clean === null) {
+            $disk->delete($path);
+            throw ValidationException::withMessages([$property => 'محتوای فایل SVG نامعتبر یا ناامن است.']);
+        }
+
+        $disk->put($path, $clean);
     }
 
     public function edit(int $id): void

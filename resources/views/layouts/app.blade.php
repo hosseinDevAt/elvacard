@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ site_setting('site_name', 'الواکارت') }}</title>
+        <title>{{ site_setting('site_name', config('app.name')) }}</title>
 
         @include('components.favicon-links')
 

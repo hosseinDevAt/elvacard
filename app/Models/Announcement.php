@@ -17,12 +17,14 @@ class Announcement extends Model
         'background_color',
         'text_color',
         'is_active',
+        'sort_order',
         'start_date',
         'end_date',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
     ];
@@ -34,6 +36,9 @@ class Announcement extends Model
 
     public function scopeVisible(Builder $query): Builder
     {
+        // Deterministic display order: admin-provided sort_order first, then
+        // id as a stable tie-breaker. visible()->first() therefore always
+        // resolves to the same, predictable announcement.
         return $query->active()
             ->where(function ($q) {
                 $q->whereNull('start_date')
@@ -42,6 +47,8 @@ class Announcement extends Model
             ->where(function ($q) {
                 $q->whereNull('end_date')
                     ->orWhere('end_date', '>=', now());
-            });
+            })
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 }

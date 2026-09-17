@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('meta')
-    <title>سوالات متداول - {{ config('app.name') }}</title>
-    <meta name="description" content="پاسخ‌های رایج سوالات مشتریان {{ config('app.name') }}">
+    <title>سوالات متداول - {{ site_setting('site_name', config('app.name')) }}</title>
+    <meta name="description" content="پاسخ‌های رایج سوالات مشتریان {{ site_setting('site_name', config('app.name')) }}">
 @endsection
 
 @section('content')

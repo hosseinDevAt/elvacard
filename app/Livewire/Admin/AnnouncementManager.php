@@ -27,6 +27,8 @@ class AnnouncementManager extends Component
 
     public bool $isActive = true;
 
+    public int $sortOrder = 0;
+
     public ?string $startDate = null;
 
     public ?string $endDate = null;
@@ -65,6 +67,7 @@ class AnnouncementManager extends Component
             'backgroundColor' => 'nullable|string|max:100|regex:/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/',
             'textColor' => 'nullable|string|max:100|regex:/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/',
             'isActive' => 'boolean',
+            'sortOrder' => 'integer|min:0',
             'startDate' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
@@ -130,6 +133,7 @@ class AnnouncementManager extends Component
             'background_color' => $this->backgroundColor,
             'text_color' => $this->textColor,
             'is_active' => $this->isActive,
+            'sort_order' => $this->sortOrder,
             'start_date' => $this->startDate !== null ? $dates->fromJalali($this->startDate) : null,
             'end_date' => $this->endDate !== null ? $dates->fromJalali($this->endDate) : null,
         ];
@@ -157,6 +161,7 @@ class AnnouncementManager extends Component
         $this->backgroundColor = $announcement->background_color;
         $this->textColor = $announcement->text_color;
         $this->isActive = $announcement->is_active;
+        $this->sortOrder = (int) $announcement->sort_order;
         $this->startDate = $announcement->start_date ? $dates->ascii($dates->jDateTime($announcement->start_date)) : null;
         $this->endDate = $announcement->end_date ? $dates->ascii($dates->jDateTime($announcement->end_date)) : null;
         $this->showForm = true;
@@ -176,6 +181,7 @@ class AnnouncementManager extends Component
         $this->backgroundColor = null;
         $this->textColor = null;
         $this->isActive = true;
+        $this->sortOrder = 0;
         $this->startDate = null;
         $this->endDate = null;
         $this->editingId = null;

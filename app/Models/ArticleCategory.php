@@ -19,4 +19,9 @@ class ArticleCategory extends Model
     {
         return $this->hasMany(Article::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 }

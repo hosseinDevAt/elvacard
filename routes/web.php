@@ -115,6 +115,7 @@ Route::post('/order-tracking', [OrderTrackingController::class, 'store'])->middl
 Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
+Route::get('/articles/category/{slug}', [ArticleController::class, 'category'])->name('articles.category');
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
 
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');

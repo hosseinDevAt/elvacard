@@ -1,14 +1,24 @@
 @extends('layouts.app')
 
 @section('meta')
-    <title>مقالات - {{ config('app.name') }}</title>
-    <meta name="description" content="مقالات و راهنماهای {{ config('app.name') }}">
+    @if (isset($category))
+        <title>{{ $category->name }} - {{ site_setting('site_name', config('app.name')) }}</title>
+        <meta name="description" content="مقالات دسته‌بندی {{ $category->name }}">
+    @else
+        <title>مقالات - {{ site_setting('site_name', config('app.name')) }}</title>
+        <meta name="description" content="مقالات و راهنماهای {{ site_setting('site_name', config('app.name')) }}">
+    @endif
 @endsection
 
 @section('content')
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <header class="mb-10">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">مقالات</h1>
+        @if (isset($category))
+            <a href="{{ route('articles.index') }}" wire:navigate class="inline-block text-sm text-primary-600 hover:text-primary-700 mb-3">← همه مقالات</a>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">{{ $category->name }}</h1>
+        @else
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">مقالات</h1>
+        @endif
         <p class="text-gray-600">آخرین مطالب و راهنماها</p>
     </header>
 
@@ -20,7 +30,7 @@
                 @endif
                 <div class="p-6">
                     @if ($article->category)
-                        <span class="inline-block px-2 py-1 text-xs font-medium text-primary-700 bg-primary-100 rounded-full mb-3">{{ $article->category->name }}</span>
+                        <a href="{{ route('articles.category', $article->category) }}" wire:navigate class="inline-block px-2 py-1 text-xs font-medium text-primary-700 bg-primary-100 rounded-full mb-3 hover:bg-primary-200 transition">{{ $article->category->name }}</a>
                     @endif
                     <h2 class="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
                         <a href="{{ route('articles.show', $article) }}" wire:navigate class="hover:text-primary-600 transition">

@@ -37,8 +37,18 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">تصویر شاخص</label>
-                    <input type="text" wire:model="coverImage" placeholder="articles/example.jpg" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                    @error('coverImage') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <input type="file" wire:model="coverImageUpload" accept="image/*" class="w-full text-sm text-gray-600 file:me-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+                    @error('coverImageUpload') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @if ($coverImageUpload)
+                        <img src="{{ $coverImageUpload->temporaryUrl() }}" alt="پیش‌نمایش تصویر شاخص" class="mt-3 h-40 w-full object-cover rounded-lg border border-gray-100">
+                    @elseif ($coverImage)
+                        <img src="{{ asset('storage/' . $coverImage) }}" alt="تصویر شاخص فعلی" class="mt-3 h-40 w-full object-cover rounded-lg border border-gray-100">
+                    @endif
+                    @if ($coverImage && ! $coverImageUpload)
+                        <label class="mt-2 inline-flex items-center gap-2 text-sm text-red-600 cursor-pointer">
+                            <input type="checkbox" wire:model="removeCoverImage" class="rounded border-gray-300 text-red-500"> حذف تصویر شاخص
+                        </label>
+                    @endif
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

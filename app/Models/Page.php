@@ -32,4 +32,19 @@ class Page extends Model
     {
         return $query->where('is_active', true);
     }
+
+    /**
+     * Reserve the page's current slug forever when it is deleted, so a released
+     * pages.slug can never be silently reused while the old public URL still
+     * exists somewhere. The reservation carries no page_id, so a deleted page's
+     * slug stays permanently dead (404) and never redirects elsewhere.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Page $page) {
+            if ($page->slug !== null && $page->slug !== '') {
+                PageSlugHistory::query()->firstOrCreate(['slug' => $page->slug]);
+            }
+        });
+    }
 }

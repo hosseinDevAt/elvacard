@@ -71,8 +71,6 @@ class MenuItem extends Model
 
             'article' => $this->resolveArticleUrl(),
 
-            'category' => null,
-
             default => null,
         };
     }

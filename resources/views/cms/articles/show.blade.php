@@ -2,9 +2,9 @@
 
 @section('meta')
     @if ($article->meta_title)
-        <title>{{ $article->meta_title }} - {{ config('app.name') }}</title>
+        <title>{{ $article->meta_title }} - {{ site_setting('site_name', config('app.name')) }}</title>
     @else
-        <title>{{ $article->title }} - {{ config('app.name') }}</title>
+        <title>{{ $article->title }} - {{ site_setting('site_name', config('app.name')) }}</title>
     @endif
 
     @if ($article->meta_description)
@@ -29,7 +29,7 @@
     <article class="prose prose-persian max-w-none">
         <header class="mb-8">
             @if ($article->category)
-                        <a href="{{ route('articles.index') }}" wire:navigate class="inline-block text-sm font-medium text-primary-600 hover:text-primary-700 mb-3">
+                <a href="{{ route('articles.category', $article->category) }}" wire:navigate class="inline-block text-sm font-medium text-primary-600 hover:text-primary-700 mb-3">
                     {{ $article->category->name }}
                 </a>
             @endif
@@ -62,9 +62,15 @@
     <hr class="my-10 border-gray-200">
 
     <div class="text-center">
-                        <a href="{{ route('articles.index') }}" wire:navigate class="text-primary-600 hover:text-primary-700 font-medium">
-            ← بازگشت به لیست مقالات
-        </a>
+        @if ($article->category)
+            <a href="{{ route('articles.category', $article->category) }}" wire:navigate class="text-primary-600 hover:text-primary-700 font-medium">
+                ← بازگشت به مقالات دسته‌بندی {{ $article->category->name }}
+            </a>
+        @else
+            <a href="{{ route('articles.index') }}" wire:navigate class="text-primary-600 hover:text-primary-700 font-medium">
+                ← بازگشت به لیست مقالات
+            </a>
+        @endif
     </div>
 </main>
 @endsection

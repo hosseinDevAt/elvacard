@@ -130,6 +130,8 @@ class HomepageController extends Controller
             ->active()
             ->purchasable()
             ->withCatalog()
+            ->latest('created_at')
+            ->latest('id')
             ->limit((int) $limit)
             ->get();
     }

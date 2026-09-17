@@ -47,4 +47,20 @@ class Article extends Model
     {
         return $query->where('status', ArticleStatusEnum::DRAFT->value);
     }
+
+    /**
+     * Reserve the article's current slug forever when it is deleted, so a
+     * released articles.slug can never be silently reused while the old public
+     * URL still exists somewhere. The reservation carries no article_id, so a
+     * deleted article's slug stays permanently dead (404) and never redirects
+     * elsewhere.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Article $article) {
+            if ($article->slug !== null && $article->slug !== '') {
+                ArticleSlugHistory::query()->firstOrCreate(['slug' => $article->slug]);
+            }
+        });
+    }
 }

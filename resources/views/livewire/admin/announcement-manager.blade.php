@@ -54,6 +54,11 @@
                         <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
                         <label for="is_active" class="text-sm text-gray-700">فعال</label>
                     </div>
+                    <div class="pb-1">
+                        <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-1">ترتیب نمایش</label>
+                        <input type="number" wire:model="sortOrder" id="sort_order" min="0" class="w-32 px-3 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        @error('sortOrder') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
                     <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">ذخیره</button>
                     <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition">لغو</button>
                 </div>
@@ -72,6 +77,7 @@
                     <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">عنوان</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
+                    <th class="px-4 py-3 text-start font-medium text-gray-500">ترتیب</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ شروع</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ پایان</th>
                     <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
@@ -85,6 +91,7 @@
                         <td class="px-4 py-3">
                             <span class="{{ $announcement->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $announcement->is_active ? 'فعال' : 'غیرفعال' }}</span>
                         </td>
+                        <td class="px-4 py-3 text-gray-500">{{ $announcement->sort_order }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ $announcement->start_date ? jalali_date($announcement->start_date, 'datetime') : '—' }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ $announcement->end_date ? jalali_date($announcement->end_date, 'datetime') : '—' }}</td>
                         <td class="px-4 py-3">
@@ -93,7 +100,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">اطلاعیه‌ای یافت نشد</td></tr>
+                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">اطلاعیه‌ای یافت نشد</td></tr>
                 @endforelse
             </tbody>
         </table>

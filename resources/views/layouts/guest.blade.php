@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ site_setting('site_name', 'الواکارت') }}</title>
+        <title>{{ site_setting('site_name', config('app.name')) }}</title>
 
         @include('components.favicon-links')
 
@@ -22,7 +22,7 @@
             <div>
                 <a href="/" wire:navigate class="flex flex-col items-center gap-2">
                     <x-application-logo class="w-20 h-20 fill-current text-primary-600" />
-                    <span class="text-lg font-bold text-primary-600">{{ site_setting('site_name', 'الواکارت') }}</span>
+                    <span class="text-lg font-bold text-primary-600">{{ site_setting('site_name', config('app.name')) }}</span>
                 </a>
             </div>
 
