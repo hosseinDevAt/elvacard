@@ -112,23 +112,6 @@ class ProductCatalogController extends Controller
         ]);
     }
 
-    public function designLanding(): View
-    {
-        $categories = CateDesign::query()
-            ->active()
-            ->withCount(['designs' => fn ($q) => $q->active()])
-            ->orderBy('sort_order')
-            ->get();
-
-        $totalDesigns = $categories->sum('designs_count');
-
-        return view('catalog.designs.landing', [
-            'categories' => $categories,
-            'totalDesigns' => $totalDesigns,
-            'totalColors' => Color::query()->active()->count(),
-        ]);
-    }
-
     public function show(Request $request, string $slug)
     {
         $selectedColorId = $request->integer('color_id');

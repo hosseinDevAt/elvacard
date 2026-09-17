@@ -10,6 +10,7 @@ use App\Http\Controllers\Cms\ArticleController;
 use App\Http\Controllers\Cms\FaqController;
 use App\Http\Controllers\Cms\HomepageController;
 use App\Http\Controllers\Cms\PageController;
+use App\Http\Controllers\CustomDesign\CustomDesignController;
 use App\Http\Controllers\CustomerDashboardController;
 use App\Http\Controllers\Order\OrderHistoryController;
 use App\Http\Controllers\Order\OrderTrackingController;
@@ -75,7 +76,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
 Route::get('/catalog/products', [ProductCatalogController::class, 'index'])->name('catalog.products.index');
 Route::get('/catalog/products/{slug}', [ProductCatalogController::class, 'show'])->name('catalog.products.show');
 Route::get('/catalog/designs', [ProductCatalogController::class, 'designCatalog'])->name('catalog.designs.index');
-Route::get('/design', [ProductCatalogController::class, 'designLanding'])->name('custom-card.design');
+Route::get('/design', [CustomDesignController::class, 'landing'])->name('custom-card.design');
+Route::get('/design/bank', [CustomDesignController::class, 'bank'])->name('custom-card.bank');
+Route::get('/design/fuel', [CustomDesignController::class, 'fuel'])->name('custom-card.fuel');
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
