@@ -7,6 +7,7 @@ use App\Enums\ProductTypeEnum;
 use App\Models\DesignColorCompatibility;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
+use App\Models\ProductImage;
 use App\Models\ProductSlugHistory;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\Customization\FuelCardActivationService;
@@ -279,6 +280,13 @@ class ProductManager extends Component
 
             return;
         }
+
+        // The product_images rows disappear through the FK cascade, which never
+        // fires Eloquent events, so the gallery files must be cleaned explicitly
+        // while the rows still exist to collect their paths.
+        $galleryPaths = $product->images()->pluck('image_path')->all();
+        $product->images()->delete();
+        ProductImage::deleteFilesWhenUnreferenced($galleryPaths);
 
         $product->delete();
 

@@ -8,7 +8,6 @@ use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Models\ProductImage;
 use App\Services\Customization\ProductPurchaseabilityService;
-use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -291,22 +290,14 @@ class ProductColorPriceManager extends Component
     }
 
     /**
-     * Removes a variant image row and its public file as long as no other
-     * product / variant image still references the path, then guarantees the
-     * variant keeps exactly one primary image when images remain.
+     * Removes a variant image row (the model's deleted hook clears its physical
+     * file once no other product / variant image, main image or og image still
+     * references the path), then guarantees the variant keeps exactly one
+     * primary image when images remain.
      */
     private function deleteImageRow(ProductImage $image): void
     {
-        $imagePath = $image->image_path;
-
         $image->delete();
-
-        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
-            [$imagePath],
-            fn (string $path) => ProductImage::query()->where('image_path', $path)->exists()
-                || Product::query()->where('main_image', $path)->exists()
-                || Product::query()->where('og_image', $path)->exists(),
-        );
 
         $remaining = ProductImage::query()
             ->where('product_id', $image->product_id)

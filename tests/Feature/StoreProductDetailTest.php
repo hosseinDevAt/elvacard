@@ -274,4 +274,102 @@ class StoreProductDetailTest extends TestCase
 
         $this->assertStringContainsString(asset('storage/products/silver-from-url.png'), $html);
     }
+
+    public function test_gallery_quantity_is_clamped_to_the_1_to_20_range(): void
+    {
+        $product = $this->commerceProduct();
+        $color = $this->color();
+        $this->variant($product, $color, 380000);
+
+        $component = Livewire::test(ProductGallery::class, ['productId' => $product->id]);
+
+        $component->assertSet('quantity', 1)
+            ->set('quantity', 0)
+            ->assertSet('quantity', 1)
+            ->set('quantity', 25)
+            ->assertSet('quantity', 20)
+            ->set('quantity', 1)
+            ->assertSet('quantity', 1)
+            ->set('quantity', 20)
+            ->assertSet('quantity', 20);
+    }
+
+    public function test_cart_rejects_out_of_range_quantity_and_keeps_cart_unchanged(): void
+    {
+        $product = $this->commerceProduct();
+        $color = $this->color();
+        $this->variant($product, $color, 380000);
+
+        $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 0])
+            ->assertSessionHasErrors('quantity');
+
+        $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 21])
+            ->assertSessionHasErrors('quantity');
+
+        $this->assertSame(0, count(app(CartService::class)->getCart()['items']));
+
+        $this->post(route('cart.add'), ['product_id' => $product->id, 'color_id' => $color->id, 'quantity' => 1])
+            ->assertRedirect(route('cart.index'));
+
+        $this->post(route('cart.add'), ['product_id' => $product->id, 'color_id' => $color->id, 'quantity' => 20])
+            ->assertRedirect(route('cart.index'));
+
+        $cart = app(CartService::class)->getCart();
+        $this->assertCount(1, $cart['items']);
+        $this->assertSame(20, $cart['items'][0]['quantity']);
+        $this->assertSame(380000, $cart['items'][0]['unit_price_snapshot']);
+        $this->assertSame(7600000, $cart['items'][0]['final_price']);
+    }
+
+    public function test_variant_images_take_precedence_over_untinted_images_when_both_exist(): void
+    {
+        $product = $this->commerceProduct();
+        $gold = $this->color('طلایی');
+        $this->variant($product, $gold, 300000);
+        $this->image($product, $gold, 'products/gold-a.png', 1, true);
+        $this->image($product, $gold, 'products/gold-b.png', 2, false);
+
+        ProductImage::create([
+            'product_id' => $product->id,
+            'color_id' => null,
+            'image_path' => 'products/untinted.png',
+            'sort_order' => 1,
+            'is_primary' => false,
+        ]);
+
+        Livewire::test(ProductGallery::class, ['productId' => $product->id])
+            ->assertOk()
+            ->assertSee(asset('storage/products/gold-a.png'))
+            ->assertSee(asset('storage/products/gold-b.png'))
+            ->assertDontSee(asset('storage/products/untinted.png'));
+
+        Livewire::test(ProductGallery::class, ['productId' => $product->id])
+            ->call('selectImage', 1)
+            ->assertSee(asset('storage/products/gold-b.png'));
+    }
+
+    public function test_base_price_only_product_is_purchasable_and_charges_base_price(): void
+    {
+        $product = $this->commerceProduct(['base_price' => 250000]);
+
+        $response = $this->get(route('catalog.products.show', $product->slug));
+
+        $response->assertOk();
+        $response->assertSee('افزودن به سبد خرید');
+        $response->assertSee('250,000');
+        $response->assertDontSee('name="color_id"');
+
+        Livewire::test(ProductGallery::class, ['productId' => $product->id])
+            ->assertOk()
+            ->assertSet('color_id', null)
+            ->assertSee('250,000');
+
+        $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1])
+            ->assertRedirect(route('cart.index'));
+
+        $cart = app(CartService::class)->getCart();
+        $this->assertCount(1, $cart['items']);
+        $this->assertNull($cart['items'][0]['color_id']);
+        $this->assertSame(250000, $cart['items'][0]['unit_price_snapshot']);
+    }
 }

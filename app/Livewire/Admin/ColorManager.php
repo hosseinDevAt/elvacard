@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Color;
+use App\Models\ProductImage;
 use App\Services\Customization\ProductPurchaseabilityService;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
@@ -120,6 +121,13 @@ class ColorManager extends Component
 
             return;
         }
+
+        // The product_images rows disappear through the FK cascade on color_id,
+        // which never fires Eloquent events, so their files must be cleaned
+        // explicitly before the color row is removed.
+        $imagePaths = ProductImage::query()->where('color_id', $color->id)->pluck('image_path')->all();
+        ProductImage::query()->where('color_id', $color->id)->delete();
+        ProductImage::deleteFilesWhenUnreferenced($imagePaths);
 
         $color->delete();
         session()->flash('success', 'رنگ با موفقیت حذف شد');

@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Livewire\Admin\ColorManager;
 use App\Livewire\Admin\ProductColorPriceManager;
+use App\Livewire\Admin\ProductManager;
 use App\Models\Color;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
@@ -168,5 +170,97 @@ class ProductVariantImageManagerTest extends TestCase
 
         $this->assertSame($newColor->id, (int) $image->fresh()->color_id);
         Storage::disk('public')->assertExists($image->fresh()->image_path);
+    }
+
+    public function test_deleting_a_product_removes_its_variant_gallery_files(): void
+    {
+        Storage::fake('public');
+
+        $product = $this->product();
+        $color = $this->color();
+        $this->saveVariant($product, $color, [
+            UploadedFile::fake()->image('gallery.png'),
+        ]);
+
+        $path = ProductImage::where('product_id', $product->id)->firstOrFail()->image_path;
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductManager::class)
+            ->call('delete', $product->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        $this->assertDatabaseMissing('product_images', ['image_path' => $path]);
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_referenced_variant_image_file_is_preserved_until_last_reference_is_gone(): void
+    {
+        Storage::fake('public');
+
+        $product = $this->product();
+        $color = $this->color();
+
+        ProductImage::create([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'image_path' => 'products/shared.png',
+            'sort_order' => 1,
+            'is_primary' => true,
+        ]);
+
+        ProductImage::create([
+            'product_id' => $product->id,
+            'color_id' => null,
+            'image_path' => 'products/shared.png',
+            'sort_order' => 1,
+            'is_primary' => false,
+        ]);
+
+        Storage::disk('public')->put('products/shared.png', 'shared content');
+
+        $tinted = ProductImage::where('product_id', $product->id)->whereNotNull('color_id')->firstOrFail();
+        $untinted = ProductImage::whereNull('color_id')->firstOrFail();
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductColorPriceManager::class)
+            ->call('deleteImage', $tinted->id)
+            ->assertHasNoErrors();
+
+        Storage::disk('public')->assertExists('products/shared.png');
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductColorPriceManager::class)
+            ->call('deleteImage', $untinted->id)
+            ->assertHasNoErrors();
+
+        Storage::disk('public')->assertMissing('products/shared.png');
+    }
+
+    public function test_deleting_a_color_cleans_up_its_product_image_files(): void
+    {
+        Storage::fake('public');
+
+        $product = $this->product();
+        $color = $this->color();
+
+        $image = ProductImage::create([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'image_path' => 'products/color-only.png',
+            'sort_order' => 1,
+            'is_primary' => true,
+        ]);
+
+        Storage::disk('public')->put('products/color-only.png', 'content');
+
+        Livewire::actingAs($this->admin())
+            ->test(ColorManager::class)
+            ->call('delete', $color->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('colors', ['id' => $color->id]);
+        $this->assertDatabaseMissing('product_images', ['id' => $image->id]);
+        Storage::disk('public')->assertMissing('products/color-only.png');
     }
 }

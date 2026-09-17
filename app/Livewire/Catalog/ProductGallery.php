@@ -26,9 +26,12 @@ class ProductGallery extends Component
 
         $this->product_id = $productId;
 
-        if ($colorId !== null && $product->colorPrices->contains(fn ($colorPrice) => (int) $colorPrice->color_id === $colorId)) {
-            $this->color_id = $colorId;
-        }
+        // The default color is established exactly once, before any render: an
+        // explicit valid selection is honored, anything else (including stale or
+        // foreign ids) falls back to the first active variant.
+        $this->color_id = $colorId !== null && $product->colorPrices->contains(fn ($colorPrice) => (int) $colorPrice->color_id === $colorId)
+            ? (int) $colorId
+            : ($product->colorPrices->first() !== null ? (int) $product->colorPrices->first()->color_id : null);
     }
 
     public function selectColor(int $colorId): void
@@ -55,7 +58,7 @@ class ProductGallery extends Component
             abort(404);
         }
 
-        $galleryCount = count($this->galleryPaths($product));
+        $galleryCount = count($this->galleryPaths($product, $this->color_id));
 
         if ($galleryCount > 0) {
             $this->selected_image_index = max(0, min($index, $galleryCount - 1));
@@ -118,17 +121,18 @@ class ProductGallery extends Component
 
         $selectedVariant = $this->color_id !== null
             ? $product->colorPrices->first(fn ($colorPrice) => (int) $colorPrice->color_id === $this->color_id)
-            : $product->colorPrices->first();
+            : null;
 
-        if ($product->colorPrices->isNotEmpty() && $selectedVariant === null) {
+        // A variant that silently stopped being active mid-session falls back
+        // to the first remaining active variant without touching component
+        // state during render.
+        if ($selectedVariant === null) {
             $selectedVariant = $product->colorPrices->first();
         }
 
-        if ($selectedVariant !== null) {
-            $this->color_id = (int) $selectedVariant->color_id;
-        }
+        $effectiveColorId = $selectedVariant !== null ? (int) $selectedVariant->color_id : null;
 
-        $gallery = $this->galleryPaths($product);
+        $gallery = $this->galleryPaths($product, $effectiveColorId);
 
         $unitPrice = $selectedVariant !== null
             ? (int) $selectedVariant->price
@@ -142,7 +146,7 @@ class ProductGallery extends Component
             'gallery' => $gallery,
             'mainImagePath' => $gallery[$this->selected_image_index] ?? ($gallery[0] ?? null),
             'unitPrice' => $unitPrice,
-            'submitColorId' => $selectedVariant !== null ? (int) $selectedVariant->color_id : null,
+            'submitColorId' => $effectiveColorId,
         ]);
     }
 
@@ -152,12 +156,10 @@ class ProductGallery extends Component
      * legacy main image is the final fallback. The ordering is authoritative
      * from product_images.sort_order.
      */
-    private function galleryPaths(Product $product): array
+    private function galleryPaths(Product $product, ?int $variantColorId): array
     {
-        $variantId = $this->color_id;
-
         $paths = array_values($product->images
-            ->filter(fn ($image) => (int) $image->color_id === $variantId)
+            ->filter(fn ($image) => (int) $image->color_id === $variantColorId)
             ->map(fn ($image) => $image->image_path)
             ->all());
 
