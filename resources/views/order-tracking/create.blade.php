@@ -5,7 +5,7 @@
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">پیگیری سفارش</h1>
             <p class="mt-2 text-sm text-gray-600">
-                با وارد کردن شماره سفارش (مثل ORD-2026-000001) و شماره تماس ثبت‌شده، وضعیت سفارش خود را مشاهده کنید.
+                برای پیگیری سفارش، کد پیگیری که پس از ثبت سفارش به شما نمایش داده شد را وارد کنید.
             </p>
 
             @if ($errors->any())
@@ -20,27 +20,16 @@
                 @csrf
 
                 <div>
-                    <label for="reference" class="mb-1 block text-sm font-medium text-gray-700">شماره سفارش</label>
+                    <label for="token" class="mb-1 block text-sm font-medium text-gray-700">کد پیگیری سفارش</label>
                     <input
-                        id="reference"
-                        name="reference"
+                        id="token"
+                        name="token"
                         type="text"
-                        value="{{ old('reference') }}"
+                        value="{{ old('token') }}"
                         required
-                        placeholder="ORD-2026-000001"
-                        class="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                    />
-                </div>
-
-                <div>
-                    <label for="customer_phone" class="mb-1 block text-sm font-medium text-gray-700">شماره تماس</label>
-                    <input
-                        id="customer_phone"
-                        name="customer_phone"
-                        type="text"
-                        value="{{ old('customer_phone') }}"
-                        required
-                        placeholder="09123456789"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="کد پیگیری"
                         class="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                     />
                 </div>

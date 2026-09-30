@@ -127,12 +127,11 @@ class CheckoutTrackingRegressionTest extends TestCase
         $this->assertSame('09123456789', $order->customer_phone);
 
         $this->post(route('order-tracking.check'), [
-            'reference' => $order->reference,
-            'customer_phone' => '09123456789',
+            'token' => $order->token,
         ])->assertSee($order->reference, false);
     }
 
-    public function test_tracking_with_plus98_finds_order_stored_as_09(): void
+    public function test_an_order_stored_with_a_local_number_is_tracked_by_its_code(): void
     {
         $this->addToCart();
 
@@ -145,10 +144,10 @@ class CheckoutTrackingRegressionTest extends TestCase
 
         $order = Order::query()->latest('id')->first();
         $this->assertNotNull($order);
+        $this->assertSame('09123456789', $order->customer_phone);
 
         $this->post(route('order-tracking.check'), [
-            'reference' => $order->reference,
-            'customer_phone' => '+989123456789',
+            'token' => $order->token,
         ])->assertSee($order->reference, false);
     }
 
@@ -170,9 +169,10 @@ class CheckoutTrackingRegressionTest extends TestCase
         $this->assertNotNull($order);
         $this->assertSame('09123456789', $order->customer_phone);
 
+        // The guest credential is the tracking code, so the phone format the
+        // customer typed no longer takes part in authorising the lookup.
         $this->post(route('order-tracking.check'), [
-            'reference' => $order->reference,
-            'customer_phone' => $trackingPhone,
+            'token' => $order->token,
         ])->assertSee($order->reference, false);
     }
 
@@ -223,20 +223,25 @@ class CheckoutTrackingRegressionTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
-    public function test_tracking_rejects_invalid_phone(): void
+    public function test_tracking_rejects_a_missing_code(): void
     {
         $this->post(route('order-tracking.check'), [
-            'reference' => 'ORD-2026-000001',
-            'customer_phone' => 'not-a-phone',
-        ])->assertSessionHasErrors('customer_phone');
+            'token' => '',
+        ])->assertSessionHasErrors('token');
     }
 
-    public function test_tracking_rejects_empty_phone(): void
+    public function test_tracking_rejects_a_code_of_the_wrong_length(): void
     {
         $this->post(route('order-tracking.check'), [
-            'reference' => 'ORD-2026-000001',
-            'customer_phone' => '',
-        ])->assertSessionHasErrors('customer_phone');
+            'token' => 'too-short',
+        ])->assertSessionHasErrors('token');
+    }
+
+    public function test_tracking_rejects_the_sequential_reference_as_a_code(): void
+    {
+        $this->post(route('order-tracking.check'), [
+            'token' => 'ORD-2026-000001',
+        ])->assertSessionHasErrors('token');
     }
 
     // ───────── canonical stored (existing behavior guard) ─────────

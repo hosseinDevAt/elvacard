@@ -38,6 +38,19 @@
             </div>
 
             <div class="mt-6 rounded-lg border border-gray-100">
+                <h2 class="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-900">پیگیری سفارش</h2>
+                <div class="px-4 py-3 text-sm text-gray-700">
+                    <p>
+                        این کد پیگیری را نگه دارید. با آن می‌توانید بدون ورود به حساب، وضعیت سفارش را ببینید.
+                    </p>
+                    <p class="mt-2 font-mono text-base font-semibold break-all text-gray-900" dir="ltr">{{ $order->token }}</p>
+                    <a href="{{ route('order-tracking.index') }}" wire:navigate class="mt-2 inline-block font-medium text-primary-700 underline">
+                        مشاهده وضعیت سفارش
+                    </a>
+                </div>
+            </div>
+
+            <div class="mt-6 rounded-lg border border-gray-100">
                 <h2 class="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-900">آیتم‌های سفارش</h2>
                 <div class="divide-y divide-gray-100">
                     @forelse ($order->items as $item)
