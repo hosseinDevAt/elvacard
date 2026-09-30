@@ -129,11 +129,17 @@ class RefundConstraintService
     }
 
     /**
-     * Check whether a payment is fully refunded.
+     * Check whether a payment has no refundable balance left.
+     *
+     * This is a *balance* question, not a question of settled money: a
+     * PENDING or REVIEW reservation consumes the balance exactly like a
+     * COMPLETED refund does, so the same received amount can never be
+     * refunded twice. Use isFullyRefundedByCompletedRefunds() when the
+     * question is "has the money actually gone back?".
      *
      * Uses the raw balance (not clamped) to avoid masking an over-refund
      * as "fully refunded." An exact zero raw balance with a positive paid
-     * amount is the only valid full-refund condition.
+     * amount is the only valid condition.
      */
     public function isFullyRefunded(Payment $payment): bool
     {
@@ -142,10 +148,42 @@ class RefundConstraintService
     }
 
     /**
+     * Total amount of refunds that actually settled with the provider.
+     *
+     * Only COMPLETED refunds represent money that really moved, which is the
+     * same basis the dashboard KPI and the financial reports use.
+     */
+    public function completedRefundedAmount(Payment $payment): int
+    {
+        return (int) Refund::where('payment_id', $payment->id)
+            ->where('status', RefundStatus::COMPLETED->value)
+            ->sum('amount');
+    }
+
+    /**
+     * Check whether every received unit of a payment has been returned by a
+     * COMPLETED refund.
+     *
+     * PENDING and REVIEW reserve the balance, but a reservation is not proof
+     * of a settled return: the provider may still have moved nothing at all.
+     * They therefore never satisfy this predicate, so an order can never be
+     * reported as REFUNDED on the strength of an unresolved refund.
+     */
+    public function isFullyRefundedByCompletedRefunds(Payment $payment): bool
+    {
+        $paid = (int) ($payment->paid_amount ?? 0);
+
+        return $paid > 0 && $this->completedRefundedAmount($payment) >= $paid;
+    }
+
+    /**
      * Determine whether the order should be marked REFUNDED.
      *
-     * An order is considered fully refunded when every successful payment
-     * on it has been fully refunded.
+     * Business rule: an order is REFUNDED only when it has at least one
+     * successful payment and the COMPLETED refunds of *every* successful
+     * payment on it cover that payment's full paid amount. A PENDING or
+     * REVIEW refund on any payment keeps the order out of REFUNDED, because
+     * those money movements are still unconfirmed.
      */
     public function isOrderFullyRefunded(Order $order): bool
     {
@@ -157,7 +195,9 @@ class RefundConstraintService
             return false;
         }
 
-        return $successPayments->every(fn (Payment $p) => $this->isFullyRefunded($p));
+        return $successPayments->every(
+            fn (Payment $p) => $this->isFullyRefundedByCompletedRefunds($p)
+        );
     }
 
     /**

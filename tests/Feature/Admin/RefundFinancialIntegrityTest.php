@@ -740,4 +740,260 @@ class RefundFinancialIntegrityTest extends TestCase
         $this->assertSame(2, $refund->metadata['reconciliation_attempts'] ?? null);
         $this->assertSame(1, $fake->refundCalls, 'Never re-invokes the provider without idempotency support.');
     }
+
+    // =========================================================================
+    // N-Onyx-44-Fix — REFUND LIFECYCLE INTEGRITY (F-01 / F-02)
+    // =========================================================================
+
+    /**
+     * F-01: an unresolved reservation is not a settled refund.
+     *
+     * Payment A holds a full-amount REVIEW refund and payment B's full refund
+     * settles. The order must stay PAID: the money on A is still unconfirmed,
+     * so REFUNDED would misreport the order exactly like the dashboard and the
+     * financial reports, which only recognise COMPLETED refunds, do not.
+     */
+    public function test_f01_full_review_on_one_payment_never_marks_a_fully_refunded_sibling_order(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder(2000);
+        $this->markOrderPaid($order);
+
+        $unresolved = $this->createSuccessfulPayment($order, 1000);
+        $settled = $this->createSuccessfulPayment($order, 1000);
+
+        $service = app(RefundCore::class);
+
+        // Payment A: the provider times out, so the refund lands in REVIEW.
+        $reviewRefund = $service->processRefund($unresolved, 1000);
+        $this->assertSame(RefundStatus::REVIEW, $reviewRefund->status);
+
+        // Payment B: the same gateway now settles cleanly.
+        $fake->timeoutOnRefund = false;
+        $settledRefund = $service->processRefund($settled, 1000);
+        $this->assertSame(RefundStatus::COMPLETED, $settledRefund->status);
+
+        // The review reservation still consumes A's balance...
+        $this->assertSame(0, app(RefundConstraintService::class)->refundableAmount($unresolved->fresh()));
+
+        // ...but it is not settled money, so the order must not be REFUNDED.
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+        $this->assertFalse(app(RefundConstraintService::class)->isOrderFullyRefunded($order->fresh()));
+    }
+
+    /**
+     * F-01: the order reaches REFUNDED only once every reservation settles.
+     *
+     * Same setup as the previous test, then payment A's REVIEW is reconciled
+     * to COMPLETED through provider lookup. Only then is the whole order
+     * genuinely returned, so REFUNDED becomes correct.
+     */
+    public function test_f01_order_becomes_refunded_only_after_every_review_settles(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder(2000);
+        $this->markOrderPaid($order);
+
+        $unresolved = $this->createSuccessfulPayment($order, 1000);
+        $settled = $this->createSuccessfulPayment($order, 1000);
+
+        $service = app(RefundCore::class);
+
+        $reviewRefund = $service->processRefund($unresolved, 1000);
+        $this->assertSame(RefundStatus::REVIEW, $reviewRefund->status);
+
+        $fake->timeoutOnRefund = false;
+        $this->assertSame(RefundStatus::COMPLETED, $service->processRefund($settled, 1000)->status);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+
+        // The provider confirms A's refund really did go through.
+        $fake->lookupResult = RefundRetrieveResult::success('RFN-F01-SETTLED');
+
+        $resolved = $service->retryReviewRefund($reviewRefund->id);
+        $this->assertSame(RefundStatus::COMPLETED, $resolved->status);
+        $this->assertSame('provider_lookup', $resolved->metadata['reconciled_via'] ?? null);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::REFUNDED, $order->payment_status);
+        $this->assertTrue(app(RefundConstraintService::class)->isOrderFullyRefunded($order->fresh()));
+    }
+
+    /**
+     * F-01: a single full REVIEW on a lone payment must not report REFUNDED.
+     */
+    public function test_f01_single_full_review_never_reports_the_order_refunded(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder(1000);
+        $this->markOrderPaid($order);
+
+        $payment = $this->createSuccessfulPayment($order, 1000);
+
+        $refund = app(RefundCore::class)->processRefund($payment, 1000);
+        $this->assertSame(RefundStatus::REVIEW, $refund->status);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+        $this->assertFalse(app(RefundConstraintService::class)->isOrderFullyRefunded($order->fresh()));
+    }
+
+    /**
+     * F-02: a PENDING row left behind by a crash is reconcilable.
+     *
+     * A process that dies between the reservation commit and the provider call
+     * leaves a PENDING row. Reconciliation must accept it, promote it to
+     * REVIEW, and then resolve it like any other unresolved refund.
+     */
+    public function test_f02_stale_pending_reservation_is_reconcilable(): void
+    {
+        $fake = $this->registerFakeGateway();
+
+        $order = $this->createOrder(1000);
+        $payment = $this->createSuccessfulPayment($order, 1000);
+        $this->markOrderPaid($order);
+
+        // Simulate the crash: the reservation committed, the provider was
+        // never called, so the row is still PENDING.
+        $stale = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 1000,
+            'status' => RefundStatus::PENDING->value,
+            'metadata' => ['idempotency_key' => 'stale-pending-key'],
+        ]);
+
+        $this->assertSame(0, app(RefundConstraintService::class)->refundableAmount($payment->fresh()));
+
+        $fake->lookupResult = RefundRetrieveResult::confirmedFailure('Provider confirms refund never occurred.');
+
+        $result = app(RefundCore::class)->retryReviewRefund($stale->id);
+
+        $this->assertSame(RefundStatus::FAILED, $result->status);
+        $this->assertTrue($result->metadata['promoted_from_pending'] ?? false);
+        $this->assertSame('stale_pending_reservation_reconciled', $result->metadata['promotion_reason'] ?? null);
+        $this->assertSame(1, $result->metadata['reconciliation_attempts'] ?? null);
+
+        // The order was never over-claimed, and the money is free again.
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+        $this->assertSame(1000, app(RefundConstraintService::class)->refundableAmount($payment->fresh()));
+    }
+
+    /**
+     * F-02: a stale PENDING does not permanently lock the payment.
+     *
+     * While PENDING the payment must stay blocked — the same money may already
+     * have moved. Once the PENDING row is reconciled to a terminal state, a
+     * fresh refund must be possible; otherwise the payment is dead forever.
+     */
+    public function test_f02_pending_does_not_permanently_lock_the_payment(): void
+    {
+        $fake = $this->registerFakeGateway();
+
+        $order = $this->createOrder(1000);
+        $payment = $this->createSuccessfulPayment($order, 1000);
+        $this->markOrderPaid($order);
+
+        Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 1000,
+            'status' => RefundStatus::PENDING->value,
+            'metadata' => ['idempotency_key' => 'stale-lock-key'],
+        ]);
+
+        $service = app(RefundCore::class);
+
+        // Still blocked while the reservation is unresolved.
+        try {
+            $service->processRefund($payment->fresh(), 1000);
+            $this->fail('Expected RefundConstraintViolationException while a PENDING reservation is open.');
+        } catch (RefundConstraintViolationException) {
+            // Expected.
+        }
+
+        $this->assertSame(RefundStatus::PENDING, Refund::query()->firstOrFail()->status);
+
+        // Reconcile the orphan out of the way.
+        $fake->lookupResult = RefundRetrieveResult::confirmedFailure('Provider confirms refund never occurred.');
+
+        $stale = Refund::query()->firstOrFail();
+        $this->assertSame(RefundStatus::FAILED, $service->retryReviewRefund($stale->id)->status);
+
+        // The payment is usable again — no permanent lock.
+        $fake->lookupResult = null;
+        $fresh = $service->processRefund($payment->fresh(), 1000);
+
+        $this->assertSame(RefundStatus::COMPLETED, $fresh->status);
+        $this->assertSame(1000, $fresh->amount);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::REFUNDED, $order->payment_status);
+    }
+
+    /**
+     * F-02: a stale PENDING can also be settled, not only released.
+     */
+    public function test_f02_stale_pending_can_be_completed_through_reconciliation(): void
+    {
+        $fake = $this->registerFakeGateway();
+
+        $order = $this->createOrder(1000);
+        $payment = $this->createSuccessfulPayment($order, 1000);
+        $this->markOrderPaid($order);
+
+        $stale = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 1000,
+            'status' => RefundStatus::PENDING->value,
+            'metadata' => ['idempotency_key' => 'stale-settle-key'],
+        ]);
+
+        $fake->lookupResult = RefundRetrieveResult::success('RFN-F02-SETTLED');
+
+        $result = app(RefundCore::class)->retryReviewRefund($stale->id);
+
+        $this->assertSame(RefundStatus::COMPLETED, $result->status);
+        $this->assertSame(0, $fake->refundCalls, 'Resolved by lookup, never a blind second provider call.');
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::REFUNDED, $order->payment_status);
+    }
+
+    /**
+     * F-02: terminal refunds stay terminal — reconciliation is still refused.
+     */
+    public function test_f02_terminal_refunds_remain_unreconcilable(): void
+    {
+        $this->registerFakeGateway();
+
+        $order = $this->createOrder(1000);
+        $payment = $this->createSuccessfulPayment($order, 1000);
+        $this->markOrderPaid($order);
+
+        foreach ([RefundStatus::COMPLETED, RefundStatus::FAILED] as $status) {
+            $refund = Refund::create([
+                'payment_id' => $payment->id,
+                'amount' => 100,
+                'status' => $status->value,
+                'metadata' => ['idempotency_key' => 'terminal-'.$status->value],
+            ]);
+
+            try {
+                app(RefundCore::class)->retryReviewRefund($refund->id);
+                $this->fail("Expected RefundConstraintViolationException for {$status->value}.");
+            } catch (RefundConstraintViolationException) {
+                // Expected.
+            }
+
+            $this->assertSame($status, $refund->fresh()->status);
+        }
+    }
 }

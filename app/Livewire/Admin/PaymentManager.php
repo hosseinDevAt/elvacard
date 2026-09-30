@@ -118,8 +118,8 @@ class PaymentManager extends Component
             return;
         }
 
-        if ($refund->status !== RefundStatus::REVIEW) {
-            session()->flash('error', 'تنها بازگشت‌های در حال بررسی قابل بررسی مجدد هستند');
+        if (! in_array($refund->status, [RefundStatus::PENDING, RefundStatus::REVIEW], true)) {
+            session()->flash('error', 'تنها بازگشت‌های در حال پردازش یا بررسی قابل بررسی مجدد هستند');
 
             return;
         }

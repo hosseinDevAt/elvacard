@@ -402,6 +402,50 @@ class PaymentManagerTest extends TestCase
         $this->assertSame(RefundStatus::COMPLETED, $refund->status);
     }
 
+    /**
+     * F-02: a stale PENDING reservation must be reconcilable from the admin
+     * surface too, otherwise the deadlock is still permanent in practice.
+     */
+    public function test_admin_can_reconcile_a_stale_pending_refund(): void
+    {
+        $admin = $this->admin();
+        $fake = $this->registerFakeGateway();
+        $fake->lookupResult = RefundRetrieveResult::confirmedFailure('Provider confirms refund never occurred.');
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-STALE-PENDING',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $stale = Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => $order->total_price,
+            'status' => RefundStatus::PENDING->value,
+            'metadata' => ['idempotency_key' => 'ui-stale-pending-key'],
+        ]);
+
+        // The reconcile affordance is offered for the orphaned reservation.
+        Livewire::actingAs($admin)
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->assertSee('reconcileReviewRefund('.$stale->id.')', false);
+
+        Livewire::actingAs($admin)
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $stale->id)
+            ->assertHasNoErrors();
+
+        $stale->refresh();
+        $this->assertSame(RefundStatus::FAILED, $stale->status);
+        $this->assertTrue($stale->metadata['promoted_from_pending'] ?? false);
+        $this->assertSame('confirmed_by_lookup', $stale->metadata['reason'] ?? null);
+    }
+
     public function test_reconcile_with_unknown_outcome_keeps_refund_in_review(): void
     {
         $fake = $this->registerBasicGateway();

@@ -209,7 +209,7 @@
                                     </span>
                                     <span class="font-mono font-bold text-amber-600">{{ number_format($refund->amount) }} تومان</span>
                                 </div>
-                                @if ($refund->status === \App\Enums\RefundStatus::REVIEW)
+                                @if (in_array($refund->status, [\App\Enums\RefundStatus::PENDING, \App\Enums\RefundStatus::REVIEW], true))
                                     <button wire:click="reconcileReviewRefund({{ $refund->id }})" wire:confirm="آیا از بررسی مجدد نتیجه این بازگشت وجه مطمئن هستید؟" class="px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-700 text-white">بررسی مجدد نتیجه</button>
                                 @endif
                             </div>

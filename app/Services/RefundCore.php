@@ -32,6 +32,21 @@ use Illuminate\Support\Str;
  */
 final class RefundCore
 {
+    /**
+     * Refund statuses whose real outcome is still unknown and which therefore
+     * admit a reconciliation attempt.
+     *
+     * PENDING belongs here next to REVIEW because a process that dies between
+     * the reservation commit and the provider call leaves a PENDING row whose
+     * provider outcome was never reported. That is exactly the REVIEW
+     * situation, so a PENDING row must stay reconcilable instead of becoming
+     * a reservation that can neither be completed nor released.
+     */
+    private const UNRESOLVED_STATES = [
+        RefundStatus::PENDING,
+        RefundStatus::REVIEW,
+    ];
+
     public function __construct(
         private readonly PaymentGatewayManager $gatewayManager,
         private readonly RefundConstraintService $constraints,
@@ -68,11 +83,11 @@ final class RefundCore
     }
 
     /**
-     * Retry / reconcile an existing REVIEW refund.
+     * Retry / reconcile an unresolved refund (PENDING or REVIEW).
      *
      * 1. Provider lookup (if supported) → success → COMPLETED; failure → FAILED.
      * 2. Idempotent same-key retry (if supported and lookup unknown).
-     * 3. Otherwise remain REVIEW and throw.
+     * 3. Otherwise remain unresolved and throw.
      *
      * Records the reconciliation attempt and, on terminal resolution, the
      * resolving admin and timestamp in the refund metadata.
@@ -83,9 +98,11 @@ final class RefundCore
     {
         $refund = Refund::findOrFail($refundId);
 
-        if ($refund->status !== RefundStatus::REVIEW) {
-            throw new RefundConstraintViolationException('تنها بازگشت‌های در حال بررسی قابل بررسی مجدد هستند.');
+        if (! in_array($refund->status, self::UNRESOLVED_STATES, true)) {
+            throw new RefundConstraintViolationException('تنها بازگشت‌های در حال پردازش یا بررسی قابل بررسی مجدد هستند.');
         }
+
+        $refund = $this->promoteStalePendingToReview($refund);
 
         $payment = Payment::findOrFail($refund->payment_id);
 
@@ -143,7 +160,42 @@ final class RefundCore
     }
 
     /**
-     * Attempt a safe idempotent retry or leave the refund in REVIEW.
+     * Promote a stale PENDING reservation to REVIEW before reconciling it.
+     *
+     * A PENDING row only means "reserved, provider outcome never reported".
+     * Once an admin starts reconciling, the row is promoted so the ledger and
+     * the admin surface show one single unresolved state instead of an
+     * orphaned reservation that looks like it is still in flight.
+     *
+     * @return Refund the promoted row, or the untouched row when it is not PENDING
+     */
+    private function promoteStalePendingToReview(Refund $refund): Refund
+    {
+        if ($refund->status !== RefundStatus::PENDING) {
+            return $refund;
+        }
+
+        DB::transaction(function () use ($refund) {
+            $locked = $this->lockRefund($refund->id);
+
+            if ($locked->status !== RefundStatus::PENDING) {
+                return;
+            }
+
+            $locked->status = RefundStatus::REVIEW;
+            $locked->metadata = array_merge($locked->metadata ?? [], [
+                'promoted_from_pending' => true,
+                'promoted_at' => now()->toIso8601String(),
+                'promotion_reason' => 'stale_pending_reservation_reconciled',
+            ]);
+            $locked->save();
+        });
+
+        return $refund->fresh();
+    }
+
+    /**
+     * Attempt a safe idempotent retry or leave the refund unresolved.
      *
      * @throws RefundConstraintViolationException
      */
