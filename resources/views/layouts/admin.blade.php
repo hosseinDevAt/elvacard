@@ -10,192 +10,121 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen bg-[#f8fafc] text-slate-800 antialiased font-sans">
     <div class="flex min-h-screen" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
         <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-30 bg-black/50 lg:hidden" @click="sidebarOpen = false"></div>
 
-        {{-- Sidebar --}}
-        <aside class="fixed inset-y-0 start-0 z-40 w-64 transform bg-gray-900 text-white flex flex-col transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 lg:transform-none"
-               :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full'">
-            <div class="p-4 border-b border-gray-800">
-                <a href="{{ route('admin.dashboard') }}" wire:navigate class="text-lg font-bold">پنل ادمین</a>
-            </div>
-            @php
-                $currentRoute = request()->route()?->getName() ?? '';
-                $storeRoutes = ['admin.products', 'admin.product-categories', 'admin.colors', 'admin.designs', 'admin.designs.create', 'admin.designs.edit'];
-                $contentRoutes = ['admin.pages', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements'];
-                $appearanceRoutes = ['admin.appearance', 'admin.menus', 'admin.menu-items', 'admin.homepage-sections'];
-                $groups = [
-                    'store' => in_array($currentRoute, $storeRoutes),
-                    'content' => in_array($currentRoute, $contentRoutes),
-                    'appearance' => in_array($currentRoute, $appearanceRoutes),
-                ];
-            @endphp
-            <nav class="flex-1 overflow-y-auto p-4 space-y-1"
-                 x-data="{ open: @js($groups) }"
-                 data-open-groups="{{ implode(' ', array_keys(array_filter($groups))) }}" />
-                <a href="{{ route('admin.dashboard') }}" wire:navigate
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.dashboard') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    داشبورد
-                </a>
+        @php
+            $currentRoute = request()->route()?->getName() ?? '';
+            $sidebar = [
+                [
+                    'id' => 'store',
+                    'label' => 'فروشگاه',
+                    'icon' => 'box',
+                    'routes' => ['admin.products', 'admin.product-categories'],
+                    'items' => [
+                        ['route' => 'admin.products', 'label' => 'محصولات', 'icon' => 'box', 'routes' => ['admin.products']],
+                        ['route' => 'admin.product-categories', 'label' => 'دسته‌بندی محصولات', 'icon' => 'tags', 'routes' => ['admin.product-categories']],
+                    ],
+                ],
+                [
+                    'id' => 'custom-design',
+                    'label' => 'شخصی‌سازی کارت',
+                    'icon' => 'palette',
+                    'routes' => ['admin.product-colors', 'admin.designs', 'admin.designs.create', 'admin.designs.edit', 'admin.design-images', 'admin.design-color-compatibilities'],
+                    'items' => [
+                        ['route' => 'admin.product-colors', 'label' => 'قیمت‌گذاری کارت‌ها', 'icon' => 'credit-card', 'routes' => ['admin.product-colors']],
+                        ['route' => 'admin.designs', 'label' => 'طرح‌ها', 'icon' => 'palette', 'routes' => ['admin.designs', 'admin.designs.create', 'admin.designs.edit']],
+                        ['route' => 'admin.design-images', 'label' => 'تصاویر طرح‌ها', 'icon' => 'image', 'routes' => ['admin.design-images']],
+                        ['route' => 'admin.design-color-compatibilities', 'label' => 'سازگاری رنگ طرح‌ها', 'icon' => 'check-badge', 'routes' => ['admin.design-color-compatibilities']],
+                    ],
+                ],
+                [
+                    'id' => 'basic-data',
+                    'label' => 'اطلاعات پایه',
+                    'icon' => 'database',
+                    'routes' => ['admin.colors'],
+                    'items' => [
+                        ['route' => 'admin.colors', 'label' => 'رنگ‌ها', 'icon' => 'droplet', 'routes' => ['admin.colors']],
+                    ],
+                ],
+                [
+                    'id' => 'payments',
+                    'label' => 'پرداخت',
+                    'icon' => 'wallet',
+                    'routes' => ['admin.payments', 'admin.manual-payment'],
+                    'items' => [
+                        ['route' => 'admin.payments', 'label' => 'پرداخت‌ها', 'icon' => 'wallet', 'routes' => ['admin.payments']],
+                        ['route' => 'admin.manual-payment', 'label' => 'پرداخت‌های دستی', 'icon' => 'banknote', 'routes' => ['admin.manual-payment']],
+                    ],
+                ],
+                [
+                    'id' => 'content',
+                    'label' => 'محتوا',
+                    'icon' => 'document-text',
+                    'routes' => ['admin.pages', 'admin.homepage-sections', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements', 'admin.menus', 'admin.menu-items'],
+                    'items' => [
+                        ['route' => 'admin.pages', 'label' => 'صفحات', 'icon' => 'document-text', 'routes' => ['admin.pages']],
+                        ['route' => 'admin.homepage-sections', 'label' => 'صفحه اصلی', 'icon' => 'home', 'routes' => ['admin.homepage-sections']],
+                        ['route' => 'admin.articles', 'label' => 'مقالات', 'icon' => 'newspaper', 'routes' => ['admin.articles']],
+                        ['route' => 'admin.article-categories', 'label' => 'دسته‌بندی مقالات', 'icon' => 'folder', 'routes' => ['admin.article-categories']],
+                        ['route' => 'admin.faq', 'label' => 'سوالات متداول', 'icon' => 'lifebuoy', 'routes' => ['admin.faq']],
+                        ['route' => 'admin.announcements', 'label' => 'اطلاعیه‌ها', 'icon' => 'megaphone', 'routes' => ['admin.announcements']],
+                        ['route' => 'admin.menus', 'label' => 'منوها', 'icon' => 'list', 'routes' => ['admin.menus']],
+                        ['route' => 'admin.menu-items', 'label' => 'آیتم‌های منو', 'icon' => 'list', 'routes' => ['admin.menu-items']],
+                    ],
+                ],
+                [
+                    'id' => 'appearance',
+                    'label' => 'تنظیمات و ظاهر',
+                    'icon' => 'cog',
+                    'routes' => ['admin.site-settings', 'admin.appearance'],
+                    'items' => [
+                        ['route' => 'admin.site-settings', 'label' => 'تنظیمات سایت', 'icon' => 'cog', 'routes' => ['admin.site-settings']],
+                        ['route' => 'admin.appearance', 'label' => 'ظاهر و برند', 'icon' => 'sparkles', 'routes' => ['admin.appearance']],
+                    ],
+                ],
+            ];
+            $openGroups = [];
+            $groups = [];
+            foreach ($sidebar as $section) {
+                $sectionActive = in_array($currentRoute, $section['routes']);
+                $groups[$section['id']] = $sectionActive;
+                if ($sectionActive) {
+                    $openGroups[] = $section['id'];
+                }
+            }
+            $flatLabels = [
+                'admin.dashboard' => 'داشبورد',
+                'admin.orders' => 'سفارشات',
+                'admin.users' => 'کاربران',
+                'admin.reports' => 'گزارش‌ها',
+            ];
+            $sectionLabel = $flatLabels[$currentRoute] ?? null;
+            if ($sectionLabel === null) {
+                foreach ($sidebar as $section) {
+                    if (in_array($currentRoute, $section['routes'])) {
+                        $sectionLabel = $section['label'];
+                        break;
+                    }
+                }
+            }
+        @endphp
 
-                {{-- فروشگاه --}}
-                <div>
-                    <button type="button"
-                            @click="open.store = !open.store"
-                            :aria-expanded="open.store === true"
-                            aria-controls="group-store"
-                            aria-label="فروشگاه"
-                            class="flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition {{ $groups['store'] ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <span>فروشگاه</span>
-                        <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="open.store ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div id="group-store" x-show="open.store" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
-                        <a href="{{ route('admin.products') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.products') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            محصولات
-                        </a>
-                        <a href="{{ route('admin.product-categories') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.product-categories') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            دسته‌بندی محصولات
-                        </a>
-                        <a href="{{ route('admin.colors') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.colors') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            رنگ‌ها
-                        </a>
-                        <a href="{{ route('admin.designs') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.designs', 'admin.designs.create', 'admin.designs.edit') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            طرح‌ها
-                        </a>
-                    </div>
-                </div>
+        @include('layouts.partials.admin-sidebar', [
+            'sidebar' => $sidebar,
+            'openGroups' => $openGroups,
+            'groups' => $groups,
+            'currentRoute' => $currentRoute,
+        ])
 
-                {{-- محتوا --}}
-                <div>
-                    <button type="button"
-                            @click="open.content = !open.content"
-                            :aria-expanded="open.content === true"
-                            aria-controls="group-content"
-                            aria-label="محتوا"
-                            class="flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition {{ $groups['content'] ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <span>محتوا</span>
-                        <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="open.content ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div id="group-content" x-show="open.content" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
-                        <a href="{{ route('admin.pages') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.pages') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            صفحات
-                        </a>
-                        <a href="{{ route('admin.articles') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.articles') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            مقالات
-                        </a>
-                        <a href="{{ route('admin.article-categories') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.article-categories') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            دسته‌بندی مقالات
-                        </a>
-                        <a href="{{ route('admin.faq') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.faq') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            سوالات متداول
-                        </a>
-                        <a href="{{ route('admin.announcements') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.announcements') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            اطلاعیه‌ها
-                        </a>
-                    </div>
-                </div>
+        <div class="flex min-w-0 flex-1 flex-col">
+            @include('layouts.partials.admin-header', ['sectionLabel' => $sectionLabel])
 
-                {{-- ظاهر سایت --}}
-                <div>
-                    <button type="button"
-                            @click="open.appearance = !open.appearance"
-                            :aria-expanded="open.appearance === true"
-                            aria-controls="group-appearance"
-                            aria-label="ظاهر سایت"
-                            class="flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition {{ $groups['appearance'] ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <span>ظاهر سایت</span>
-                        <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="open.appearance ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div id="group-appearance" x-show="open.appearance" x-collapse.duration.200ms class="mt-1 ms-3 space-y-1 border-s-2 border-gray-800 ps-2">
-                        <a href="{{ route('admin.appearance') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.appearance') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            ظاهر و برند
-                        </a>
-                        <a href="{{ route('admin.menus') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menus') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            منوها
-                        </a>
-                        <a href="{{ route('admin.menu-items') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.menu-items') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            آیتم‌های منو
-                        </a>
-                        <a href="{{ route('admin.homepage-sections') }}" wire:navigate
-                            class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.homepage-sections') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                            صفحه اصلی
-                        </a>
-                    </div>
-                </div>
-
-                <a href="{{ route('admin.orders') }}" wire:navigate
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.orders') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    سفارشات
-                </a>
-                <a href="{{ route('admin.reports') }}" wire:navigate
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.reports') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    گزارش‌ها
-                </a>
-                <a href="{{ route('admin.payments') }}" wire:navigate
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.payments') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    پرداخت‌ها
-                </a>
-                <a href="{{ route('admin.manual-payment') }}" wire:navigate
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.manual-payment') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    تنظیمات پرداخت
-                </a>
-                <a href="{{ route('admin.users') }}" wire:navigate
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.users') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    کاربران
-                </a>
-                <a href="{{ route('admin.site-settings') }}" wire:navigate
-                    class="block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('admin.site-settings') ? 'bg-yellow-500' : 'hover:bg-gray-800' }}">
-                    تنظیمات سایت
-                </a>
-            </nav>
-            <div class="p-4 border-t border-gray-800">
-                <a href="{{ route('home') }}" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-800 transition">بازگشت به سایت</a>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full text-start px-3 py-2 rounded-lg text-sm hover:bg-gray-800 transition">خروج</button>
-                </form>
-            </div>
-        </aside>
-
-        {{-- Main Content --}}
-        <main class="flex-1 p-4 overflow-auto sm:p-8">
-            <button
-                type="button"
-                @click="sidebarOpen = !sidebarOpen"
-                :aria-expanded="sidebarOpen"
-                aria-label="باز کردن منو"
-                class="lg:hidden inline-flex items-center p-2 mb-4 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
-            >
-                <x-icons.menu-toggle x-var="sidebarOpen" />
-            </button>
-
-            @if(session()->has('success'))
-                <div class="bg-green-50 text-green-700 p-4 rounded-xl mb-6 text-sm">{{ session('success') }}</div>
-            @endif
-            @if(session()->has('error'))
-                <div class="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm">{{ session('error') }}</div>
-            @endif
-            {{ $slot }}
-        </main>
+            <main class="flex-1 p-4 sm:p-8">
+                {{ $slot }}
+            </main>
+        </div>
     </div>
     @livewireScripts
 </body>

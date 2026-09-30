@@ -1,61 +1,87 @@
-﻿<div>
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">مدیریت طرح‌ها</h1>
-        <div class="flex flex-wrap items-center gap-3">
-            <a href="{{ route('admin.cate-designs') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition">
+<div>
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">طرح‌های فعال در میزکار</h2>
+            <p class="text-xs text-slate-500 mt-1">مدیریت، بارگذاری و تنظیم طرح‌های چاپ شخصی‌سازی کارت</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a href="{{ route('admin.cate-designs') }}" class="admin-btn admin-btn-secondary text-xs font-semibold">
                 دسته‌بندی طرح‌ها
             </a>
-            <a href="{{ route('admin.designs.create') }}" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
-                + طرح جدید
+            <a href="{{ route('admin.designs.create') }}" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>افزودن طرح جدید</span>
             </a>
         </div>
     </div>
 
-    <div class="mb-4">
-        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در نام طرح..." class="w-full sm:w-80 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-    </div>
+    <div class="admin-card overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">لیست کلی طرح‌های کارت</h3>
+            <div class="w-full sm:w-72">
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در نام طرح..." class="admin-input py-2 text-xs">
+            </div>
+        </div>
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">نام</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">اسلاگ</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">دسته‌بندی</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تصاویر</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($designs as $design)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-500">{{ $design->id }}</td>
-                        <td class="px-4 py-3 font-medium">{{ $design->name }}</td>
-                        <td class="px-4 py-3 text-gray-500 font-mono text-xs" dir="ltr">{{ $design->slug }}</td>
-                        <td class="px-4 py-3 text-gray-500">{{ $design->category?->name }}</td>
-                        <td class="px-4 py-3 text-gray-500">{{ $design->images_count }}</td>
-                        <td class="px-4 py-3">
-                            <span class="{{ $design->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $design->is_active ? 'فعال' : 'غیرفعال' }}</span>
-                            @if($design->is_active)
-                                @if($workspaceReady[$design->id] ?? false)
-                                    <span class="block text-xs text-green-600">قابل نمایش در شخصی‌سازی</span>
-                                @else
-                                    <span class="block text-xs text-red-500">پنهان از شخصی‌سازی</span>
-                                @endif
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            <a href="{{ route('admin.designs.edit', $design->id) }}" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</a>
-                            <button wire:click="delete({{ $design->id }})" wire:confirm="آیا از حذف این طرح مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>
-                        </td>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50/70 border-b border-slate-100">
+                    <tr>
+                        <th class="admin-th w-16">#</th>
+                        <th class="admin-th">نام طرح</th>
+                        <th class="admin-th">اسلاگ</th>
+                        <th class="admin-th">دسته‌بندی</th>
+                        <th class="admin-th">تصاویر</th>
+                        <th class="admin-th">وضعیت</th>
+                        <th class="admin-th text-center">عملیات</th>
                     </tr>
-                @empty
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">طرحی یافت نشد</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="p-4">{{ $designs->links() }}</div>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($designs as $design)
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="admin-td text-xs text-slate-400 font-mono">{{ $design->id }}</td>
+                            <td class="admin-td">
+                                <span class="font-bold text-slate-900 block text-xs">{{ $design->name }}</span>
+                            </td>
+                            <td class="admin-td text-slate-400 font-mono text-xs" dir="ltr">{{ $design->slug }}</td>
+                            <td class="admin-td">
+                                <span class="text-xs text-slate-600">{{ $design->category?->name ?? '-' }}</span>
+                            </td>
+                            <td class="admin-td">
+                                <span class="admin-badge admin-badge-neutral text-xs">{{ $design->images_count }} تصویر</span>
+                            </td>
+                            <td class="admin-td">
+                                <span class="admin-badge {{ $design->is_active ? 'admin-badge-success' : 'admin-badge-danger' }}">
+                                    {{ $design->is_active ? 'فعال' : 'غیرفعال' }}
+                                </span>
+                                @if($design->is_active)
+                                    @if($workspaceReady[$design->id] ?? false)
+                                        <span class="block text-[10px] text-emerald-600 font-medium mt-0.5">قابل نمایش در میزکار</span>
+                                    @else
+                                        <span class="block text-[10px] text-amber-600 font-medium mt-0.5">پنهان از میزکار</span>
+                                    @endif
+                                @endif
+                            </td>
+                            <td class="admin-td text-center">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <a href="{{ route('admin.designs.edit', $design->id) }}" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
+                                        ویرایش
+                                    </a>
+                                    <button wire:click="delete({{ $design->id }})" wire:confirm="آیا از حذف این طرح مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">
+                                        حذف
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7" class="admin-empty">طرحی یافت نشد</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="p-5 border-t border-slate-100">{{ $designs->links() }}</div>
     </div>
 </div>

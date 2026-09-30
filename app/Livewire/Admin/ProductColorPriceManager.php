@@ -55,8 +55,14 @@ class ProductColorPriceManager extends Component
     {
         $product = request()->query('product');
 
+        // Only Bank/Fuel card products belong to this surface. A crafted query
+        // string pointing at an ordinary Store product must never select it.
         if ($product !== null && filter_var($product, FILTER_VALIDATE_INT) !== false) {
-            $this->productId = (int) $product;
+            $resolved = Product::query()->find((int) $product);
+
+            if ($resolved !== null && $resolved->getRawOriginal('customization_workflow') !== null) {
+                $this->productId = (int) $product;
+            }
         }
     }
 
@@ -77,6 +83,12 @@ class ProductColorPriceManager extends Component
         }
 
         $product = Product::find($this->productId);
+
+        if ($product === null || $product->getRawOriginal('customization_workflow') === null) {
+            session()->flash('error', 'مدیریت قیمت رنگ فقط برای کارت‌های بانکی و سوخت انجام می‌شود؛ قیمت محصولات فروشگاهی را از «مدیریت محصولات» تنظیم کنید.');
+
+            return;
+        }
 
         if (
             $this->isActive
@@ -168,6 +180,12 @@ class ProductColorPriceManager extends Component
             return;
         }
 
+        if ($priceItem->product === null || $priceItem->product->getRawOriginal('customization_workflow') === null) {
+            session()->flash('error', 'این قیمت متعلق به محصول فروشگاهی است؛ آن را از «مدیریت محصولات» ویرایش کنید.');
+
+            return;
+        }
+
         $this->editingId = $id;
         $this->productId = (int) $priceItem->product_id;
         $this->colorId = (int) $priceItem->color_id;
@@ -182,6 +200,12 @@ class ProductColorPriceManager extends Component
 
         if (! $priceItem) {
             session()->flash('error', 'قیمت موردنظر یافت نشد');
+
+            return;
+        }
+
+        if ($priceItem->product === null || $priceItem->product->getRawOriginal('customization_workflow') === null) {
+            session()->flash('error', 'این قیمت متعلق به محصول فروشگاهی است؛ آن را از «مدیریت محصولات» حذف کنید.');
 
             return;
         }
@@ -225,10 +249,16 @@ class ProductColorPriceManager extends Component
 
     public function setPrimaryImage(int $id): void
     {
-        $image = ProductImage::find($id);
+        $image = ProductImage::with('product')->find($id);
 
         if (! $image) {
             session()->flash('error', 'تصویر موردنظر یافت نشد');
+
+            return;
+        }
+
+        if ($image->product === null || $image->product->getRawOriginal('customization_workflow') === null) {
+            session()->flash('error', 'تصویر این محصول فروشگاهی از «مدیریت محصولات» مدیریت می‌شود.');
 
             return;
         }
@@ -244,10 +274,16 @@ class ProductColorPriceManager extends Component
 
     public function deleteImage(int $id): void
     {
-        $image = ProductImage::find($id);
+        $image = ProductImage::with('product')->find($id);
 
         if (! $image) {
             session()->flash('error', 'تصویر موردنظر یافت نشد');
+
+            return;
+        }
+
+        if ($image->product === null || $image->product->getRawOriginal('customization_workflow') === null) {
+            session()->flash('error', 'تصویر این محصول فروشگاهی از «مدیریت محصولات» مدیریت می‌شود.');
 
             return;
         }
@@ -324,7 +360,12 @@ class ProductColorPriceManager extends Component
 
     public function getProductOptionsProperty(): array
     {
-        $items = Product::query()->orderBy('name')->get(['id', 'name', 'is_active']);
+        // Only Bank/Fuel card products may be priced here. Ordinary Store
+        // products keep their pricing inside the Store → Products surface.
+        $items = Product::query()
+            ->whereNotNull('customization_workflow')
+            ->orderBy('name')
+            ->get(['id', 'name', 'is_active']);
 
         return array_merge(
             $items->filter(fn ($product) => (bool) $product->is_active)
@@ -372,6 +413,7 @@ class ProductColorPriceManager extends Component
     {
         $prices = ProductColorPrice::query()
             ->with('product', 'color', 'images')
+            ->whereHas('product', fn ($productQuery) => $productQuery->whereNotNull('customization_workflow'))
             ->when($this->productId, fn ($query) => $query->where('product_id', $this->productId))
             ->when($this->search !== '', fn ($query) => $query->whereHas('product', fn ($productQuery) => $productQuery->where('name', 'like', '%'.$this->search.'%')))
             ->orderByDesc('id')
@@ -383,7 +425,8 @@ class ProductColorPriceManager extends Component
             'prices' => $prices,
             'productOptions' => $this->productOptions,
             'colorOptions' => $this->colorOptions,
+            'selectedProduct' => $selectedProduct,
             'selectedProductIsFuel' => $selectedProduct?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD,
-        ])->layout('layouts.admin')->title('قیمت رنگ محصولات');
+        ])->layout('layouts.admin')->title('قیمت‌گذاری کارت‌ها');
     }
 }

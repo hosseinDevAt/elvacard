@@ -1,44 +1,43 @@
-﻿<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">مدیریت مقالات</h1>
-        <button wire:click="$set('showForm', true)" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
+<div>
+    <div class="mb-6 flex items-center justify-end gap-4">
+        <button wire:click="$set('showForm', true)" class="admin-btn admin-btn-primary">
             + مقاله جدید
         </button>
     </div>
 
     @if($showForm)
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-gray-900 mb-4">{{ $editingId ? 'ویرایش مقاله' : 'مقاله جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">عنوان</label>
-                    <input type="text" wire:model="title" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                    @error('title') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">عنوان</label>
+                    <input type="text" wire:model="title" class="admin-input">
+                    @error('title') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی</label>
-                    <select wire:model="articleCategoryId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                    <label class="admin-label">دسته‌بندی</label>
+                    <select wire:model="articleCategoryId" class="admin-input">
                         <option value="">بدون دسته‌بندی</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
-                    @error('articleCategoryId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('articleCategoryId') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">خلاصه</label>
-                    <textarea wire:model="excerpt" rows="3" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                    @error('excerpt') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">خلاصه</label>
+                    <textarea wire:model="excerpt" rows="3" class="admin-input"></textarea>
+                    @error('excerpt') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">محتوا</label>
-                    <textarea wire:model="content" rows="8" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                    @error('content') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">محتوا</label>
+                    <textarea wire:model="content" rows="8" class="admin-input"></textarea>
+                    @error('content') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">تصویر شاخص</label>
+                    <label class="admin-label">تصویر شاخص</label>
                     <input type="file" wire:model="coverImageUpload" accept="image/*" class="w-full text-sm text-gray-600 file:me-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
-                    @error('coverImageUpload') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('coverImageUpload') <p class="admin-error">{{ $message }}</p> @enderror
                     @if ($coverImageUpload)
                         <img src="{{ $coverImageUpload->temporaryUrl() }}" alt="پیش‌نمایش تصویر شاخص" class="mt-3 h-40 w-full object-cover rounded-lg border border-gray-100">
                     @elseif ($coverImage)
@@ -53,18 +52,18 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">وضعیت</label>
-                        <select wire:model="status" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <label class="admin-label">وضعیت</label>
+                        <select wire:model="status" class="admin-input">
                             @foreach(\App\Enums\ArticleStatusEnum::cases() as $status)
                                 <option value="{{ $status->value }}">{{ $status->faLabel() }}</option>
                             @endforeach
                         </select>
-                        @error('status') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('status') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">تاریخ انتشار (اختیاری)</label>
+                        <label class="admin-label">تاریخ انتشار (اختیاری)</label>
                         <x-jalali-date-input mode="datetime" wire:model="publishedAt" id="article_published_at" />
-                        @error('publishedAt') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('publishedAt') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -72,19 +71,19 @@
                     <h4 class="font-bold text-gray-900 mb-3">سئو</h4>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">عنوان سئو</label>
-                            <input type="text" wire:model="metaTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                            @error('metaTitle') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">عنوان سئو</label>
+                            <input type="text" wire:model="metaTitle" class="admin-input">
+                            @error('metaTitle') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات سئو</label>
-                            <textarea wire:model="metaDescription" rows="3" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                            @error('metaDescription') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">توضیحات سئو</label>
+                            <textarea wire:model="metaDescription" rows="3" class="admin-input"></textarea>
+                            @error('metaDescription') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">آدرس Canonical</label>
-                            <input type="text" wire:model="canonicalUrl" placeholder="https://example.com/..." dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                            @error('canonicalUrl') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">آدرس Canonical</label>
+                            <input type="text" wire:model="canonicalUrl" placeholder="https://example.com/..." dir="ltr" class="admin-input">
+                            @error('canonicalUrl') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div class="flex items-center gap-2">
                             <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-gray-300 text-yellow-500">
@@ -102,40 +101,40 @@
     @endif
 
     <div class="mb-4">
-        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در عنوان یا محتوا..." class="w-full sm:w-80 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در عنوان یا محتوا..." class="admin-input sm:w-80">
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+    <div class="admin-card overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">عنوان</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">دسته‌بندی</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ انتشار</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
+                    <th class="admin-th">#</th>
+                    <th class="admin-th">عنوان</th>
+                    <th class="admin-th">دسته‌بندی</th>
+                    <th class="admin-th">وضعیت</th>
+                    <th class="admin-th">تاریخ انتشار</th>
+                    <th class="admin-th">عملیات</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($articles as $article)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-500">{{ $article->id }}</td>
-                        <td class="px-4 py-3 font-medium">{{ $article->title }}</td>
-                        <td class="px-4 py-3 text-gray-500">{{ $article->category?->name ?? 'بدون دسته‌بندی' }}</td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td text-gray-500">{{ $article->id }}</td>
+                        <td class="admin-td font-medium">{{ $article->title }}</td>
+                        <td class="admin-td text-gray-500">{{ $article->category?->name ?? 'بدون دسته‌بندی' }}</td>
+                        <td class="admin-td">
                             <span class="{{ $article->status === \App\Enums\ArticleStatusEnum::PUBLISHED ? 'text-green-600' : 'text-red-500' }}">
                                 {{ $article->status->faLabel() }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $article->published_at ? jalali_date($article->published_at, 'datetime') : '—' }}</td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td text-gray-500 text-xs">{{ $article->published_at ? jalali_date($article->published_at, 'datetime') : '—' }}</td>
+                        <td class="admin-td">
                             <button wire:click="edit({{ $article->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
-                            <button wire:click="delete({{ $article->id }})" wire:confirm="آیا از حذف این مقاله مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>
+                            <button wire:click="delete({{ $article->id }})" wire:confirm="آیا از حذف این مقاله مطمئن هستید؟" class="text-rose-600 hover:text-rose-700 text-xs font-medium transition">حذف</button>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">مقاله‌ای یافت نشد</td></tr>
+                    <tr><td colspan="6" class="admin-empty">مقاله‌ای یافت نشد</td></tr>
                 @endforelse
             </tbody>
         </table>

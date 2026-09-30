@@ -1,51 +1,50 @@
-﻿<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">تنظیمات سایت</h1>
-        <button wire:click="$set('showForm', true)" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
+<div>
+    <div class="mb-6 flex items-center justify-end gap-4">
+        <button wire:click="$set('showForm', true)" class="admin-btn admin-btn-primary">
             + تنظیمات جدید
         </button>
     </div>
 
     @if($showForm)
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-gray-900 mb-4">{{ $editingId ? 'ویرایش تنظیمات' : 'تنظیمات جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">کلید (key)</label>
-                        <input type="text" wire:model="key" placeholder="site_name" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('key') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">کلید (key)</label>
+                        <input type="text" wire:model="key" placeholder="site_name" dir="ltr" class="admin-input">
+                        @error('key') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">گروه</label>
-                        <input type="text" wire:model="group" placeholder="general" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('group') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">گروه</label>
+                        <input type="text" wire:model="group" placeholder="general" dir="ltr" class="admin-input">
+                        @error('group') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">نوع</label>
-                        <select wire:model="type" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <label class="admin-label">نوع</label>
+                        <select wire:model="type" class="admin-input">
                             <option value="string">string</option>
                             <option value="integer">integer</option>
                             <option value="boolean">boolean</option>
                             <option value="json">json</option>
                         </select>
-                        @error('type') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('type') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">مقدار (value)</label>
+                    <label class="admin-label">مقدار (value)</label>
                     @if($type === 'boolean')
-                        <select wire:model="value" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <select wire:model="value" class="admin-input">
                             <option value="1">true</option>
                             <option value="0">false</option>
                         </select>
                     @elseif($type === 'json')
-                        <textarea wire:model="value" rows="4" dir="ltr" placeholder='{"key": "value"}' class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition font-mono text-xs"></textarea>
+                        <textarea wire:model="value" rows="4" dir="ltr" placeholder='{"key": "value"}' class="admin-input font-mono text-xs"></textarea>
                     @else
-                        <input type="{{ $type === 'integer' ? 'number' : 'text' }}" wire:model="value" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <input type="{{ $type === 'integer' ? 'number' : 'text' }}" wire:model="value" dir="ltr" class="admin-input">
                     @endif
-                    @error('value') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('value') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="flex flex-wrap items-end gap-4">
@@ -61,38 +60,38 @@
     @endif
 
     <div class="mb-4">
-        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در کلید، مقدار یا گروه..." class="w-full sm:w-80 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در کلید، مقدار یا گروه..." class="admin-input sm:w-80">
     </div>
 
     @forelse($settings as $group => $groupSettings)
         <div class="mb-6">
             <h2 class="font-bold text-gray-800 mb-3 bg-gray-100 rounded-lg px-3 py-2">{{ $group }} <span class="text-xs text-gray-500 font-normal">({{ $groupSettings->count() }})</span></h2>
 
-            <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+            <div class="admin-card overflow-x-auto">
         <table class="w-full text-sm">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-3 text-start font-medium text-gray-500">کلید</th>
-                            <th class="px-4 py-3 text-start font-medium text-gray-500">مقدار</th>
-                            <th class="px-4 py-3 text-start font-medium text-gray-500">نوع</th>
-                            <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                            <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
+                            <th class="admin-th">کلید</th>
+                            <th class="admin-th">مقدار</th>
+                            <th class="admin-th">نوع</th>
+                            <th class="admin-th">وضعیت</th>
+                            <th class="admin-th">عملیات</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach($groupSettings as $setting)
                             <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 font-medium" dir="ltr">{{ $setting->key }}</td>
-                                <td class="px-4 py-3 text-gray-600 max-w-xs truncate" dir="ltr">{{ $setting->value }}</td>
-                                <td class="px-4 py-3">
+                                <td class="admin-td font-medium" dir="ltr">{{ $setting->key }}</td>
+                                <td class="admin-td text-gray-600 max-w-xs truncate" dir="ltr">{{ $setting->value }}</td>
+                                <td class="admin-td">
                                     <span class="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs" dir="ltr">{{ $setting->type }}</span>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="admin-td">
                                     <span class="{{ $setting->is_public ? 'text-green-600' : 'text-red-500' }}">{{ $setting->is_public ? 'عمومی' : 'خصوصی' }}</span>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="admin-td">
                                     <button wire:click="edit({{ $setting->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
-                                    <button wire:click="delete({{ $setting->id }})" wire:confirm="آیا از حذف این تنظیمات مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>
+                                    <button wire:click="delete({{ $setting->id }})" wire:confirm="آیا از حذف این تنظیمات مطمئن هستید؟" class="text-rose-600 hover:text-rose-700 text-xs font-medium transition">حذف</button>
                                 </td>
                             </tr>
                         @endforeach
@@ -101,6 +100,6 @@
             </div>
         </div>
     @empty
-        <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">تنظیماتی یافت نشد</div>
+        <div class="admin-card p-8 text-center text-gray-400">تنظیماتی یافت نشد</div>
     @endforelse
 </div>

@@ -1,22 +1,24 @@
 <div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">مدیریت پرداخت‌ها</h1>
-        <button wire:click="resetFilters" class="px-3 py-1.5 rounded-lg text-xs bg-gray-200 text-gray-700 hover:bg-gray-300 transition">پاک‌سازی فیلترها</button>
+    <div class="mb-6 flex items-center justify-end gap-4">
+        <button wire:click="resetFilters" class="admin-btn admin-btn-secondary admin-btn-sm">پاک‌سازی فیلترها</button>
     </div>
 
     @if (session('success'))
-        <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
+        <div class="mb-6 flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <x-icons.check-badge class="mt-0.5 shrink-0 text-green-600" />
+            <div class="min-w-0">{{ session('success') }}</div>
+        </div>
     @endif
 
     @if (session('error'))
         <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ session('error') }}</div>
     @endif
 
-    <div class="mb-6 rounded-xl border border-gray-200 bg-white p-4">
+    <div class="mb-6 admin-card p-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
             <div>
                 <label class="block text-xs text-gray-400 mb-1">وضعیت</label>
-                <select wire:model.live="statusFilter" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                <select wire:model.live="statusFilter" class="admin-input">
                     <option value="">همه</option>
                     @foreach ($statusCases as $case)
                         <option value="{{ $case->value }}">{{ $case->faLabel() }}</option>
@@ -25,7 +27,7 @@
             </div>
             <div>
                 <label class="block text-xs text-gray-400 mb-1">روش پرداخت</label>
-                <select wire:model.live="methodFilter" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                <select wire:model.live="methodFilter" class="admin-input">
                     <option value="">همه</option>
                     @foreach ($methodCases as $case)
                         <option value="{{ $case->value }}">{{ $case->faLabel() }}</option>
@@ -48,7 +50,7 @@
             </div>
             <div>
                 <label class="block text-xs text-gray-400 mb-1">کد سفارش</label>
-                <input type="text" wire:model.live.debounce.300ms="reference" placeholder="ORD-2026-..." dir="ltr" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                <input type="text" wire:model.live.debounce.300ms="reference" placeholder="ORD-2026-..." dir="ltr" class="admin-input">
             </div>
         </div>
     </div>
@@ -90,7 +92,7 @@
             $spDetail = $sp->metadata['detail'] ?? null;
             $spRefunds = $sp->refunds->sortByDesc('created_at')->values();
         @endphp
-        <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div class="mb-6 admin-card overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <h2 class="text-lg font-bold text-gray-900 min-w-0">جزئیات پرداخت <span class="text-gray-500 text-sm" dir="ltr">#{{ $sp->id }}</span></h2>
                 <button wire:click="closePaymentDetail" class="px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200">بازگشت به لیست</button>
@@ -102,7 +104,7 @@
                     <h3 class="font-bold text-gray-900">
                         پرداخت سفارش <span class="font-mono text-sm" dir="ltr">{{ $sp->order?->reference ?? $sp->order_id }}</span>
                     </h3>
-                    <span class="text-xs px-2 py-1 rounded-full {{ $statusColors[$sp->status->value] ?? 'bg-gray-100 text-gray-700' }}">
+                    <span class="admin-badge {{ $statusColors[$sp->status->value] ?? 'bg-gray-100 text-gray-700' }}">
                         {{ $sp->status->faLabel() }}
                     </span>
                 </div>
@@ -176,8 +178,8 @@
 
                 @if ($sp->status === \App\Enums\PaymentStatus::PENDING_REVIEW && $sp->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER)
                     <div class="mt-4 flex items-center gap-2">
-                        <button wire:click="approvePayment({{ $sp->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="px-4 py-2 rounded-lg text-sm bg-green-600 hover:bg-green-700 text-white">تایید پرداخت</button>
-                        <button wire:click="rejectPayment({{ $sp->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="px-4 py-2 rounded-lg text-sm bg-red-600 hover:bg-red-700 text-white">رد پرداخت</button>
+                        <button wire:click="approvePayment({{ $sp->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success">تایید پرداخت</button>
+                        <button wire:click="rejectPayment({{ $sp->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger">رد پرداخت</button>
                     </div>
                 @endif
 
@@ -200,7 +202,7 @@
                         <div class="rounded-xl border border-gray-200 p-4 mb-3 text-sm">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div class="flex items-center gap-2">
-                                    <span class="{{ $refundStatusColors[$refund->status->value] ?? 'bg-gray-100 text-gray-700' }} text-xs px-2 py-1 rounded-full">
+                                    <span class="{{ $refundStatusColors[$refund->status->value] ?? 'bg-gray-100 text-gray-700' }} admin-badge">
                                         {{ $refund->status->faLabel() }}
                                     </span>
                                     <span class="font-mono font-bold text-amber-600">{{ number_format($refund->amount) }} تومان</span>
@@ -285,19 +287,19 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+    <div class="admin-card overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">سفارش</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">مشتری</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">روش</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">مبلغ / پرداخت‌شده</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">درگاه / تراکنش</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">کد دلیل</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">زمان</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">اقدامات</th>
+                    <th class="admin-th">سفارش</th>
+                    <th class="admin-th">مشتری</th>
+                    <th class="admin-th">روش</th>
+                    <th class="admin-th">وضعیت</th>
+                    <th class="admin-th">مبلغ / پرداخت‌شده</th>
+                    <th class="admin-th">درگاه / تراکنش</th>
+                    <th class="admin-th">کد دلیل</th>
+                    <th class="admin-th">زمان</th>
+                    <th class="admin-th">اقدامات</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -307,29 +309,29 @@
                         $detail = $payment->metadata['detail'] ?? null;
                     @endphp
                     <tr class="hover:bg-gray-50 align-top">
-                        <td class="px-4 py-3">
+                        <td class="admin-td">
                             <div class="font-mono text-xs" dir="ltr">{{ $payment->order?->reference ?? '—' }}</div>
                             <a href="{{ route('admin.orders') }}" wire:navigate class="text-xs text-yellow-600 hover:underline">
                                 سفارش #{{ $payment->order_id }}
                             </a>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td">
                             <div class="text-gray-900">{{ $payment->order?->user?->name ?? $payment->order?->customer_name ?? '—' }}</div>
                             <div class="text-gray-500 text-xs font-mono" dir="ltr">{{ $payment->order?->user?->phone ?? $payment->order?->customer_phone ?? '—' }}</div>
                         </td>
-                        <td class="px-4 py-3 text-xs">{{ $payment->method->faLabel() }}</td>
-                        <td class="px-4 py-3">
-                            <span class="{{ $statusColors[$payment->status->value] ?? 'bg-gray-100 text-gray-700' }} text-xs px-2 py-1 rounded-full">
+                        <td class="admin-td text-xs">{{ $payment->method->faLabel() }}</td>
+                        <td class="admin-td">
+                            <span class="{{ $statusColors[$payment->status->value] ?? 'bg-gray-100 text-gray-700' }} admin-badge">
                                 {{ $payment->status->faLabel() }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 font-mono text-xs" dir="ltr">
+                        <td class="admin-td font-mono text-xs" dir="ltr">
                             <div>{{ number_format($payment->amount) }} تومان</div>
                             @if ($payment->paid_amount !== null)
                                 <div class="text-green-700">{{ number_format($payment->paid_amount) }} تومان (پرداخت‌شده)</div>
                             @endif
                         </td>
-                        <td class="px-4 py-3 font-mono text-xs" dir="ltr">
+                        <td class="admin-td font-mono text-xs" dir="ltr">
                             @if ($payment->gateway)
                                 <div>{{ $payment->gateway }}</div>
                             @endif
@@ -343,7 +345,7 @@
                                 <span class="text-gray-400">—</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td">
                             @if ($reason)
                                 <span class="inline-block text-xs px-2 py-1 rounded-lg bg-red-50 text-red-700">
                                     {{ $reasonLabels[$reason] ?? $reason }}
@@ -355,13 +357,13 @@
                                 <span class="text-gray-300">—</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-xs text-gray-500">
+                        <td class="admin-td text-xs text-gray-500">
                             <div>ایجاد: {{ jalali_date($payment->created_at, 'datetime') }}</div>
                             @if ($payment->paid_at)
                                 <div class="text-green-700">پرداخت: {{ jalali_date($payment->paid_at, 'datetime') }}</div>
                             @endif
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td">
                             <div class="flex flex-col items-start gap-2">
                                 <button wire:click="viewPayment({{ $payment->id }})" class="px-2 py-1 rounded-lg text-xs bg-yellow-500 hover:bg-yellow-600 text-white">جزئیات</button>
                                 @if ($payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER && $payment->receipt_path)
@@ -372,8 +374,8 @@
                                 @endif
                                 @if ($payment->status === \App\Enums\PaymentStatus::PENDING_REVIEW && $payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER)
                                     <div class="flex items-center gap-2">
-                                        <button wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="px-3 py-1.5 rounded-lg text-xs bg-green-600 hover:bg-green-700 text-white">تایید</button>
-                                        <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="px-3 py-1.5 rounded-lg text-xs bg-red-600 hover:bg-red-700 text-white">رد</button>
+                                        <button wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success admin-btn-sm">تایید</button>
+                                        <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger admin-btn-sm">رد</button>
                                     </div>
                                 @endif
                                 @if ($payment->status === \App\Enums\PaymentStatus::SUCCESS)
@@ -388,7 +390,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">پرداختی یافت نشد</td></tr>
+                    <tr><td colspan="9" class="admin-empty">پرداختی یافت نشد</td></tr>
                 @endforelse
             </tbody>
         </table>

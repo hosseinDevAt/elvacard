@@ -27,6 +27,19 @@ export default {
                 sans: ['Vazirmatn', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                navy: {
+                    50:  '#f1f5fa',
+                    100: '#dde6f2',
+                    200: '#b9cbe3',
+                    300: '#8da6cc',
+                    400: '#5f7cad',
+                    500: '#3f5b8c',
+                    600: '#2c4270',
+                    700: '#22325a',
+                    800: '#182444',
+                    900: '#101a33',
+                    950: '#0a1224',
+                },
                 primary: {
                     50:  '#f2f4f8',
                     100: '#e3e7f0',

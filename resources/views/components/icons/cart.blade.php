@@ -1,10 +1,10 @@
-@props(['variant' => null])
+@props(['variant' => null, 'size' => null])
 
 @php
     $solid = (is_string($variant) && $variant !== '' ? $variant : site_icon_variant('cart')) === 'solid';
 @endphp
 
-<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {{ $attributes->except('class')->merge(['class' => icon_class($attributes->get('class'), 'h-5 w-5', $size)]) }}
      @if ($solid) fill="currentColor" @else fill="none" stroke="currentColor" @endif>
     @if ($solid)
         <path fill-rule="evenodd" clip-rule="evenodd" d="M5.4 4.5l-.42-1.26a1 1 0 00-1.9.63l.42 1.26.98 2.94 1.77 5.63a2 2 0 001.87 1.35h8.26a2 2 0 001.9-1.42l1.76-5.95a1 1 0 00-.97-1.32H6.75l-.63-1.86zM9 17.75a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.25 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />

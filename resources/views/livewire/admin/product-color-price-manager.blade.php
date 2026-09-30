@@ -1,127 +1,171 @@
-﻿<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">قیمت رنگ محصولات</h1>
-        <button wire:click="create" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
-            + قیمت جدید
+<div>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">طرح‌های کار و پایه قیمت‌ها</h2>
+            <p class="text-xs text-slate-500 mt-1">تعیین قیمت پایه بر اساس رنگ کارت‌های بانکی و سوخت</p>
+            @if($selectedProduct)
+                <p class="text-xs font-semibold text-indigo-600 mt-1">در حال مدیریت رنگ و قیمت «{{ $selectedProduct->name }}»</p>
+            @endif
+        </div>
+        <button wire:click="create" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20 shrink-0">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>افزودن طرح / قیمت جدید</span>
         </button>
     </div>
 
+    @if($selectedProductIsFuel)
+        <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-800">
+            کارت سوخت فقط یک رنگ و قیمت فعال می‌پذیرد؛ ردیف‌های غیرفعال اضافی مجاز هستند.
+        </div>
+    @endif
+
+    <!-- Base Price Cards by Color (Matching Figma Reference 2) -->
+    <div class="admin-card p-6 mb-6">
+        <h3 class="text-sm font-bold text-slate-700 mb-5">لیست قیمت پایه بر اساس رنگ کارت</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            @forelse($prices->take(5) as $cardPrice)
+                <div class="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-white hover:shadow-sm hover:border-indigo-100 transition group text-center">
+                    <div class="w-12 h-12 rounded-full border-2 border-white shadow-md mb-3 transition-transform group-hover:scale-105"
+                         style="background-color: {{ $cardPrice->color?->code_hex ?? '#ccc' }};"></div>
+                    <span class="text-xs font-bold text-slate-800 block mb-1">{{ $cardPrice->color?->name ?? 'رنگ' }}</span>
+                    <span class="text-xs font-extrabold text-indigo-600 block">{{ number_format((int)$cardPrice->price) }} تومان</span>
+                </div>
+            @empty
+                <div class="col-span-full py-6 text-center text-xs text-slate-400">
+                    قیمتی برای رنگ‌های پایه ثبت نشده است.
+                </div>
+            @endforelse
+        </div>
+    </div>
+
     @if($showForm)
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <h3 class="font-bold text-gray-900 mb-4">{{ $editingId ? 'ویرایش قیمت' : 'قیمت جدید' }}</h3>
+        <div class="admin-card p-6 mb-6">
+            <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش قیمت' : 'قیمت جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">محصول</label>
-                        <select wire:model="productId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <label class="admin-label">کارت بانکی / سوخت</label>
+                        <select wire:model="productId" class="admin-input">
                             <option value="">— انتخاب محصول —</option>
                             @foreach($productOptions as $option)
                                 <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
                             @endforeach
                         </select>
-                        @error('productId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('productId') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">رنگ</label>
-                        <select wire:model="colorId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <label class="admin-label">رنگ</label>
+                        <select wire:model="colorId" class="admin-input">
                             <option value="">— انتخاب رنگ —</option>
                             @foreach($colorOptions as $option)
                                 <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
                             @endforeach
                         </select>
-                        @error('colorId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('colorId') <p class="admin-error">{{ $message }}</p> @enderror
                         @if($selectedProductIsFuel)
-                            <p class="text-xs text-amber-600 mt-1">کارت سوخت فقط یک رنگ فعال می‌پذیرد؛ برای تعویض رنگ فعال، ابتدا رنگ فعال فعلی را غیرفعال کنید. ردیف‌های غیرفعال اضافی مجاز هستند.</p>
+                            <p class="text-xs text-amber-600 mt-1">کارت سوخت فقط یک رنگ فعال می‌پذیرد؛ برای تعویض رنگ فعال، ابتدا رنگ فعال فعلی را غیرفعال کنید.</p>
                         @endif
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">قیمت (تومان)</label>
-                    <input type="number" wire:model="price" min="0" dir="ltr" class="w-full sm:w-72 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                    @error('price') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">قیمت (تومان)</label>
+                    <input type="number" wire:model="price" min="0" dir="ltr" class="admin-input sm:w-72">
+                    @error('price') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
-                    <label for="is_active" class="text-sm text-gray-700">فعال (قابل فروش)</label>
+                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (قابل فروش)</label>
                 </div>
                 <div>
-                    <label for="image_uploads" class="block text-sm font-medium text-gray-700 mb-1">تصاویر این رنگ (اختیاری)</label>
-                    <input type="file" id="image_uploads" wire:model="imageUploads" multiple accept="image/jpeg,image/png,image/jpg,image/webp,image/svg+xml" class="w-full sm:w-96 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                    @error('imageUploads.*') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                    <p class="text-xs text-gray-400 mt-1">تصاویر جی‌پی‌جی، پی‌ان‌جی، وب‌پی یا اس‌وی‌جی تا ۲ مگابایت؛ اگر این رنگ تصویر اصلی نداشته باشد، اولین تصویر همان می‌شود.</p>
+                    <label for="image_uploads" class="admin-label">تصاویر این رنگ (اختیاری)</label>
+                    <input type="file" id="image_uploads" wire:model="imageUploads" multiple accept="image/jpeg,image/png,image/jpg,image/webp,image/svg+xml" class="admin-input sm:w-96 text-xs">
+                    @error('imageUploads.*') <p class="admin-error">{{ $message }}</p> @enderror
+                    <p class="text-[11px] text-slate-400 mt-1">تصاویر جی‌پی‌جی، پی‌ان‌جی، وب‌پی یا اس‌وی‌جی تا ۲ مگابایت؛ اگر این رنگ تصویر اصلی نداشته باشد، اولین تصویر همان می‌شود.</p>
                 </div>
-                <div class="flex items-end gap-4">
-                    <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">ذخیره</button>
-                    <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition">لغو</button>
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">ذخیره قیمت</button>
+                    <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="admin-btn admin-btn-secondary admin-btn-sm">لغو</button>
                 </div>
             </form>
         </div>
     @endif
 
-    <div class="mb-4">
-        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در نام محصول..." class="w-full sm:w-80 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-    </div>
+    <div class="admin-card overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">جدول کلی قیمت‌ها و موجودی رنگ</h3>
+            <div class="w-full sm:w-72">
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در نام محصول..." class="admin-input py-2 text-xs">
+            </div>
+        </div>
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">محصول</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">رنگ</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">قیمت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تصاویر</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($prices as $priceItem)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-500">{{ $priceItem->id }}</td>
-                        <td class="px-4 py-3 font-medium">{{ $priceItem->product?->name }}</td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center gap-2">
-                                <div class="w-5 h-5 rounded border" style="background-color: {{ $priceItem->color?->code_hex }}"></div>
-                                <span>{{ $priceItem->color?->name }}</span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-gray-500" dir="ltr">{{ number_format((int) $priceItem->price) }}</td>
-                        <td class="px-4 py-3">
-                            <span class="{{ $priceItem->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $priceItem->is_active ? 'فعال' : 'غیرفعال' }}</span>
-                        </td>
-                        <td class="px-4 py-3">
-                            @if($priceItem->images->isEmpty())
-                                <span class="text-xs text-gray-400">بدون تصویر</span>
-                            @else
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach($priceItem->images as $image)
-                                        <div class="flex flex-col items-center gap-1">
-                                            <div class="relative">
-                                                <img src="{{ asset('storage/' . $image->image_path) }}" alt="" class="h-12 w-12 rounded border border-gray-200 object-cover">
-                                                @if($image->is_primary)
-                                                    <span class="absolute -top-1 -start-1 rounded-full bg-green-500 px-1 text-[8px] font-medium text-white">اصلی</span>
-                                                @endif
-                                            </div>
-                                            @if(! $image->is_primary)
-                                                <button type="button" wire:click="setPrimaryImage({{ $image->id }})" class="text-[10px] text-yellow-500 hover:text-yellow-700">تعیین اصلی</button>
-                                            @endif
-                                            <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-red-600 hover:text-red-800">حذف</button>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            <button wire:click="edit({{ $priceItem->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
-                            <button wire:click="delete({{ $priceItem->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>
-                        </td>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50/70 border-b border-slate-100">
+                    <tr>
+                        <th class="admin-th w-16">#</th>
+                        <th class="admin-th">محصول</th>
+                        <th class="admin-th">رنگ</th>
+                        <th class="admin-th">قیمت</th>
+                        <th class="admin-th">وضعیت</th>
+                        <th class="admin-th">تصاویر</th>
+                        <th class="admin-th text-center">عملیات</th>
                     </tr>
-                @empty
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">قیمتی یافت نشد</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="p-4">{{ $prices->links() }}</div>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($prices as $priceItem)
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="admin-td text-xs text-slate-400 font-mono">{{ $priceItem->id }}</td>
+                            <td class="admin-td font-bold text-slate-900">{{ $priceItem->product?->name }}</td>
+                            <td class="admin-td">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-5 h-5 rounded-full border border-white shadow-xs" style="background-color: {{ $priceItem->color?->code_hex }}"></div>
+                                    <span class="text-xs font-semibold text-slate-700">{{ $priceItem->color?->name }}</span>
+                                </div>
+                            </td>
+                            <td class="admin-td font-extrabold text-indigo-600" dir="ltr">{{ number_format((int) $priceItem->price) }} تومان</td>
+                            <td class="admin-td">
+                                <span class="admin-badge {{ $priceItem->is_active ? 'admin-badge-success' : 'admin-badge-neutral' }}">
+                                    {{ $priceItem->is_active ? 'فعال' : 'غیرفعال' }}
+                                </span>
+                            </td>
+                            <td class="admin-td">
+                                @if($priceItem->images->isEmpty())
+                                    <span class="text-xs text-slate-400">بدون تصویر</span>
+                                @else
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($priceItem->images as $image)
+                                            <div class="flex flex-col items-center gap-1">
+                                                <div class="relative">
+                                                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="" class="h-10 w-10 rounded-xl border border-slate-200 object-cover shadow-xs">
+                                                    @if($image->is_primary)
+                                                        <span class="absolute -top-1 -start-1 rounded-full bg-emerald-500 px-1 text-[8px] font-medium text-white">اصلی</span>
+                                                    @endif
+                                                </div>
+                                                @if(! $image->is_primary)
+                                                    <button type="button" wire:click="setPrimaryImage({{ $image->id }})" class="text-[10px] text-indigo-600 hover:text-indigo-800">تعیین اصلی</button>
+                                                @endif
+                                                <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-rose-600 hover:text-rose-700">حذف</button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="admin-td text-center">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <button wire:click="edit({{ $priceItem->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                                    <button wire:click="delete({{ $priceItem->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7" class="admin-empty">قیمتی یافت نشد</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="p-5 border-t border-slate-100">{{ $prices->links() }}</div>
     </div>
 </div>

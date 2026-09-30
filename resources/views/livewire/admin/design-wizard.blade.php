@@ -4,15 +4,14 @@
     @endphp
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">{{ $design ? 'ویرایش طرح' : 'طرح جدید' }}</h1>
+    <div class="mb-6 flex items-center justify-end gap-4">
         <a href="{{ route('admin.designs') }}" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition">
             بازگشت به فهرست طرح‌ها
         </a>
     </div>
 
     {{-- Step indicator --}}
-    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6 overflow-x-auto">
+    <div class="admin-card p-4 mb-6 overflow-x-auto">
         <ol class="flex items-center gap-2 min-w-[560px]">
             @foreach($stepLabels as $number => $label)
                 @php
@@ -41,7 +40,10 @@
     </div>
 
     @if(session()->has('success'))
-        <div class="bg-green-50 text-green-700 p-4 rounded-xl mb-6 text-sm">{{ session('success') }}</div>
+        <div class="mb-6 flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <x-icons.check-badge class="mt-0.5 shrink-0 text-green-600" />
+            <div class="min-w-0">{{ session('success') }}</div>
+        </div>
     @endif
     @if(session()->has('error'))
         <div class="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm">{{ session('error') }}</div>
@@ -49,17 +51,17 @@
 
     {{-- Step ① اطلاعات --}}
     @if($step === 1)
-        <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <div class="admin-card p-6 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی طرح</label>
-                    <select wire:model="cateDesignId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                    <label class="admin-label">دسته‌بندی طرح</label>
+                    <select wire:model="cateDesignId" class="admin-input">
                         <option value="">— انتخاب دسته‌بندی —</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}{{ $category->is_active ? '' : ' (غیرفعال)' }}</option>
                         @endforeach
                     </select>
-                    @error('cateDesignId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('cateDesignId') <p class="admin-error">{{ $message }}</p> @enderror
 
                     <button type="button" wire:click="$toggle('showCategoryForm')" class="mt-2 text-xs text-yellow-600 hover:text-yellow-700 hover:underline">
                         {{ $showCategoryForm ? 'بستن فرم دسته‌بندی جدید' : '+ دسته‌بندی جدید' }}
@@ -68,32 +70,32 @@
                     @if($showCategoryForm)
                         <div class="mt-3 flex flex-wrap items-center gap-2">
                             <input type="text" wire:model="newCategoryName" placeholder="نام دسته‌بندی جدید"
-                                   class="w-full sm:w-56 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition text-sm">
+                                   class="admin-input sm:w-56">
                             <button type="button" wire:click="addCategory" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">
                                 افزودن
                             </button>
                         </div>
-                        @error('newCategoryName') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('newCategoryName') <p class="admin-error">{{ $message }}</p> @enderror
                     @endif
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">نام طرح</label>
-                    <input type="text" wire:model="name" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                    @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">نام طرح</label>
+                    <input type="text" wire:model="name" class="admin-input">
+                    @error('name') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات</label>
-                <textarea wire:model="description" rows="3" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                @error('description') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                <label class="admin-label">توضیحات</label>
+                <textarea wire:model="description" rows="3" class="admin-input"></textarea>
+                @error('description') <p class="admin-error">{{ $message }}</p> @enderror
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ترتیب نمایش</label>
-                    <input type="number" wire:model="sortOrder" min="0" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                    @error('sortOrder') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">ترتیب نمایش</label>
+                    <input type="number" wire:model="sortOrder" min="0" class="admin-input">
+                    @error('sortOrder') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
             </div>
 
@@ -112,25 +114,25 @@
                 <h4 class="font-bold text-gray-900 mb-3">سئو</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">عنوان سئو</label>
-                        <input type="text" wire:model="metaTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('metaTitle') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">عنوان سئو</label>
+                        <input type="text" wire:model="metaTitle" class="admin-input">
+                        @error('metaTitle') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات سئو</label>
-                        <textarea wire:model="metaDescription" rows="2" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                        @error('metaDescription') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">توضیحات سئو</label>
+                        <textarea wire:model="metaDescription" rows="2" class="admin-input"></textarea>
+                        @error('metaDescription') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">آدرس Canonical</label>
-                        <input type="text" wire:model="canonicalUrl" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('canonicalUrl') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">آدرس Canonical</label>
+                        <input type="text" wire:model="canonicalUrl" dir="ltr" class="admin-input">
+                        @error('canonicalUrl') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
                 <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">محتوی سئو</label>
-                    <textarea wire:model="seoContent" rows="3" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                    @error('seoContent') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">محتوی سئو</label>
+                    <textarea wire:model="seoContent" rows="3" class="admin-input"></textarea>
+                    @error('seoContent') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
             </div>
         </div>
@@ -139,30 +141,30 @@
     {{-- Step ② تصاویر --}}
     @if($step === 2)
         @if(! $designId)
-            <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 mb-6">
+            <div class="admin-card p-8 text-center text-gray-400 mb-6">
                 ابتدا در مرحله «اطلاعات» نام و دسته‌بندی طرح را ثبت کنید.
             </div>
         @else
             <div class="space-y-6">
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="admin-card p-6">
                     <h3 class="font-bold text-gray-900 mb-4">{{ $editingImageId ? 'ویرایش تصویر' : 'افزودن تصویر' }}</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">رنگ تصویر</label>
-                            <select wire:model="colorId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                            <label class="admin-label">رنگ تصویر</label>
+                            <select wire:model="colorId" class="admin-input">
                                 <option value="">— انتخاب رنگ —</option>
                                 @foreach($colors as $color)
                                     <option value="{{ $color->id }}">{{ $color->name }}</option>
                                 @endforeach
                             </select>
-                            @error('colorId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            @error('colorId') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">مسیر تصویر</label>
-                            <input type="text" wire:model="imagePath" placeholder="designs/eagle-black.png" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                            @error('imagePath') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">مسیر تصویر</label>
+                            <input type="text" wire:model="imagePath" placeholder="designs/eagle-black.png" dir="ltr" class="admin-input">
+                            @error('imagePath') <p class="admin-error">{{ $message }}</p> @enderror
                             <input type="file" wire:model="imageUpload" accept="image/*" class="block w-full mt-2 text-sm text-gray-600 file:me-3 file:border-0 file:bg-yellow-50 file:px-4 file:py-2 file:text-yellow-700 file:cursor-pointer">
-                            @error('imageUpload') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            @error('imageUpload') <p class="admin-error">{{ $message }}</p> @enderror
                             @if($imageUpload)
                                 <img src="{{ $imageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
                             @elseif($editingImageId && $imagePath)
@@ -170,30 +172,30 @@
                             @endif
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">متن جایگزین (Alt)</label>
-                            <input type="text" wire:model="altText" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                            @error('altText') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">متن جایگزین (Alt)</label>
+                            <input type="text" wire:model="altText" class="admin-input">
+                            @error('altText') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">عنوان تصویر</label>
-                            <input type="text" wire:model="imageTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                            @error('imageTitle') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">عنوان تصویر</label>
+                            <input type="text" wire:model="imageTitle" class="admin-input">
+                            @error('imageTitle') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">فایل بهینه‌شده</label>
-                            <input type="text" wire:model="optimizedFilename" placeholder="eagle-black-optimized.webp" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                            @error('optimizedFilename') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">فایل بهینه‌شده</label>
+                            <input type="text" wire:model="optimizedFilename" placeholder="eagle-black-optimized.webp" dir="ltr" class="admin-input">
+                            @error('optimizedFilename') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">ترتیب نمایش</label>
-                            <input type="number" wire:model="imageSortOrder" min="0" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                            @error('imageSortOrder') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="admin-label">ترتیب نمایش</label>
+                            <input type="number" wire:model="imageSortOrder" min="0" class="admin-input">
+                            @error('imageSortOrder') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                     </div>
                     <div class="mt-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">کپشن سئو</label>
-                        <textarea wire:model="seoCaption" rows="2" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                        @error('seoCaption') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">کپشن سئو</label>
+                        <textarea wire:model="seoCaption" rows="2" class="admin-input"></textarea>
+                        @error('seoCaption') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div class="mt-4 flex items-center gap-2">
                         <input type="checkbox" wire:model="imageIsActive" id="image_is_active" class="rounded border-gray-300 text-yellow-500">
@@ -208,40 +210,40 @@
                 </div>
 
                 @if($images->isEmpty())
-                    <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
+                    <div class="admin-card p-8 text-center text-gray-400">
                         هنوز تصویری برای این طرح ثبت نشده است.
                     </div>
                 @else
-                    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+                    <div class="admin-card overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
-                                    <th class="px-4 py-3 text-start font-medium text-gray-500">رنگ</th>
-                                    <th class="px-4 py-3 text-start font-medium text-gray-500">مسیر</th>
-                                    <th class="px-4 py-3 text-start font-medium text-gray-500">ترتیب</th>
-                                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                                    <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
+                                    <th class="admin-th">#</th>
+                                    <th class="admin-th">رنگ</th>
+                                    <th class="admin-th">مسیر</th>
+                                    <th class="admin-th">ترتیب</th>
+                                    <th class="admin-th">وضعیت</th>
+                                    <th class="admin-th">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @foreach($images as $image)
                                     <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-3 text-gray-500">{{ $image->id }}</td>
-                                        <td class="px-4 py-3">
+                                        <td class="admin-td text-gray-500">{{ $image->id }}</td>
+                                        <td class="admin-td">
                                             <div class="flex items-center gap-2">
                                                 <div class="w-5 h-5 rounded border" style="background-color: {{ $image->color?->code_hex }}"></div>
                                                 <span>{{ $image->color?->name }}</span>
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3 text-gray-500 font-mono text-xs break-all" dir="ltr">{{ $image->image_path }}</td>
-                                        <td class="px-4 py-3 text-gray-500">{{ $image->sort_order }}</td>
-                                        <td class="px-4 py-3">
+                                        <td class="admin-td text-gray-500 font-mono text-xs break-all" dir="ltr">{{ $image->image_path }}</td>
+                                        <td class="admin-td text-gray-500">{{ $image->sort_order }}</td>
+                                        <td class="admin-td">
                                             <span class="{{ $image->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $image->is_active ? 'فعال' : 'غیرفعال' }}</span>
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <td class="admin-td">
                                             <button type="button" wire:click="editImage({{ $image->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
-                                            <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر (به همراه سازگاری‌هایش) مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>
+                                            <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر (به همراه سازگاری‌هایش) مطمئن هستید؟" class="text-rose-600 hover:text-rose-700 text-xs font-medium transition">حذف</button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -256,11 +258,11 @@
     {{-- Step ③ رنگ‌ها --}}
     @if($step === 3)
         @if($images->isEmpty())
-            <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 mb-6">
+            <div class="admin-card p-8 text-center text-gray-400 mb-6">
                 این طرح هنوز تصویری ندارد؛ ابتدا در مرحله «تصاویر» تصویر اضافه کنید.
             </div>
         @else
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <div class="admin-card p-6">
                 <h3 class="font-bold text-gray-900 mb-2">رنگ‌های مرتبط با طرح</h3>
                 <p class="text-sm text-gray-500 mb-6">رنگ‌هایی که برای این طرح تصویر ثبت کرده‌اید. در مرحله بعد، سازگاری هر تصویر با رنگ‌های کارت را تعیین کنید.</p>
 
@@ -286,12 +288,12 @@
     {{-- Step ④ سازگاری --}}
     @if($step === 4)
         @if($images->isEmpty())
-            <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 mb-6">
+            <div class="admin-card p-8 text-center text-gray-400 mb-6">
                 این طرح تصویری ندارد؛ ابتدا در مرحله «تصاویر» تصویر اضافه کنید.
             </div>
         @else
             <div class="space-y-6">
-                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <div class="admin-card p-5">
                     <p class="text-sm text-gray-500 mb-4">برای هر تصویر طرح، سازگاری با رنگ‌های کارت را با تیک مشخص کنید. فقط ترکیب‌های دارای تیک در سفارشی‌ساز نمایش داده می‌شوند.</p>
                     @foreach($compatibilityRows as $row)
                         <div class="rounded-xl border border-gray-200 p-5 mb-4">
@@ -334,7 +336,7 @@
 
     {{-- Step ⑤ بررسی --}}
     @if($step === 5)
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <div class="admin-card p-6">
             <h3 class="font-bold text-gray-900 mb-6">بررسی نهایی طرح</h3>
             <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                 <div class="flex items-start justify-between gap-4 border-b border-gray-100 pb-3">

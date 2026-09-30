@@ -272,23 +272,6 @@ class FuelCardColorPricingBoundaryTest extends TestCase
         $this->assertSame(1, ProductColorPrice::where('product_id', $product->id)->where('is_active', true)->count());
     }
 
-    public function test_commerce_active_color_row_deletion_is_unchanged(): void
-    {
-        $product = $this->createProduct('commerce-delete-boundary', ProductTypeEnum::STANDARD);
-        $colorA = $this->createColor('A');
-        $colorB = $this->createColor('B');
-        $rejected = $this->createPrice($product, $colorA, 300000, true);
-        $this->createPrice($product, $colorB, 350000, true);
-
-        Livewire::actingAs($this->admin())
-            ->test(ProductColorPriceManager::class)
-            ->call('delete', $rejected->id)
-            ->assertHasNoErrors();
-
-        $this->assertDatabaseMissing('product_color_prices', ['id' => $rejected->id]);
-        $this->assertSame(1, ProductColorPrice::where('product_id', $product->id)->where('is_active', true)->count());
-    }
-
     public function test_product_manager_rejects_switching_to_fuel_when_two_active_prices_exist(): void
     {
         $bankProduct = $this->createBankProduct();
@@ -346,22 +329,6 @@ class FuelCardColorPricingBoundaryTest extends TestCase
         $this->createPrice($product, $colorB, 750000, true);
 
         $this->fillPriceForm($product, $colorC, 800000, true)
-            ->call('save')
-            ->assertHasNoErrors();
-
-        $this->assertSame(3, ProductColorPrice::where('product_id', $product->id)->where('is_active', true)->count());
-    }
-
-    public function test_commerce_product_without_workflow_keeps_prior_color_price_behavior(): void
-    {
-        $product = $this->createProduct('commerce-boundary', ProductTypeEnum::STANDARD);
-        $colorA = $this->createColor('A');
-        $colorB = $this->createColor('B');
-        $colorC = $this->createColor('C');
-        $this->createPrice($product, $colorA, 300000, true);
-        $this->createPrice($product, $colorB, 350000, true);
-
-        $this->fillPriceForm($product, $colorC, 400000, true)
             ->call('save')
             ->assertHasNoErrors();
 

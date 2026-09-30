@@ -1,68 +1,67 @@
-﻿<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">تصاویر طرح‌ها</h1>
-        <button wire:click="create" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">
+<div>
+    <div class="mb-6 flex items-center justify-end gap-4">
+        <button wire:click="create" class="admin-btn admin-btn-primary">
             + تصویر جدید
         </button>
     </div>
 
     @if($showForm)
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-gray-900 mb-4">{{ $editingId ? 'ویرایش تصویر' : 'تصویر جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">طرح</label>
-                        <select wire:model="designId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <label class="admin-label">طرح</label>
+                        <select wire:model="designId" class="admin-input">
                             <option value="">— انتخاب طرح —</option>
                             @foreach($designOptions as $option)
                                 <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
                             @endforeach
                         </select>
-                        @error('designId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('designId') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">رنگ تصویر</label>
-                        <select wire:model="colorId" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+                        <label class="admin-label">رنگ تصویر</label>
+                        <select wire:model="colorId" class="admin-input">
                             <option value="">— انتخاب رنگ —</option>
                             @foreach($colorOptions as $option)
                                 <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
                             @endforeach
                         </select>
-                        @error('colorId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('colorId') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">مسیر تصویر</label>
-                    <input type="text" wire:model="imagePath" placeholder="designs/eagle-black.png" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                    @error('imagePath') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">مسیر تصویر</label>
+                    <input type="text" wire:model="imagePath" placeholder="designs/eagle-black.png" dir="ltr" class="admin-input">
+                    @error('imagePath') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">متن جایگزین (Alt)</label>
-                        <input type="text" wire:model="altText" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('altText') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">متن جایگزین (Alt)</label>
+                        <input type="text" wire:model="altText" class="admin-input">
+                        @error('altText') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">عنوان تصویر</label>
-                        <input type="text" wire:model="imageTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('imageTitle') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">عنوان تصویر</label>
+                        <input type="text" wire:model="imageTitle" class="admin-input">
+                        @error('imageTitle') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">فایل بهینه‌شده</label>
-                        <input type="text" wire:model="optimizedFilename" placeholder="eagle-black-optimized.webp" dir="ltr" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('optimizedFilename') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">فایل بهینه‌شده</label>
+                        <input type="text" wire:model="optimizedFilename" placeholder="eagle-black-optimized.webp" dir="ltr" class="admin-input">
+                        @error('optimizedFilename') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ترتیب نمایش</label>
-                        <input type="number" wire:model="sortOrder" min="0" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
-                        @error('sortOrder') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="admin-label">ترتیب نمایش</label>
+                        <input type="number" wire:model="sortOrder" min="0" class="admin-input">
+                        @error('sortOrder') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">کپشن سئو</label>
-                    <textarea wire:model="seoCaption" rows="2" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"></textarea>
-                    @error('seoCaption') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="admin-label">کپشن سئو</label>
+                    <textarea wire:model="seoCaption" rows="2" class="admin-input"></textarea>
+                    @error('seoCaption') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
@@ -77,49 +76,49 @@
     @endif
 
     <div class="flex flex-wrap gap-4 mb-4">
-        <select wire:model.live="designFilter" class="w-full sm:w-64 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+        <select wire:model.live="designFilter" class="admin-input sm:w-64">
             <option value="">همه طرح‌ها</option>
             @foreach($designFilterOptions as $design)
                 <option value="{{ $design->id }}">{{ $design->name }}</option>
             @endforeach
         </select>
-        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در مسیر تصویر..." class="w-full sm:w-80 px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
+        <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در مسیر تصویر..." class="admin-input sm:w-80">
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+    <div class="admin-card overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">طرح</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">رنگ</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">مسیر</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">عملیات</th>
+                    <th class="admin-th">#</th>
+                    <th class="admin-th">طرح</th>
+                    <th class="admin-th">رنگ</th>
+                    <th class="admin-th">مسیر</th>
+                    <th class="admin-th">وضعیت</th>
+                    <th class="admin-th">عملیات</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($images as $image)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-500">{{ $image->id }}</td>
-                        <td class="px-4 py-3 font-medium">{{ $image->design?->name }}</td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td text-gray-500">{{ $image->id }}</td>
+                        <td class="admin-td font-medium">{{ $image->design?->name }}</td>
+                        <td class="admin-td">
                             <div class="flex items-center gap-2">
                                 <div class="w-5 h-5 rounded border" style="background-color: {{ $image->color?->code_hex }}"></div>
                                 <span>{{ $image->color?->name }}</span>
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 font-mono text-xs break-all" dir="ltr">{{ $image->image_path }}</td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td text-gray-500 font-mono text-xs break-all" dir="ltr">{{ $image->image_path }}</td>
+                        <td class="admin-td">
                             <span class="{{ $image->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $image->is_active ? 'فعال' : 'غیرفعال' }}</span>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="admin-td">
                             <button wire:click="edit({{ $image->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
-                            <button wire:click="delete({{ $image->id }})" wire:confirm="آیا از حذف این تصویر (به همراه سازگاری‌هایش) مطمئن هستید؟" class="text-red-600 hover:text-red-800 text-xs">حذف</button>
+                            <button wire:click="delete({{ $image->id }})" wire:confirm="آیا از حذف این تصویر (به همراه سازگاری‌هایش) مطمئن هستید؟" class="text-rose-600 hover:text-rose-700 text-xs font-medium transition">حذف</button>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">تصویری یافت نشد</td></tr>
+                    <tr><td colspan="6" class="admin-empty">تصویری یافت نشد</td></tr>
                 @endforelse
             </tbody>
         </table>

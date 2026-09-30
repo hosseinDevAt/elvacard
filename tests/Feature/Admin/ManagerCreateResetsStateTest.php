@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Livewire\Admin\CateDesignManager;
 use App\Livewire\Admin\ColorManager;
@@ -38,10 +39,10 @@ class ManagerCreateResetsStateTest extends TestCase
     private function product(): Product
     {
         return Product::create([
-            'type' => ProductTypeEnum::STANDARD->value,
-            'name' => 'محصول وضعیت',
+            'type' => ProductTypeEnum::BANK->value,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD->value,
+            'name' => 'کارت وضعیت',
             'slug' => 'state-product-'.uniqid(),
-            'base_price' => 100000,
             'is_active' => false,
         ]);
     }

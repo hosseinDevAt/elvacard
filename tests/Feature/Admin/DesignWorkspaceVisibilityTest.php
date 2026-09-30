@@ -203,8 +203,8 @@ class DesignWorkspaceVisibilityTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.designs'))
             ->assertOk()
-            ->assertSee('پنهان از شخصی‌سازی')
-            ->assertSee('قابل نمایش در شخصی‌سازی')
+            ->assertSee('پنهان از میزکار')
+            ->assertSee('قابل نمایش در میزکار')
             ->assertSee($hidden->name)
             ->assertSee($visible->name);
     }

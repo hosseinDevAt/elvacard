@@ -225,3 +225,31 @@ if (! function_exists('site_favicon_type')) {
         };
     }
 }
+
+if (! function_exists('icon_class')) {
+    /**
+     * Resolves the class attribute of an icon component.
+     *
+     * Tailwind emits size utilities in a fixed stylesheet order, so a component
+     * default such as `h-5 w-5` silently beats a caller's `h-4 w-4` however the
+     * two are merged. The caller therefore always wins: an explicit `$size`
+     * prop, or the caller's own height/width utility, is used as-is, and
+     * `$default` only applies when the caller expressed no size at all. Every
+     * icon component resolves its classes through this helper so all of them
+     * behave identically.
+     */
+    function icon_class(?string $callerClass, string $default = 'h-5 w-5', ?string $size = null): string
+    {
+        $classes = trim((string) preg_replace('/\s+/', ' ', (string) $callerClass));
+
+        if ($size !== null && trim($size) !== '') {
+            return trim($size.' '.$classes);
+        }
+
+        if (preg_match('/(?:^|\s)[hw]-(?:\d|\.|\[)/', $classes) === 1) {
+            return $classes;
+        }
+
+        return trim($default.' '.$classes);
+    }
+}

@@ -172,7 +172,9 @@ class ProductManagerOperationsTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductManager::class)
-            ->assertSee('text-green-600">قابل فروش', false);
+            ->assertSee('admin-badge-success', false)
+            ->assertSee('قابل فروش')
+            ->assertDontSee('قابل فروش نیست');
     }
 
     public function test_active_product_without_purchasable_path_is_marked_not_purchasable(): void
@@ -182,8 +184,10 @@ class ProductManagerOperationsTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductManager::class)
-            ->assertSee('text-green-600">قابل فروش', false)
-            ->assertSee('text-red-500">قابل فروش نیست', false);
+            ->assertSee('admin-badge-success', false)
+            ->assertSee('admin-badge-danger', false)
+            ->assertSee('قابل فروش')
+            ->assertSee('قابل فروش نیست');
     }
 
     public function test_inactive_product_does_not_render_a_purchase_badge(): void

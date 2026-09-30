@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Livewire\Admin\ColorManager;
 use App\Livewire\Admin\ProductColorPriceManager;
 use App\Livewire\Admin\ProductManager;
@@ -28,12 +29,11 @@ class ProductVariantImageManagerTest extends TestCase
     private function product(): Product
     {
         return Product::create([
-            'type' => 'standard',
-            'customization_workflow' => null,
-            'name' => 'محصول گالری',
+            'type' => 'bank',
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD->value,
+            'name' => 'کارت بانکی گالری',
             'slug' => 'gallery-product-'.uniqid(),
-            'base_price' => 200000,
-            'is_active' => true,
+            'is_active' => false,
         ]);
     }
 

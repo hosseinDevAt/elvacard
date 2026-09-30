@@ -1,18 +1,24 @@
 <div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">مدیریت سفارشات</h1>
-        <div class="flex flex-wrap gap-2">
-            <button wire:click="$set('statusFilter', null)" class="px-3 py-1.5 rounded-lg text-xs transition {{ !$statusFilter ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' }}">همه</button>
-            <button wire:click="$set('statusFilter', 'pending')" class="px-3 py-1.5 rounded-lg text-xs transition {{ $statusFilter === 'pending' ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' }}">در انتظار</button>
-            <button wire:click="$set('statusFilter', 'confirmed')" class="px-3 py-1.5 rounded-lg text-xs transition {{ $statusFilter === 'confirmed' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' }}">تأیید شده</button>
-            <button wire:click="$set('statusFilter', 'processing')" class="px-3 py-1.5 rounded-lg text-xs transition {{ $statusFilter === 'processing' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' }}">در حال پردازش</button>
-            <button wire:click="$set('statusFilter', 'completed')" class="px-3 py-1.5 rounded-lg text-xs transition {{ $statusFilter === 'completed' ? 'bg-green-800 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' }}">تکمیل شده</button>
-            <button wire:click="$set('statusFilter', 'cancelled')" class="px-3 py-1.5 rounded-lg text-xs transition {{ $statusFilter === 'cancelled' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' }}">لغو شده</button>
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">مدیریت سفارشات کاربران</h2>
+            <p class="text-xs text-slate-500 mt-1">مشاهده سفارشات، بررسی فیش‌های واریزی و تغییر وضعیت سفارش</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button wire:click="$set('statusFilter', null)" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ !$statusFilter ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">همه</button>
+            <button wire:click="$set('statusFilter', 'pending')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'pending' ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">معلق / در انتظار</button>
+            <button wire:click="$set('statusFilter', 'confirmed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'confirmed' ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تأیید شده</button>
+            <button wire:click="$set('statusFilter', 'processing')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'processing' ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در حال پردازش</button>
+            <button wire:click="$set('statusFilter', 'completed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'completed' ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تکمیل شده</button>
+            <button wire:click="$set('statusFilter', 'cancelled')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'cancelled' ? 'bg-rose-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">لغو شده</button>
         </div>
     </div>
 
     @if (session('success'))
-        <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
+        <div class="mb-6 flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <x-icons.check-badge class="mt-0.5 shrink-0 text-green-600" />
+            <div class="min-w-0">{{ session('success') }}</div>
+        </div>
     @endif
 
     @if (session('error'))
@@ -20,7 +26,7 @@
     @endif
 
     @if ($selectedOrder)
-        <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div class="mb-6 admin-card overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <h2 class="text-lg font-bold text-gray-900 min-w-0">جزئیات سفارش <span class="text-gray-500 max-w-[160px] truncate" dir="ltr" title="{{ $selectedOrder->reference }}">{{ $selectedOrder->reference }}</span></h2>
                 <button wire:click="closeOrderDetail" class="px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200">بازگشت به لیست</button>
@@ -108,7 +114,7 @@
                         }
                         $isFuel = $itemWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD;
                     @endphp
-                    <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+                    <div class="admin-card p-4 space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
                             <div>
                                 <span class="font-bold text-gray-900 text-sm">{{ $item->product_name_snapshot }}</span>
@@ -205,7 +211,7 @@
                     <div class="px-6 py-4 border-t border-gray-100">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                             <h3 class="font-bold text-gray-900">پرداخت #{{ $allPayments->count() - $index }}</h3>
-                            <span class="text-xs px-2 py-1 rounded-full {{ $payment->status === \App\Enums\PaymentStatus::SUCCESS ? 'bg-green-100 text-green-800' : ($payment->status === \App\Enums\PaymentStatus::PENDING_REVIEW ? 'bg-amber-100 text-amber-700' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700')) }}">
+                            <span class="admin-badge {{ $payment->status === \App\Enums\PaymentStatus::SUCCESS ? 'bg-green-100 text-green-800' : ($payment->status === \App\Enums\PaymentStatus::PENDING_REVIEW ? 'bg-amber-100 text-amber-700' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700')) }}">
                                 {{ $payment->status->faLabel() }}
                             </span>
                         </div>
@@ -273,8 +279,8 @@
 
                         @if ($payment->status === \App\Enums\PaymentStatus::PENDING_REVIEW && $payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER)
                             <div class="mt-4 flex items-center gap-2">
-                                <button wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="px-4 py-2 rounded-lg text-sm bg-green-600 hover:bg-green-700 text-white">تایید پرداخت</button>
-                                <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="px-4 py-2 rounded-lg text-sm bg-red-600 hover:bg-red-700 text-white">رد پرداخت</button>
+                                <button wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success">تایید پرداخت</button>
+                                <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger">رد پرداخت</button>
                             </div>
                         @endif
 
@@ -299,63 +305,82 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">کاربر</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">مبلغ</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">جزئیات</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تغییر وضعیت</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($orders as $order)
-                    @php
-                        $statusColors = [
-                            'pending' => 'bg-amber-100 text-amber-700',
-                            'confirmed' => 'bg-teal-100 text-teal-700',
-                            'processing' => 'bg-blue-100 text-blue-700',
-                            'completed' => 'bg-green-100 text-green-800',
-                            'cancelled' => 'bg-red-100 text-red-700',
-                        ];
-                    @endphp
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-500">{{ $order->reference ?? $order->id }}</td>
-                        <td class="px-4 py-3">{{ $order->user->name ?? ($order->customer_name ?? '-') }} <span class="text-gray-400 text-xs">({{ $order->user->phone ?? ($order->customer_phone ?? '-') }})</span></td>
-                        <td class="px-4 py-3 font-mono" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
-                        <td class="px-4 py-3">
-                            <span class="{{ $statusColors[$order->status->value] ?? 'bg-gray-100 text-gray-700' }} text-xs px-2 py-1 rounded-full">
-                                {{ $order->status->faLabel() }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ jalali_relative($order->created_at) }}</td>
-                        <td class="px-4 py-3">
-                            <button wire:click="viewOrder({{ $order->id }})" class="text-xs px-2 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white">جزئیات</button>
-                        </td>
-                        <td class="px-4 py-3">
-                            @php $targets = $transitions[$order->id] ?? []; @endphp
-                            @if (empty($targets))
-                                <span class="text-gray-400 text-xs">—</span>
-                            @else
-                                <select wire:change="updateStatus({{ $order->id }}, $event.target.value)"
-                                    class="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:border-yellow-500">
-                                    <option value="">تغییر وضعیت...</option>
-                                    @foreach ($targets as $target)
-                                        <option value="{{ $target['value'] }}">{{ $target['label'] }}</option>
-                                    @endforeach
-                                </select>
-                            @endif
-                        </td>
+    <div class="admin-card overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900">سفارشات اخیر سیستم</h3>
+            <span class="text-xs text-slate-400">نمایش وضعیت سفارشات و تغییرات</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50/70 border-b border-slate-100">
+                    <tr>
+                        <th class="admin-th w-24">کد سفارش</th>
+                        <th class="admin-th">مشتری</th>
+                        <th class="admin-th">مبلغ سفارش</th>
+                        <th class="admin-th">وضعیت</th>
+                        <th class="admin-th">تاریخ ثبت</th>
+                        <th class="admin-th text-center">جزئیات</th>
+                        <th class="admin-th">تغییر وضعیت</th>
                     </tr>
-                @empty
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">سفارشی وجود ندارد</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="p-4">{{ $orders->links() }}</div>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($orders as $order)
+                        @php
+                            $statusColors = [
+                                'pending' => 'admin-badge-warning',
+                                'confirmed' => 'admin-badge-info',
+                                'processing' => 'admin-badge-info',
+                                'completed' => 'admin-badge-success',
+                                'cancelled' => 'admin-badge-danger',
+                            ];
+                        @endphp
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="admin-td font-mono text-xs text-slate-500" dir="ltr">{{ $order->reference ?? '#'.$order->id }}</td>
+                            <td class="admin-td">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">
+                                        {{ mb_substr($order->user?->name ?? $order->customer_name ?? 'م', 0, 1) }}
+                                    </span>
+                                    <div>
+                                        <span class="font-bold text-slate-900 block text-xs">{{ $order->user?->name ?? ($order->customer_name ?? 'کاربر مهمان') }}</span>
+                                        <span class="text-[11px] text-slate-400 font-mono" dir="ltr">{{ $order->user?->phone ?? ($order->customer_phone ?? '-') }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="admin-td font-bold text-slate-900 text-xs">{{ number_format($order->total_price) }} تومان</td>
+                            <td class="admin-td">
+                                <span class="{{ $statusColors[$order->status->value] ?? 'admin-badge-neutral' }} admin-badge">
+                                    {{ $order->status->faLabel() }}
+                                </span>
+                            </td>
+                            <td class="admin-td text-slate-400 text-xs">{{ jalali_relative($order->created_at) }}</td>
+                            <td class="admin-td text-center">
+                                <button wire:click="viewOrder({{ $order->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
+                                    جزئیات
+                                </button>
+                            </td>
+                            <td class="admin-td">
+                                @php $targets = $transitions[$order->id] ?? []; @endphp
+                                @if (empty($targets))
+                                    <span class="text-slate-400 text-xs">—</span>
+                                @else
+                                    <select wire:change="updateStatus({{ $order->id }}, $event.target.value)"
+                                        class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-100">
+                                        <option value="">تغییر وضعیت...</option>
+                                        @foreach ($targets as $target)
+                                            <option value="{{ $target['value'] }}">{{ $target['label'] }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7" class="admin-empty">سفارشی وجود ندارد</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="p-5 border-t border-slate-100">{{ $orders->links() }}</div>
     </div>
 </div>

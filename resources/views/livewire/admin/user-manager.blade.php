@@ -1,9 +1,8 @@
-﻿<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">مدیریت کاربران</h1>
-        <div class="w-full sm:w-72">
-            <input type="text" wire:model.live="search" placeholder="جستجو بر اساس نام یا شماره..."
-                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition text-sm">
+<div>
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">مدیریت کاربران سیستم</h2>
+            <p class="text-xs text-slate-500 mt-1">مشاهده و مدیریت کاربران، بررسی سفارشات و وضعیت حساب کاربری</p>
         </div>
     </div>
 
@@ -12,17 +11,20 @@
     @endif
 
     @if (session('success'))
-        <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
+        <div class="mb-6 flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <x-icons.check-badge class="mt-0.5 shrink-0 text-green-600" />
+            <div class="min-w-0">{{ session('success') }}</div>
+        </div>
     @endif
 
     @if ($selectedUser)
-        <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div class="mb-6 admin-card overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <h2 class="text-lg font-bold text-gray-900 min-w-0">مشخصات مشتری <span class="text-gray-500">{{ $selectedUser->displayName() }}</span>
                     @if ($selectedUser->is_active)
-                        <span class="inline-block ms-2 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">فعال</span>
+                        <span class="admin-badge ms-2 bg-green-100 text-green-800">فعال</span>
                     @else
-                        <span class="inline-block ms-2 px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">مسدود</span>
+                        <span class="admin-badge ms-2 bg-red-100 text-red-700">مسدود</span>
                     @endif
                 </h2>
                 <button wire:click="closeUserDetail" class="px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200">بازگشت به لیست</button>
@@ -96,7 +98,7 @@
                         <div class="flex-1">
                             <label class="block text-xs text-gray-500 mb-1">دلیل مسدودسازی (اختیاری)</label>
                             <textarea wire:model="blockReason" rows="2" maxlength="255"
-                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"
+                                class="admin-input"
                                 placeholder="اختیاری"></textarea>
                             @error('blockReason')
                                 <span class="text-xs text-red-600">{{ $message }}</span>
@@ -130,28 +132,28 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">کد سفارش</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت پرداخت</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">مبلغ</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ</th>
+                                <th class="admin-th">کد سفارش</th>
+                                <th class="admin-th">وضعیت</th>
+                                <th class="admin-th">وضعیت پرداخت</th>
+                                <th class="admin-th">مبلغ</th>
+                                <th class="admin-th">تاریخ</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($recentOrders as $order)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ $order->reference }}</td>
-                                    <td class="px-4 py-3">
-                                        <span class="text-xs px-2 py-1 rounded-full {{ $order->status->value === 'completed' ? 'bg-green-100 text-green-800' : ($order->status->value === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700') }}">
+                                    <td class="admin-td font-mono text-xs" dir="ltr">{{ $order->reference }}</td>
+                                    <td class="admin-td">
+                                        <span class="admin-badge {{ $order->status->value === 'completed' ? 'bg-green-100 text-green-800' : ($order->status->value === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700') }}">
                                             {{ $order->status->faLabel() }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-xs">{{ $order->payment_status->faLabel() }}</td>
-                                    <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
-                                    <td class="px-4 py-3 text-xs text-gray-500">{{ jalali_date($order->created_at, 'datetime') }}</td>
+                                    <td class="admin-td text-xs">{{ $order->payment_status->faLabel() }}</td>
+                                    <td class="admin-td font-mono text-xs" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
+                                    <td class="admin-td text-xs text-gray-500">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">سفارشی برای این کاربر ثبت نشده است</td></tr>
+                                <tr><td colspan="5" class="admin-empty">سفارشی برای این کاربر ثبت نشده است</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -164,32 +166,32 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">کد سفارش</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">نوع حساب</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت پرداخت</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">مبلغ</th>
-                                <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ</th>
+                                <th class="admin-th">کد سفارش</th>
+                                <th class="admin-th">نوع حساب</th>
+                                <th class="admin-th">وضعیت</th>
+                                <th class="admin-th">وضعیت پرداخت</th>
+                                <th class="admin-th">مبلغ</th>
+                                <th class="admin-th">تاریخ</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($guestOrders as $order)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ $order->reference }}</td>
-                                    <td class="px-4 py-3">
-                                        <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800">مهمان</span>
+                                    <td class="admin-td font-mono text-xs" dir="ltr">{{ $order->reference }}</td>
+                                    <td class="admin-td">
+                                        <span class="admin-badge bg-amber-100 text-amber-800">مهمان</span>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <span class="text-xs px-2 py-1 rounded-full {{ $order->status->value === 'completed' ? 'bg-green-100 text-green-800' : ($order->status->value === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700') }}">
+                                    <td class="admin-td">
+                                        <span class="admin-badge {{ $order->status->value === 'completed' ? 'bg-green-100 text-green-800' : ($order->status->value === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700') }}">
                                             {{ $order->status->faLabel() }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-xs">{{ $order->payment_status->faLabel() }}</td>
-                                    <td class="px-4 py-3 font-mono text-xs" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
-                                    <td class="px-4 py-3 text-xs text-gray-500">{{ jalali_date($order->created_at, 'datetime') }}</td>
+                                    <td class="admin-td text-xs">{{ $order->payment_status->faLabel() }}</td>
+                                    <td class="admin-td font-mono text-xs" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
+                                    <td class="admin-td text-xs text-gray-500">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">سفارش مهمانی با این شماره تماس یافت نشد</td></tr>
+                                <tr><td colspan="6" class="admin-empty">سفارش مهمانی با این شماره تماس یافت نشد</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -198,45 +200,73 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">#</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">نام</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تلفن</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">آدرس</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تعداد سفارش</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">وضعیت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">تاریخ عضویت</th>
-                    <th class="px-4 py-3 text-start font-medium text-gray-500">جزئیات</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($users as $user)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-500">{{ $user->id }}</td>
-                        <td class="px-4 py-3 font-medium">{{ $user->name }}</td>
-                        <td class="px-4 py-3 font-mono" dir="ltr">{{ $user->phone }}</td>
-                        <td class="px-4 py-3 text-gray-500 text-xs max-w-[200px] truncate">{{ $user->address ?? '-' }}</td>
-                        <td class="px-4 py-3">{{ $user->orders_count }}</td>
-                        <td class="px-4 py-3">
-                            @if ($user->is_active)
-                                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">فعال</span>
-                            @else
-                                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">مسدود</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ jalali_relative($user->created_at) }}</td>
-                        <td class="px-4 py-3">
-                            <button wire:click="viewUser({{ $user->id }})" class="text-xs px-2 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white">جزئیات</button>
-                        </td>
+    <div class="admin-card overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 border-b border-slate-100">
+            <div>
+                <h3 class="text-base font-bold text-slate-900">لیست کاربران سیستم</h3>
+                <p class="text-xs text-slate-400 mt-0.5">مشاهده مشخصات، نقش‌ها و فعالیت کاربران</p>
+            </div>
+            <div class="w-full sm:w-72">
+                <input type="text" wire:model.live="search" placeholder="جستجوی کاربر..."
+                       class="admin-input py-2 text-xs">
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50/70 border-b border-slate-100">
+                    <tr>
+                        <th class="admin-th w-16">#</th>
+                        <th class="admin-th">نام کاربر</th>
+                        <th class="admin-th">ایمیل</th>
+                        <th class="admin-th">تلفن همراه</th>
+                        <th class="admin-th">عضویت</th>
+                        <th class="admin-th">نقش / وضعیت</th>
+                        <th class="admin-th text-center">جزئیات</th>
                     </tr>
-                @empty
-                    <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">کاربری یافت نشد</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="p-4">{{ $users->links() }}</div>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($users as $user)
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="admin-td text-xs text-slate-400 font-mono">{{ $user->id }}</td>
+                            <td class="admin-td">
+                                <div class="flex items-center gap-3">
+                                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">
+                                        {{ mb_substr($user->name ?? 'ک', 0, 1) }}
+                                    </span>
+                                    <div>
+                                        <span class="font-bold text-slate-900 block text-xs">{{ $user->name }}</span>
+                                        @if($user->address)
+                                            <span class="text-[11px] text-slate-400 max-w-[160px] truncate block">{{ $user->address }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="admin-td text-xs text-slate-500 font-mono" dir="ltr">{{ $user->email ?? '-' }}</td>
+                            <td class="admin-td font-mono text-xs text-slate-600" dir="ltr">{{ $user->phone }}</td>
+                            <td class="admin-td text-slate-400 text-xs">{{ jalali_relative($user->created_at) }}</td>
+                            <td class="admin-td">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="admin-badge {{ $user->role === 'admin' ? 'admin-badge-info' : 'admin-badge-neutral' }}">
+                                        {{ $user->role === 'admin' ? 'مدیر' : 'مشتری' }}
+                                    </span>
+                                    <span class="admin-badge {{ $user->is_active ? 'admin-badge-success' : 'admin-badge-danger' }}">
+                                        {{ $user->is_active ? 'فعال' : 'مسدود' }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="admin-td text-center">
+                                <button wire:click="viewUser({{ $user->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
+                                    جزئیات
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7" class="admin-empty">کاربری یافت نشد</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="p-5 border-t border-slate-100">{{ $users->links() }}</div>
     </div>
 </div>

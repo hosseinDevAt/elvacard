@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
+use App\Models\Color;
 use App\Models\DesignColorCompatibility;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -64,6 +65,13 @@ class ProductManager extends Component
 
     public bool $isActive = true;
 
+    /**
+     * Transient pricing-model selection of the Store form («محصول عادی» /
+     * «محصول متغیر»). It is never persisted: the database stays authoritative
+     * (products.base_price for simple rows, ProductColorPrice for variables).
+     */
+    public string $pricingType = 'simple';
+
     public string $search = '';
 
     public string $typeFilter = '';
@@ -73,6 +81,18 @@ class ProductManager extends Component
     public ?int $editingId = null;
 
     public bool $showForm = false;
+
+    public ?int $variantColorId = null;
+
+    public ?int $variantPrice = null;
+
+    public bool $variantIsActive = true;
+
+    public $variantImageUploads = [];
+
+    public ?int $editingVariantId = null;
+
+    public bool $showVariantForm = false;
 
     protected $rules = [
         'type' => 'required|in:bank,fuel,standard',
@@ -93,6 +113,20 @@ class ProductManager extends Component
         'seoContent' => 'nullable|string',
         'robotsIndex' => 'boolean',
         'isActive' => 'boolean',
+    ];
+
+    protected $variantRules = [
+        'variantColorId' => 'required|integer|exists:colors,id',
+        'variantPrice' => 'required|integer|min:0',
+        'variantIsActive' => 'boolean',
+        'variantImageUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+    ];
+
+    protected $variantMessages = [
+        'variantColorId.required' => 'رنگ را انتخاب کنید.',
+        'variantPrice.required' => 'قیمت را وارد کنید.',
+        'variantPrice.integer' => 'قیمت باید عدد صحیح باشد.',
+        'variantPrice.min' => 'قیمت نمی‌تواند منفی باشد.',
     ];
 
     public function save(): void
@@ -168,13 +202,43 @@ class ProductManager extends Component
             }
         }
 
-        if ($this->type === ProductTypeEnum::STANDARD->value && $this->isActive && $this->basePrice === null) {
+        if (
+            $this->editingId !== null
+            && $this->customizationWorkflow === null
+            && $this->pricingType === 'simple'
+            && ProductColorPrice::query()->where('product_id', $this->editingId)->exists()
+        ) {
             $this->addError(
-                'basePrice',
-                'محصول استاندارد فعال باید قیمت پایه داشته باشد؛ بدون قیمت پایه قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
+                'pricingType',
+                'این محصول دارای رنگ و قیمت‌های متغیر ثبت‌شده است؛ برای تبدیل به محصول عادی ابتدا همه متغیرها را از بخش «متغیرهای محصول» حذف کنید.'
             );
 
             return;
+        }
+
+        if ($this->type === ProductTypeEnum::STANDARD->value && $this->isActive) {
+            if ($this->pricingType === 'variable') {
+                $hasActiveVariant = ProductColorPrice::query()
+                    ->where('product_id', $this->editingId)
+                    ->where('is_active', true)
+                    ->exists();
+
+                if (! $hasActiveVariant) {
+                    $this->addError(
+                        'pricingType',
+                        'محصول متغیر فعال باید حداقل یک رنگ و قیمت فعال داشته باشد؛ ابتدا محصول را بدون فعال بودن ذخیره کنید، سپس از بخش «متغیرهای محصول» رنگ و قیمت فعال اضافه کنید و دوباره آن را فعال کنید.'
+                    );
+
+                    return;
+                }
+            } elseif ($this->basePrice === null) {
+                $this->addError(
+                    'basePrice',
+                    'محصول استاندارد (عادی) فعال باید قیمت پایه داشته باشد؛ بدون قیمت پایه قابل فروش نیست و نمی‌تواند فعال ذخیره شود.'
+                );
+
+                return;
+            }
         }
 
         $previousMainImage = null;
@@ -231,11 +295,15 @@ class ProductManager extends Component
             'is_active' => $this->isActive,
         ];
 
+        $createdProductId = null;
+
         if ($this->editingId) {
             Product::find($this->editingId)->update($data);
             session()->flash('success', 'محصول با موفقیت ویرایش شد');
         } else {
-            Product::create($data);
+            /** @var Product $createdProduct */
+            $createdProduct = Product::create($data);
+            $createdProductId = $createdProduct->id;
             session()->flash('success', 'محصول با موفقیت اضافه شد');
         }
 
@@ -245,6 +313,22 @@ class ProductManager extends Component
             $this->mainImage,
             $this->ogImage,
         );
+
+        // A variable Store product needs a real product id before any color
+        // price exists, so creating one opens the edit form right into the
+        // variant-pricing section instead of dumping the admin back to the
+        // list. edit() derives the pricing model from existing rows (which are
+        // none yet), so the variable model is restored explicitly afterwards.
+        if (
+            $createdProductId !== null
+            && $this->type === ProductTypeEnum::STANDARD->value
+            && $this->pricingType === 'variable'
+        ) {
+            $this->edit($createdProductId);
+            $this->pricingType = 'variable';
+
+            return;
+        }
 
         $this->resetForm();
         $this->showForm = false;
@@ -259,6 +343,28 @@ class ProductManager extends Component
     {
         $this->resetForm();
         $this->showForm = true;
+    }
+
+    /**
+     * Guards the pricing-model toggle while editing: a Store product that
+     * already carries color-price rows must not silently lose them when the
+     * admin switches to «محصول عادی». The toggle is rejected, the state stays
+     * variable, and the rows are preserved; the admin must delete every variant
+     * first through the existing guarded delete actions.
+     */
+    public function updatedPricingType(string $value): void
+    {
+        if ($value !== 'simple' || $this->editingId === null || $this->customizationWorkflow !== null) {
+            return;
+        }
+
+        if (ProductColorPrice::query()->where('product_id', $this->editingId)->exists()) {
+            $this->pricingType = 'variable';
+            $this->addError(
+                'pricingType',
+                'این محصول دارای رنگ و قیمت‌های متغیر ثبت‌شده است؛ برای تبدیل به محصول عادی ابتدا همه متغیرها را از بخش «متغیرهای محصول» حذف کنید. هیچ داده‌ای به‌صورت خودکار حذف نمی‌شود.'
+            );
+        }
     }
 
     public function edit(int $id): void
@@ -288,6 +394,12 @@ class ProductManager extends Component
         $this->ogImage = $product->og_image;
         $this->seoContent = $product->seo_content;
         $this->isActive = (bool) $product->is_active;
+        $this->pricingType = $this->customizationWorkflow === null
+            && ProductColorPrice::query()->where('product_id', $product->id)->exists()
+                ? 'variable'
+                : 'simple';
+        $this->resetVariantForm();
+        $this->showVariantForm = false;
         $this->showForm = true;
     }
 
@@ -375,6 +487,332 @@ class ProductManager extends Component
         $this->seoContent = null;
         $this->isActive = true;
         $this->editingId = null;
+        $this->pricingType = 'simple';
+        $this->resetVariantForm();
+        $this->showVariantForm = false;
+    }
+
+    /**
+     * Store-product pricing is managed inline from the Store → Products
+     * surface only: an ordinary Store product (customization_workflow = null).
+     * Bank/Fuel cards keep their color pricing in «قیمت‌گذاری کارت‌ها».
+     */
+    private function editableStoreProduct(): ?Product
+    {
+        if ($this->editingId === null) {
+            return null;
+        }
+
+        $product = Product::query()->find($this->editingId);
+
+        if ($product === null || $product->getRawOriginal('customization_workflow') !== null) {
+            return null;
+        }
+
+        return $product;
+    }
+
+    /**
+     * Resolves a variant price row only when it belongs to the Store product
+     * currently open in the form. Every variant action goes through this, so a
+     * crafted Livewire call can never re-parent another product's price row
+     * into this one.
+     */
+    private function scopedStoreVariant(int $id): ?ProductColorPrice
+    {
+        $product = $this->editableStoreProduct();
+
+        if ($product === null) {
+            return null;
+        }
+
+        return ProductColorPrice::query()
+            ->where('product_id', $product->id)
+            ->whereKey($id)
+            ->first();
+    }
+
+    /**
+     * Same ownership contract as scopedStoreVariant(), applied to variant
+     * gallery images: an image is only reachable while its own product is open.
+     */
+    private function scopedStoreVariantImage(int $id): ?ProductImage
+    {
+        $product = $this->editableStoreProduct();
+
+        if ($product === null) {
+            return null;
+        }
+
+        return ProductImage::query()
+            ->where('product_id', $product->id)
+            ->whereKey($id)
+            ->first();
+    }
+
+    public function openVariantForm(): void
+    {
+        if ($this->editableStoreProduct() === null) {
+            session()->flash('error', 'برای مدیریت قیمت متغیر، ابتدا محصول فروشگاهی را ذخیره و سپس ویرایش کنید.');
+
+            return;
+        }
+
+        $this->resetVariantForm();
+        $this->showVariantForm = true;
+    }
+
+    public function editVariant(int $id): void
+    {
+        $priceItem = $this->scopedStoreVariant($id);
+
+        if ($priceItem === null) {
+            session()->flash('error', 'این قیمت متعلق به محصول در حال ویرایش نیست؛ عملیات متوقف شد.');
+
+            return;
+        }
+
+        $this->editingVariantId = $id;
+        $this->variantColorId = (int) $priceItem->color_id;
+        $this->variantPrice = (int) $priceItem->price;
+        $this->variantIsActive = (bool) $priceItem->is_active;
+        $this->showVariantForm = true;
+    }
+
+    public function saveVariant(): void
+    {
+        $this->validate($this->variantRules, $this->variantMessages);
+
+        $product = $this->editableStoreProduct();
+
+        if ($product === null) {
+            session()->flash('error', 'ابتدا محصول فروشگاهی را ذخیره کنید؛ سپس رنگ و قیمت متغیر آن را تعریف کنید.');
+
+            return;
+        }
+
+        $duplicate = ProductColorPrice::query()
+            ->where('product_id', $product->id)
+            ->where('color_id', $this->variantColorId)
+            ->when($this->editingVariantId, fn ($query) => $query->where('id', '!=', $this->editingVariantId))
+            ->exists();
+
+        if ($duplicate) {
+            session()->flash('error', 'قیمت‌گذاری برای این محصول و رنگ از قبل ثبت شده است.');
+
+            return;
+        }
+
+        $priceRowBlocker = ProductPurchaseabilityService::priceRowChangeBlocker(
+            $product->id,
+            $this->editingVariantId,
+            $this->variantColorId,
+            $this->variantIsActive,
+        );
+
+        if ($priceRowBlocker !== null) {
+            session()->flash('error', $priceRowBlocker);
+
+            return;
+        }
+
+        $data = [
+            'product_id' => $product->id,
+            'color_id' => $this->variantColorId,
+            'price' => $this->variantPrice,
+            'is_active' => $this->variantIsActive,
+        ];
+
+        $priceItem = null;
+        $previousColorId = null;
+
+        if ($this->editingVariantId) {
+            $priceItem = $this->scopedStoreVariant($this->editingVariantId);
+
+            if ($priceItem === null) {
+                session()->flash('error', 'این قیمت متعلق به محصول در حال ویرایش نیست؛ عملیات متوقف شد.');
+                $this->resetVariantForm();
+                $this->showVariantForm = false;
+
+                return;
+            }
+
+            $previousColorId = $priceItem->color_id !== null ? (int) $priceItem->color_id : null;
+            $priceItem->update($data);
+            session()->flash('success', 'قیمت متغیر با موفقیت ویرایش شد');
+        } else {
+            $priceItem = ProductColorPrice::create($data);
+            session()->flash('success', 'قیمت متغیر با موفقیت اضافه شد');
+        }
+
+        if ($previousColorId !== null && (int) $previousColorId !== (int) $this->variantColorId) {
+            ProductImage::query()
+                ->where('product_id', $product->id)
+                ->where('color_id', $previousColorId)
+                ->update(['color_id' => $this->variantColorId]);
+        }
+
+        $this->persistVariantUploadedImages();
+
+        $this->resetVariantForm();
+        $this->showVariantForm = false;
+    }
+
+    public function deleteVariant(int $id): void
+    {
+        $priceItem = $this->scopedStoreVariant($id);
+
+        if ($priceItem === null) {
+            session()->flash('error', 'این قیمت متعلق به محصول در حال ویرایش نیست؛ عملیات متوقف شد.');
+
+            return;
+        }
+
+        $priceRowBlocker = ProductPurchaseabilityService::priceRowChangeBlocker(
+            $priceItem->product_id,
+            $id,
+            null,
+            false,
+        );
+
+        if ($priceRowBlocker !== null) {
+            session()->flash('error', $priceRowBlocker);
+
+            return;
+        }
+
+        $priceItem->delete();
+
+        $images = ProductImage::query()
+            ->where('product_id', $priceItem->product_id)
+            ->where('color_id', $priceItem->color_id)
+            ->get();
+
+        foreach ($images as $image) {
+            $this->deleteVariantImageRow($image);
+        }
+
+        session()->flash('success', 'قیمت متغیر با موفقیت حذف شد');
+    }
+
+    public function setPrimaryVariantImage(int $id): void
+    {
+        $image = $this->scopedStoreVariantImage($id);
+
+        if ($image === null) {
+            session()->flash('error', 'تصویر موردنظر متعلق به محصول در حال ویرایش نیست؛ عملیات متوقف شد.');
+
+            return;
+        }
+
+        ProductImage::query()
+            ->where('product_id', $image->product_id)
+            ->where('color_id', $image->color_id)
+            ->update(['is_primary' => false]);
+
+        $image->update(['is_primary' => true]);
+        session()->flash('success', 'تصویر اصلی با موفقیت تعیین شد');
+    }
+
+    public function deleteVariantImage(int $id): void
+    {
+        $image = $this->scopedStoreVariantImage($id);
+
+        if ($image === null) {
+            session()->flash('error', 'تصویر موردنظر متعلق به محصول در حال ویرایش نیست؛ عملیات متوقف شد.');
+
+            return;
+        }
+
+        $this->deleteVariantImageRow($image);
+        session()->flash('success', 'تصویر با موفقیت حذف شد');
+    }
+
+    /**
+     * Stores every uploaded variant image under the product's color, ordered
+     * after any existing gallery. The first upload becomes the primary image
+     * only when the variant has none yet.
+     */
+    private function persistVariantUploadedImages(): void
+    {
+        $uploads = array_values(array_filter(
+            is_array($this->variantImageUploads) ? $this->variantImageUploads : [],
+            fn ($file) => $file !== null,
+        ));
+
+        if ($uploads === []) {
+            return;
+        }
+
+        $hasPrimary = ProductImage::query()
+            ->where('product_id', $this->editingId)
+            ->where('color_id', $this->variantColorId)
+            ->where('is_primary', true)
+            ->exists();
+
+        $nextSortOrder = (int) ProductImage::query()
+            ->where('product_id', $this->editingId)
+            ->where('color_id', $this->variantColorId)
+            ->max('sort_order');
+
+        foreach ($uploads as $index => $file) {
+            ProductImage::query()->create([
+                'product_id' => $this->editingId,
+                'color_id' => $this->variantColorId,
+                'image_path' => $file->store('products', 'public'),
+                'sort_order' => $nextSortOrder + $index + 1,
+                'is_primary' => ! $hasPrimary && $index === 0,
+            ]);
+        }
+    }
+
+    /**
+     * Removes a variant image row (the model's deleted hook clears its physical
+     * file once no other product / variant image, main image or og image still
+     * references the path), then guarantees the variant keeps exactly one
+     * primary image when images remain.
+     */
+    private function deleteVariantImageRow(ProductImage $image): void
+    {
+        $image->delete();
+
+        $remaining = ProductImage::query()
+            ->where('product_id', $image->product_id)
+            ->where('color_id', $image->color_id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        if (! $remaining->contains(fn ($item) => (bool) $item->is_primary) && $remaining->isNotEmpty()) {
+            $remaining->first()->update(['is_primary' => true]);
+        }
+    }
+
+    public function getStoreColorOptionsProperty(): array
+    {
+        $items = Color::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'is_active']);
+
+        return array_merge(
+            $items->filter(fn ($color) => (bool) $color->is_active)
+                ->map(fn ($color) => ['id' => $color->id, 'name' => $color->name])
+                ->values()
+                ->all(),
+            $this->editingVariantId
+                ? $items->filter(fn ($color) => ! $color->is_active && (int) $color->id === (int) $this->variantColorId)
+                    ->map(fn ($color) => ['id' => $color->id, 'name' => $color->name.' (غیرفعال)'])
+                    ->values()
+                    ->all()
+                : []
+        );
+    }
+
+    public function resetVariantForm(): void
+    {
+        $this->variantColorId = null;
+        $this->variantPrice = null;
+        $this->variantIsActive = true;
+        $this->variantImageUploads = [];
+        $this->editingVariantId = null;
     }
 
     /**
@@ -460,9 +898,21 @@ class ProductManager extends Component
             ->map(fn ($id) => (int) $id)
             ->all();
 
+        $storeProduct = $this->editableStoreProduct();
+
+        $storeVariants = $storeProduct !== null
+            ? ProductColorPrice::query()
+                ->with('color', 'images')
+                ->where('product_id', $storeProduct->id)
+                ->orderByDesc('id')
+                ->get()
+            : collect();
+
         return view('livewire.admin.product-manager', [
             'products' => $products,
             'purchasableIds' => $purchasableIds,
+            'storeVariants' => $storeVariants,
+            'storeColorOptions' => $this->storeColorOptions,
             'typeOptions' => ProductTypeEnum::options(),
             'categoryOptions' => ProductCategory::query()
                 ->orderBy('sort_order')

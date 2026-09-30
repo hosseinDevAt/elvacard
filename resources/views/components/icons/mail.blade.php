@@ -1,10 +1,10 @@
-@props(['variant' => null])
+@props(['variant' => null, 'size' => null])
 
 @php
     $solid = (is_string($variant) && $variant !== '' ? $variant : site_icon_variant('mail')) === 'solid';
 @endphp
 
-<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {{ $attributes->except('class')->merge(['class' => icon_class($attributes->get('class'), 'h-5 w-5', $size)]) }}
      @if ($solid) fill="currentColor" @else fill="none" stroke="currentColor" @endif>
     @if ($solid)
         <path fill-rule="evenodd" clip-rule="evenodd" d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm0 4.4L12 13l8-4.6V6.5l-8 4.6-8-4.6V8.4z" />

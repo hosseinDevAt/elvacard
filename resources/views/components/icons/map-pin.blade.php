@@ -1,10 +1,10 @@
-@props(['variant' => null])
+@props(['variant' => null, 'size' => null])
 
 @php
     $solid = (is_string($variant) && $variant !== '' ? $variant : site_icon_variant('map_pin')) === 'solid';
 @endphp
 
-<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {{ $attributes->except('class')->merge(['class' => icon_class($attributes->get('class'), 'h-5 w-5', $size)]) }}
      @if ($solid) fill="currentColor" @else fill="none" stroke="currentColor" @endif>
     @if ($solid)
         <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />

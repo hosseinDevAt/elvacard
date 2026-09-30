@@ -30,6 +30,8 @@ class Dashboard extends Component
 
     public int $totalRevenue = 0;
 
+    public $recentOrders = [];
+
     public function mount(): void
     {
         $this->totalUsers = User::count();
@@ -41,6 +43,8 @@ class Dashboard extends Component
         $this->successfulPayments = Payment::where('status', PaymentStatus::SUCCESS->value)->count();
         $this->totalRevenue = (int) Payment::where('status', PaymentStatus::SUCCESS->value)->sum('paid_amount')
             - (int) Refund::where('status', RefundStatus::COMPLETED->value)->sum('amount');
+
+        $this->recentOrders = Order::with('user')->latest()->take(5)->get();
     }
 
     public function render()
