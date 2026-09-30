@@ -339,7 +339,7 @@ class FuelCardFinalSecurityTest extends TestCase
             'quantity' => 1,
             'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
             'customization_json' => [
-                'card_number' => '6274051234567890',
+                'card_number' => '6274051234567898',
             ],
         ]);
 
@@ -351,6 +351,8 @@ class FuelCardFinalSecurityTest extends TestCase
         $stored = OrderItem::query()->where('order_id', $order->id)->first();
 
         $this->assertSame(CustomizationWorkflowEnum::BANK_CARD, $stored->customization_workflow);
-        $this->assertSame('6274051234567890', $stored->customization_json['card_number']);
+        $this->assertSame('7898', $stored->customization_json['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $stored->customization_json['card_number_masked']);
+        $this->assertArrayNotHasKey('card_number', $stored->customization_json);
     }
 }

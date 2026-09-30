@@ -90,8 +90,9 @@
                                 <div class="mt-2 border-t border-gray-100 pt-2 text-gray-600">
                                     @if (is_array($customization))
                                         <div class="grid gap-1.5 sm:grid-cols-2 text-sm">
-                                            @if (! empty($customization['card_number']))
-                                                <p class="sm:col-span-2"><span class="font-semibold">شماره کارت:</span> <span dir="ltr" class="font-mono"><span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Services\Customization\CardPresenter::presentCardNumber($customization['card_number']) }}</span></span></p>
+                                            @php $maskedPan = $item->getMaskedPan() ?? (!empty($customization['card_number_masked']) ? $customization['card_number_masked'] : (!empty($customization['pan_last4']) ? \App\Services\Customization\CardPresenter::maskPan($customization['pan_last4']) : (!empty($customization['card_number']) ? \App\Services\Customization\CardPresenter::maskPan($customization['card_number']) : null))); @endphp
+                                            @if (! empty($maskedPan))
+                                                <p class="sm:col-span-2"><span class="font-semibold">شماره کارت:</span> <span dir="ltr" class="font-mono"><span style="direction: ltr; unicode-bidi: isolate;">{{ $maskedPan }}</span></span></p>
                                             @endif
                                             @if (! empty($customization['card_holder_name']))
                                                 <p><span class="font-semibold">نام دارنده کارت:</span> {{ $customization['card_holder_name'] }}</p>
@@ -100,7 +101,7 @@
                                                 <p><span class="font-semibold">متن پشت کارت:</span> {{ $customization['back_text'] }}</p>
                                             @endif
                                             @if (! empty($customization['security_cvv_enabled']))
-                                                <p><span class="font-semibold">مقدار CVV2:</span> <span dir="ltr">{{ $customization['cvv2'] ?? 'ثبت نشده' }}</span></p>
+                                                <p><span class="font-semibold">حکاکی CVV2:</span> <span>فعال</span></p>
                                             @endif
                                             @if (! empty($customization['security_expiry_enabled']))
                                                 <p><span class="font-semibold">تاریخ انقضا:</span> <span dir="ltr">{{ $customization['expiry_month'] ?? '--' }}/{{ $customization['expiry_year'] ?? '--' }}</span></p>

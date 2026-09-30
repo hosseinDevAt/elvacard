@@ -78,6 +78,10 @@ class CustomizationWorkflowRegistry
     {
         $bankEvidenceKeys = [
             'card_number',
+            'pan_encrypted',
+            'pan_last4',
+            'card_number_masked',
+            'pan_hash',
             'card_holder_name',
             'back_text',
             'cvv2',

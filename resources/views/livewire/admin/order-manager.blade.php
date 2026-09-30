@@ -162,10 +162,10 @@
                                 <div class="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">پارامترهای حکاکی کاربر:</div>
                                 <div><span class="text-gray-400">رنگ کارت:</span> <span class="text-gray-900 font-bold">{{ $item->color_name_snapshot ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">طرح کارت:</span> <span class="text-gray-900 font-bold">{{ $item->design_name_snapshot ?? 'ثبت نشده' }}</span></div>
-                                <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ !empty($custom['card_number']) ? \App\Services\Customization\CardPresenter::presentCardNumber($custom['card_number']) : 'ثبت نشده' }}</span></div>
+                                <div><span class="text-gray-400">شماره کارت:</span> <span class="font-mono text-gray-900 font-bold" dir="ltr">{{ $item->getMaskedPan() ?? (!empty($custom['card_number_masked']) ? $custom['card_number_masked'] : (!empty($custom['pan_last4']) ? \App\Services\Customization\CardPresenter::maskPan($custom['pan_last4']) : (!empty($custom['card_number']) ? \App\Services\Customization\CardPresenter::maskPan($custom['card_number']) : 'ثبت نشده'))) }}</span></div>
                                 <div><span class="text-gray-400">نام دارنده کارت:</span> <span class="text-gray-900 font-bold">{{ $custom['card_holder_name'] ?? 'ثبت نشده' }}</span></div>
                                 <div><span class="text-gray-400">متن دلخواه پشت:</span> <span class="text-gray-900 font-bold">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span></div>
-                                <div><span class="text-gray-400">وضعیت CVV2:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_cvv_enabled']) ? 'فعال (مقدار: ' . ($custom['cvv2'] ?? 'مشخص نشده') . ')' : 'غیرفعال' }}</span></div>
+                                <div><span class="text-gray-400">وضعیت CVV2:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_cvv_enabled']) ? 'فعال (حکاکی روی کارت)' : 'غیرفعال' }}</span></div>
                                 <div><span class="text-gray-400">وضعیت تاریخ انقضا:</span> <span class="text-gray-900 font-bold">{{ !empty($custom['security_expiry_enabled']) ? 'فعال (تاریخ: ' . ($custom['expiry_month'] ?? '--') . '/' . ($custom['expiry_year'] ?? '--') . ')' : 'غیرفعال' }}</span></div>
                             </div>
 
@@ -175,9 +175,10 @@
                                 <div class="absolute top-7 inset-x-0 h-6 bg-gray-950 shadow-inner"></div>
 
                                 <div class="relative h-full w-full mt-4 text-[10px]">
-                                    @if (!empty($custom['card_number']))
+                                    @php $maskedPan = $item->getMaskedPan() ?? (!empty($custom['card_number_masked']) ? $custom['card_number_masked'] : (!empty($custom['pan_last4']) ? \App\Services\Customization\CardPresenter::maskPan($custom['pan_last4']) : (!empty($custom['card_number']) ? \App\Services\Customization\CardPresenter::maskPan($custom['card_number']) : null))); @endphp
+                                    @if (!empty($maskedPan))
                                         <div class="absolute font-mono font-bold" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;" dir="ltr">
-                                            <span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Services\Customization\CardPresenter::presentCardNumber($custom['card_number']) }}</span>
+                                            <span style="direction: ltr; unicode-bidi: isolate;">{{ $maskedPan }}</span>
                                         </div>
                                     @endif
                                     @if (!empty($custom['card_holder_name']))
@@ -190,9 +191,9 @@
                                             {{ $custom['back_text'] }}
                                         </div>
                                     @endif
-                                    @if (!empty($custom['security_cvv_enabled']) && !empty($custom['cvv2']))
+                                    @if (!empty($custom['security_cvv_enabled']))
                                         <div class="absolute font-mono text-[9px]" style="left: {{ $slots['cvv2']['x'] * 100 }}%; top: {{ $slots['cvv2']['y'] * 100 }}%;" dir="ltr">
-                                            CVV2: {{ $custom['cvv2'] }}
+                                            CVV2: •••
                                         </div>
                                     @endif
                                     @if (!empty($custom['security_expiry_enabled']) && (!empty($custom['expiry_month']) || !empty($custom['expiry_year'])))

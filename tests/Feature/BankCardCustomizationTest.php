@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Rules\LuhnRule;
 use App\Services\BankCard\BankCardCustomization;
 use App\Support\Dates\DateService;
+use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
 class BankCardCustomizationTest extends TestCase
@@ -37,21 +39,27 @@ class BankCardCustomizationTest extends TestCase
     {
         $result = BankCardCustomization::sanitize([
             'customization_json' => [
-                'card_number' => '6274051234567890',
+                'card_number' => '6274051234567898',
                 'qr_code_enabled' => true,
                 'positions' => ['card_number' => ['x' => 0.5, 'y' => 0.5]],
                 'random_injected_field' => 'hacked',
             ],
         ]);
 
-        $this->assertSame(['card_number' => '6274051234567890'], $result);
+        $this->assertArrayNotHasKey('card_number', $result);
+        $this->assertArrayNotHasKey('qr_code_enabled', $result);
+        $this->assertArrayNotHasKey('positions', $result);
+        $this->assertArrayNotHasKey('random_injected_field', $result);
+        $this->assertSame('7898', $result['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $result['card_number_masked']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($result['pan_encrypted']));
     }
 
     public function test_sanitize_keeps_valid_card_number_cvs_and_expiry(): void
     {
         $result = BankCardCustomization::sanitize([
             'customization_json' => [
-                'card_number' => '۶۲۷۴-۰۵۱۲ ۳۴۵۶ ۷۸۹۰',
+                'card_number' => '۶۲۷۴-۰۵۱۲ ۳۴۵۶ ۷۸۹۸',
                 'card_holder_name' => ' ALI REZA ',
                 'back_text' => ' TEXT ',
                 'security_cvv_enabled' => true,
@@ -62,19 +70,24 @@ class BankCardCustomizationTest extends TestCase
             ],
         ]);
 
-        $this->assertSame('6274051234567890', $result['card_number']);
+        $this->assertArrayNotHasKey('card_number', $result);
+        $this->assertSame('7898', $result['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $result['card_number_masked']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($result['pan_encrypted']));
         $this->assertSame('ALI REZA', $result['card_holder_name']);
         $this->assertSame('TEXT', $result['back_text']);
-        $this->assertSame('808', $result['cvv2']);
+        $this->assertTrue($result['security_cvv_enabled']);
+        $this->assertArrayNotHasKey('cvv2', $result);
         $this->assertSame('05', $result['expiry_month']);
         $this->assertSame((string) ((int) date('y') + 2), $result['expiry_year']);
     }
 
     public function test_sanitize_drops_invalid_card_number(): void
     {
-        foreach (['1234-5678', '123456789012345', '62740000000000001', '6274ABCD5678EFGH'] as $invalid) {
+        foreach (['1234-5678', '123456789012345', '62740000000000001', '6274ABCD5678EFGH', '6274051234567890'] as $invalid) {
             $result = BankCardCustomization::sanitize(['customization_json' => ['card_number' => $invalid]]);
             $this->assertArrayNotHasKey('card_number', $result);
+            $this->assertArrayNotHasKey('pan_encrypted', $result);
         }
     }
 
@@ -84,7 +97,8 @@ class BankCardCustomizationTest extends TestCase
             $result = BankCardCustomization::sanitize([
                 'customization_json' => ['security_cvv_enabled' => true, 'cvv2' => $cvv],
             ]);
-            $this->assertSame($cvv, $result['cvv2']);
+            $this->assertTrue($result['security_cvv_enabled']);
+            $this->assertArrayNotHasKey('cvv2', $result);
         }
     }
 
@@ -150,7 +164,7 @@ class BankCardCustomizationTest extends TestCase
     {
         $rules = BankCardCustomization::rulesFor(false, false);
 
-        $this->assertSame(['nullable', 'string', 'digits:16'], $rules['card_number']);
+        $this->assertEquals(['nullable', 'string', 'digits:16', new LuhnRule], $rules['card_number']);
         $this->assertSame(['nullable', 'string', 'max:100'], $rules['card_holder_name']);
         $this->assertSame(['nullable', 'string', 'max:255'], $rules['back_text']);
         $this->assertSame(['boolean'], $rules['security_cvv_enabled']);

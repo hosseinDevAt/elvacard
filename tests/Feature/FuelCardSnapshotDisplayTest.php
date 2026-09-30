@@ -176,7 +176,7 @@ class FuelCardSnapshotDisplayTest extends TestCase
             'design_image_id' => $this->designImage->id,
             'quantity' => 1,
             'customization_json' => [
-                'card_number' => '6274051234567890',
+                'card_number' => '6274051234567898',
                 'card_holder_name' => 'ALI REZA',
                 'back_text' => 'BORN TO LEAD',
                 'security_cvv_enabled' => true,
@@ -363,10 +363,14 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $response = $this->actingAs($user)->get(route('orders.show', $order));
 
         $response->assertOk();
-        $response->assertSee('6274 0512 3456 7890');
+        $response->assertSee('•••• •••• •••• 7898');
+        $response->assertDontSee('6274051234567898');
+        $response->assertDontSee('6274 0512 3456 7898');
+        $response->assertDontSee('808');
         $response->assertSee('ALI REZA');
         $response->assertSee('BORN TO LEAD');
-        $response->assertSee('808');
+        $response->assertSee('حکاکی CVV2');
+        $response->assertSee('فعال');
         $response->assertSee('شماره کارت');
         $response->assertSee('نام دارنده کارت');
         $response->assertDontSee(CustomizationWorkflowEnum::FUEL_CARD->faLabel());
@@ -383,9 +387,12 @@ class FuelCardSnapshotDisplayTest extends TestCase
 
         $component->assertSee('پارامترهای حکاکی کاربر');
         $component->assertSee('2D Snapshot Preview');
-        $component->assertSee('6274 0512 3456 7890');
+        $component->assertSee('•••• •••• •••• 7898');
+        $component->assertDontSee('6274051234567898');
+        $component->assertDontSee('6274 0512 3456 7898');
         $component->assertSee('ALI REZA');
-        $component->assertSee('فعال (مقدار: 808)');
+        $component->assertSee('فعال (حکاکی روی کارت)');
+        $component->assertDontSee('808');
         $component->assertDontSee('مشخصات کارت سوخت');
         $component->assertDontSee(CustomizationWorkflowEnum::FUEL_CARD->faLabel());
     }
@@ -429,7 +436,9 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $this->actingAs($user)
             ->get(route('orders.show', $order))
             ->assertOk()
-            ->assertSee('6274 0000 0000 0000')
+            ->assertSee('•••• •••• •••• 0000')
+            ->assertDontSee('6274 0000 0000 0000')
+            ->assertDontSee('808')
             ->assertSee('LEGACY')
             ->assertDontSee('مشخصات کارت سوخت');
 
@@ -437,7 +446,9 @@ class FuelCardSnapshotDisplayTest extends TestCase
             ->test(OrderManager::class)
             ->call('viewOrder', $order->id)
             ->assertSee('پارامترهای حکاکی کاربر')
-            ->assertSee('6274 0000 0000 0000')
+            ->assertSee('•••• •••• •••• 0000')
+            ->assertDontSee('6274 0000 0000 0000')
+            ->assertDontSee('808')
             ->assertDontSee('مشخصات کارت سوخت');
     }
 

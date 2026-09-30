@@ -2,7 +2,10 @@
 
 namespace App\Services\BankCard;
 
+use App\Rules\LuhnRule;
+use App\Services\Customization\CardPresenter;
 use App\Support\Dates\DateService;
+use Illuminate\Support\Facades\Crypt;
 
 class BankCardCustomization
 {
@@ -24,10 +27,15 @@ class BankCardCustomization
         return preg_replace('/[\s\-]+/', '', $value) ?? '';
     }
 
+    public static function validateLuhn(string $number): bool
+    {
+        return LuhnRule::passesLuhn($number);
+    }
+
     public static function rulesFor(bool $cvvEnabled, bool $expiryEnabled): array
     {
         $rules = [
-            'card_number' => ['nullable', 'string', 'digits:16'],
+            'card_number' => ['nullable', 'string', 'digits:16', new LuhnRule],
             'card_holder_name' => ['nullable', 'string', 'max:100'],
             'back_text' => ['nullable', 'string', 'max:255'],
             'security_cvv_enabled' => ['boolean'],
@@ -72,10 +80,25 @@ class BankCardCustomization
 
         $sanitizedCustomization = [];
 
+        // Encrypt and protect PAN at rest using Laravel Crypt + last4 mask
         if (! empty($rawCustomization['card_number']) && is_string($rawCustomization['card_number'])) {
             $cardNumber = self::canonicalizeCardNumber($rawCustomization['card_number']);
-            if (preg_match('/^[0-9]{16}$/', $cardNumber) === 1) {
-                $sanitizedCustomization['card_number'] = $cardNumber;
+            if (preg_match('/^[0-9]{16}$/', $cardNumber) === 1 && LuhnRule::passesLuhn($cardNumber)) {
+                $sanitizedCustomization['pan_encrypted'] = Crypt::encryptString($cardNumber);
+                $sanitizedCustomization['pan_last4'] = substr($cardNumber, -4);
+                $sanitizedCustomization['card_number_masked'] = CardPresenter::maskPan($cardNumber);
+                $sanitizedCustomization['pan_hash'] = hash_hmac('sha256', $cardNumber, (string) config('app.key'));
+            }
+        } elseif (! empty($rawCustomization['pan_encrypted']) && is_string($rawCustomization['pan_encrypted'])) {
+            $sanitizedCustomization['pan_encrypted'] = $rawCustomization['pan_encrypted'];
+            if (! empty($rawCustomization['pan_last4'])) {
+                $sanitizedCustomization['pan_last4'] = (string) $rawCustomization['pan_last4'];
+            }
+            if (! empty($rawCustomization['card_number_masked'])) {
+                $sanitizedCustomization['card_number_masked'] = (string) $rawCustomization['card_number_masked'];
+            }
+            if (! empty($rawCustomization['pan_hash'])) {
+                $sanitizedCustomization['pan_hash'] = (string) $rawCustomization['pan_hash'];
             }
         }
 
@@ -93,14 +116,9 @@ class BankCardCustomization
             }
         }
 
+        // CVV2 is strictly used for live validation and discarded immediately - never persisted
         if (isset($rawCustomization['security_cvv_enabled'])) {
             $sanitizedCustomization['security_cvv_enabled'] = (bool) $rawCustomization['security_cvv_enabled'];
-            if ($sanitizedCustomization['security_cvv_enabled'] && ! empty($rawCustomization['cvv2']) && is_string($rawCustomization['cvv2'])) {
-                $cvv = self::canonicalizeCardNumber($rawCustomization['cvv2']);
-                if (preg_match('/^[0-9]{3,4}$/', $cvv) === 1) {
-                    $sanitizedCustomization['cvv2'] = $cvv;
-                }
-            }
         }
 
         if (isset($rawCustomization['security_expiry_enabled'])) {

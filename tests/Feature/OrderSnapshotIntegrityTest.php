@@ -96,7 +96,7 @@ class OrderSnapshotIntegrityTest extends TestCase
             'design_image_id' => $this->designImage->id,
             'quantity' => 1,
             'customization_json' => $customization ?: [
-                'card_number' => '6274000000000000',
+                'card_number' => '6274051234567898',
                 'card_holder_name' => 'HOSSEIN REZAIE',
                 'security_cvv_enabled' => true,
                 'cvv2' => '808',
@@ -140,10 +140,13 @@ class OrderSnapshotIntegrityTest extends TestCase
 
         $item = OrderItem::query()->where('order_id', $order->id)->first();
 
-        $this->assertSame('6274000000000000', $item->customization_json['card_number']);
+        $this->assertArrayNotHasKey('card_number', $item->customization_json);
+        $this->assertArrayNotHasKey('cvv2', $item->customization_json);
+        $this->assertSame('7898', $item->customization_json['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $item->getMaskedPan());
+        $this->assertSame('6274051234567898', $item->getDecryptedPan());
         $this->assertSame('HOSSEIN REZAIE', $item->customization_json['card_holder_name']);
         $this->assertTrue($item->customization_json['security_cvv_enabled']);
-        $this->assertSame('808', $item->customization_json['cvv2']);
 
         foreach (['product_id', 'color_id', 'design_id', 'design_image_id'] as $relationalKey) {
             $this->assertArrayNotHasKey($relationalKey, $item->customization_json);
@@ -234,7 +237,8 @@ class OrderSnapshotIntegrityTest extends TestCase
         $response = $this->actingAs($user)->get(route('orders.show', $order));
 
         $response->assertOk();
-        $response->assertSee('6274 0000 0000 0000');
+        $response->assertSee('•••• •••• •••• 0000');
+        $response->assertDontSee('6274 0000 0000 0000');
         $response->assertSee('LEGACY');
         $response->assertSee('ثبت نشده');
     }

@@ -17,6 +17,7 @@ use App\Services\CartService;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\FuelCard\FuelCardCustomization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use InvalidArgumentException;
 use ReflectionMethod;
 use Tests\TestCase;
@@ -400,7 +401,7 @@ class FuelCardCartValidationTest extends TestCase
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
             'customization_json' => [
-                'card_number' => '6274000000000000',
+                'card_number' => '6274051234567898',
             ],
         ]);
 
@@ -408,7 +409,9 @@ class FuelCardCartValidationTest extends TestCase
         $this->assertSame($secondColor->id, $item['color_id']);
         $this->assertSame($secondColor->name, $item['color_name_snapshot']);
         $this->assertSame(650000, $item['unit_price_snapshot']);
-        $this->assertSame('6274000000000000', $item['customization_json']['card_number']);
+        $this->assertSame('7898', $item['customization_json']['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $item['customization_json']['card_number_masked']);
+        $this->assertArrayNotHasKey('card_number', $item['customization_json']);
     }
 
     public function test_bank_customization_json_unchanged_by_dispatch(): void
@@ -424,7 +427,7 @@ class FuelCardCartValidationTest extends TestCase
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
             'customization_json' => [
-                'card_number' => '6274 0512 3456 7890',
+                'card_number' => '6274 0512 3456 7898',
                 'card_holder_name' => ' ALI REZA ',
                 'back_text' => 'BORN TO LEAD',
                 'security_cvv_enabled' => true,
@@ -437,9 +440,18 @@ class FuelCardCartValidationTest extends TestCase
 
         $cart = app(CartService::class)->addItem($payload);
 
+        $expected = BankCardCustomization::sanitize($payload);
+        $actual = $cart['items'][0]['customization_json'];
+
         $this->assertSame(
-            BankCardCustomization::sanitize($payload),
-            $cart['items'][0]['customization_json'],
+            Crypt::decryptString($expected['pan_encrypted']),
+            Crypt::decryptString($actual['pan_encrypted'])
+        );
+        unset($expected['pan_encrypted'], $actual['pan_encrypted']);
+
+        $this->assertSame(
+            $expected,
+            $actual,
             'The CartService dispatch must hand the Bank payload to BankCardCustomization untouched.'
         );
     }
@@ -457,7 +469,7 @@ class FuelCardCartValidationTest extends TestCase
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
             'customization_json' => [
-                'card_number' => '۶۲۷۴ ۰۵۱۲ ۳۴۵۶ ۷۸۹۰',
+                'card_number' => '۶۲۷۴ ۰۵۱۲ ۳۴۵۶ ۷۸۹۸',
                 'card_holder_name' => 'ALI REZA',
                 'back_text' => 'TEXT',
                 'security_cvv_enabled' => true,
@@ -470,11 +482,13 @@ class FuelCardCartValidationTest extends TestCase
 
         $customization = $cart['items'][0]['customization_json'];
 
-        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $customization['card_number_masked']);
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertArrayNotHasKey('cvv2', $customization);
         $this->assertSame('ALI REZA', $customization['card_holder_name']);
         $this->assertSame('TEXT', $customization['back_text']);
         $this->assertTrue($customization['security_cvv_enabled']);
-        $this->assertSame('0808', $customization['cvv2']);
         $this->assertTrue($customization['security_expiry_enabled']);
         $this->assertSame('05', $customization['expiry_month']);
         $this->assertSame('29', $customization['expiry_year']);
@@ -529,7 +543,7 @@ class FuelCardCartValidationTest extends TestCase
             'quantity' => 1,
             'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
             'customization_json' => [
-                'card_number' => '6274000000000000',
+                'card_number' => '6274051234567898',
                 'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
             ],
         ]);
@@ -542,7 +556,9 @@ class FuelCardCartValidationTest extends TestCase
         $item = OrderItem::query()->where('order_id', $order->id)->first();
 
         $this->assertSame(CustomizationWorkflowEnum::BANK_CARD, $item->customization_workflow);
-        $this->assertSame('6274000000000000', $item->customization_json['card_number']);
+        $this->assertSame('7898', $item->customization_json['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $item->customization_json['card_number_masked']);
+        $this->assertArrayNotHasKey('card_number', $item->customization_json);
         $this->assertArrayNotHasKey('customization_workflow', $item->customization_json);
     }
 
@@ -592,7 +608,7 @@ class FuelCardCartValidationTest extends TestCase
             'design_image_id' => $designData['designImage']->id,
             'quantity' => 1,
             'customization_json' => [
-                'card_number' => '6274000000000000',
+                'card_number' => '6274051234567898',
                 'positions' => ['card_number' => ['x' => 0.5, 'y' => 0.5]],
                 'qr_code_path' => '/tmp/hacked.png',
                 'customization_workflow' => 'fuel_card',
@@ -600,7 +616,13 @@ class FuelCardCartValidationTest extends TestCase
             ],
         ]);
 
-        $this->assertSame(['card_number' => '6274000000000000'], $cart['items'][0]['customization_json']);
+        $this->assertSame('7898', $cart['items'][0]['customization_json']['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $cart['items'][0]['customization_json']['card_number_masked']);
+        $this->assertArrayNotHasKey('card_number', $cart['items'][0]['customization_json']);
+        $this->assertArrayNotHasKey('positions', $cart['items'][0]['customization_json']);
+        $this->assertArrayNotHasKey('qr_code_path', $cart['items'][0]['customization_json']);
+        $this->assertArrayNotHasKey('customization_workflow', $cart['items'][0]['customization_json']);
+        $this->assertArrayNotHasKey('injected_field', $cart['items'][0]['customization_json']);
     }
 
     public function test_cart_service_rejects_invalid_payload(): void

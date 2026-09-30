@@ -17,6 +17,7 @@ use App\Services\CartService;
 use App\Services\Customization\CardPresenter;
 use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -215,14 +216,17 @@ class ProductCustomizerTest extends TestCase
     public function test_card_number_is_canonicalized_before_storage(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('bankCard.card_number', ' 6274 0512 3456 7890 ')
+            ->set('bankCard.card_number', ' 6274 0512 3456 7898 ')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
         $cart = app(CartService::class)->getCart();
         $customization = $cart['items'][0]['customization_json'];
 
-        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $customization['card_number_masked']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($customization['pan_encrypted']));
     }
 
     public function test_card_number_digits_only_rejects_letters(): void
@@ -249,12 +253,14 @@ class ProductCustomizerTest extends TestCase
         foreach (['123', '8080'] as $cvv) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleCvv')
+                ->set('bankCard.card_number', '6274051234567898')
                 ->set('bankCard.cvv2', $cvv)
                 ->call('addToCart')
                 ->assertRedirect(route('cart.index'));
 
             $cart = app(CartService::class)->getCart();
-            $this->assertSame($cvv, $cart['items'][0]['customization_json']['cvv2']);
+            $this->assertTrue($cart['items'][0]['customization_json']['security_cvv_enabled']);
+            $this->assertArrayNotHasKey('cvv2', $cart['items'][0]['customization_json']);
 
             app(CartService::class)->clear();
         }
@@ -408,7 +414,7 @@ class ProductCustomizerTest extends TestCase
         $expiry = $dates->jalaliExpiryToGregorian('05', (string) ($dates->jalaliYearRange()[0] + 3));
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('bankCard.card_number', '1234657897897897')
+            ->set('bankCard.card_number', '6274051234567898')
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
             ->set('bankCard.back_text', 'BORN TO LEAD')
             ->call('toggleCvv')
@@ -421,10 +427,13 @@ class ProductCustomizerTest extends TestCase
 
         $customization = app(CartService::class)->getCart()['items'][0]['customization_json'];
 
-        $this->assertSame('1234657897897897', $customization['card_number']);
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertArrayNotHasKey('cvv2', $customization);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $customization['card_number_masked']);
         $this->assertSame('HOSSEIN REZAIE', $customization['card_holder_name']);
         $this->assertSame('BORN TO LEAD', $customization['back_text']);
-        $this->assertSame('808', $customization['cvv2']);
+        $this->assertTrue($customization['security_cvv_enabled']);
         $this->assertSame($expiry['expiry_month'], $customization['expiry_month']);
         $this->assertSame($expiry['expiry_year'], $customization['expiry_year']);
         $this->assertArrayNotHasKey('qr_code_enabled', $customization);
@@ -437,7 +446,7 @@ class ProductCustomizerTest extends TestCase
         $validYear = (string) (app(DateService::class)->jalaliYearRange()[0] + 3);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('bankCard.card_number', '1234657897897897')
+            ->set('bankCard.card_number', '6274051234567898')
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
             ->set('bankCard.back_text', 'BORN TO LEAD')
             ->call('toggleCvv')
@@ -493,14 +502,17 @@ class ProductCustomizerTest extends TestCase
             'design_image_id' => $this->designImage->id,
             'quantity' => 1,
             'customization_json' => [
-                'card_number' => '6274 0512-3456 7890',
+                'card_number' => '6274 0512-3456 7898',
             ],
         ];
 
         $result = $cartService->addItem($payload);
         $customization = $result['items'][0]['customization_json'];
 
-        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $customization['card_number_masked']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($customization['pan_encrypted']));
     }
 
     public function test_end_to_end_snapshot_is_persisted_without_regeneration(): void
@@ -510,7 +522,7 @@ class ProductCustomizerTest extends TestCase
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
-            ->set('bankCard.card_number', ' 6274 0512 3456 7890 ')
+            ->set('bankCard.card_number', ' 6274 0512 3456 7898 ')
             ->set('bankCard.back_text', 'BORN TO LEAD')
             ->call('toggleCvv')
             ->set('bankCard.cvv2', '808')
@@ -533,13 +545,13 @@ class ProductCustomizerTest extends TestCase
         $orderItem = OrderItem::query()->where('order_id', $order->id)->first();
         $this->assertNotNull($orderItem);
 
-        ksort($snapshotInCart);
         $persisted = $orderItem->customization_json;
-        ksort($persisted);
-        $this->assertSame($snapshotInCart, $persisted);
-
-        $this->assertSame('6274051234567890', $orderItem->customization_json['card_number']);
-        $this->assertSame('808', $orderItem->customization_json['cvv2']);
+        $this->assertArrayNotHasKey('card_number', $persisted);
+        $this->assertArrayNotHasKey('cvv2', $persisted);
+        $this->assertTrue($persisted['security_cvv_enabled']);
+        $this->assertSame('7898', $persisted['pan_last4']);
+        $this->assertSame('6274051234567898', $orderItem->getDecryptedPan());
+        $this->assertSame('•••• •••• •••• 7898', $orderItem->getMaskedPan());
         $this->assertSame($expiry['expiry_month'], $orderItem->customization_json['expiry_month']);
         $this->assertSame($expiry['expiry_year'], $orderItem->customization_json['expiry_year']);
         $this->assertArrayNotHasKey('positions', $orderItem->customization_json);
@@ -581,20 +593,21 @@ class ProductCustomizerTest extends TestCase
     {
         $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id]);
 
-        $component->set('bankCard.card_number', '6274051234567890');
-        $this->assertSame('6274 0512 3456 7890', $component->get('displayCardNumber'));
+        $component->set('bankCard.card_number', '6274051234567898');
+        $this->assertSame('6274 0512 3456 7898', $component->get('displayCardNumber'));
 
-        $component->set('bankCard.card_number', '6274 0512 3456 7890')
+        $component->set('bankCard.card_number', '6274 0512 3456 7898')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
         $cart = app(CartService::class)->getCart();
         $customization = $cart['items'][0]['customization_json'];
 
-        // The snapshot must keep the canonical form; presentation never leaks in.
-        $this->assertSame('6274051234567890', $customization['card_number']);
-        $this->assertStringNotContainsString(' ', $customization['card_number']);
-        $this->assertSame('6274 0512 3456 7890', CardPresenter::presentCardNumber($customization['card_number']));
+        // The snapshot must keep the encrypted form; presentation and plaintext never leak in.
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $customization['card_number_masked']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($customization['pan_encrypted']));
     }
 
     public function test_display_card_number_computed_property_formats_live_input(): void

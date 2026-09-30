@@ -572,6 +572,10 @@ class CartService
             return $value;
         }
 
+        // pan_encrypted ciphertext varies per call due to random IV.
+        // Omit pan_encrypted and rely on pan_hash (blind index) for deterministic identity comparison.
+        unset($value['pan_encrypted']);
+
         ksort($value);
 
         foreach ($value as $key => $item) {

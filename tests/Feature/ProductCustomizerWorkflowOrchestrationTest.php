@@ -17,6 +17,7 @@ use App\Models\ProductColorPrice;
 use App\Services\CartService;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\ViewErrorBag;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -316,7 +317,7 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
 
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
             ->set('workflow', CustomizationWorkflowEnum::FUEL_CARD->value)
-            ->set('bankCard.card_number', '6274051234567890')
+            ->set('bankCard.card_number', '6274051234567898')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -324,8 +325,10 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
 
         // addToCart branches on the product row, so a tampered workflow still
         // produces the Bank snapshot - never the empty Fuel boundary.
-        $this->assertArrayHasKey('card_number', $customization);
-        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $customization['card_number_masked']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($customization['pan_encrypted']));
         $this->assertNotSame([], $customization);
     }
 

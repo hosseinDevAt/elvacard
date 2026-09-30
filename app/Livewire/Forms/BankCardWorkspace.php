@@ -79,10 +79,6 @@ class BankCardWorkspace extends Form
             $customizationJson['back_text'] = trim($this->back_text);
         }
 
-        if ($this->security_cvv_enabled && trim($this->cvv2) !== '') {
-            $customizationJson['cvv2'] = trim($this->cvv2);
-        }
-
         if ($this->security_expiry_enabled) {
             if (trim($this->expiry_month) !== '') {
                 $customizationJson['expiry_month'] = trim($this->expiry_month);

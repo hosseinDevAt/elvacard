@@ -262,13 +262,15 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
     {
         $bankPayload = [
             'customization_json' => [
-                'card_number' => '6274 0512 3456 7890',
+                'card_number' => '6274 0512 3456 7898',
                 'card_holder_name' => ' ALI REZA ',
             ],
         ];
 
         $bankResult = BankCardCustomization::sanitize($bankPayload);
-        $this->assertSame('6274051234567890', $bankResult['card_number']);
+        $this->assertSame('7898', $bankResult['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $bankResult['card_number_masked']);
+        $this->assertArrayNotHasKey('card_number', $bankResult);
         $this->assertSame('ALI REZA', $bankResult['card_holder_name']);
 
         $this->assertSame([], FuelCardCustomization::sanitize($bankPayload), 'The same Bank payload must be entirely rejected by the Fuel boundary.');

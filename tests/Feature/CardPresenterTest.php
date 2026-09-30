@@ -37,6 +37,17 @@ class CardPresenterTest extends TestCase
         $this->assertSame('', CardPresenter::presentCardNumber(''));
     }
 
+    public function test_mask_pan_formats_and_hides_sensitive_digits(): void
+    {
+        $this->assertSame('•••• •••• •••• 7898', CardPresenter::maskPan('6274051234567898'));
+        $this->assertSame('•••• •••• •••• 7898', CardPresenter::maskPan('6274 0512 3456 7898'));
+        $this->assertSame('•••• •••• •••• 7898', CardPresenter::maskPan('۶۲۷۴۰۵۱۲۳۴۵۶۷۸۹۸'));
+        $this->assertSame('•••• •••• •••• 7898', CardPresenter::maskPan('7898'));
+        $this->assertSame('•••• •••• •••• 7898', CardPresenter::maskPan('•••• •••• •••• 7898'));
+        $this->assertSame('', CardPresenter::maskPan(null));
+        $this->assertSame('', CardPresenter::maskPan(''));
+    }
+
     public function test_fixed_slots_have_all_fields_with_normalized_coordinates(): void
     {
         $slots = CardPresenter::fixedSlots();

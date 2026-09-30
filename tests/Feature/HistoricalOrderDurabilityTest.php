@@ -147,7 +147,10 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->assertSame($this->designImage->image_path, $item->design_image_path_snapshot);
         $this->assertSame(600000, (int) $item->unit_price_snapshot);
         $this->assertSame('علی رضایی', $item->customization_json['card_holder_name']);
-        $this->assertSame('6274051234567890', $item->customization_json['card_number']);
+        $this->assertSame('7898', $item->customization_json['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $item->customization_json['card_number_masked']);
+        $this->assertArrayNotHasKey('card_number', $item->customization_json);
+        $this->assertSame('6274051234567898', $item->getDecryptedPan());
     }
 
     public function test_a_fuel_order_snapshot_can_reconstruct_the_purchase(): void
@@ -1087,7 +1090,7 @@ class HistoricalOrderDurabilityTest extends TestCase
             'quantity' => 1,
             'customization_json' => [
                 'card_holder_name' => 'علی رضایی',
-                'card_number' => '6274051234567890',
+                'card_number' => '6274051234567898',
             ],
         ];
     }

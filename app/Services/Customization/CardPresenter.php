@@ -13,6 +13,14 @@ class CardPresenter
      */
     public static function presentCardNumber(?string $value): string
     {
+        if ($value === null || trim($value) === '') {
+            return '';
+        }
+
+        if (str_contains($value, '•') || str_contains($value, '*')) {
+            return trim($value);
+        }
+
         $value = strtr(trim((string) $value), [
             '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
             '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
@@ -23,6 +31,38 @@ class CardPresenter
         $digits = preg_replace('/\D/', '', $value) ?? '';
 
         return trim(preg_replace('/(.{4})(?=.)/', '$1 ', $digits) ?? '');
+    }
+
+    /**
+     * Masked representation of a card number showing only last 4 digits.
+     * e.g. "•••• •••• •••• 7898"
+     */
+    public static function maskPan(?string $value): string
+    {
+        if ($value === null || trim($value) === '') {
+            return '';
+        }
+
+        if (str_contains($value, '•') || str_contains($value, '*')) {
+            return trim($value);
+        }
+
+        $value = strtr(trim((string) $value), [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]);
+
+        $digits = preg_replace('/\D/', '', $value) ?? '';
+
+        if ($digits === '') {
+            return '';
+        }
+
+        $last4 = substr($digits, -4);
+
+        return '•••• •••• •••• '.$last4;
     }
 
     /**

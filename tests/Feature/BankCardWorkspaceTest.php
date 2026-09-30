@@ -17,6 +17,7 @@ use App\Services\BankCard\BankCardCustomization;
 use App\Services\CartService;
 use App\Support\Dates\DateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Livewire\Form;
 use Livewire\Livewire;
 use ReflectionClass;
@@ -121,12 +122,15 @@ class BankCardWorkspaceTest extends TestCase
     public function test_accepts_valid_card_number(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('bankCard.card_number', '6274051234567890')
+            ->set('bankCard.card_number', '6274051234567898')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
         $customization = app(CartService::class)->getCart()['items'][0]['customization_json'];
-        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertArrayNotHasKey('card_number', $customization);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('•••• •••• •••• 7898', $customization['card_number_masked']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($customization['pan_encrypted']));
     }
 
     public function test_rejects_invalid_card_number(): void
@@ -142,23 +146,25 @@ class BankCardWorkspaceTest extends TestCase
     public function test_persian_digits_are_canonicalized(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('bankCard.card_number', '۶۲۷۴ ۰۵۱۲-۳۴۵۶ ۷۸۹۰')
+            ->set('bankCard.card_number', '۶۲۷۴ ۰۵۱۲-۳۴۵۶ ۷۸۹۸')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
         $customization = app(CartService::class)->getCart()['items'][0]['customization_json'];
-        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($customization['pan_encrypted']));
     }
 
     public function test_arabic_digits_are_canonicalized(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('bankCard.card_number', '٦٢٧٤٠٥١٢٣٤٥٦٧٨٩٠')
+            ->set('bankCard.card_number', '٦٢٧٤٠٥١٢٣٤٥٦٧٨٩٨')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
         $customization = app(CartService::class)->getCart()['items'][0]['customization_json'];
-        $this->assertSame('6274051234567890', $customization['card_number']);
+        $this->assertSame('7898', $customization['pan_last4']);
+        $this->assertSame('6274051234567898', Crypt::decryptString($customization['pan_encrypted']));
     }
 
     public function test_cvv_disabled_by_default_and_not_persisted(): void
@@ -177,12 +183,15 @@ class BankCardWorkspaceTest extends TestCase
     {
         foreach (['123', '8080'] as $cvv) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+                ->set('bankCard.card_number', '6274051234567898')
                 ->call('toggleCvv')
                 ->set('bankCard.cvv2', $cvv)
                 ->call('addToCart')
                 ->assertRedirect(route('cart.index'));
 
-            $this->assertSame($cvv, app(CartService::class)->getCart()['items'][0]['customization_json']['cvv2']);
+            $customization = app(CartService::class)->getCart()['items'][0]['customization_json'];
+            $this->assertTrue($customization['security_cvv_enabled']);
+            $this->assertArrayNotHasKey('cvv2', $customization);
             app(CartService::class)->clear();
         }
     }
@@ -314,7 +323,6 @@ class BankCardWorkspaceTest extends TestCase
             'card_number' => '6274051234567890',
             'card_holder_name' => 'HOSSEIN REZAIE',
             'back_text' => 'BORN TO LEAD',
-            'cvv2' => '808',
             'expiry_month' => '05',
             'expiry_year' => (string) ((int) date('y') + 3),
         ], $form->customizationJson());
@@ -323,7 +331,7 @@ class BankCardWorkspaceTest extends TestCase
     public function test_customization_json_excludes_commerce_and_presentation_data(): void
     {
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
-            ->set('bankCard.card_number', '1234657897897897')
+            ->set('bankCard.card_number', '6274051234567898')
             ->set('bankCard.card_holder_name', 'HOSSEIN REZAIE')
             ->set('bankCard.back_text', 'BORN TO LEAD')
             ->call('toggleCvv')
@@ -388,7 +396,7 @@ class BankCardWorkspaceTest extends TestCase
     {
         $form = $this->mountWorkspace();
 
-        $this->assertSame(
+        $this->assertEquals(
             BankCardCustomization::rulesFor(false, false),
             $form->rules()
         );
@@ -396,7 +404,7 @@ class BankCardWorkspaceTest extends TestCase
         $form->toggleCvv();
         $form->toggleExpiry();
 
-        $this->assertSame(
+        $this->assertEquals(
             BankCardCustomization::rulesFor(true, true),
             $form->rules()
         );

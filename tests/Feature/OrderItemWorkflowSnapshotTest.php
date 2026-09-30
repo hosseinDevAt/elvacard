@@ -97,7 +97,7 @@ class OrderItemWorkflowSnapshotTest extends TestCase
             'design_image_id' => $this->designImage->id,
             'quantity' => 1,
             'customization_json' => $customization ?: [
-                'card_number' => '6274000000000000',
+                'card_number' => '6274051234567898',
                 'card_holder_name' => 'HOSSEIN REZAIE',
                 'security_cvv_enabled' => true,
                 'cvv2' => '808',
@@ -247,7 +247,11 @@ class OrderItemWorkflowSnapshotTest extends TestCase
         $this->assertSame('طلایی', $item->color_name_snapshot);
         $this->assertSame('طرح شیر', $item->design_name_snapshot);
         $this->assertSame('designs/lion-gold.png', $item->design_image_path_snapshot);
-        $this->assertSame('6274000000000000', $item->customization_json['card_number']);
         $this->assertSame(CustomizationWorkflowEnum::BANK_CARD, $item->customization_workflow);
+        $this->assertArrayNotHasKey('card_number', $item->customization_json);
+        $this->assertArrayNotHasKey('cvv2', $item->customization_json);
+        $this->assertSame('7898', $item->customization_json['pan_last4']);
+        $this->assertSame('6274051234567898', $item->getDecryptedPan());
+        $this->assertSame('•••• •••• •••• 7898', $item->getMaskedPan());
     }
 }
