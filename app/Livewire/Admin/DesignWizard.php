@@ -198,6 +198,39 @@ class DesignWizard extends Component
             return;
         }
 
+        // Resolved before any file is written so a refused save cannot leave a
+        // freshly uploaded file behind. The ownership scope is the same one
+        // deleteImage() uses: an image of another design is not editable here.
+        $existing = null;
+
+        if ($this->editingImageId) {
+            $existing = DesignImage::query()
+                ->where('id', $this->editingImageId)
+                ->where('design_id', $this->designId)
+                ->first();
+
+            if (! $existing) {
+                session()->flash('error', 'تصویر موردنظر یافت نشد.');
+
+                return;
+            }
+
+            // Deactivating an image removes it from its design's visible set, so
+            // it must obey the same blocker that already guards deleteImage().
+            // Without this, unchecking the box strips a design of its last
+            // visible image and a live Bank/Fuel product silently stops
+            // resolving any design at all.
+            if ($existing->is_active && ! $this->imageIsActive) {
+                $removalBlocker = ProductPurchaseabilityService::designImageRemovalBlocker((int) $existing->id);
+
+                if ($removalBlocker !== null) {
+                    session()->flash('error', $removalBlocker);
+
+                    return;
+                }
+            }
+        }
+
         $path = $this->imagePath;
 
         if ($this->imageUpload) {
@@ -222,18 +255,7 @@ class DesignWizard extends Component
             'sort_order' => $this->imageSortOrder,
         ];
 
-        if ($this->editingImageId) {
-            $existing = DesignImage::query()
-                ->where('id', $this->editingImageId)
-                ->where('design_id', $this->designId)
-                ->first();
-
-            if (! $existing) {
-                session()->flash('error', 'تصویر موردنظر یافت نشد.');
-
-                return;
-            }
-
+        if ($existing) {
             $previousPath = $existing->image_path;
 
             $existing->update($data);
@@ -320,7 +342,12 @@ class DesignWizard extends Component
             return;
         }
 
-        if (! Color::query()->whereKey($colorId)->exists()) {
+        // Permission is only ever granted for an active card color: a row on an
+        // inactive color can never satisfy workspace readiness and can never be
+        // reached by a live product, so allowing one would only create a
+        // misleading row. The standalone matrix already offers active colors
+        // only, which is why this toggle is the path that needed the check.
+        if (! Color::query()->active()->whereKey($colorId)->exists()) {
             session()->flash('error', 'رنگ موردنظر یافت نشد.');
 
             return;

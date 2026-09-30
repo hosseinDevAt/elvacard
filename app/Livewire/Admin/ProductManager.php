@@ -45,8 +45,6 @@ class ProductManager extends Component
 
     public ?int $productCategoryId = null;
 
-    public bool $supportsChipSelection = false;
-
     public ?string $designConfig = null;
 
     public ?string $metaTitle = null;
@@ -103,7 +101,6 @@ class ProductManager extends Component
         'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         'basePrice' => 'nullable|integer|min:0',
         'productCategoryId' => 'nullable|integer|exists:product_categories,id',
-        'supportsChipSelection' => 'boolean',
         'designConfig' => 'nullable|json',
         'metaTitle' => 'nullable|string|max:255',
         'metaDescription' => 'nullable|string|max:255',
@@ -294,7 +291,6 @@ class ProductManager extends Component
             'main_image' => $this->mainImage ?: null,
             'base_price' => $this->basePrice,
             'product_category_id' => $this->productCategoryId,
-            'supports_chip_selection' => $this->supportsChipSelection,
             'design_config' => $this->designConfig ? json_decode($this->designConfig, true) : null,
             'meta_title' => $this->metaTitle ?: null,
             'meta_description' => $this->metaDescription ?: null,
@@ -403,7 +399,6 @@ class ProductManager extends Component
         $this->mainImage = $product->main_image;
         $this->basePrice = $product->base_price;
         $this->productCategoryId = $product->product_category_id !== null ? (int) $product->product_category_id : null;
-        $this->supportsChipSelection = (bool) $product->supports_chip_selection;
         $this->designConfig = $product->design_config ? json_encode($product->design_config, JSON_UNESCAPED_UNICODE) : null;
         $this->metaTitle = $product->meta_title;
         $this->metaDescription = $product->meta_description;
@@ -494,7 +489,6 @@ class ProductManager extends Component
         $this->mainImageUpload = null;
         $this->basePrice = null;
         $this->productCategoryId = null;
-        $this->supportsChipSelection = false;
         $this->designConfig = null;
         $this->metaTitle = null;
         $this->metaDescription = null;

@@ -19,7 +19,6 @@ class Product extends Model
         'main_image',
         'base_price',
         'product_category_id',
-        'supports_chip_selection',
         'design_config',
         'meta_title',
         'meta_description',
@@ -34,7 +33,6 @@ class Product extends Model
         'type' => ProductTypeEnum::class,
         'customization_workflow' => CustomizationWorkflowEnum::class,
         'design_config' => 'array',
-        'supports_chip_selection' => 'boolean',
         'robots_index' => 'boolean',
         'is_active' => 'boolean',
     ];

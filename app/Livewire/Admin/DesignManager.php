@@ -17,6 +17,14 @@ class DesignManager extends Component
     use GeneratesUniqueSlug;
     use WithPagination;
 
+    /**
+     * Verbatim copy of the message DesignWizard::save() flashes for the same
+     * condition, so the identical refusal reads identically on both admin
+     * entry points. Components keep their own message constants in this
+     * codebase rather than sharing a global catalogue.
+     */
+    private const NOT_READY_FOR_WORKSPACE = 'برای فعال‌سازی، طرح باید حداقل یک تصویر فعال داشته باشد که برای یک رنگ فعال مجاز شده باشد؛ در غیر این صورت در بخش شخصی‌سازی نمایش داده نمی‌شود.';
+
     public ?int $cateDesignId = null;
 
     public string $name = '';
@@ -65,11 +73,22 @@ class DesignManager extends Component
     {
         $this->validate();
 
-        if ($this->editingId && ! $this->isActive) {
-            $blocker = ProductPurchaseabilityService::designDeactivationBlocker($this->editingId);
+        if ($this->editingId) {
+            if (! $this->isActive) {
+                $blocker = ProductPurchaseabilityService::designDeactivationBlocker($this->editingId);
 
-            if ($blocker !== null) {
-                session()->flash('error', $blocker);
+                if ($blocker !== null) {
+                    session()->flash('error', $blocker);
+
+                    return;
+                }
+            } elseif (! app(DesignCatalogService::class)->isReadyForWorkspace((int) $this->editingId)) {
+                // The same authoritative gate DesignWizard::save() applies. An
+                // active design that cannot surface in the workspace is
+                // saved-but-hidden, so it is refused instead. The rule itself
+                // is never re-implemented here: it is read from the catalog
+                // service, which is the single workspace-readiness definition.
+                session()->flash('error', self::NOT_READY_FOR_WORKSPACE);
 
                 return;
             }
@@ -103,6 +122,11 @@ class DesignManager extends Component
             $design->update($data);
             session()->flash('success', 'طرح با موفقیت ویرایش شد');
         } else {
+            // A brand-new design owns no image yet, so it can never satisfy the
+            // readiness rule. Persist it inactive and let the readiness-aware
+            // wizard activate it once a compatible image exists, exactly like
+            // DesignWizard::persistDesign() does.
+            $data['is_active'] = false;
             Design::create($data);
             session()->flash('success', 'طرح با موفقیت اضافه شد');
         }

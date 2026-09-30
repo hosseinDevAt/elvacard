@@ -175,12 +175,6 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-6">
-                    @if($customizationWorkflow !== \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" wire:model="supportsChipSelection" id="supports_chip" class="rounded border-gray-300 text-yellow-500">
-                            <label for="supports_chip" class="text-sm text-gray-700">پشتیبانی از انتخاب چیپ</label>
-                        </div>
-                    @endif
                     <div class="flex items-center gap-2">
                         <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
                         <label for="is_active" class="text-sm text-gray-700">فعال (نمایش در فروشگاه)</label>

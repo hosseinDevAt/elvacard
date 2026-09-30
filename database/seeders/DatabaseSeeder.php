@@ -65,7 +65,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'کارت بانکی',
                 'description' => 'کارت بانکی با طرح سفارشی',
                 'base_price' => 850000,
-                'supports_chip_selection' => true,
                 'is_active' => true,
             ]
         );
@@ -78,7 +77,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'کارت سوخت',
                 'description' => 'کارت سوخت با طرح سفارشی',
                 'base_price' => 450000,
-                'supports_chip_selection' => false,
                 'is_active' => true,
             ]
         );

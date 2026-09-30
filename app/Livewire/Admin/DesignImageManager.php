@@ -87,7 +87,38 @@ class DesignImageManager extends Component
                 return;
             }
 
+            $wasActive = (bool) $designImage->is_active;
+            $previousDesignId = (int) $designImage->design_id;
+            $previousPath = $designImage->image_path;
+
+            // Both transitions below take an active image out of its current
+            // design's visible set: deactivating it, or moving it under another
+            // design. Reuse the delete-path blocker so the "a design keeps at
+            // least one visible image" invariant also holds on edits. Inactive
+            // images and pure metadata/path edits are untouched by this.
+            $leavesCurrentDesign = $wasActive
+                && (! $this->isActive || (int) $this->designId !== $previousDesignId);
+
+            if ($leavesCurrentDesign) {
+                $removalBlocker = ProductPurchaseabilityService::designImageRemovalBlocker((int) $designImage->id);
+
+                if ($removalBlocker !== null) {
+                    session()->flash('error', $removalBlocker);
+
+                    return;
+                }
+            }
+
             $designImage->update($data);
+
+            // Same order-aware cleanup the wizard performs. It runs only after a
+            // successful write, so a failed update never frees the old file, and
+            // a file still referenced by a live row or by an order's
+            // design_image_path_snapshot is preserved.
+            if ($previousPath !== null && $previousPath !== $data['image_path']) {
+                app(StoredFileManager::class)->deleteDesignImageFilesWhenUnreferenced([$previousPath]);
+            }
+
             session()->flash('success', 'تصویر طرح با موفقیت ویرایش شد');
         } else {
             DesignImage::create($data);
