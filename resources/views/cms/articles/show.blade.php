@@ -55,7 +55,7 @@
         @endif
 
         <div class="text-gray-700 leading-relaxed">
-            {!! $article->content !!}
+            {{ $article->content }}
         </div>
     </article>
 

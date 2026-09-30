@@ -142,7 +142,15 @@ class MenuItemManager extends Component
         ];
 
         if ($this->editingId) {
-            MenuItem::find($this->editingId)->update($data);
+            $menuItem = MenuItem::find($this->editingId);
+
+            if (! $menuItem) {
+                session()->flash('error', 'آیتم منو موردنظر یافت نشد');
+
+                return;
+            }
+
+            $menuItem->update($data);
             session()->flash('success', 'آیتم منو با موفقیت ویرایش شد');
         } else {
             MenuItem::create($data);
@@ -156,6 +164,13 @@ class MenuItemManager extends Component
     public function edit(int $id): void
     {
         $item = MenuItem::find($id);
+
+        if (! $item) {
+            session()->flash('error', 'آیتم منو موردنظر یافت نشد');
+
+            return;
+        }
+
         $this->editingId = $id;
         $this->menuId = $item->menu_id;
         $this->itemType = $item->item_type->value;

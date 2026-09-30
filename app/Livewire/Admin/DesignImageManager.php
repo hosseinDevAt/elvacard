@@ -79,7 +79,15 @@ class DesignImageManager extends Component
         ];
 
         if ($this->editingId) {
-            DesignImage::find($this->editingId)->update($data);
+            $designImage = DesignImage::find($this->editingId);
+
+            if (! $designImage) {
+                session()->flash('error', 'تصویر طرح موردنظر یافت نشد');
+
+                return;
+            }
+
+            $designImage->update($data);
             session()->flash('success', 'تصویر طرح با موفقیت ویرایش شد');
         } else {
             DesignImage::create($data);

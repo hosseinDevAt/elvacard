@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Models\ProductImage;
 use App\Models\User;
+use App\Services\CartService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -366,6 +367,44 @@ class StoreProductPricingTest extends TestCase
         $this->assertFalse($product->is_active);
     }
 
+    public function test_switching_a_simple_product_to_variable_clears_the_persisted_base_price(): void
+    {
+        $product = $this->storeProduct(['base_price' => 100000, 'is_active' => false]);
+        $this->variant($product, $this->color(), 300000, true);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductManager::class)
+            ->call('edit', $product->id)
+            ->assertSet('pricingType', 'variable')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertNull(
+            $product->fresh()->base_price,
+            'A variable product must not keep a base price: CartService falls back to it whenever a request omits color_id.'
+        );
+    }
+
+    public function test_a_variable_product_never_charges_its_old_base_price(): void
+    {
+        $product = $this->storeProduct(['base_price' => 100000, 'is_active' => false]);
+        $this->variant($product, $this->color(), 300000, true);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductManager::class)
+            ->call('edit', $product->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(CartService::class)->addItem([
+            'product_id' => $product->id,
+            'color_id' => null,
+            'quantity' => 1,
+        ]);
+    }
+
     public function test_activation_of_variable_product_without_active_variant_is_rejected(): void
     {
         Livewire::actingAs($this->admin())
@@ -517,7 +556,12 @@ class StoreProductPricingTest extends TestCase
 
         $this->assertSame('ویرایش متغیر با انتخاب نوع قیمت', $product->fresh()->name);
         $this->assertSame(1, ProductColorPrice::where('product_id', $product->id)->count());
-        $this->assertSame(100000, $product->fresh()->base_price);
+
+        // The variants and the variable pricing model are what this test guards.
+        // The base price must be cleared: CartService seeds unit_price from
+        // base_price whenever a request omits color_id, so a surviving base price
+        // on a variable product is a second, admin-unaware price source.
+        $this->assertNull($product->fresh()->base_price);
     }
 
     public function test_pricing_type_radios_form_one_named_group_with_live_binding(): void

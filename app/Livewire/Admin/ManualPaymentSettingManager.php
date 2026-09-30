@@ -29,7 +29,7 @@ class ManualPaymentSettingManager extends Component
 
     public function mount(): void
     {
-        $setting = ManualPaymentSetting::query()->whereKey(1)->first();
+        $setting = ManualPaymentSetting::query()->orderBy('id')->first();
 
         if (! $setting) {
             return;
@@ -71,12 +71,6 @@ class ManualPaymentSettingManager extends Component
     {
         $this->validate();
 
-        if (! $this->loaded || ! $this->settingId) {
-            session()->flash('error', 'تنظیمات پرداخت یافت نشد. لطفاً سیدر را مجدداً اجرا کنید.');
-
-            return;
-        }
-
         $cleaned = $this->cleanFinancialData();
 
         if (! empty($this->is_active) && ! $this->hasMinimumFinancialData($cleaned)) {
@@ -85,14 +79,28 @@ class ManualPaymentSettingManager extends Component
             return;
         }
 
+        // The panel owns this configuration, so a missing row is created on the
+        // first save instead of telling the admin to re-run the seeder. The
+        // singleton is the lowest-id row, which keeps the seeder's id 1 primary.
         DB::transaction(function () use ($cleaned): void {
             if (! empty($this->is_active)) {
                 ManualPaymentSetting::query()
-                    ->where('id', '!=', $this->settingId)
+                    ->where('id', '!=', $this->settingId ?? 0)
                     ->update(['is_active' => false]);
             }
 
-            ManualPaymentSetting::query()->whereKey($this->settingId)->update($cleaned);
+            $setting = $this->settingId !== null
+                ? ManualPaymentSetting::query()->find($this->settingId)
+                : null;
+
+            if ($setting) {
+                $setting->update($cleaned);
+
+                return;
+            }
+
+            $this->settingId = ManualPaymentSetting::query()->create($cleaned)->id;
+            $this->loaded = true;
         });
 
         session()->flash('success', 'تنظیمات پرداخت با موفقیت ذخیره شد.');

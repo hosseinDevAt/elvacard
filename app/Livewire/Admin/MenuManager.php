@@ -42,7 +42,15 @@ class MenuManager extends Component
         $this->validate();
 
         if ($this->editingId) {
-            Menu::find($this->editingId)->update([
+            $menu = Menu::find($this->editingId);
+
+            if (! $menu) {
+                session()->flash('error', 'منو موردنظر یافت نشد');
+
+                return;
+            }
+
+            $menu->update([
                 'name' => $this->name,
                 'location' => $this->location,
             ]);
@@ -62,6 +70,13 @@ class MenuManager extends Component
     public function edit(int $id): void
     {
         $menu = Menu::find($id);
+
+        if (! $menu) {
+            session()->flash('error', 'منو موردنظر یافت نشد');
+
+            return;
+        }
+
         $this->editingId = $id;
         $this->name = $menu->name;
         $this->location = $menu->location;
@@ -70,7 +85,15 @@ class MenuManager extends Component
 
     public function delete(int $id): void
     {
-        Menu::find($id)->delete();
+        $menu = Menu::find($id);
+
+        if (! $menu) {
+            session()->flash('error', 'منو موردنظر یافت نشد');
+
+            return;
+        }
+
+        $menu->delete();
         session()->flash('success', 'منو با موفقیت حذف شد');
     }
 

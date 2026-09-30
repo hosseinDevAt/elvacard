@@ -183,7 +183,7 @@ class DesignWizard extends Component
         $this->validate([
             'colorId' => 'required|integer|exists:colors,id',
             'imagePath' => 'nullable|string|max:255',
-            'imageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'imageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'altText' => 'nullable|string|max:255',
             'imageTitle' => 'nullable|string|max:255',
             'optimizedFilename' => 'nullable|string|max:255',

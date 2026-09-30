@@ -87,11 +87,11 @@ class AppearanceManager extends Component
     {
         return [
             'siteName' => 'required|string|max:255',
-            'siteLogo' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'siteLogo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'siteFavicon' => 'nullable|file|mimes:png,ico,svg|max:512',
-            'bannerImage1' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
-            'bannerImage2' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
-            'bannerImage3' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'bannerImage1' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'bannerImage2' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'bannerImage3' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'bannerTitle1' => 'nullable|string|max:255',
             'bannerSubtitle1' => 'nullable|string|max:500',
             'bannerCtaText1' => 'nullable|string|max:100',

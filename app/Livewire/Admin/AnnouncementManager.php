@@ -139,7 +139,15 @@ class AnnouncementManager extends Component
         ];
 
         if ($this->editingId) {
-            Announcement::find($this->editingId)->update($data);
+            $announcement = Announcement::find($this->editingId);
+
+            if (! $announcement) {
+                session()->flash('error', 'اطلاعیه موردنظر یافت نشد');
+
+                return;
+            }
+
+            $announcement->update($data);
             session()->flash('success', 'اطلاعیه با موفقیت ویرایش شد');
         } else {
             Announcement::create($data);
@@ -153,6 +161,13 @@ class AnnouncementManager extends Component
     public function edit(int $id): void
     {
         $announcement = Announcement::find($id);
+
+        if (! $announcement) {
+            session()->flash('error', 'اطلاعیه موردنظر یافت نشد');
+
+            return;
+        }
+
         $dates = app(DateService::class);
         $this->editingId = $id;
         $this->title = $announcement->title;
@@ -169,7 +184,15 @@ class AnnouncementManager extends Component
 
     public function delete(int $id): void
     {
-        Announcement::find($id)->delete();
+        $announcement = Announcement::find($id);
+
+        if (! $announcement) {
+            session()->flash('error', 'اطلاعیه موردنظر یافت نشد');
+
+            return;
+        }
+
+        $announcement->delete();
         session()->flash('success', 'اطلاعیه با موفقیت حذف شد');
     }
 

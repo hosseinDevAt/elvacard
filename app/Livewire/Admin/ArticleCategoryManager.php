@@ -61,7 +61,15 @@ class ArticleCategoryManager extends Component
         $slug = $this->generateUniqueSlug($this->name, $this->editingId);
 
         if ($this->editingId) {
-            ArticleCategory::find($this->editingId)->update([
+            $articleCategory = ArticleCategory::find($this->editingId);
+
+            if (! $articleCategory) {
+                session()->flash('error', 'دسته‌بندی مقاله موردنظر یافت نشد');
+
+                return;
+            }
+
+            $articleCategory->update([
                 'name' => $this->name,
                 'slug' => $slug,
             ]);
@@ -81,6 +89,13 @@ class ArticleCategoryManager extends Component
     public function edit(int $id): void
     {
         $category = ArticleCategory::find($id);
+
+        if (! $category) {
+            session()->flash('error', 'دسته‌بندی مقاله موردنظر یافت نشد');
+
+            return;
+        }
+
         $this->editingId = $id;
         $this->name = $category->name;
         $this->showForm = true;
@@ -88,7 +103,15 @@ class ArticleCategoryManager extends Component
 
     public function delete(int $id): void
     {
-        ArticleCategory::find($id)->delete();
+        $articleCategory = ArticleCategory::find($id);
+
+        if (! $articleCategory) {
+            session()->flash('error', 'دسته‌بندی مقاله موردنظر یافت نشد');
+
+            return;
+        }
+
+        $articleCategory->delete();
         session()->flash('success', 'دسته‌بندی با موفقیت حذف شد');
     }
 

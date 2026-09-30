@@ -13,7 +13,7 @@
          id="faq-answer-{{ $faq->id }}"
          class="px-6 pb-4 border-t border-gray-100">
         <div class="text-gray-600 pt-4 leading-relaxed">
-            {!! $faq->answer !!}
+            {{ $faq->answer }}
         </div>
     </div>
 </div>

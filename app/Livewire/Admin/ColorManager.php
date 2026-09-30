@@ -64,7 +64,15 @@ class ColorManager extends Component
         ];
 
         if ($this->editingId) {
-            Color::find($this->editingId)->update($data);
+            $color = Color::find($this->editingId);
+
+            if (! $color) {
+                session()->flash('error', 'رنگ موردنظر یافت نشد');
+
+                return;
+            }
+
+            $color->update($data);
             session()->flash('success', 'رنگ با موفقیت ویرایش شد');
         } else {
             Color::create($data);

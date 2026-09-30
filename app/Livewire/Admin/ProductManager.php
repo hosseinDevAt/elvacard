@@ -100,7 +100,7 @@ class ProductManager extends Component
         'name' => 'required|string|min:1|max:255',
         'description' => 'nullable|string',
         'mainImage' => 'nullable|string|max:255',
-        'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+        'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         'basePrice' => 'nullable|integer|min:0',
         'productCategoryId' => 'nullable|integer|exists:product_categories,id',
         'supportsChipSelection' => 'boolean',
@@ -109,7 +109,7 @@ class ProductManager extends Component
         'metaDescription' => 'nullable|string|max:255',
         'canonicalUrl' => 'nullable|url:http,https|max:255',
         'ogImage' => 'nullable|string|max:255',
-        'ogImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+        'ogImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         'seoContent' => 'nullable|string',
         'robotsIndex' => 'boolean',
         'isActive' => 'boolean',
@@ -119,7 +119,7 @@ class ProductManager extends Component
         'variantColorId' => 'required|integer|exists:colors,id',
         'variantPrice' => 'required|integer|min:0',
         'variantIsActive' => 'boolean',
-        'variantImageUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+        'variantImageUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
     ];
 
     protected $variantMessages = [
@@ -275,6 +275,16 @@ class ProductManager extends Component
                 ->firstOrCreate(['slug' => $previousSlug], ['product_id' => $this->editingId]);
         }
 
+        // A variable Store product is priced exclusively by its active
+        // ProductColorPrice rows. Persisting a base price for it would leave a
+        // second, admin-unaware price source behind: CartService seeds
+        // unit_price from base_price whenever a request omits color_id, so the
+        // stale value would still be charged and would still be published as
+        // AggregateOffer.lowPrice in the catalog JSON-LD.
+        if ($this->pricingType === 'variable') {
+            $this->basePrice = null;
+        }
+
         $data = [
             'type' => $this->type,
             'customization_workflow' => $this->customizationWorkflow ?: null,
@@ -298,7 +308,15 @@ class ProductManager extends Component
         $createdProductId = null;
 
         if ($this->editingId) {
-            Product::find($this->editingId)->update($data);
+            $product = Product::find($this->editingId);
+
+            if (! $product) {
+                session()->flash('error', 'محصول موردنظر یافت نشد');
+
+                return;
+            }
+
+            $product->update($data);
             session()->flash('success', 'محصول با موفقیت ویرایش شد');
         } else {
             /** @var Product $createdProduct */
@@ -913,6 +931,7 @@ class ProductManager extends Component
             'purchasableIds' => $purchasableIds,
             'storeVariants' => $storeVariants,
             'storeColorOptions' => $this->storeColorOptions,
+            'fuelPreparation' => $this->fuelPreparation,
             'typeOptions' => ProductTypeEnum::options(),
             'categoryOptions' => ProductCategory::query()
                 ->orderBy('sort_order')

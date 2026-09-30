@@ -92,7 +92,15 @@ class DesignManager extends Component
         ];
 
         if ($this->editingId) {
-            Design::find($this->editingId)->update($data);
+            $design = Design::find($this->editingId);
+
+            if (! $design) {
+                session()->flash('error', 'طرح موردنظر یافت نشد');
+
+                return;
+            }
+
+            $design->update($data);
             session()->flash('success', 'طرح با موفقیت ویرایش شد');
         } else {
             Design::create($data);

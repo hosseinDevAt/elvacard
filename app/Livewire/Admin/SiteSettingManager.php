@@ -117,7 +117,15 @@ class SiteSettingManager extends Component
         ];
 
         if ($this->editingId) {
-            SiteSetting::find($this->editingId)->update($data);
+            $siteSetting = SiteSetting::find($this->editingId);
+
+            if (! $siteSetting) {
+                session()->flash('error', 'تنظیمات موردنظر یافت نشد');
+
+                return;
+            }
+
+            $siteSetting->update($data);
             session()->flash('success', 'تنظیمات با موفقیت ویرایش شد');
         } else {
             SiteSetting::create($data);
@@ -145,6 +153,13 @@ class SiteSettingManager extends Component
     public function edit(int $id): void
     {
         $setting = SiteSetting::find($id);
+
+        if (! $setting) {
+            session()->flash('error', 'تنظیمات موردنظر یافت نشد');
+
+            return;
+        }
+
         $this->editingId = $id;
         $this->key = $setting->key;
         $this->value = (string) $setting->value;
@@ -156,7 +171,15 @@ class SiteSettingManager extends Component
 
     public function delete(int $id): void
     {
-        SiteSetting::find($id)->delete();
+        $siteSetting = SiteSetting::find($id);
+
+        if (! $siteSetting) {
+            session()->flash('error', 'تنظیمات موردنظر یافت نشد');
+
+            return;
+        }
+
+        $siteSetting->delete();
         session()->flash('success', 'تنظیمات با موفقیت حذف شد');
     }
 

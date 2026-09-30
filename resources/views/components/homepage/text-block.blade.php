@@ -9,7 +9,7 @@
             <div class="text-center mb-8">
                 @if ($section->title)
                     <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-                        {!! $section->title !!}
+                        {{ $section->title }}
                     </h2>
                 @endif
             </div>
@@ -17,7 +17,7 @@
 
         @if ($section->content)
             <div class="prose prose-persian max-w-none text-gray-700 leading-relaxed">
-                {!! $section->content !!}
+                {{ $section->content }}
             </div>
         @endif
 

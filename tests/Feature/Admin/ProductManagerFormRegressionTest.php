@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
 use App\Livewire\Admin\ProductManager;
+use App\Models\Color;
 use App\Models\Product;
+use App\Models\ProductColorPrice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -81,6 +84,66 @@ class ProductManagerFormRegressionTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertSame('محصول ویرایش‌شده', $product->fresh()->name);
+    }
+
+    public function test_fuel_workflow_edit_form_renders_activation_checklist(): void
+    {
+        $product = $this->product([
+            'type' => ProductTypeEnum::FUEL->value,
+            'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
+            'name' => 'کارت سوخت',
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductManager::class)
+            ->call('edit', $product->id)
+            ->assertHasNoErrors()
+            ->assertSee('پیش‌نیازهای فعال‌سازی و فروش کارت سوخت')
+            ->assertSee('انتخاب یک رنگ فعال')
+            ->assertSee('تعریف قیمت')
+            ->assertSee('انتخاب طرح کارت')
+            ->assertSee('لازم است');
+    }
+
+    public function test_fuel_workflow_create_form_renders_placeholder_checklist(): void
+    {
+        Livewire::actingAs($this->admin())
+            ->test(ProductManager::class)
+            ->call('create')
+            ->set('type', ProductTypeEnum::FUEL->value)
+            ->set('customizationWorkflow', CustomizationWorkflowEnum::FUEL_CARD->value)
+            ->assertHasNoErrors()
+            ->assertSee('پیش‌نیازهای فعال‌سازی و فروش کارت سوخت')
+            ->assertSee('انتخاب یک رنگ فعال')
+            ->assertDontSee('لازم است');
+    }
+
+    public function test_fuel_checklist_marks_prerequisite_complete_when_color_price_exists(): void
+    {
+        $product = $this->product([
+            'type' => ProductTypeEnum::FUEL->value,
+            'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
+            'name' => 'کارت سوخت آماده',
+        ]);
+
+        $color = Color::create([
+            'name' => 'قرمز '.uniqid(),
+            'code_hex' => '#ff0000',
+            'is_active' => true,
+        ]);
+
+        ProductColorPrice::create([
+            'product_id' => $product->id,
+            'color_id' => $color->id,
+            'price' => 250000,
+            'is_active' => true,
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductManager::class)
+            ->call('edit', $product->id)
+            ->assertHasNoErrors()
+            ->assertSee('تکمیل شده');
     }
 
     public function test_opening_create_after_edit_creates_a_new_product(): void

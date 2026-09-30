@@ -138,7 +138,15 @@ class PageManager extends Component
         ];
 
         if ($this->editingId) {
-            Page::find($this->editingId)->update($data);
+            $page = Page::find($this->editingId);
+
+            if (! $page) {
+                session()->flash('error', 'صفحه موردنظر یافت نشد');
+
+                return;
+            }
+
+            $page->update($data);
 
             if ($previousSlug !== null && $previousSlug !== $slug) {
                 PageSlugHistory::query()->firstOrCreate(
@@ -184,6 +192,13 @@ class PageManager extends Component
     public function edit(int $id): void
     {
         $page = Page::find($id);
+
+        if (! $page) {
+            session()->flash('error', 'صفحه موردنظر یافت نشد');
+
+            return;
+        }
+
         $this->editingId = $id;
         $this->pageType = $page->page_type;
         $this->title = $page->title;

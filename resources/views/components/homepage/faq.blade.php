@@ -11,12 +11,12 @@
                 <header class="text-center mb-10">
                     @if ($section->title)
                         <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-                            {!! $section->title !!}
+                            {{ $section->title }}
                         </h2>
                     @endif
                     @if ($section->content)
                         <p class="text-gray-600 max-w-2xl mx-auto">
-                            {!! $section->content !!}
+                            {{ $section->content }}
                         </p>
                     @endif
                 </header>

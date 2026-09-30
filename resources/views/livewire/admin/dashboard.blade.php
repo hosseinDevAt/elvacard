@@ -117,30 +117,37 @@
         <div class="admin-card p-6 lg:col-span-7">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-base font-bold text-slate-900">نمودار درآمد هفتگی</h3>
-                <div class="flex items-center gap-2 text-xs text-slate-500">
-                    <span class="h-2.5 w-2.5 rounded-full bg-indigo-600"></span>
-                    <span>فروش جاری</span>
+                <div class="flex items-center gap-3 text-xs text-slate-500">
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-full bg-indigo-600"></span>
+                        <span>درآمد مثبت</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
+                        <span>درآمد منفی (بازگشت وجه)</span>
+                    </span>
                 </div>
             </div>
 
             <!-- Bar Chart Display -->
             <div class="h-64 flex items-end justify-between gap-3 pt-6 pb-2 px-2 border-b border-slate-100">
-                @php
-                    $days = ['شنبه', '۱شنبه', '۲شنبه', '۳شنبه', '۴شنبه', '۵شنبه', 'جمعه'];
-                    $heights = [45, 75, 30, 80, 80, 70, 85];
-                @endphp
-                @foreach($days as $idx => $day)
+                @foreach($weeklyRevenue as $day)
                     <div class="flex flex-col items-center flex-1 h-full justify-end group">
-                        <div class="w-full max-w-[42px] bg-indigo-500 rounded-t-xl transition-all duration-300 group-hover:bg-indigo-600 shadow-sm"
-                             style="height: {{ $totalRevenue > 0 ? max(12, $heights[$idx]) : 12 }}%;">
+                        <div @class([
+                                'w-full max-w-[42px] rounded-t-xl transition-all duration-300 shadow-sm',
+                                'bg-indigo-500 group-hover:bg-indigo-600' => $day['value'] >= 0,
+                                'bg-rose-400 group-hover:bg-rose-500' => $day['value'] < 0,
+                            ])
+                             style="height: {{ $day['height'] }}%;"
+                             title="{{ $day['label'] }}: {{ number_format($day['value']) }} تومان">
                         </div>
-                        <span class="mt-3 text-[11px] font-medium text-slate-400 group-hover:text-slate-600">{{ $day }}</span>
+                        <span class="mt-3 text-[11px] font-medium text-slate-400 group-hover:text-slate-600">{{ $day['label'] }}</span>
                     </div>
                 @endforeach
             </div>
             <div class="mt-4 flex items-center justify-between text-xs text-slate-400">
-                <span>به‌روزرسانی هفتگی خودکار بر اساس داده‌های مالی</span>
-                <span class="font-semibold text-slate-600">مجموع دوره: {{ number_format($totalRevenue) }} تومان</span>
+                <span>درآمد خالص هفته جاری (شنبه تا جمعه): پرداخت موفق منهای بازگشت وجه</span>
+                <span class="font-semibold text-slate-600">مجموع هفته: {{ number_format(array_sum(array_column($weeklyRevenue, 'value'))) }} تومان</span>
             </div>
         </div>
 

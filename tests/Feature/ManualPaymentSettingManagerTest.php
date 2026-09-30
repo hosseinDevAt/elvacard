@@ -493,7 +493,7 @@ class ManualPaymentSettingManagerTest extends TestCase
 
     // ── Missing Setting Safety ──────────────────────────────────────
 
-    public function test_save_with_missing_setting_no_update(): void
+    public function test_save_with_missing_setting_creates_it(): void
     {
         Livewire::actingAs($this->admin())
             ->test(ManualPaymentSettingManager::class)
@@ -502,18 +502,38 @@ class ManualPaymentSettingManagerTest extends TestCase
             ->set('account_name', 'Test Account')
             ->set('is_active', true)
             ->call('save')
-            ->assertHasNoErrors();
+            ->assertHasNoErrors()
+            ->assertSet('loaded', true);
 
-        $this->assertSame(0, ManualPaymentSetting::query()->count());
+        $this->assertSame(1, ManualPaymentSetting::query()->count());
+        $this->assertDatabaseHas('manual_payment_settings', [
+            'card_number' => '6037991234567890',
+            'account_name' => 'Test Account',
+            'is_active' => true,
+        ]);
     }
 
-    public function test_no_duplicate_setting_created_when_missing(): void
+    public function test_created_setting_is_reused_instead_of_duplicated(): void
     {
-        Livewire::actingAs($this->admin())
+        $component = Livewire::actingAs($this->admin())
             ->test(ManualPaymentSettingManager::class)
-            ->call('save');
+            ->set('card_number', '6037991234567890')
+            ->set('account_name', 'Test Account')
+            ->call('save')
+            ->assertHasNoErrors();
 
-        $this->assertSame(0, ManualPaymentSetting::query()->count());
+        $createdId = $component->get('settingId');
+
+        $component->set('card_number', '6037999876543210')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, ManualPaymentSetting::query()->count());
+        $this->assertSame($createdId, $component->get('settingId'));
+        $this->assertDatabaseHas('manual_payment_settings', [
+            'id' => $createdId,
+            'card_number' => '6037999876543210',
+        ]);
     }
 
     // ── Security ────────────────────────────────────────────────────

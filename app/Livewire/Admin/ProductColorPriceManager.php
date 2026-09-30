@@ -40,7 +40,7 @@ class ProductColorPriceManager extends Component
         'colorId' => 'required|integer|exists:colors,id',
         'price' => 'required|integer|min:0',
         'isActive' => 'boolean',
-        'imageUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+        'imageUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
     ];
 
     protected $messages = [

@@ -132,7 +132,15 @@ class HomepageSectionManager extends Component
         ];
 
         if ($this->editingId) {
-            HomepageSection::find($this->editingId)->update($data);
+            $homepageSection = HomepageSection::find($this->editingId);
+
+            if (! $homepageSection) {
+                session()->flash('error', 'بخش صفحه اصلی موردنظر یافت نشد');
+
+                return;
+            }
+
+            $homepageSection->update($data);
             session()->flash('success', 'بخش صفحه اصلی با موفقیت ویرایش شد');
         } else {
             HomepageSection::create($data);
@@ -189,6 +197,13 @@ class HomepageSectionManager extends Component
     public function edit(int $id): void
     {
         $section = HomepageSection::find($id);
+
+        if (! $section) {
+            session()->flash('error', 'بخش صفحه اصلی موردنظر یافت نشد');
+
+            return;
+        }
+
         $settings = is_array($section->settings) ? $section->settings : [];
 
         $this->editingId = $id;
@@ -214,7 +229,15 @@ class HomepageSectionManager extends Component
 
     public function delete(int $id): void
     {
-        HomepageSection::find($id)->delete();
+        $homepageSection = HomepageSection::find($id);
+
+        if (! $homepageSection) {
+            session()->flash('error', 'بخش صفحه اصلی موردنظر یافت نشد');
+
+            return;
+        }
+
+        $homepageSection->delete();
         session()->flash('success', 'بخش صفحه اصلی با موفقیت حذف شد');
     }
 

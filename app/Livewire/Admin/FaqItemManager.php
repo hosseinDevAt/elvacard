@@ -46,7 +46,15 @@ class FaqItemManager extends Component
         $this->validate();
 
         if ($this->editingId) {
-            FaqItem::find($this->editingId)->update([
+            $faqItem = FaqItem::find($this->editingId);
+
+            if (! $faqItem) {
+                session()->flash('error', 'سوال موردنظر یافت نشد');
+
+                return;
+            }
+
+            $faqItem->update([
                 'question' => $this->question,
                 'answer' => $this->answer,
                 'sort_order' => $this->sortOrder,
@@ -70,6 +78,13 @@ class FaqItemManager extends Component
     public function edit(int $id): void
     {
         $faq = FaqItem::find($id);
+
+        if (! $faq) {
+            session()->flash('error', 'سوال موردنظر یافت نشد');
+
+            return;
+        }
+
         $this->editingId = $id;
         $this->question = $faq->question;
         $this->answer = $faq->answer;
@@ -80,7 +95,15 @@ class FaqItemManager extends Component
 
     public function delete(int $id): void
     {
-        FaqItem::find($id)->delete();
+        $faqItem = FaqItem::find($id);
+
+        if (! $faqItem) {
+            session()->flash('error', 'سوال موردنظر یافت نشد');
+
+            return;
+        }
+
+        $faqItem->delete();
         session()->flash('success', 'سوال با موفقیت حذف شد');
     }
 

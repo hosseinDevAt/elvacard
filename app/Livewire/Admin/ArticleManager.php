@@ -178,7 +178,15 @@ class ArticleManager extends Component
         ];
 
         if ($this->editingId) {
-            Article::find($this->editingId)->update($data);
+            $article = Article::find($this->editingId);
+
+            if (! $article) {
+                session()->flash('error', 'مقاله موردنظر یافت نشد');
+
+                return;
+            }
+
+            $article->update($data);
 
             if ($previousSlug !== null && $previousSlug !== $slug) {
                 ArticleSlugHistory::query()->firstOrCreate(
@@ -231,6 +239,13 @@ class ArticleManager extends Component
     public function edit(int $id): void
     {
         $article = Article::find($id);
+
+        if (! $article) {
+            session()->flash('error', 'مقاله موردنظر یافت نشد');
+
+            return;
+        }
+
         $dates = app(DateService::class);
         $this->editingId = $id;
         $this->articleCategoryId = $article->article_category_id;

@@ -15,13 +15,13 @@
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 text-center">
         @if ($section->title)
             <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                {!! $section->title !!}
+                {{ $section->title }}
             </h1>
         @endif
 
         @if ($section->content)
             <p class="text-xl sm:text-2xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed">
-                {!! $section->content !!}
+                {{ $section->content }}
             </p>
         @endif
 

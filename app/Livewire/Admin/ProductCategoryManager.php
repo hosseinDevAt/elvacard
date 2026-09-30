@@ -42,7 +42,15 @@ class ProductCategoryManager extends Component
         ];
 
         if ($this->editingId) {
-            ProductCategory::find($this->editingId)->update($data);
+            $productCategory = ProductCategory::find($this->editingId);
+
+            if (! $productCategory) {
+                session()->flash('error', 'دسته‌بندی محصول موردنظر یافت نشد');
+
+                return;
+            }
+
+            $productCategory->update($data);
             session()->flash('success', 'دسته‌بندی با موفقیت ویرایش شد');
         } else {
             ProductCategory::create($data);

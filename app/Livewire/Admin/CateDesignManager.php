@@ -45,7 +45,15 @@ class CateDesignManager extends Component
         $slug = $this->uniqueSlug($this->name, CateDesign::class, $this->editingId ? (int) $this->editingId : null);
 
         if ($this->editingId) {
-            CateDesign::find($this->editingId)->update([
+            $cateDesign = CateDesign::find($this->editingId);
+
+            if (! $cateDesign) {
+                session()->flash('error', 'دسته‌بندی طرح موردنظر یافت نشد');
+
+                return;
+            }
+
+            $cateDesign->update([
                 'name' => $this->name,
                 'slug' => $slug,
                 'is_active' => $this->isActive,
