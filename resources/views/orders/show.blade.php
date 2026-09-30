@@ -56,6 +56,36 @@
                                 <p><span class="font-semibold">تصویر طرح:</span> {{ $item->design_image_path_snapshot }}</p>
                             @endif
 
+                            {{--
+                                Fuel fulfillment data for the customer. This is the immutable
+                                OrderItem snapshot (the historical purchase) rendered through
+                                the same shared read model the admin order detail uses, so the
+                                customer can verify what was actually bought and the two
+                                surfaces can never drift apart. Chip size is an order
+                                customization and is therefore listed here, outside any
+                                printed/engraved specification.
+                            --}}
+                            @if ($isFuel)
+                                @php
+                                    $fuelFields = \App\Services\FuelCard\FuelCardCustomization::fulfillmentFields(is_array($customization) ? $customization : []);
+                                @endphp
+                                @if (array_filter($fuelFields, fn (array $fuelField): bool => $fuelField['value'] !== ''))
+                                    <div class="mt-2 border-t border-gray-100 pt-2 text-gray-700">
+                                        <div class="font-semibold mb-1">اطلاعات کارت سوخت ثبت‌شده:</div>
+                                        <div class="grid gap-1.5 sm:grid-cols-2">
+                                            @foreach ($fuelFields as $fuelKey => $fuelField)
+                                                @if ($fuelField['value'] !== '')
+                                                    <p class="break-words">
+                                                        <span class="font-semibold">{{ $fuelField['label'] }}:</span>
+                                                        <span @if (in_array($fuelKey, ['vin', 'system_identifier', 'plate_number'], true)) dir="ltr" @endif>{{ $fuelField['value'] }}</span>
+                                                    </p>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
+
                             @if (! $isFuel && $item->customization_json)
                                 <div class="mt-2 border-t border-gray-100 pt-2 text-gray-600">
                                     @if (is_array($customization))
