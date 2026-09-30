@@ -60,8 +60,13 @@ class ManualRefundService
                 ],
             ]);
 
-            if ($this->constraints->isFullyRefunded($locked)) {
-                $order = $this->lockOrder($locked->order_id);
+            // The order is only REFUNDED when every successful payment on it is
+            // fully refunded, so a historical order carrying more than one
+            // successful payment is never reported as refunded while money is
+            // still held.
+            $order = $this->lockOrder($locked->order_id);
+
+            if ($this->constraints->isOrderFullyRefunded($order)) {
                 $order->payment_status = PaymentStatusEnum::REFUNDED;
                 $order->save();
             }

@@ -306,6 +306,7 @@ class AdminCatalogIntegrityGuardTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('delete', $rowB->id)
             ->assertSessionMissing('error');
 

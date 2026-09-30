@@ -60,7 +60,7 @@ class ProductColorPriceManager extends Component
         if ($product !== null && filter_var($product, FILTER_VALIDATE_INT) !== false) {
             $resolved = Product::query()->find((int) $product);
 
-            if ($resolved !== null && $resolved->getRawOriginal('customization_workflow') !== null) {
+            if ($resolved !== null && $this->isCardWorkflow($resolved)) {
                 $this->productId = (int) $product;
             }
         }
@@ -69,6 +69,14 @@ class ProductColorPriceManager extends Component
     public function save(): void
     {
         $this->validate();
+
+        $product = $this->editableCardProduct();
+
+        if ($product === null) {
+            session()->flash('error', 'مدیریت قیمت رنگ فقط برای کارت‌های بانکی و سوخت انجام می‌شود؛ قیمت محصولات فروشگاهی را از «مدیریت محصولات» تنظیم کنید.');
+
+            return;
+        }
 
         $duplicate = ProductColorPrice::query()
             ->where('product_id', $this->productId)
@@ -82,17 +90,24 @@ class ProductColorPriceManager extends Component
             return;
         }
 
-        $product = Product::find($this->productId);
+        // The row being edited must belong to the selected card product, so a
+        // crafted call cannot re-parent another product's row into this one.
+        $currentColorPrice = $this->editingId
+            ? $this->scopedCardVariant($this->editingId)
+            : null;
 
-        if ($product === null || $product->getRawOriginal('customization_workflow') === null) {
-            session()->flash('error', 'مدیریت قیمت رنگ فقط برای کارت‌های بانکی و سوخت انجام می‌شود؛ قیمت محصولات فروشگاهی را از «مدیریت محصولات» تنظیم کنید.');
+        if ($this->editingId !== null && $currentColorPrice === null) {
+            session()->flash('error', 'این قیمت متعلق به محصول در حال ویرایش نیست؛ عملیات متوقف شد.');
 
             return;
         }
 
+        $workflowRaw = (string) $product->getRawOriginal('customization_workflow');
+        $isFuelCard = $workflowRaw === CustomizationWorkflowEnum::FUEL_CARD->value;
+
         if (
             $this->isActive
-            && $product?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD
+            && $isFuelCard
             && ProductColorPrice::fuelActiveCount($this->productId, $this->editingId) >= 1
         ) {
             session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
@@ -100,11 +115,9 @@ class ProductColorPriceManager extends Component
             return;
         }
 
-        $currentColorPrice = $this->editingId ? ProductColorPrice::find($this->editingId) : null;
-
         if (
             ! $this->isActive
-            && $product?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD
+            && $isFuelCard
             && $currentColorPrice?->is_active
             && ProductColorPrice::fuelActiveCount($this->productId, $this->editingId) === 0
         ) {
@@ -137,9 +150,10 @@ class ProductColorPriceManager extends Component
         $previousColorId = null;
 
         if ($this->editingId) {
-            $priceItem = ProductColorPrice::find($this->editingId);
-            $previousColorId = $priceItem?->color_id !== null ? (int) $priceItem->color_id : null;
-            $priceItem?->update($data);
+            // Already resolved and ownership-checked above.
+            $previousColorId = $currentColorPrice->color_id !== null ? (int) $currentColorPrice->color_id : null;
+            $currentColorPrice->update($data);
+            $priceItem = $currentColorPrice;
             session()->flash('success', 'قیمت با موفقیت ویرایش شد');
         } else {
             $priceItem = ProductColorPrice::create($data);
@@ -170,18 +184,98 @@ class ProductColorPriceManager extends Component
         $this->showForm = true;
     }
 
-    public function edit(int $id): void
+    /**
+     * Card pricing is owned by exactly one Bank/Fuel product. A row is only
+     * reachable while its own product is the one selected in the form, so a
+     * crafted Livewire call can never re-parent another product's price row
+     * into this one, nor mutate a product the form has not opened.
+     */
+    private function editableCardProduct(): ?Product
     {
-        $priceItem = ProductColorPrice::with('product', 'color')->find($id);
+        if ($this->productId === null) {
+            return null;
+        }
 
-        if (! $priceItem) {
-            session()->flash('error', 'قیمت موردنظر یافت نشد');
+        $product = Product::query()->find($this->productId);
+
+        if ($product === null || ! $this->isCardWorkflow($product)) {
+            return null;
+        }
+
+        return $product;
+    }
+
+    private function scopedCardVariant(int $id): ?ProductColorPrice
+    {
+        $priceItem = ProductColorPrice::query()->whereKey($id)->first();
+
+        if ($priceItem === null) {
+            return null;
+        }
+
+        $product = $this->editableCardProduct();
+
+        if ($product === null) {
+            return null;
+        }
+
+        return (int) $priceItem->product_id === (int) $product->id ? $priceItem : null;
+    }
+
+    private function scopedCardVariantImage(int $id): ?ProductImage
+    {
+        $image = ProductImage::query()->whereKey($id)->first();
+
+        if ($image === null) {
+            return null;
+        }
+
+        $product = $this->editableCardProduct();
+
+        if ($product === null) {
+            return null;
+        }
+
+        return (int) $image->product_id === (int) $product->id ? $image : null;
+    }
+
+    /**
+     * Card pricing covers Bank and Fuel cards only; Store products keep their
+     * variants in the Store → Products surface.
+     */
+    private function isCardWorkflow(Product $product): bool
+    {
+        return in_array(
+            (string) $product->getRawOriginal('customization_workflow'),
+            [CustomizationWorkflowEnum::BANK_CARD->value, CustomizationWorkflowEnum::FUEL_CARD->value],
+            true,
+        );
+    }
+
+    /**
+     * The cross-product list renders every card's rows, so a row can be listed
+     * long before its product is opened. Choosing a row is what establishes the
+     * mutation context; it is not itself a change to the row.
+     */
+    public function selectProduct(int $id): void
+    {
+        $product = Product::query()->find($id);
+
+        if ($product === null || ! $this->isCardWorkflow($product)) {
+            session()->flash('error', 'مدیریت قیمت رنگ فقط برای کارت‌های بانکی و سوخت انجام می‌شود؛ قیمت محصولات فروشگاهی را از «مدیریت محصولات» تنظیم کنید.');
 
             return;
         }
 
-        if ($priceItem->product === null || $priceItem->product->getRawOriginal('customization_workflow') === null) {
-            session()->flash('error', 'این قیمت متعلق به محصول فروشگاهی است؛ آن را از «مدیریت محصولات» ویرایش کنید.');
+        $this->productId = (int) $product->id;
+    }
+
+    public function edit(int $id): void
+    {
+        $priceItem = $this->scopedCardVariant($id);
+
+        if (! $priceItem) {
+            session()->flash('error', 'قیمت موردنظر یافت نشد');
 
             return;
         }
@@ -196,7 +290,7 @@ class ProductColorPriceManager extends Component
 
     public function delete(int $id): void
     {
-        $priceItem = ProductColorPrice::with('product')->find($id);
+        $priceItem = $this->scopedCardVariant($id);
 
         if (! $priceItem) {
             session()->flash('error', 'قیمت موردنظر یافت نشد');
@@ -204,14 +298,8 @@ class ProductColorPriceManager extends Component
             return;
         }
 
-        if ($priceItem->product === null || $priceItem->product->getRawOriginal('customization_workflow') === null) {
-            session()->flash('error', 'این قیمت متعلق به محصول فروشگاهی است؛ آن را از «مدیریت محصولات» حذف کنید.');
-
-            return;
-        }
-
         if (
-            $priceItem->product?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD
+            (string) $priceItem->product->getRawOriginal('customization_workflow') === CustomizationWorkflowEnum::FUEL_CARD->value
             && $priceItem->is_active
             && ProductColorPrice::fuelActiveCount($priceItem->product_id, $id) === 0
         ) {
@@ -249,16 +337,10 @@ class ProductColorPriceManager extends Component
 
     public function setPrimaryImage(int $id): void
     {
-        $image = ProductImage::with('product')->find($id);
+        $image = $this->scopedCardVariantImage($id);
 
         if (! $image) {
             session()->flash('error', 'تصویر موردنظر یافت نشد');
-
-            return;
-        }
-
-        if ($image->product === null || $image->product->getRawOriginal('customization_workflow') === null) {
-            session()->flash('error', 'تصویر این محصول فروشگاهی از «مدیریت محصولات» مدیریت می‌شود.');
 
             return;
         }
@@ -274,16 +356,10 @@ class ProductColorPriceManager extends Component
 
     public function deleteImage(int $id): void
     {
-        $image = ProductImage::with('product')->find($id);
+        $image = $this->scopedCardVariantImage($id);
 
         if (! $image) {
             session()->flash('error', 'تصویر موردنظر یافت نشد');
-
-            return;
-        }
-
-        if ($image->product === null || $image->product->getRawOriginal('customization_workflow') === null) {
-            session()->flash('error', 'تصویر این محصول فروشگاهی از «مدیریت محصولات» مدیریت می‌شود.');
 
             return;
         }
@@ -426,7 +502,7 @@ class ProductColorPriceManager extends Component
             'productOptions' => $this->productOptions,
             'colorOptions' => $this->colorOptions,
             'selectedProduct' => $selectedProduct,
-            'selectedProductIsFuel' => $selectedProduct?->customization_workflow === CustomizationWorkflowEnum::FUEL_CARD,
+            'selectedProductIsFuel' => (string) $selectedProduct?->getRawOriginal('customization_workflow') === CustomizationWorkflowEnum::FUEL_CARD->value,
         ])->layout('layouts.admin')->title('قیمت‌گذاری کارت‌ها');
     }
 }

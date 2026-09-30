@@ -17,6 +17,7 @@ use App\Models\Refund;
 use App\Services\ManualPaymentReviewService;
 use App\Services\ManualRefundService;
 use App\Services\OrderStateMachine;
+use App\Services\RefundConstraintService;
 use App\Services\RefundCore;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Facades\Gate;
@@ -180,7 +181,7 @@ class OrderManager extends Component
         }
     }
 
-    public function render(OrderStateMachine $stateMachine)
+    public function render(OrderStateMachine $stateMachine, RefundConstraintService $constraints)
     {
         $query = Order::with(['user', 'items', 'payments']);
 
@@ -212,10 +213,22 @@ class OrderManager extends Component
             $this->selectedOrderId = null;
         }
 
+        // Same rule as the payments surface: the displayed refundable balance
+        // comes from the single authoritative calculation, not from a view-level
+        // recomputation that could drift from what the server accepts.
+        $refundableByPaymentId = [];
+
+        if ($selectedOrder !== null) {
+            foreach ($selectedOrder->payments as $orderPayment) {
+                $refundableByPaymentId[(int) $orderPayment->id] = $constraints->refundableAmount($orderPayment);
+            }
+        }
+
         return view('livewire.admin.order-manager', [
             'orders' => $orders,
             'transitions' => $transitions,
             'selectedOrder' => $selectedOrder,
+            'refundableByPaymentId' => $refundableByPaymentId,
         ])->layout('layouts.admin')->title('مدیریت سفارشات');
     }
 }

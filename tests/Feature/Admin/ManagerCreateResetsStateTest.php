@@ -81,6 +81,7 @@ class ManagerCreateResetsStateTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('edit', $price->id)
             ->assertSet('editingId', $price->id)
             ->call('create')

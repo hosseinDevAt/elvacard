@@ -694,6 +694,156 @@ class PaymentManagerTest extends TestCase
         $this->assertSame(RefundStatus::FAILED, $refund->status);
     }
 
+    /**
+     * The refund button must offer exactly what the server will accept. The
+     * figure comes from RefundConstraintService, so a REVIEW refund that still
+     * reserves balance lowers the offered amount instead of the view inventing
+     * its own formula.
+     */
+    public function test_refundable_offer_matches_the_refund_constraint_service(): void
+    {
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-OP02',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        // 150,000 paid, 60,000 already refunded, 25,000 stuck in REVIEW.
+        Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 60000,
+            'status' => RefundStatus::COMPLETED->value,
+            'refunded_at' => now(),
+        ]);
+        Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => 25000,
+            'status' => RefundStatus::REVIEW->value,
+            'metadata' => ['idempotency_key' => 'op02-key'],
+        ]);
+
+        $expected = app(RefundConstraintService::class)->refundableAmount($payment);
+        $this->assertSame(65000, $expected);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->assertViewHas('refundableByPaymentId', [$payment->id => $expected])
+            ->assertSeeHtml('بازگشت وجه (65,000 تومان)');
+    }
+
+    public function test_fully_refunded_payment_offers_no_refund_button(): void
+    {
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-OP02B',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        Refund::create([
+            'payment_id' => $payment->id,
+            'amount' => $order->total_price,
+            'status' => RefundStatus::COMPLETED->value,
+            'refunded_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->assertViewHas('refundableByPaymentId', [$payment->id => 0])
+            ->assertDontSeeHtml('بازگشت وجه (');
+    }
+
+    /**
+     * A REVIEW refund still reserves its balance, so a client that replays the
+     * pre-reservation amount is rejected by the server instead of quietly
+     * over-refunding.
+     */
+    public function test_stale_client_refund_amount_is_rejected_while_a_review_reserves_balance(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-STALE',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $review = app(RefundCore::class)->processRefund($payment, 100000);
+        $this->assertSame(RefundStatus::REVIEW, $review->status);
+
+        // The admin page already offers the reduced, service-derived figure,
+        // yet a replayed pre-reservation amount is refused outright.
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->assertViewHas('refundableByPaymentId', [$payment->id => 50000])
+            ->call('refundPayment', $payment->id, 100000)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseCount('refunds', 1);
+        $review->refresh();
+        $this->assertSame(RefundStatus::REVIEW, $review->status);
+        $this->assertSame(1, $fake->refundCalls, 'A rejected request never reaches the provider.');
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+    }
+
+    public function test_failed_reconciliation_releases_the_reservation_for_a_new_refund(): void
+    {
+        $fake = $this->registerFakeGateway();
+        $fake->timeoutOnRefund = true;
+
+        $order = $this->createOrder();
+        $payment = $this->createPayment($order, PaymentMethod::GATEWAY, PaymentStatus::SUCCESS, [
+            'gateway' => 'fake',
+            'transaction_id' => 'TXN-RELEASE',
+            'paid_amount' => $order->total_price,
+            'paid_at' => now(),
+        ]);
+        $this->markOrderPaid($order);
+
+        $review = app(RefundCore::class)->processRefund($payment, 100000);
+        $this->assertSame(RefundStatus::REVIEW, $review->status);
+        $this->assertSame(50000, app(RefundConstraintService::class)->refundableAmount($payment->fresh()));
+
+        $fake->lookupResult = RefundRetrieveResult::confirmedFailure('Provider confirms refund never occurred.');
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->call('reconcileReviewRefund', $review->id);
+
+        $review->refresh();
+        $this->assertSame(RefundStatus::FAILED, $review->status);
+
+        // The released balance is refundable again, in full.
+        $fake->timeoutOnRefund = false;
+        $fake->lookupResult = null;
+
+        Livewire::actingAs($this->admin())
+            ->test(PaymentManager::class)
+            ->set('selectedPaymentId', $payment->id)
+            ->assertViewHas('refundableByPaymentId', [$payment->id => $order->total_price])
+            ->call('refundPayment', $payment->id, $order->total_price);
+
+        $this->assertDatabaseCount('refunds', 2);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::REFUNDED, $order->payment_status);
+    }
+
     public function test_customer_cannot_invoke_reconcile_review_refund(): void
     {
         $order = $this->createOrder();

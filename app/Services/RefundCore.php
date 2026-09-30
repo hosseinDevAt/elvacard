@@ -316,8 +316,14 @@ final class RefundCore
             $locked->metadata = array_merge($locked->metadata ?? [], $metadata);
             $locked->save();
 
-            if ($this->constraints->isFullyRefunded($payment)) {
-                $order = $this->lockOrder($payment->order_id);
+            // Order state is derived from every successful payment on the order,
+            // never from this one payment alone: the schema does not forbid
+            // legacy/imported orders carrying more than one successful payment,
+            // and marking such an order REFUNDED while money is still held
+            // would misreport the order.
+            $order = $this->lockOrder($payment->order_id);
+
+            if ($this->constraints->isOrderFullyRefunded($order)) {
                 $order->payment_status = PaymentStatusEnum::REFUNDED;
                 $order->save();
             }

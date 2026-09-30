@@ -13,6 +13,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\User;
+use App\Services\ManualRefundService;
 use App\Services\PaymentGatewayManager;
 use App\Services\RefundConstraintService;
 use App\Services\RefundCore;
@@ -563,6 +564,87 @@ class RefundFinancialIntegrityTest extends TestCase
         $this->assertSame(1000 - 300, $summary['revenue']);
         $this->assertSame(300, $summary['refunded']);
         $this->assertSame(1, $summary['totalRefunds']);
+    }
+
+    // =========================================================================
+    // ORDER STATE DERIVATION (OP-06)
+    // =========================================================================
+
+    /**
+     * Order state is a property of the order, not of one payment. The schema
+     * does not forbid a historical/imported order from carrying more than one
+     * successful payment, so refunding one of them to zero must never report the
+     * whole order as refunded while the other payment is still collected.
+     */
+    public function test_order_stays_paid_until_every_successful_payment_is_refunded(): void
+    {
+        $this->registerFakeGateway();
+
+        $order = $this->createOrder(2000);
+        $this->markOrderPaid($order);
+
+        $first = $this->createSuccessfulPayment($order, 1000);
+        $second = $this->createSuccessfulPayment($order, 1000);
+
+        $service = app(RefundCore::class);
+
+        $service->processRefund($first, 1000);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+        $this->assertSame(0, app(RefundConstraintService::class)->refundableAmount($first->fresh()));
+        $this->assertSame(1000, app(RefundConstraintService::class)->refundableAmount($second->fresh()));
+
+        $service->processRefund($second, 1000);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::REFUNDED, $order->payment_status);
+    }
+
+    public function test_manual_refund_also_requires_every_successful_payment_to_be_refunded(): void
+    {
+        $this->registerFakeGateway();
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+        $order = $this->createOrder(2000);
+        $this->markOrderPaid($order);
+
+        $manual = Payment::create([
+            'order_id' => $order->id,
+            'method' => PaymentMethod::MANUAL_TRANSFER->value,
+            'status' => PaymentStatus::SUCCESS->value,
+            'amount' => 1000,
+            'paid_amount' => 1000,
+            'paid_at' => now(),
+            'tracking_code' => 'MANUAL-OP06',
+        ]);
+
+        $gateway = $this->createSuccessfulPayment($order, 1000);
+
+        app(ManualRefundService::class)->refund($manual, 1000);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+
+        app(RefundCore::class)->processRefund($gateway, 1000);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::REFUNDED, $order->payment_status);
+    }
+
+    public function test_partially_refunded_order_is_never_marked_refunded(): void
+    {
+        $this->registerFakeGateway();
+
+        $order = $this->createOrder(1000);
+        $payment = $this->createSuccessfulPayment($order);
+        $this->markOrderPaid($order);
+
+        app(RefundCore::class)->processRefund($payment, 400);
+
+        $order->refresh();
+        $this->assertSame(PaymentStatusEnum::PAID, $order->payment_status);
+        $this->assertFalse(app(RefundConstraintService::class)->isOrderFullyRefunded($order->fresh()));
     }
 
     // =========================================================================

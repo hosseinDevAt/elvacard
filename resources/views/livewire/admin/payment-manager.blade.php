@@ -185,7 +185,9 @@
 
                 @if ($sp->status === \App\Enums\PaymentStatus::SUCCESS)
                     @php
-                        $spRefundable = max(0, (int) ($sp->paid_amount ?? 0) - (int) $sp->refunds->whereIn('status', ['completed', 'pending', 'review'])->sum('amount'));
+                        // Authoritative refundable balance from RefundConstraintService;
+                        // never recomputed in the view.
+                        $spRefundable = $refundableByPaymentId[(int) $sp->id] ?? 0;
                     @endphp
                     @if ($spRefundable > 0)
                         <div class="mt-4 flex items-center gap-2">
@@ -380,7 +382,7 @@
                                 @endif
                                 @if ($payment->status === \App\Enums\PaymentStatus::SUCCESS)
                                     @php
-                                        $refundable = max(0, (int) ($payment->paid_amount ?? 0) - (int) $payment->refunds->whereIn('status', ['completed', 'pending', 'review'])->sum('amount'));
+                                        $refundable = $refundableByPaymentId[(int) $payment->id] ?? 0;
                                     @endphp
                                     @if ($refundable > 0)
                                         <button wire:click="refundPayment({{ $payment->id }}, {{ $refundable }})" wire:confirm="آیا از بازگشت {{ number_format($refundable) }} تومان مطمئن هستید؟" class="px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-700 text-white">بازگشت وجه</button>

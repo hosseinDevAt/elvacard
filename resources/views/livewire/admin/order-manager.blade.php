@@ -286,8 +286,7 @@
 
                         @if ($payment->status === \App\Enums\PaymentStatus::SUCCESS)
                             @php
-                                $refundableAmount = $payment->paid_amount - $payment->refunds->whereIn('status', ['completed', 'pending', 'review'])->sum('amount');
-                                $refundableAmount = max(0, $refundableAmount);
+                                $refundableAmount = $refundableByPaymentId[(int) $payment->id] ?? 0;
                             @endphp
                             @if ($refundableAmount > 0)
                                 <div class="mt-4 flex items-center gap-2">

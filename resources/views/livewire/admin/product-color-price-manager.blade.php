@@ -144,10 +144,12 @@
                                                         <span class="absolute -top-1 -start-1 rounded-full bg-emerald-500 px-1 text-[8px] font-medium text-white">اصلی</span>
                                                     @endif
                                                 </div>
-                                                @if(! $image->is_primary)
-                                                    <button type="button" wire:click="setPrimaryImage({{ $image->id }})" class="text-[10px] text-indigo-600 hover:text-indigo-800">تعیین اصلی</button>
+                                                @if($productId)
+                                                    @if(! $image->is_primary)
+                                                        <button type="button" wire:click="setPrimaryImage({{ $image->id }})" class="text-[10px] text-indigo-600 hover:text-indigo-800">تعیین اصلی</button>
+                                                    @endif
+                                                    <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-rose-600 hover:text-rose-700">حذف</button>
                                                 @endif
-                                                <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-rose-600 hover:text-rose-700">حذف</button>
                                             </div>
                                         @endforeach
                                     </div>
@@ -155,8 +157,12 @@
                             </td>
                             <td class="admin-td text-center">
                                 <div class="inline-flex items-center gap-1.5">
-                                    <button wire:click="edit({{ $priceItem->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
-                                    <button wire:click="delete({{ $priceItem->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
+                                    @if($productId)
+                                        <button wire:click="edit({{ $priceItem->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                                        <button wire:click="delete({{ $priceItem->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
+                                    @else
+                                        <button wire:click="selectProduct({{ $priceItem->product_id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">انتخاب کارت</button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

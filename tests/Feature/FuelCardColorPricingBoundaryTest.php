@@ -248,6 +248,7 @@ class FuelCardColorPricingBoundaryTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('delete', $inactive->id)
             ->assertHasNoErrors();
 
@@ -265,6 +266,7 @@ class FuelCardColorPricingBoundaryTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('delete', $rejected->id)
             ->assertHasNoErrors();
 

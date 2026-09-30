@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Services\ManualPaymentReviewService;
 use App\Services\ManualRefundService;
+use App\Services\RefundConstraintService;
 use App\Services\RefundCore;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Dates\DateService;
@@ -177,7 +178,7 @@ class PaymentManager extends Component
         }
     }
 
-    public function render()
+    public function render(RefundConstraintService $constraints)
     {
         $query = Payment::query()->with(['order.user']);
 
@@ -228,9 +229,23 @@ class PaymentManager extends Component
             $this->selectedPaymentId = null;
         }
 
+        // The refundable balance is always derived from the single
+        // authoritative calculation, never recomputed in the view, so the
+        // displayed figure can never disagree with what the server will accept.
+        $refundableByPaymentId = [];
+
+        foreach ($payments as $listedPayment) {
+            $refundableByPaymentId[(int) $listedPayment->id] = $constraints->refundableAmount($listedPayment);
+        }
+
+        if ($selectedPayment !== null) {
+            $refundableByPaymentId[(int) $selectedPayment->id] = $constraints->refundableAmount($selectedPayment);
+        }
+
         return view('livewire.admin.payment-manager', [
             'payments' => $payments,
             'selectedPayment' => $selectedPayment,
+            'refundableByPaymentId' => $refundableByPaymentId,
             'statusCases' => PaymentStatus::cases(),
             'methodCases' => PaymentMethod::cases(),
         ])->layout('layouts.admin')->title('مدیریت پرداخت‌ها');

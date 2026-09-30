@@ -114,6 +114,7 @@ class ProductVariantImageManagerTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('setPrimaryImage', $second->id)
             ->call('deleteImage', $first->id)
             ->assertHasNoErrors();
@@ -138,6 +139,7 @@ class ProductVariantImageManagerTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('delete', $variantId)
             ->assertHasNoErrors();
 
@@ -224,6 +226,7 @@ class ProductVariantImageManagerTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('deleteImage', $tinted->id)
             ->assertHasNoErrors();
 
@@ -231,6 +234,7 @@ class ProductVariantImageManagerTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(ProductColorPriceManager::class)
+            ->set('productId', $product->id)
             ->call('deleteImage', $untinted->id)
             ->assertHasNoErrors();
 
