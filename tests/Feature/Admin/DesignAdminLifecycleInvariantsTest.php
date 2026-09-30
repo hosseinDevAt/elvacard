@@ -47,6 +47,12 @@ class DesignAdminLifecycleInvariantsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('public');
+    }
+
     private function admin(): User
     {
         return User::factory()->create(['role' => 'admin']);
@@ -85,10 +91,13 @@ class DesignAdminLifecycleInvariantsTest extends TestCase
 
     private function image(Design $design, Color $color, string $suffix = '', bool $isActive = true): DesignImage
     {
+        $path = 'designs/life-'.$suffix.uniqid().'.png';
+        Storage::disk('public')->put($path, 'fake');
+
         return DesignImage::create([
             'design_id' => $design->id,
             'color_id' => $color->id,
-            'image_path' => 'designs/life-'.$suffix.uniqid().'.png',
+            'image_path' => $path,
             'is_active' => $isActive,
             'sort_order' => 1,
         ]);

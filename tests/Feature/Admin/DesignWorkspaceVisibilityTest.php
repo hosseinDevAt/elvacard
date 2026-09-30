@@ -11,6 +11,7 @@ use App\Models\DesignImage;
 use App\Models\User;
 use App\Services\DesignCatalogService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -25,6 +26,15 @@ use Tests\TestCase;
 class DesignWorkspaceVisibilityTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('public');
+        Storage::disk('public')->put('designs/workspace-ready.png', 'fake');
+        Storage::disk('public')->put('designs/readiness.png', 'fake');
+        Storage::disk('public')->put('designs/visible.png', 'fake');
+    }
 
     private function admin(): User
     {
@@ -207,5 +217,42 @@ class DesignWorkspaceVisibilityTest extends TestCase
             ->assertSee('قابل نمایش در میزکار')
             ->assertSee($hidden->name)
             ->assertSee($visible->name);
+    }
+
+    public function test_readiness_fails_when_image_file_is_missing_on_disk(): void
+    {
+        $catalog = app(DesignCatalogService::class);
+        $category = $this->category();
+        $color = $this->color();
+        $design = $this->design($category, true);
+
+        $missingPath = 'designs/physically-missing-asset.png';
+        Storage::disk('public')->delete($missingPath);
+
+        $image = DesignImage::create([
+            'design_id' => $design->id,
+            'color_id' => $color->id,
+            'image_path' => $missingPath,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        DesignColorCompatibility::create([
+            'design_image_id' => $image->id,
+            'card_color_id' => $color->id,
+            'is_allowed' => true,
+        ]);
+
+        // File is missing on disk -> readiness must be false!
+        $this->assertFalse(Storage::disk('public')->exists($missingPath));
+        $this->assertFalse($catalog->isReadyForWorkspace($design->id));
+
+        // Create file on disk -> readiness becomes true!
+        Storage::disk('public')->put($missingPath, 'valid-bytes');
+        $this->assertTrue($catalog->isReadyForWorkspace($design->id));
+
+        // Delete file on disk -> readiness drops back to false!
+        Storage::disk('public')->delete($missingPath);
+        $this->assertFalse($catalog->isReadyForWorkspace($design->id));
     }
 }

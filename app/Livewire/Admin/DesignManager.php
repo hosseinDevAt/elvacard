@@ -73,6 +73,13 @@ class DesignManager extends Component
     {
         $this->validate();
 
+        $targetCategory = CateDesign::find($this->cateDesignId);
+        if ($this->isActive && (! $targetCategory || ! $targetCategory->is_active)) {
+            session()->flash('error', 'امکان انتساب طرح فعال به دسته‌بندی غیرفعال وجود ندارد.');
+
+            return;
+        }
+
         if ($this->editingId) {
             if (! $this->isActive) {
                 $blocker = ProductPurchaseabilityService::designDeactivationBlocker($this->editingId);
@@ -82,7 +89,7 @@ class DesignManager extends Component
 
                     return;
                 }
-            } elseif (! app(DesignCatalogService::class)->isReadyForWorkspace((int) $this->editingId)) {
+            } elseif (! app(DesignCatalogService::class)->isReadyForWorkspace((int) $this->editingId, (int) $this->cateDesignId, $this->isActive)) {
                 // The same authoritative gate DesignWizard::save() applies. An
                 // active design that cannot surface in the workspace is
                 // saved-but-hidden, so it is refused instead. The rule itself

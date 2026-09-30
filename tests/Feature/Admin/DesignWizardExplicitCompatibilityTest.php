@@ -12,6 +12,7 @@ use App\Models\DesignImage;
 use App\Models\User;
 use App\Services\DesignCatalogService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -26,6 +27,14 @@ use Tests\TestCase;
 class DesignWizardExplicitCompatibilityTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('public');
+        Storage::disk('public')->put('designs/not-ready.png', 'fake');
+        Storage::disk('public')->put('designs/semantics.png', 'fake');
+    }
 
     private function admin(): User
     {

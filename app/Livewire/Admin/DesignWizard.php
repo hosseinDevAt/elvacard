@@ -137,11 +137,20 @@ class DesignWizard extends Component
             $this->validate($this->stepOneRules());
         }
 
+        if ($this->isActive) {
+            $targetCategory = CateDesign::find($this->cateDesignId);
+            if (! $targetCategory || ! $targetCategory->is_active) {
+                session()->flash('error', 'امکان انتساب طرح فعال به دسته‌بندی غیرفعال وجود ندارد.');
+
+                return;
+            }
+        }
+
         // Activation is meaningless when the design cannot surface in the
         // workspace: the customizer only renders an active design that has an
         // active image allowed for an active card color. Refuse to save an
         // active-but-invisible design instead of silently hiding it.
-        if ($this->isActive && $this->designId && ! app(DesignCatalogService::class)->isReadyForWorkspace((int) $this->designId)) {
+        if ($this->isActive && $this->designId && ! app(DesignCatalogService::class)->isReadyForWorkspace((int) $this->designId, (int) $this->cateDesignId, $this->isActive)) {
             session()->flash(
                 'error',
                 'برای فعال‌سازی، طرح باید حداقل یک تصویر فعال داشته باشد که برای یک رنگ فعال مجاز شده باشد؛ در غیر این صورت در بخش شخصی‌سازی نمایش داده نمی‌شود.'
@@ -414,6 +423,15 @@ class DesignWizard extends Component
 
     protected function persistDesign(): bool
     {
+        if ($this->isActive) {
+            $targetCategory = CateDesign::find($this->cateDesignId);
+            if (! $targetCategory || ! $targetCategory->is_active) {
+                session()->flash('error', 'امکان انتساب طرح فعال به دسته‌بندی غیرفعال وجود ندارد.');
+
+                return false;
+            }
+        }
+
         $data = [
             'cate_design_id' => $this->cateDesignId,
             'name' => $this->name,

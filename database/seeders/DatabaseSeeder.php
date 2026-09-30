@@ -317,6 +317,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
+            DesignAssetSeeder::class,
             ManualPaymentSettingSeeder::class,
             CmsContentSeeder::class,
         ]);

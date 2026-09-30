@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Enums\CustomizationWorkflowEnum;
+use App\Models\CateDesign;
 use App\Models\Design;
 use App\Models\DesignImage;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class DesignCatalogService
 {
@@ -116,39 +118,74 @@ class DesignCatalogService
     }
 
     /**
-     * Whether an activated design would actually be displayable in the
-     * customization workspace. The workspace only lists a design for a card
-     * color when the design is active, its category is active, and one of its
-     * active images is allowed for that color; a design missing any of those
-     * is saved but silently invisible. This check mirrors that gate (via
-     * ProductCustomizer::allowedImageIds()) but deliberately ignores the
-     * design's own is_active flag so the wizard can validate the activation
-     * before it is written.
+     * Whether a design is actually displayable in the customization workspace.
+     * Readiness strictly requires:
+     *   1. Active design (or true resulting activation state)
+     *   2. Active category (or true resulting category state)
+     *   3. At least one active image
+     *   4. That image file physically exists on the public disk
+     *   5. Explicit allowed compatibility (design_color_compatibilities.is_allowed = true)
+     *   6. On an active card color (colors.is_active = true)
      */
-    public function isReadyForWorkspace(int $designId): bool
-    {
-        return Design::query()
-            ->whereKey($designId)
-            ->whereRelation('category', fn ($query) => $query->where('is_active', true))
-            ->whereExists(function ($query) {
-                $query->select('id')
-                    ->from('design_images')
-                    ->whereColumn('design_images.design_id', 'designs.id')
-                    ->where('design_images.is_active', true)
-                    ->whereExists(function ($compat) {
-                        $compat->select('id')
-                            ->from('design_color_compatibilities')
-                            ->whereColumn('design_color_compatibilities.design_image_id', 'design_images.id')
-                            ->where('design_color_compatibilities.is_allowed', true)
-                            ->whereExists(function ($color) {
-                                $color->select('id')
-                                    ->from('colors')
-                                    ->whereColumn('colors.id', 'design_color_compatibilities.card_color_id')
-                                    ->where('colors.is_active', true);
-                            });
+    public function isReadyForWorkspace(
+        int|Design $design,
+        ?int $resultingCategoryId = null,
+        ?bool $resultingIsActive = null,
+    ): bool {
+        $designModel = $design instanceof Design ? $design : Design::query()->find($design);
+
+        if ($designModel === null) {
+            return false;
+        }
+
+        // 1. Active design check (evaluating against resulting state when provided)
+        $isActive = $resultingIsActive ?? (bool) $designModel->is_active;
+        if (! $isActive) {
+            return false;
+        }
+
+        // 2. Active category check (evaluating against resulting category when provided)
+        $categoryId = $resultingCategoryId ?? (int) $designModel->cate_design_id;
+        $categoryIsActive = CateDesign::query()
+            ->whereKey($categoryId)
+            ->where('is_active', true)
+            ->exists();
+
+        if (! $categoryIsActive) {
+            return false;
+        }
+
+        // 3. Active images with explicit allowed compatibility for an active card color
+        $images = DesignImage::query()
+            ->where('design_id', $designModel->id)
+            ->where('is_active', true)
+            ->whereExists(function ($compat) {
+                $compat->select('id')
+                    ->from('design_color_compatibilities')
+                    ->whereColumn('design_color_compatibilities.design_image_id', 'design_images.id')
+                    ->where('design_color_compatibilities.is_allowed', true)
+                    ->whereExists(function ($color) {
+                        $color->select('id')
+                            ->from('colors')
+                            ->whereColumn('colors.id', 'design_color_compatibilities.card_color_id')
+                            ->where('colors.is_active', true);
                     });
             })
-            ->exists();
+            ->get(['id', 'image_path']);
+
+        if ($images->isEmpty()) {
+            return false;
+        }
+
+        // 4. Physical image file must actually exist on the public disk
+        $disk = Storage::disk('public');
+        foreach ($images as $image) {
+            if ($image->image_path !== null && $image->image_path !== '' && $disk->exists($image->image_path)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

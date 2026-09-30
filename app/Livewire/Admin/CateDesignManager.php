@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\CateDesign;
+use App\Models\Design;
 use App\Services\Customization\ProductPurchaseabilityService;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
@@ -37,6 +38,12 @@ class CateDesignManager extends Component
 
             if ($blocker !== null) {
                 session()->flash('error', $blocker);
+
+                return;
+            }
+
+            if (Design::where('cate_design_id', $this->editingId)->where('is_active', true)->exists()) {
+                session()->flash('error', 'این دسته‌بندی شامل طرح‌های فعال است؛ ابتدا طرح‌های آن را غیرفعال یا به دسته‌بندی دیگری منتقل کنید.');
 
                 return;
             }
