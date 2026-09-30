@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\DesignImage;
+use App\Models\OrderItem;
 use Illuminate\Support\Facades\Storage;
 
 class StoredFileManager
@@ -32,6 +34,30 @@ class StoredFileManager
                 $this->deletePublicFile($path);
             }
         }
+    }
+
+    /**
+     * Delete design image files, but only once no live design image and no
+     * historical order still points at them.
+     *
+     * An OrderItem keeps the purchased asset path in
+     * design_image_path_snapshot, and the design_images row is allowed to
+     * disappear from the catalog (the foreign key is nullOnDelete). Without the
+     * order check the file would be unlinked and every paid order that bought
+     * that design would be left pointing at a missing asset.
+     */
+    public function deleteDesignImageFilesWhenUnreferenced(array $paths): void
+    {
+        $this->deletePublicFilesWhenUnreferenced(
+            $paths,
+            fn (string $path): bool => $this->isDesignImageFileReferenced($path),
+        );
+    }
+
+    public function isDesignImageFileReferenced(string $path): bool
+    {
+        return DesignImage::query()->where('image_path', $path)->exists()
+            || OrderItem::query()->where('design_image_path_snapshot', $path)->exists();
     }
 
     private function isSafePublicPath(?string $path): bool

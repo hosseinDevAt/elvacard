@@ -126,6 +126,9 @@
                         </div>
 
                         @if ($isFuel)
+                            @php
+                                $fuelFields = \App\Services\FuelCard\FuelCardCustomization::fulfillmentFields($custom);
+                            @endphp
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                 <div class="space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                     <div class="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">مشخصات کارت سوخت:</div>
@@ -134,8 +137,22 @@
                                     <div><span class="text-gray-400">طرح کارت:</span> <span class="text-gray-900 font-bold">{{ $item->design_name_snapshot ?? 'ثبت نشده' }}</span></div>
                                     <div><span class="text-gray-400">تصویر طرح:</span> <span class="text-gray-900 font-bold">{{ $item->design_image_path_snapshot ?? 'ثبت نشده' }}</span></div>
                                 </div>
-                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center justify-center text-gray-400 text-[10px]">
-                                    پیش‌نمایش پشت کارت: تعریف نشده
+
+                                {{--
+                                    Fuel fulfillment data. This is the immutable OrderItem
+                                    snapshot (the historical purchase), never the customer's
+                                    current design workspace. Chip size is an order
+                                    customization and is therefore listed here, outside any
+                                    printed/engraved specification.
+                                --}}
+                                <div class="space-y-1.5 bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                                    <div class="font-bold text-emerald-800 mb-1 border-b border-emerald-200 pb-1">اطلاعات مشتری برای تولید کارت سوخت:</div>
+                                    @foreach ($fuelFields as $fuelKey => $fuelField)
+                                        <div>
+                                            <span class="text-gray-400">{{ $fuelField['label'] }}:</span>
+                                            <span class="text-gray-900 font-bold break-all" @if (in_array($fuelKey, ['vin', 'plate_number', 'system_identifier'], true)) dir="ltr" @endif>{{ $fuelField['value'] !== '' ? $fuelField['value'] : 'ثبت نشده' }}</span>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                         @else

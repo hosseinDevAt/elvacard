@@ -259,10 +259,7 @@ class DesignWizard extends Component
             return;
         }
 
-        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
-            [$previous],
-            fn (string $path): bool => DesignImage::query()->where('image_path', $path)->exists(),
-        );
+        app(StoredFileManager::class)->deleteDesignImageFilesWhenUnreferenced([$previous]);
     }
 
     public function editImage(int $id): void
@@ -308,10 +305,7 @@ class DesignWizard extends Component
 
         $image->delete();
 
-        app(StoredFileManager::class)->deletePublicFilesWhenUnreferenced(
-            [$image->image_path],
-            fn (string $path): bool => DesignImage::query()->where('image_path', $path)->exists(),
-        );
+        app(StoredFileManager::class)->deleteDesignImageFilesWhenUnreferenced([$image->image_path]);
 
         session()->flash('success', 'تصویر طرح به همراه سازگاری‌هایش حذف شد.');
     }

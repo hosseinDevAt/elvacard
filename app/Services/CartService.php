@@ -524,20 +524,61 @@ class CartService
         }
     }
 
+    /**
+     * Locate an existing cart line that represents *exactly* the same purchase.
+     *
+     * A customized card line is identified by the catalog selection AND its
+     * customization payload. Two Fuel cards that share product, color, design
+     * and design image but carry different vehicle data (VIN, plate, owner,
+     * fuel system, chip size) are two different physical cards for two
+     * different vehicles: they must stay separate lines, because merging them
+     * would keep only one vehicle's fulfillment data while billing for both.
+     * Ordinary Store lines carry an empty payload and still merge as before.
+     */
     private function findDuplicateItemIndex(array $items, array $validated): ?int
     {
+        $identity = $this->cartIdentity($validated);
+
         foreach ($items as $index => $item) {
-            if (
-                (int) ($item['product_id'] ?? 0) === $validated['product_id']
-                && (int) ($item['color_id'] ?? 0) === (int) ($validated['color_id'] ?? 0)
-                && (int) ($item['design_id'] ?? 0) === (int) ($validated['design_id'] ?? 0)
-                && ((int) ($item['design_image_id'] ?? 0) === (int) ($validated['design_image_id'] ?? 0))
-            ) {
+            if ($this->cartIdentity($item) === $identity) {
                 return $index;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Stable identity of a cart line.
+     *
+     * The customization payload is key-sorted first so two byte-identical
+     * payloads always produce the same identity regardless of the order their
+     * keys happened to be written in.
+     */
+    private function cartIdentity(array $line): string
+    {
+        return (string) json_encode([
+            'product_id' => (int) ($line['product_id'] ?? 0),
+            'color_id' => (int) ($line['color_id'] ?? 0),
+            'design_id' => (int) ($line['design_id'] ?? 0),
+            'design_image_id' => (int) ($line['design_image_id'] ?? 0),
+            'customization' => $this->canonicalizeForIdentity($line['customization_json'] ?? []),
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    private function canonicalizeForIdentity(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        ksort($value);
+
+        foreach ($value as $key => $item) {
+            $value[$key] = $this->canonicalizeForIdentity($item);
+        }
+
+        return $value;
     }
 
     private function store(array $items): void

@@ -6,6 +6,30 @@ class FuelCardCustomization
 {
     public const VALID_CHIP_SIZES = ['small', 'large'];
 
+    /**
+     * Human labels of the Fuel fulfillment read model, in the order an
+     * operator needs them to produce and dispatch a physical card.
+     */
+    public const FULFILLMENT_LABELS = [
+        'owner_name' => 'نام مالک کارت',
+        'car_info' => 'اطلاعات خودرو',
+        'vin' => 'شماره شاسی (VIN)',
+        'system_name' => 'نام سامانه سوخت',
+        'system_identifier' => 'شناسه سامانه سوخت',
+        'plate_number' => 'شماره پلاک',
+        'chip_info' => 'سایز چیپ',
+    ];
+
+    /**
+     * Chip size is an order customization choice, not a printed specification,
+     * so it is presented separately from anything that gets engraved on the
+     * card body.
+     */
+    public const CHIP_SIZE_LABELS = [
+        'small' => 'کوچک',
+        'large' => 'بزرگ',
+    ];
+
     private const DIGIT_MAP = [
         '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
         '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
@@ -177,5 +201,60 @@ class FuelCardCustomization
             'chip_info' => 10,
             default => 100,
         };
+    }
+
+    /**
+     * Build the Fuel fulfillment read model directly from an OrderItem
+     * customization snapshot.
+     *
+     * The snapshot is the only source: the customer's live design workspace is
+     * never consulted, so a paid order always renders the data that was
+     * actually purchased.
+     *
+     * This is deliberately a *read* projection and not a second call to
+     * sanitize(). It filters to the allow-list (so a hand-edited row cannot
+     * leak a Bank or foreign key) and canonicalizes VIN/plate/chip, but it
+     * never truncates. Re-validating on read would silently shorten an
+     * over-length historical value, and would drop a VIN that does not match
+     * today's 17-character rule — both are exactly the silent data loss a
+     * fulfillment screen must not cause. A value that no longer matches the
+     * current rules is still what the customer bought, so it is still shown.
+     *
+     * @param  array<string, mixed>|null  $snapshot
+     * @return array<string, array{label: string, value: string}> keyed by field
+     */
+    public static function fulfillmentFields(?array $snapshot): array
+    {
+        $snapshot = is_array($snapshot) ? $snapshot : [];
+
+        $fields = [];
+
+        foreach (self::FULFILLMENT_LABELS as $key => $label) {
+            $raw = $snapshot[$key] ?? null;
+            $value = is_string($raw) ? trim($raw) : '';
+
+            if ($key === 'vin' && $value !== '') {
+                $canonical = self::canonicalizeVin($value);
+
+                // Fall back to the stored text when it is not canonicalizable
+                // (e.g. a historical value that predates the current rule) so
+                // the operator still sees what was actually purchased.
+                $value = $canonical !== '' ? $canonical : $value;
+            } elseif ($key === 'plate_number' && $value !== '') {
+                $value = self::canonicalizePlate($value);
+            } elseif ($key === 'chip_info' && $value !== '') {
+                $chip = self::canonicalizeChipInfo($value);
+                $value = $chip !== '' ? (self::CHIP_SIZE_LABELS[$chip] ?? $chip) : $value;
+            } elseif ($value !== '') {
+                $value = (string) preg_replace('/\s+/u', ' ', $value);
+            }
+
+            $fields[$key] = [
+                'label' => $label,
+                'value' => $value,
+            ];
+        }
+
+        return $fields;
     }
 }
