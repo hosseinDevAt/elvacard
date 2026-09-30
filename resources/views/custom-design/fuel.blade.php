@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
+@section('title')طراحی کارت سوخت - {{ site_setting('site_name', config('app.name')) }}@endsection
+
 @section('meta')
-    <title>طراحی کارت سوخت - {{ site_setting('site_name', config('app.name')) }}</title>
     <meta name="description" content="شخصی‌سازی کارت سوخت اختصاصی با تمام مشخصات خودرو، شماره شاسی و سامانه سوخت.">
     <link rel="canonical" href="{{ route('custom-card.fuel') }}">
 @endsection

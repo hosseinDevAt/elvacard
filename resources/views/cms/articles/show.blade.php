@@ -1,12 +1,8 @@
 @extends('layouts.app')
 
-@section('meta')
-    @if ($article->meta_title)
-        <title>{{ $article->meta_title }} - {{ site_setting('site_name', config('app.name')) }}</title>
-    @else
-        <title>{{ $article->title }} - {{ site_setting('site_name', config('app.name')) }}</title>
-    @endif
+@section('title'){{ $article->meta_title ?: $article->title }} - {{ site_setting('site_name', config('app.name')) }}@endsection
 
+@section('meta')
     @if ($article->meta_description)
         <meta name="description" content="{{ $article->meta_description }}">
     @endif

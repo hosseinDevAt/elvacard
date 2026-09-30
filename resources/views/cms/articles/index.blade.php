@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
+@section('title'){{ isset($category) ? $category->name : 'مقالات' }} - {{ site_setting('site_name', config('app.name')) }}@endsection
+
 @section('meta')
     @if (isset($category))
-        <title>{{ $category->name }} - {{ site_setting('site_name', config('app.name')) }}</title>
         <meta name="description" content="مقالات دسته‌بندی {{ $category->name }}">
     @else
-        <title>مقالات - {{ site_setting('site_name', config('app.name')) }}</title>
         <meta name="description" content="مقالات و راهنماهای {{ site_setting('site_name', config('app.name')) }}">
     @endif
 @endsection

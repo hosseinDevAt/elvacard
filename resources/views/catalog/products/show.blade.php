@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('meta')
-    <title>{{ $product->meta_title ?: $product->name }} - {{ site_setting('site_name', config('app.name')) }}</title>
+@section('title'){{ $product->meta_title ?: $product->name }} - {{ site_setting('site_name', config('app.name')) }}@endsection
 
+@section('meta')
     @if ($product->meta_description)
         <meta name="description" content="{{ $product->meta_description }}">
     @endif

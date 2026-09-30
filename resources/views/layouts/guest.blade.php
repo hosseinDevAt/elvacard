@@ -5,9 +5,14 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ site_setting('site_name', config('app.name')) }}</title>
+        {{-- Single authoritative document title, matching layouts.app. A guest
+             page overrides it with @section('title'); guest pages without SEO
+             metadata keep the site name fallback. --}}
+        <title>@yield('title', site_setting('site_name', config('app.name')))</title>
 
         @include('components.favicon-links')
+
+        @yield('meta')
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

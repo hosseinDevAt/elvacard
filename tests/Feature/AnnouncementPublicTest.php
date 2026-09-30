@@ -101,4 +101,157 @@ class AnnouncementPublicTest extends TestCase
             ->call('edit', $saved->id)
             ->assertSet('sortOrder', 7);
     }
+
+    // ---------------------------------------------------------------------
+    // N-Onyx-49 / SET-01: stored hex colors must actually reach the DOM.
+    // ---------------------------------------------------------------------
+
+    /**
+     * The style attribute of the rendered announcement bar.
+     */
+    private function announcementBarStyle(string $html): ?string
+    {
+        $matched = preg_match('/<div\s[^>]*role="alert"[^>]*>/s', $html, $tag);
+
+        $this->assertSame(1, $matched, 'The announcement bar should be rendered with role="alert".');
+
+        if (preg_match('/\sstyle="([^"]*)"/', $tag[0], $style) !== 1) {
+            return null;
+        }
+
+        return $style[1];
+    }
+
+    public function test_stored_hex_colors_are_rendered_as_inline_styles(): void
+    {
+        $this->announcement([
+            'title' => 'اطلاعیه رنگی',
+            'background_color' => '#ff0000',
+            'text_color' => '#ffffff',
+        ]);
+
+        $content = $this->get('/')->assertOk()->getContent();
+
+        $this->assertSame(
+            'background-color: #ff0000;color: #ffffff',
+            $this->announcementBarStyle($content)
+        );
+
+        // The stored hex must never be emitted as a utility class token again.
+        $this->assertStringNotContainsString('#ff0000', $this->classAttributeOf($content));
+    }
+
+    public function test_three_digit_hex_colors_are_supported(): void
+    {
+        $this->announcement([
+            'title' => 'اطلاعیه کوتاه',
+            'background_color' => '#0af',
+            'text_color' => '#fff',
+        ]);
+
+        $style = $this->announcementBarStyle($this->get('/')->assertOk()->getContent());
+
+        $this->assertSame('background-color: #0af;color: #fff', $style);
+    }
+
+    public function test_default_visual_behavior_is_preserved_when_no_colors_are_stored(): void
+    {
+        $this->announcement(['title' => 'اطلاعیه بی‌رنگ']);
+
+        $content = $this->get('/')->assertOk()->getContent();
+
+        $this->assertNull(
+            $this->announcementBarStyle($content),
+            'Without stored colors no inline override should be emitted.'
+        );
+
+        $classes = $this->classAttributeOf($content);
+        $this->assertStringContainsString('bg-primary-50', $classes);
+        $this->assertStringContainsString('text-primary-900', $classes);
+    }
+
+    public function test_only_the_background_color_falls_back_for_the_text_color(): void
+    {
+        $this->announcement([
+            'title' => 'اطلاعیه نیمه‌رنگی',
+            'background_color' => '#123456',
+            'text_color' => null,
+        ]);
+
+        $content = $this->get('/')->assertOk()->getContent();
+
+        $this->assertSame('background-color: #123456', $this->announcementBarStyle($content));
+
+        $classes = $this->classAttributeOf($content);
+        $this->assertStringNotContainsString('bg-primary-50', $classes);
+        $this->assertStringContainsString('text-primary-900', $classes);
+    }
+
+    public function test_admin_can_persist_valid_hex_colors(): void
+    {
+        Livewire::actingAs($this->admin())
+            ->test(AnnouncementManager::class)
+            ->set('title', 'اطلاعیه ذخیره‌شده')
+            ->set('content', 'متن')
+            ->set('backgroundColor', '#ABCDEF')
+            ->set('textColor', '#123456')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $saved = Announcement::where('title', 'اطلاعیه ذخیره‌شده')->firstOrFail();
+
+        $this->assertSame('#ABCDEF', $saved->background_color);
+        $this->assertSame('#123456', $saved->text_color);
+    }
+
+    public function test_manager_still_rejects_non_hex_colors(): void
+    {
+        Livewire::actingAs($this->admin())
+            ->test(AnnouncementManager::class)
+            ->set('title', 'اطلاعیه نامعتبر')
+            ->set('content', 'متن')
+            ->set('backgroundColor', 'bg-red-500')
+            ->set('textColor', 'text-primary-900')
+            ->call('save')
+            ->assertHasErrors(['backgroundColor', 'textColor']);
+
+        $this->assertNull(
+            Announcement::where('title', 'اطلاعیه نامعتبر')->first(),
+            'An invalid color must not be persisted.'
+        );
+    }
+
+    public function test_a_css_injection_payload_in_a_legacy_row_cannot_reach_the_style_attribute(): void
+    {
+        // Bypass validation to simulate a legacy/hand-edited row.
+        $this->announcement([
+            'title' => 'اطلاعیه دستکاری‌شده',
+            'background_color' => '#fff;background-image:url(javascript:alert(1))',
+        ]);
+
+        $content = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('javascript:', $content);
+        $this->assertStringNotContainsString('url(javascript', $content);
+
+        // The invalid value must degrade to the default, not be emitted at all.
+        $this->assertNull($this->announcementBarStyle($content));
+        $this->assertStringContainsString('bg-primary-50', $this->classAttributeOf($content));
+    }
+
+    /**
+     * The class attribute of the rendered announcement bar.
+     */
+    private function classAttributeOf(string $html): string
+    {
+        $matched = preg_match('/<div\s[^>]*role="alert"[^>]*>/s', $html, $tag);
+
+        $this->assertSame(1, $matched, 'The announcement bar should be rendered with role="alert".');
+
+        if (preg_match('/\sclass="([^"]*)"/', $tag[0], $class) !== 1) {
+            return '';
+        }
+
+        return $class[1];
+    }
 }

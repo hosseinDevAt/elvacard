@@ -1,10 +1,28 @@
 @php
     $announcement = \App\Models\Announcement::visible()->first();
+
+    // The stored colors are hex literals (#RGB / #RRGGBB), not utility class
+    // names, so they must be applied as inline CSS -- exactly like the homepage
+    // section background colors. Rendering them into the class attribute made
+    // every admin-selected color a dead class token. The values are re-validated
+    // here so a legacy or hand-edited row can never inject arbitrary CSS.
+    $announcementBackground = preg_match('/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', (string) $announcement?->background_color)
+        ? $announcement->background_color
+        : null;
+    $announcementText = preg_match('/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', (string) $announcement?->text_color)
+        ? $announcement->text_color
+        : null;
+
+    $announcementStyle = trim(implode(';', array_filter([
+        $announcementBackground !== null ? 'background-color: '.$announcementBackground : '',
+        $announcementText !== null ? 'color: '.$announcementText : '',
+    ])));
 @endphp
 
 @if ($announcement && $announcement->title)
     <div
-        class="border-b border-gray-200 text-center py-3 px-4 sm:px-6 {{ $announcement->background_color ?? 'bg-primary-50' }} {{ $announcement->text_color ?? 'text-primary-900' }}"
+        class="border-b border-gray-200 text-center py-3 px-4 sm:px-6 {{ $announcementBackground !== null ? '' : 'bg-primary-50' }} {{ $announcementText !== null ? '' : 'text-primary-900' }}"
+        @if ($announcementStyle !== '') style="{{ $announcementStyle }}" @endif
         role="alert"
     >
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm">

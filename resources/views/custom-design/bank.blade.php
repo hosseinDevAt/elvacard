@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
+@section('title')طراحی کارت بانکی - {{ site_setting('site_name', config('app.name')) }}@endsection
+
 @section('meta')
-    <title>طراحی کارت بانکی - {{ site_setting('site_name', config('app.name')) }}</title>
     <meta name="description" content="کارت بانکی خود را با طرح دلخواه‌تان طراحی کنید؛ رنگ، طرح و متن را انتخاب کرده و سفارش دهید.">
     <link rel="canonical" href="{{ route('custom-card.bank') }}">
 @endsection

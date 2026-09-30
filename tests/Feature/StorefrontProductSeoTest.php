@@ -64,9 +64,18 @@ class StorefrontProductSeoTest extends TestCase
         $product = $this->product(['meta_title' => 'عنوان سئو اختصاصی']);
         $siteName = site_setting('site_name', config('app.name'));
 
-        $this->get(route('catalog.products.show', $product->slug))
+        $response = $this->get(route('catalog.products.show', $product->slug))
             ->assertOk()
             ->assertSee('<title>عنوان سئو اختصاصی - '.$siteName.'</title>', false);
+
+        // Asserting the string is present is not enough: the layout must own the
+        // only title element, otherwise the fixed site-name title wins and the
+        // admin meta_title is inert (N-Onyx-49 / SEO-01).
+        $this->assertSame(
+            1,
+            preg_match_all('/<title\b[^>]*>/i', $response->getContent()),
+            'The product page must render exactly one title element.'
+        );
     }
 
     public function test_product_detail_title_falls_back_to_product_name(): void
@@ -74,9 +83,15 @@ class StorefrontProductSeoTest extends TestCase
         $product = $this->product(['meta_title' => null]);
         $siteName = site_setting('site_name', config('app.name'));
 
-        $this->get(route('catalog.products.show', $product->slug))
+        $response = $this->get(route('catalog.products.show', $product->slug))
             ->assertOk()
             ->assertSee('<title>'.$product->name.' - '.$siteName.'</title>', false);
+
+        $this->assertSame(
+            1,
+            preg_match_all('/<title\b[^>]*>/i', $response->getContent()),
+            'The product page must render exactly one title element.'
+        );
     }
 
     public function test_meta_description_renders_when_set(): void

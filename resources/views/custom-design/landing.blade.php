@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
+@section('title')طراحی کارت اختصاصی - {{ site_setting('site_name', config('app.name')) }}@endsection
+
 @section('meta')
-    <title>طراحی کارت اختصاصی - {{ site_setting('site_name', config('app.name')) }}</title>
     <meta name="description" content="کارت شخصی خود را با طرح دلخواه‌تان بسازید؛ نوع کارت را انتخاب کنید و وارد فرآیند طراحی اختصاصی شوید.">
     <link rel="canonical" href="{{ route('custom-card.design') }}">
 @endsection

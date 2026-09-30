@@ -26,13 +26,13 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="admin-label">رنگ پس‌زمینه (کلاس)</label>
-                        <input type="text" wire:model="backgroundColor" placeholder="bg-primary-50" class="admin-input">
+                        <label class="admin-label">رنگ پس‌زمینه (کد رنگ hex)</label>
+                        <input type="text" wire:model="backgroundColor" placeholder="#F5F5F5" dir="ltr" class="admin-input">
                         @error('backgroundColor') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="admin-label">رنگ متن (کلاس)</label>
-                        <input type="text" wire:model="textColor" placeholder="text-primary-900" class="admin-input">
+                        <label class="admin-label">رنگ متن (کد رنگ hex)</label>
+                        <input type="text" wire:model="textColor" placeholder="#1F2937" dir="ltr" class="admin-input">
                         @error('textColor') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>

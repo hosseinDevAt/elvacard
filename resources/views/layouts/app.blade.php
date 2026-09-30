@@ -5,7 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ site_setting('site_name', config('app.name')) }}</title>
+        {{-- Single authoritative document title for this layout. Content views
+             override it with @section('title'); every other public page falls
+             back to the site name. Content views must NOT emit their own title
+             tag here, or the page would carry two of them. --}}
+        <title>@yield('title', site_setting('site_name', config('app.name')))</title>
 
         @include('components.favicon-links')
 
