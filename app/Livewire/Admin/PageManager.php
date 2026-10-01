@@ -106,7 +106,8 @@ class PageManager extends Component
         if ($this->imageUpload) {
             $this->imagePath = $this->imageUpload->store('pages', 'public');
 
-            if (strtolower((string) $this->imageUpload->getClientOriginalExtension()) === 'svg') {
+            $sanitizer = app(SvgSanitizer::class);
+            if ($sanitizer->isSvg($this->imageUpload) || $sanitizer->isSvg(Storage::disk('public')->get($this->imagePath), Storage::disk('public')->mimeType($this->imagePath))) {
                 $this->sanitizeStoredSvg($this->imagePath, 'imageUpload');
             }
         }

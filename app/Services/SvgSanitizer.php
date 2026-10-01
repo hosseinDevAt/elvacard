@@ -6,6 +6,7 @@ use DOMAttr;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
+use Illuminate\Http\UploadedFile;
 
 /**
  * Sanitizes user-uploaded SVG files before they are stored and served.
@@ -42,6 +43,53 @@ final class SvgSanitizer
         'title',
         'desc',
     ];
+
+    /**
+     * Determine whether an uploaded file or content string represents an SVG
+     * based on detected MIME type and content inspection, never trusting
+     * client-supplied filename extensions.
+     */
+    public function isSvg(mixed $fileOrContent, ?string $mimeType = null): bool
+    {
+        if ($fileOrContent instanceof UploadedFile) {
+            $realPath = $fileOrContent->getRealPath();
+            $content = ($realPath && file_exists($realPath))
+                ? (string) @file_get_contents($realPath, false, null, 0, 4096)
+                : '';
+            $mime = strtolower((string) $fileOrContent->getMimeType());
+        } elseif (is_string($fileOrContent)) {
+            $content = $fileOrContent;
+            $mime = $mimeType !== null ? strtolower(trim($mimeType)) : null;
+        } else {
+            return false;
+        }
+
+        if ($content === '') {
+            return false;
+        }
+
+        // 1. Check for binary raster image magic bytes (PNG, JPEG, GIF, WEBP, ICO).
+        // If it has raster magic bytes, it is NEVER an SVG, regardless of extension or reported mime.
+        if (
+            str_starts_with($content, "\x89PNG\r\n\x1a\n") ||
+            str_starts_with($content, "\xFF\xD8\xFF") ||
+            str_starts_with($content, 'GIF87a') ||
+            str_starts_with($content, 'GIF89a') ||
+            (str_starts_with($content, 'RIFF') && substr($content, 8, 4) === 'WEBP') ||
+            str_starts_with($content, "\x00\x00\x01\x00") ||
+            str_starts_with($content, "\x00\x00\x02\x00")
+        ) {
+            return false;
+        }
+
+        // 2. Detected MIME
+        if ($mime === 'image/svg+xml' || $mime === 'image/svg') {
+            return true;
+        }
+
+        // 3. Content inspection for SVG root/tag
+        return (bool) preg_match('/<svg[\s>\/]/i', $content);
+    }
 
     public function sanitize(string $content): ?string
     {

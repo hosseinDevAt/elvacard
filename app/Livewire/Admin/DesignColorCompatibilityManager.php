@@ -9,16 +9,58 @@ use App\Models\DesignImage;
 use App\Services\Customization\ProductPurchaseabilityService;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 class DesignColorCompatibilityManager extends Component
 {
     use AuthorizesAdminActions;
 
-    public ?int $designFilter = null;
+    public $designFilter = null;
+
+    protected function rules(): array
+    {
+        return [
+            'designFilter' => ['nullable', 'integer', 'exists:designs,id'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'designFilter.integer' => 'شناسه طرح باید عدد باشد.',
+            'designFilter.exists' => 'طرح انتخاب‌شده یافت نشد یا معتبر نیست.',
+        ];
+    }
+
+    public function updatedDesignFilter($value): void
+    {
+        if ($value === '' || $value === null) {
+            $this->designFilter = null;
+            $this->resetErrorBag('designFilter');
+
+            return;
+        }
+
+        $this->validateOnly('designFilter', [
+            'designFilter' => ['nullable', 'integer', 'exists:designs,id'],
+        ], [
+            'designFilter.integer' => 'شناسه طرح باید عدد باشد.',
+            'designFilter.exists' => 'طرح انتخاب‌شده یافت نشد یا معتبر نیست.',
+        ]);
+    }
 
     public function toggle(int $designImageId, int $colorId): void
     {
+        if ($this->designFilter !== null && $this->designFilter !== '') {
+            $this->validateOnly('designFilter', [
+                'designFilter' => ['nullable', 'integer', 'exists:designs,id'],
+            ], [
+                'designFilter.integer' => 'شناسه طرح باید عدد باشد.',
+                'designFilter.exists' => 'طرح انتخاب‌شده یافت نشد یا معتبر نیست.',
+            ]);
+        }
+
         $image = DesignImage::query()->find($designImageId);
 
         if (! $image) {
@@ -76,13 +118,30 @@ class DesignColorCompatibilityManager extends Component
 
     public function render()
     {
+        if ($this->designFilter !== null && $this->designFilter !== '') {
+            $validator = Validator::make(
+                ['designFilter' => $this->designFilter],
+                ['designFilter' => ['nullable', 'integer', 'exists:designs,id']],
+                [
+                    'designFilter.integer' => 'شناسه طرح باید عدد باشد.',
+                    'designFilter.exists' => 'طرح انتخاب‌شده یافت نشد یا معتبر نیست.',
+                ]
+            );
+
+            if ($validator->fails()) {
+                $this->addError('designFilter', $validator->errors()->first('designFilter'));
+            }
+        }
+
         $colors = Color::query()->active()->orderBy('sort_order')->orderBy('name')->get();
 
         $images = [];
 
-        if ($this->designFilter) {
+        $hasFilterError = $this->getErrorBag()->has('designFilter');
+
+        if ($this->designFilter && ! $hasFilterError) {
             $designImages = DesignImage::query()
-                ->where('design_id', $this->designFilter)
+                ->where('design_id', (int) $this->designFilter)
                 ->with(['color', 'compatibilities'])
                 ->orderBy('sort_order')
                 ->orderBy('id')

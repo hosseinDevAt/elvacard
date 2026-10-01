@@ -16,6 +16,9 @@
                 <option value="{{ $design->id }}">{{ $design->name }}</option>
             @endforeach
         </select>
+        @error('designFilter')
+            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+        @enderror
         <p class="text-xs text-slate-400 mt-2">برای هر تصویر طرح، سازگاری با هر رنگ کارت را با تیک مشخص کنید. فقط ترکیب‌های مجاز در میزکار طراحی نمایش داده می‌شوند.</p>
     </div>
 

@@ -76,12 +76,17 @@
     @endif
 
     <div class="flex flex-wrap gap-4 mb-4">
-        <select wire:model.live="designFilter" class="admin-input sm:w-64">
-            <option value="">همه طرح‌ها</option>
-            @foreach($designFilterOptions as $design)
-                <option value="{{ $design->id }}">{{ $design->name }}</option>
-            @endforeach
-        </select>
+        <div>
+            <select wire:model.live="designFilter" class="admin-input sm:w-64">
+                <option value="">همه طرح‌ها</option>
+                @foreach($designFilterOptions as $design)
+                    <option value="{{ $design->id }}">{{ $design->name }}</option>
+                @endforeach
+            </select>
+            @error('designFilter')
+                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+            @enderror
+        </div>
         <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در مسیر تصویر..." class="admin-input sm:w-80">
     </div>
 

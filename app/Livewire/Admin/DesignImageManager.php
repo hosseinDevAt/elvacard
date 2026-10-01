@@ -9,6 +9,7 @@ use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -38,13 +39,14 @@ class DesignImageManager extends Component
 
     public string $search = '';
 
-    public ?int $designFilter = null;
+    public $designFilter = null;
 
     public ?int $editingId = null;
 
     public bool $showForm = false;
 
     protected $rules = [
+        'designFilter' => 'nullable|integer|exists:designs,id',
         'designId' => 'required|integer|exists:designs,id',
         'colorId' => 'required|integer|exists:colors,id',
         'imagePath' => 'required|string|max:255',
@@ -57,10 +59,32 @@ class DesignImageManager extends Component
     ];
 
     protected $messages = [
+        'designFilter.integer' => 'شناسه طرح باید عدد صحیح باشد.',
+        'designFilter.exists' => 'طرح انتخاب‌شده نامعتبر است.',
         'designId.required' => 'طرح را انتخاب کنید.',
         'colorId.required' => 'رنگ تصویر را انتخاب کنید.',
         'imagePath.required' => 'مسیر تصویر الزامی است.',
     ];
+
+    public function updatedDesignFilter($value): void
+    {
+        if ($value === '' || $value === null) {
+            $this->designFilter = null;
+            $this->resetErrorBag('designFilter');
+            $this->resetPage();
+
+            return;
+        }
+
+        $this->validateOnly('designFilter', [
+            'designFilter' => ['nullable', 'integer', 'exists:designs,id'],
+        ], [
+            'designFilter.integer' => 'شناسه طرح باید عدد صحیح باشد.',
+            'designFilter.exists' => 'طرح انتخاب‌شده نامعتبر است.',
+        ]);
+
+        $this->resetPage();
+    }
 
     public function save(): void
     {
@@ -248,9 +272,29 @@ class DesignImageManager extends Component
 
     public function render()
     {
+        if ($this->designFilter !== null && $this->designFilter !== '') {
+            $validator = Validator::make(
+                ['designFilter' => $this->designFilter],
+                ['designFilter' => ['nullable', 'integer', 'exists:designs,id']],
+                [
+                    'designFilter.integer' => 'شناسه طرح باید عدد صحیح باشد.',
+                    'designFilter.exists' => 'طرح انتخاب‌شده نامعتبر است.',
+                ]
+            );
+
+            if ($validator->fails()) {
+                $this->addError('designFilter', $validator->errors()->first('designFilter'));
+            }
+        }
+
+        $hasFilterError = $this->getErrorBag()->has('designFilter');
+
         $images = DesignImage::query()
             ->with('design', 'color')
-            ->when($this->designFilter, fn ($query) => $query->where('design_id', $this->designFilter))
+            ->when(
+                $this->designFilter && ! $hasFilterError,
+                fn ($query) => $query->where('design_id', (int) $this->designFilter)
+            )
             ->when($this->search !== '', fn ($query) => $query->where('image_path', 'like', '%'.$this->search.'%'))
             ->orderByDesc('id')
             ->paginate(15);

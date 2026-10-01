@@ -99,7 +99,9 @@ if (! function_exists('site_setting')) {
 if (! function_exists('safe_url')) {
     /**
      * Return the URL only if it uses a safe scheme (http/https or site-relative).
-     * Returns null for dangerous schemes like javascript:, data:, vbscript:.
+     * Returns null for dangerous schemes (javascript:, data:, vbscript:),
+     * protocol-relative URLs (//evil.com), backslash variants (/\evil.com, \\evil.com),
+     * and invalid URL formats.
      */
     function safe_url(?string $url): ?string
     {
@@ -109,13 +111,48 @@ if (! function_exists('safe_url')) {
 
         $url = trim($url);
 
-        if (str_starts_with($url, '/') && ! str_starts_with($url, '//')) {
+        // Reject control characters, newlines, and unencoded whitespace
+        if (preg_match('/[\x00-\x1F\x7F\s]/', $url)) {
+            return null;
+        }
+
+        // Reject any URL starting with a backslash (e.g. \evil.com, \\evil.com, \/evil.com)
+        if (str_starts_with($url, '\\')) {
+            return null;
+        }
+
+        // Site-relative URL: must start with a single slash '/'
+        // Must NOT start with '//', '/\', or any other slash/backslash combination
+        if (str_starts_with($url, '/')) {
+            if (str_starts_with($url, '//') || str_starts_with($url, '/\\') || preg_match('#^/[/\\\\]#', $url)) {
+                return null;
+            }
+
             return $url;
         }
 
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        // Absolute URL: must have a valid http or https scheme and a host
+        $parsed = parse_url($url);
+        if (! is_array($parsed)) {
+            return null;
+        }
 
-        return in_array($scheme, ['http', 'https'], true) ? $url : null;
+        $scheme = strtolower($parsed['scheme'] ?? '');
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            return null;
+        }
+
+        // Must start with http:// or https:// (not http:evil.com or http:/evil.com)
+        if (! preg_match('#^https?://#i', $url)) {
+            return null;
+        }
+
+        $host = $parsed['host'] ?? '';
+        if ($host === '' || str_contains($host, '\\')) {
+            return null;
+        }
+
+        return $url;
     }
 }
 

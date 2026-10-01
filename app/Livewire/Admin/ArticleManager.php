@@ -149,7 +149,8 @@ class ArticleManager extends Component
         if ($this->coverImageUpload) {
             $coverImage = $this->coverImageUpload->store('articles', 'public');
 
-            if (strtolower((string) $this->coverImageUpload->getClientOriginalExtension()) === 'svg') {
+            $sanitizer = app(SvgSanitizer::class);
+            if ($sanitizer->isSvg($this->coverImageUpload) || $sanitizer->isSvg(Storage::disk('public')->get($coverImage), Storage::disk('public')->mimeType($coverImage))) {
                 $this->sanitizeStoredSvg($coverImage, 'coverImageUpload');
             }
         }

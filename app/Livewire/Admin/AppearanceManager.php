@@ -296,7 +296,8 @@ class AppearanceManager extends Component
 
         $path = $file->store($directory, 'public');
 
-        if (strtolower($file->getClientOriginalExtension()) === 'svg') {
+        $sanitizer = app(SvgSanitizer::class);
+        if ($sanitizer->isSvg($file) || $sanitizer->isSvg(Storage::disk('public')->get($path), Storage::disk('public')->mimeType($path))) {
             $this->sanitizeStoredSvg($path, $property);
         }
 
