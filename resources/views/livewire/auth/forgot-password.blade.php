@@ -25,7 +25,7 @@
         <form wire:submit.prevent="requestOtp" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
-                <input type="tel" wire:model.blur="phone" placeholder="09123456789" inputmode="numeric"
+                <input type="tel" wire:model.blur="phone" placeholder="09123456789" inputmode="numeric" autocomplete="tel"
                     class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-accent-500 focus:ring-2 focus:ring-accent-200 transition text-left"
                     dir="ltr">
                 @error('phone') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -44,7 +44,7 @@
         <form wire:submit.prevent="verifyCode" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">کد تأیید</label>
-                <input type="text" wire:model="code" placeholder="123456" inputmode="numeric" maxlength="6"
+                <input type="text" wire:model="code" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
                     class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-accent-500 focus:ring-2 focus:ring-accent-200 transition text-center text-xl tracking-widest"
                     dir="ltr">
                 @error('code') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

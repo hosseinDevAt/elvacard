@@ -1,6 +1,13 @@
 @extends('layouts.app')
 
-@section('title'){{ $page->meta_title ?: $page->title }} - {{ site_setting('site_name', config('app.name')) }}@endsection
+@php
+    $siteName = site_setting('site_name', config('app.name'));
+    $baseTitle = $page->meta_title ?: $page->title;
+    $title = str_ends_with(trim($baseTitle), $siteName)
+        ? $baseTitle
+        : ($baseTitle . ' - ' . $siteName);
+@endphp
+@section('title', $title)
 
 @section('meta')
     @if ($page->meta_description)

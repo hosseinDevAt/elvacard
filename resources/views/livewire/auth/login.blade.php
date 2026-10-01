@@ -9,7 +9,7 @@
     <form wire:submit.prevent="login" class="space-y-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">شماره تلفن</label>
-            <input type="text" wire:model.blur="phone" placeholder="09123456789"
+            <input type="text" wire:model.blur="phone" placeholder="09123456789" autocomplete="username tel"
                 class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition text-left"
                 dir="ltr">
             @error('phone') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -17,7 +17,7 @@
 
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
-            <input type="password" wire:model.blur="password" placeholder="رمز عبور"
+            <input type="password" wire:model.blur="password" placeholder="رمز عبور" autocomplete="current-password"
                 class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition">
             @error('password') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>

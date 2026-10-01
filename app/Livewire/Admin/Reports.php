@@ -83,6 +83,35 @@ class Reports extends Component
         $this->compute($from, $to);
     }
 
+    public function setPreset(string $preset): void
+    {
+        $dates = app(DateService::class);
+        $now = $dates->now();
+
+        switch ($preset) {
+            case 'today':
+                $this->fromDate = $dates->ascii($dates->jDate($now));
+                $this->toDate = $dates->ascii($dates->jDate($now));
+                break;
+            case 'yesterday':
+                $yesterday = $now->copy()->subDay();
+                $this->fromDate = $dates->ascii($dates->jDate($yesterday));
+                $this->toDate = $dates->ascii($dates->jDate($yesterday));
+                break;
+            case '7days':
+                $this->fromDate = $dates->ascii($dates->jDate($now->copy()->subDays(6)));
+                $this->toDate = $dates->ascii($dates->jDate($now));
+                break;
+            case '30days':
+            default:
+                $this->fromDate = $dates->ascii($dates->jDate($now->copy()->subDays(29)));
+                $this->toDate = $dates->ascii($dates->jDate($now));
+                break;
+        }
+
+        $this->applyFilter();
+    }
+
     public function clearFilter(): void
     {
         $dates = app(DateService::class);

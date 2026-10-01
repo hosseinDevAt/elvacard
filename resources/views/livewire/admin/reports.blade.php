@@ -3,6 +3,14 @@
 
     {{-- Date Filter --}}
     <div class="admin-card p-5 mb-6">
+        <div class="flex flex-wrap items-center gap-2 mb-4 text-xs">
+            <span class="text-gray-500 font-medium">بازه زمانی سریع:</span>
+            <button type="button" wire:click="setPreset('today')" class="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition">امروز</button>
+            <button type="button" wire:click="setPreset('yesterday')" class="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition">دیروز</button>
+            <button type="button" wire:click="setPreset('7days')" class="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition">۷ روز اخیر</button>
+            <button type="button" wire:click="setPreset('30days')" class="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition">۳۰ روز اخیر</button>
+        </div>
+
         <form wire:submit="applyFilter" class="flex flex-wrap items-end gap-4">
             <div>
                 <label for="fromDate" class="admin-label">از تاریخ</label>
