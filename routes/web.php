@@ -108,6 +108,7 @@ Route::post('/checkout/payment/gateway/{order:token}', [GatewayPaymentController
 
 Route::post('/checkout/payment/callback/{gateway}', [GatewayPaymentController::class, 'callback'])
     ->where('gateway', '[a-z0-9_-]{1,64}')
+    ->middleware('throttle:10,1')
     ->name('checkout.payment.callback');
 
 Route::get('/checkout/payment/{order:token}/return', [GatewayPaymentController::class, 'return'])

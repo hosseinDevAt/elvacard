@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentStatusEnum;
 use App\Enums\RefundStatus;
 use App\Models\Payment;
 use App\Models\Refund;
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\DB;
 
 class ReportingService
 {
+    /**
+     * Compute aggregate metrics and cash-basis net revenue for the period.
+     *
+     * Net revenue = successful payments (paid_at within window) minus completed refunds (refunded_at within window).
+     */
     public function summary(CarbonInterface $from, CarbonInterface $to): array
     {
         $from = Carbon::instance($from);
@@ -74,6 +80,12 @@ class ReportingService
 
     /**
      * Sum of completed refunds refunded inside the given window.
+     *
+     * Period Accounting Note:
+     * Cash outflows from refunds are strictly aggregated by `refunded_at` (the actual
+     * settlement timestamp when funds were remitted). Under cash-basis accounting and
+     * bank ledger reconciliation, refunds must be reported in the period they occur
+     * rather than retroactively mutating historical inflow reports of the original payment.
      */
     private function refundedAmount(CarbonInterface $from, CarbonInterface $to): int
     {
@@ -85,6 +97,8 @@ class ReportingService
 
     /**
      * Count of completed refunds refunded inside the given window.
+     *
+     * Counts completed refund transactions by `refunded_at` within the window.
      */
     private function completedRefundCount(CarbonInterface $from, CarbonInterface $to): int
     {
@@ -149,6 +163,18 @@ class ReportingService
         return array_values($filled);
     }
 
+    /**
+     * Retrieve top-performing products by volume and realized sales in the window.
+     *
+     * Accounting Semantics & Net Revenue Alignment:
+     * - Only orders created within [$from, $to] with confirmed successful payments are included.
+     * - Cancelled orders (`o.status = CANCELLED`) and fully refunded orders (`o.payment_status = REFUNDED`)
+     *   are strictly excluded to ensure product sales totals align with net revenue semantics.
+     * - Order-item level vs payment-level accounting: Line items (`order_items`) represent
+     *   contracted prices at checkout and do not track partial refunds (which are ledgered
+     *   at the payment level). Fully refunded orders are therefore omitted in their entirety,
+     *   while macro-level partial refund deductions are reflected in summary() via payment refunds.
+     */
     public function topProducts(CarbonInterface $from, CarbonInterface $to, int $limit = 10): array
     {
         $from = Carbon::instance($from);
@@ -158,6 +184,10 @@ class ReportingService
             ->join('orders as o', 'o.id', '=', 'oi.order_id')
             ->whereBetween('o.created_at', [$from, $to])
             ->where('o.status', '!=', OrderStatusEnum::CANCELLED->value)
+            ->where(function ($query) {
+                $query->where('o.payment_status', '!=', PaymentStatusEnum::REFUNDED->value)
+                    ->orWhereNull('o.payment_status');
+            })
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('payments as p')

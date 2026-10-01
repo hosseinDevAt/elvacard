@@ -27,11 +27,9 @@ class UserManager extends Component
 
     public function viewUser(int $userId): void
     {
-        $user = User::find($userId);
+        $user = $this->findCustomer($userId);
 
         if (! $user) {
-            session()->flash('error', 'کاربر یافت نشد');
-
             return;
         }
 
@@ -89,7 +87,7 @@ class UserManager extends Component
 
     public function render()
     {
-        $query = User::withCount('orders');
+        $query = User::where('role', 'customer')->withCount('orders');
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -99,7 +97,7 @@ class UserManager extends Component
         }
 
         $selectedUser = $this->selectedUserId
-            ? User::find($this->selectedUserId)
+            ? $this->findCustomer($this->selectedUserId)
             : null;
 
         if ($this->selectedUserId && ! $selectedUser) {

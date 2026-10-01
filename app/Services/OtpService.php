@@ -75,17 +75,6 @@ final class OtpService
         return true;
     }
 
-    /**
-     * Whether a phone still has a non-expired active code for a purpose.
-     */
-    public function hasActiveCode(string $phone, OtpPurpose $purpose): bool
-    {
-        return OtpCode::query()
-            ->active($phone, $purpose)
-            ->where('expires_at', '>', now())
-            ->exists();
-    }
-
     private function generateCode(): string
     {
         $length = max(4, (int) config('sms.otp.length', 6));
