@@ -3,6 +3,7 @@
 namespace App\Livewire\Forms;
 
 use App\Services\BankCard\BankCardCustomization;
+use App\Support\Dates\DateService;
 use Livewire\Form;
 
 class BankCardWorkspace extends Form
@@ -25,10 +26,21 @@ class BankCardWorkspace extends Form
 
     public function rules(): array
     {
-        return BankCardCustomization::rulesFor(
+        $rules = BankCardCustomization::rulesFor(
             $this->security_cvv_enabled,
             $this->security_expiry_enabled,
         );
+
+        if ($this->security_expiry_enabled) {
+            $month = $this->expiry_month;
+            $rules['expiry_year'][] = function (string $attribute, mixed $value, \Closure $fail) use ($month): void {
+                if ($value !== '' && $month !== '' && app(DateService::class)->isPastJalaliExpiry($month, (string) $value)) {
+                    $fail('تاریخ انقضای کارت گذشته است؛ لطفاً تاریخی در آینده انتخاب کنید.');
+                }
+            };
+        }
+
+        return $rules;
     }
 
     public function messages(): array

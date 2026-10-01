@@ -224,8 +224,7 @@ class BankCardWorkspaceTest extends TestCase
     public function test_expiry_enabled_accepts_valid_month_and_year(): void
     {
         $dates = app(DateService::class);
-        [$from] = $dates->jalaliYearRange();
-        $jalaliYear = (string) ($from + 2);
+        $jalaliYear = (string) ($dates->currentJalaliYear() + 2);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->call('toggleExpiry')
@@ -244,8 +243,7 @@ class BankCardWorkspaceTest extends TestCase
     public function test_invalid_expiry_month_rejected(): void
     {
         $dates = app(DateService::class);
-        [$from] = $dates->jalaliYearRange();
-        $validYear = (string) ($from + 2);
+        $validYear = (string) ($dates->currentJalaliYear() + 2);
 
         foreach (['00', '13', '99', 'A1'] as $month) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
@@ -275,8 +273,9 @@ class BankCardWorkspaceTest extends TestCase
     public function test_expiry_years_from_1400_floor_to_beyond_1415_accepted(): void
     {
         $dates = app(DateService::class);
+        $nearFutureYear = (string) ($dates->currentJalaliYear() + 1);
 
-        foreach (['1400', '1420'] as $year) {
+        foreach ([$nearFutureYear, '1420'] as $year) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
                 ->set('bankCard.expiry_month', '05')
@@ -338,7 +337,7 @@ class BankCardWorkspaceTest extends TestCase
             ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) (app(DateService::class)->jalaliYearRange()[0] + 3))
+            ->set('bankCard.expiry_year', (string) (app(DateService::class)->currentJalaliYear() + 2))
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -396,6 +395,7 @@ class BankCardWorkspaceTest extends TestCase
     {
         $form = $this->mountWorkspace();
 
+        // When expiry is disabled no closure is appended — exact equality holds.
         $this->assertEquals(
             BankCardCustomization::rulesFor(false, false),
             $form->rules()
@@ -404,10 +404,33 @@ class BankCardWorkspaceTest extends TestCase
         $form->toggleCvv();
         $form->toggleExpiry();
 
-        $this->assertEquals(
-            BankCardCustomization::rulesFor(true, true),
-            $form->rules()
-        );
+        $baseRules = BankCardCustomization::rulesFor(true, true);
+        $formRules = $form->rules();
+
+        // The form adds one extra past-expiry closure to expiry_year; all other
+        // fields must contain all their base rules (using assertEquals per item to
+        // handle object rules like LuhnRule).
+        foreach ($baseRules as $field => $expectedRules) {
+            $this->assertArrayHasKey($field, $formRules);
+            foreach ($expectedRules as $rule) {
+                if (is_object($rule)) {
+                    $matched = false;
+                    foreach ($formRules[$field] as $actual) {
+                        if ($actual == $rule) {
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    $this->assertTrue($matched, 'Expected rule '.get_class($rule)." not found in {$field} rules.");
+                } else {
+                    $this->assertContains($rule, $formRules[$field], "Expected rule '{$rule}' not found in {$field} rules.");
+                }
+            }
+        }
+
+        // Confirm exactly one closure is appended to expiry_year.
+        $closures = array_filter($formRules['expiry_year'], fn ($r) => $r instanceof \Closure);
+        $this->assertCount(1, $closures, 'BankCardWorkspace::rules() should append exactly one past-expiry closure to expiry_year.');
     }
 
     public function test_messages_delegate_to_bank_card_customization(): void
@@ -428,5 +451,48 @@ class BankCardWorkspaceTest extends TestCase
         $this->assertTrue($reflection->hasProperty('bankCard'));
         $this->assertFalse($reflection->hasMethod('canonicalizeCardNumber'));
         $this->assertFalse($reflection->hasMethod('sanitizeCardCustomization'));
+    }
+
+    public function test_past_expiry_is_rejected(): void
+    {
+        $dates = app(DateService::class);
+        // Use current year with a month that has already passed (month 1 of current year).
+        $currentYear = $dates->currentJalaliYear();
+        $pastMonth = $dates->todayJalali()->getMonth() - 1;
+
+        // If we're in month 01, roll back to previous year's month 12.
+        if ($pastMonth < 1) {
+            $pastMonth = 12;
+            $currentYear--;
+        }
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('toggleExpiry')
+            ->set('bankCard.expiry_month', sprintf('%02d', $pastMonth))
+            ->set('bankCard.expiry_year', (string) $currentYear)
+            ->call('addToCart')
+            ->assertHasErrors(['bankCard.expiry_year']);
+    }
+
+    public function test_missing_expiry_month_rejected_when_expiry_enabled(): void
+    {
+        $dates = app(DateService::class);
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('toggleExpiry')
+            ->set('bankCard.expiry_month', '')
+            ->set('bankCard.expiry_year', (string) ($dates->currentJalaliYear() + 2))
+            ->call('addToCart')
+            ->assertHasErrors(['bankCard.expiry_month' => 'required']);
+    }
+
+    public function test_missing_expiry_year_rejected_when_expiry_enabled(): void
+    {
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('toggleExpiry')
+            ->set('bankCard.expiry_month', '06')
+            ->set('bankCard.expiry_year', '')
+            ->call('addToCart')
+            ->assertHasErrors(['bankCard.expiry_year' => 'required']);
     }
 }

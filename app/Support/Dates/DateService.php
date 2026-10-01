@@ -267,6 +267,31 @@ class DateService
         ];
     }
 
+    /**
+     * Whether the given Jalali month/year card expiry has already passed
+     * relative to the current Jalali month. Returns false for malformed input
+     * (other validation rules cover format errors). This does NOT modify the
+     * behaviour of jalaliExpiryToGregorian() – call that separately.
+     */
+    public function isPastJalaliExpiry(?string $jalaliMonth, ?string $jalaliYear): bool
+    {
+        $m = $this->ascii(trim((string) $jalaliMonth));
+        $y = $this->ascii(trim((string) $jalaliYear));
+
+        if (preg_match('/^(0[1-9]|1[0-2])$/', $m) !== 1 || preg_match('/^\d{4}$/', $y) !== 1) {
+            return false; // malformed — let format rules handle it
+        }
+
+        $jy = (int) $y;
+        $jm = (int) $m;
+
+        $today = $this->todayJalali();
+        $currentYear = $today->getYear();
+        $currentMonth = $today->getMonth();
+
+        return $jy < $currentYear || ($jy === $currentYear && $jm < $currentMonth);
+    }
+
     // ─────────────────────────────────────────────
     // UTC boundaries for business days
     // ─────────────────────────────────────────────

@@ -319,4 +319,38 @@ class DateServiceTest extends TestCase
         $past = $this->dates->now()->subDays(30);
         $this->assertSame($this->dates->jDate($past), $this->dates->relativeForHumans($past));
     }
+
+    // ─── isPastJalaliExpiry ───────────────────────────────────────────────────
+
+    public function test_is_past_jalali_expiry_returns_false_for_malformed_input(): void
+    {
+        // Malformed input should return false; other validation rules handle format.
+        $this->assertFalse($this->dates->isPastJalaliExpiry(null, null));
+        $this->assertFalse($this->dates->isPastJalaliExpiry('', ''));
+        $this->assertFalse($this->dates->isPastJalaliExpiry('00', '1405'));   // invalid month
+        $this->assertFalse($this->dates->isPastJalaliExpiry('13', '1405'));   // invalid month
+        $this->assertFalse($this->dates->isPastJalaliExpiry('05', '140'));    // non-4-digit year
+        $this->assertFalse($this->dates->isPastJalaliExpiry('05', 'abcd'));   // non-numeric year
+    }
+
+    public function test_is_past_jalali_expiry_returns_true_for_past_dates(): void
+    {
+        // Pin to 1405/07/09 (≈ 2026-09-30)
+        Carbon::setTestNow(Carbon::parse('2026-09-30 12:00:00', 'Asia/Tehran'));
+
+        $this->assertTrue($this->dates->isPastJalaliExpiry('06', '1405')); // month before current
+        $this->assertTrue($this->dates->isPastJalaliExpiry('12', '1404')); // previous year
+        $this->assertTrue($this->dates->isPastJalaliExpiry('01', '1400')); // far past
+    }
+
+    public function test_is_past_jalali_expiry_returns_false_for_current_and_future_dates(): void
+    {
+        // Pin to 1405/07/09
+        Carbon::setTestNow(Carbon::parse('2026-09-30 12:00:00', 'Asia/Tehran'));
+
+        $this->assertFalse($this->dates->isPastJalaliExpiry('07', '1405')); // current month — not yet past
+        $this->assertFalse($this->dates->isPastJalaliExpiry('08', '1405')); // next month
+        $this->assertFalse($this->dates->isPastJalaliExpiry('01', '1406')); // next year
+        $this->assertFalse($this->dates->isPastJalaliExpiry('12', '1430')); // far future
+    }
 }

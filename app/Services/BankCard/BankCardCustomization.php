@@ -49,8 +49,8 @@ class BankCardCustomization
         if ($expiryEnabled) {
             [$from, $to] = self::expiryYearRange();
             $yearRange = 'between:'.$from.','.$to;
-            $rules['expiry_month'] = ['nullable', 'string', 'regex:/^(0[1-9]|1[0-2])$/'];
-            $rules['expiry_year'] = ['nullable', 'string', 'integer', 'digits:4', $yearRange];
+            $rules['expiry_month'] = ['required', 'string', 'regex:/^(0[1-9]|1[0-2])$/'];
+            $rules['expiry_year'] = ['required', 'string', 'integer', 'digits:4', $yearRange];
         }
 
         return $rules;
@@ -61,7 +61,9 @@ class BankCardCustomization
         return [
             'card_number.digits' => 'شماره کارت باید دقیقاً ۱۶ رقمی باشد.',
             'cvv2.digits_between' => 'CVV2 باید ۳ تا ۴ رقم باشد.',
+            'expiry_month.required' => 'انتخاب ماه انقضا الزامی است.',
             'expiry_month.regex' => 'ماه انقضا باید بین ۰۱ تا ۱۲ باشد.',
+            'expiry_year.required' => 'انتخاب سال انقضا الزامی است.',
             'expiry_year.digits' => 'سال انقضا باید چهار رقم باشد.',
             'expiry_year.between' => 'سال انقضا باید در بازه معتبر باشد.',
         ];

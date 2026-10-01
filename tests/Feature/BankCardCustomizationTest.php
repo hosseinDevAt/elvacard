@@ -179,11 +179,11 @@ class BankCardCustomizationTest extends TestCase
         $rules = BankCardCustomization::rulesFor(true, true);
 
         $this->assertSame(['nullable', 'string', 'digits_between:3,4'], $rules['cvv2']);
-        $this->assertSame(['nullable', 'string', 'regex:/^(0[1-9]|1[0-2])$/'], $rules['expiry_month']);
+        $this->assertSame(['required', 'string', 'regex:/^(0[1-9]|1[0-2])$/'], $rules['expiry_month']);
 
         [$from, $to] = app(DateService::class)->jalaliYearRange();
         $expectedYearRange = "between:{$from},{$to}";
-        $this->assertSame(['nullable', 'string', 'integer', 'digits:4', $expectedYearRange], $rules['expiry_year']);
+        $this->assertSame(['required', 'string', 'integer', 'digits:4', $expectedYearRange], $rules['expiry_year']);
     }
 
     public function test_expiry_year_range_starts_at_1400_without_1415_cap(): void
@@ -201,7 +201,9 @@ class BankCardCustomizationTest extends TestCase
 
         $this->assertArrayHasKey('card_number.digits', $messages);
         $this->assertArrayHasKey('cvv2.digits_between', $messages);
+        $this->assertArrayHasKey('expiry_month.required', $messages);
         $this->assertArrayHasKey('expiry_month.regex', $messages);
+        $this->assertArrayHasKey('expiry_year.required', $messages);
         $this->assertArrayHasKey('expiry_year.digits', $messages);
         $this->assertArrayHasKey('expiry_year.between', $messages);
     }

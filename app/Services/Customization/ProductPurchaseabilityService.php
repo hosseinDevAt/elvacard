@@ -68,8 +68,12 @@ class ProductPurchaseabilityService
      * means activation is allowed. A null product id means the product is not
      * persisted yet and must be saved inactive before its price and design are
      * defined.
+     *
+     * Pass $targetWorkflow when the product is being transitioned to a new
+     * workflow in the same save (e.g. standard → bank_card) so readiness is
+     * evaluated against the *resulting* state rather than the old DB value.
      */
-    public static function activationBlockers(?int $productId): array
+    public static function activationBlockers(?int $productId, ?CustomizationWorkflowEnum $targetWorkflow = null): array
     {
         if ($productId === null) {
             return ['محصول کارت بانکی را ابتدا بدون فعال‌سازی ذخیره کنید؛ سپس رنگ، قیمت و طرح کارت را تعریف کرده و در نهایت آن را فعال کنید.'];
@@ -81,7 +85,9 @@ class ProductPurchaseabilityService
             return ['محصول یافت نشد.'];
         }
 
-        $workflow = $product->customization_workflow;
+        // Evaluate against the pending target workflow when provided; otherwise
+        // fall back to whatever is currently persisted in the database.
+        $workflow = $targetWorkflow ?? $product->customization_workflow;
 
         if ($workflow === null) {
             return [];

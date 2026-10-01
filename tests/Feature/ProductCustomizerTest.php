@@ -144,10 +144,11 @@ class ProductCustomizerTest extends TestCase
 
     public function test_add_to_cart_stores_only_user_typed_customizations(): void
     {
+        // Expiry is left disabled — only holder name and back text are typed.
+        // The test verifies those fields are stored and expiry keys are absent.
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_holder_name', ' HOSSEIN REZAIE ')
             ->set('bankCard.back_text', ' BORN TO LEAD ')
-            ->call('toggleExpiry')
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -157,7 +158,7 @@ class ProductCustomizerTest extends TestCase
 
         $this->assertSame('HOSSEIN REZAIE', $customization['card_holder_name']);
         $this->assertSame('BORN TO LEAD', $customization['back_text']);
-        $this->assertTrue($customization['security_expiry_enabled']);
+        $this->assertFalse($customization['security_expiry_enabled']);
         $this->assertFalse($customization['security_cvv_enabled']);
         $this->assertArrayNotHasKey('expiry_month', $customization);
         $this->assertArrayNotHasKey('expiry_year', $customization);
@@ -280,7 +281,7 @@ class ProductCustomizerTest extends TestCase
 
     public function test_expiry_month_must_be_between_01_and_12(): void
     {
-        $validYear = (string) (app(DateService::class)->jalaliYearRange()[0] + 2);
+        $validYear = (string) (app(DateService::class)->currentJalaliYear() + 2);
 
         foreach (['00', '13', '99', 'A1'] as $month) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
@@ -296,7 +297,7 @@ class ProductCustomizerTest extends TestCase
     {
         $dates = app(DateService::class);
         [$minYear, $maxYear] = $dates->jalaliYearRange();
-        $validYear = (string) ($minYear + 5);
+        $validYear = (string) ($dates->currentJalaliYear() + 2);
         $pastYear = (string) ($minYear - 1);
         $tooFarYear = (string) ($maxYear + 1);
 
@@ -330,8 +331,11 @@ class ProductCustomizerTest extends TestCase
     public function test_expiry_year_boundaries_1400_and_1430_accepted(): void
     {
         $dates = app(DateService::class);
+        // 1400 is now in the past and would be rejected; test the upper boundary (1430)
+        // and a current-era future year instead.
+        $nearFutureYear = (string) ($dates->currentJalaliYear() + 1);
 
-        foreach (['1400', '1430'] as $year) {
+        foreach ([$nearFutureYear, '1430'] as $year) {
             Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
                 ->call('toggleExpiry')
                 ->set('bankCard.expiry_month', '05')
@@ -411,7 +415,8 @@ class ProductCustomizerTest extends TestCase
     public function test_snapshot_has_no_positions_when_configuration_is_complete(): void
     {
         $dates = app(DateService::class);
-        $expiry = $dates->jalaliExpiryToGregorian('05', (string) ($dates->jalaliYearRange()[0] + 3));
+        $futureYear = (string) ($dates->currentJalaliYear() + 2);
+        $expiry = $dates->jalaliExpiryToGregorian('05', $futureYear);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_number', '6274051234567898')
@@ -421,7 +426,7 @@ class ProductCustomizerTest extends TestCase
             ->set('bankCard.cvv2', '808')
             ->call('toggleExpiry')
             ->set('bankCard.expiry_month', '05')
-            ->set('bankCard.expiry_year', (string) ($dates->jalaliYearRange()[0] + 3))
+            ->set('bankCard.expiry_year', $futureYear)
             ->call('addToCart')
             ->assertRedirect(route('cart.index'));
 
@@ -443,7 +448,7 @@ class ProductCustomizerTest extends TestCase
 
     public function test_snapshot_never_contains_qr_code_keys(): void
     {
-        $validYear = (string) (app(DateService::class)->jalaliYearRange()[0] + 3);
+        $validYear = (string) (app(DateService::class)->currentJalaliYear() + 2);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
             ->set('bankCard.card_number', '6274051234567898')

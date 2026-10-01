@@ -190,7 +190,7 @@ class ProductManager extends Component
                 return;
             }
 
-            foreach (ProductPurchaseabilityService::activationBlockers($this->editingId) as $blocker) {
+            foreach (ProductPurchaseabilityService::activationBlockers($this->editingId, CustomizationWorkflowEnum::BANK_CARD) as $blocker) {
                 $this->addError('customizationWorkflow', $blocker);
             }
 
