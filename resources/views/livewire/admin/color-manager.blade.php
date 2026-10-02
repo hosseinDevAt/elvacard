@@ -1,17 +1,15 @@
 <div>
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">مدیریت رنگ‌های پایه</h2>
-            <p class="text-xs text-slate-500 mt-1">مدیریت کدهای رنگی و پالت‌های عمومی مورد استفاده در فروشگاه و کارت‌ها</p>
-        </div>
-        <button wire:click="create" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>افزودن رنگ جدید</span>
-        </button>
-    </div>
+    <x-admin.page-header title="مدیریت رنگ‌های پایه" subtitle="مدیریت کدهای رنگی و پالت‌های عمومی مورد استفاده در فروشگاه و کارت‌ها">
+        <x-slot:actions>
+            <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>افزودن رنگ جدید</span>
+            </button>
+        </x-slot:actions>
+    </x-admin.page-header>
 
     @if($showForm)
         <div class="admin-card p-6 mb-6">
@@ -52,7 +50,7 @@
                     <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (قابل انتخاب در سبد و سفارش)</label>
                 </div>
                 <div class="flex items-center gap-3 pt-2">
-                    <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">ذخیره رنگ</button>
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">{{ $editingId ? 'ذخیره تغییرات' : 'ایجاد رنگ' }}</button>
                     <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="admin-btn admin-btn-secondary admin-btn-sm">لغو</button>
                 </div>
             </form>
@@ -102,7 +100,11 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="admin-empty">رنگی وجود ندارد</td></tr>
+                        <tr>
+                            <td colspan="6" class="py-8">
+                                <x-admin.empty-state title="رنگی ثبت نشده است" description="هنوز هیچ رنگی به سیستم اضافه نشده است." />
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>

@@ -1,20 +1,24 @@
 <div>
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">طرح‌های کار و پایه قیمت‌ها</h2>
-            <p class="text-xs text-slate-500 mt-1">تعیین قیمت پایه بر اساس رنگ کارت‌های بانکی و سوخت</p>
-            @if($selectedProduct)
-                <p class="text-xs font-semibold text-indigo-600 mt-1">در حال مدیریت رنگ و قیمت «{{ $selectedProduct->name }}»</p>
-            @endif
+    <x-admin.page-header title="طرح‌های کار و پایه قیمت‌ها" subtitle="تعیین قیمت پایه بر اساس رنگ کارت‌های بانکی و سوخت">
+        <x-slot:actions>
+            <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20 shrink-0">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>افزودن طرح / قیمت جدید</span>
+            </button>
+        </x-slot:actions>
+    </x-admin.page-header>
+
+    @if($selectedProduct)
+        <div class="mb-4 -mt-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                <span>در حال مدیریت رنگ و قیمت:</span>
+                <span class="font-bold">{{ $selectedProduct->name }}</span>
+            </span>
         </div>
-        <button wire:click="create" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20 shrink-0">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>افزودن طرح / قیمت جدید</span>
-        </button>
-    </div>
+    @endif
 
     @if($selectedProductIsFuel)
         <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-800">
@@ -48,7 +52,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="admin-label">کارت بانکی / سوخت</label>
-                        <select wire:model="productId" class="admin-input">
+                        <select wire:model="productId" class="admin-select">
                             <option value="">— انتخاب محصول —</option>
                             @foreach($productOptions as $option)
                                 <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
@@ -58,7 +62,7 @@
                     </div>
                     <div>
                         <label class="admin-label">رنگ</label>
-                        <select wire:model="colorId" class="admin-input">
+                        <select wire:model="colorId" class="admin-select">
                             <option value="">— انتخاب رنگ —</option>
                             @foreach($colorOptions as $option)
                                 <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
@@ -167,7 +171,11 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="admin-empty">قیمتی یافت نشد</td></tr>
+                        <tr>
+                            <td colspan="7" class="py-8">
+                                <x-admin.empty-state title="قیمتی یافت نشد" description="هیچ قیمتی برای رنگ‌ها با فیلتر جستجوی فعلی پیدا نشد." />
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>

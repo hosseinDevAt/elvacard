@@ -1,67 +1,69 @@
 <div>
-    <div class="mb-6 flex items-center justify-end gap-4">
-        @if ($loaded)
-            <span class="admin-badge {{ $is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}">
-                {{ $is_active ? 'فعال' : 'غیرفعال' }}
-            </span>
-        @endif
-    </div>
+    <x-admin.page-header title="تنظیمات پرداخت کارت‌به‌کارت" subtitle="پیکربندی شماره کارت، شبا و پیام‌های راهنمای پرداخت دستی مشتریان">
+        <x-slot:actions>
+            @if ($loaded)
+                <span class="admin-badge {{ $is_active ? 'admin-badge-success' : 'admin-badge-danger' }}">
+                    {{ $is_active ? 'پرداخت کارت‌به‌کارت فعال' : 'پرداخت کارت‌به‌کارت غیرفعال' }}
+                </span>
+            @endif
+        </x-slot:actions>
+    </x-admin.page-header>
 
     @if (! $loaded)
-        <div class="admin-card p-8 text-center text-gray-400">
-            تنظیمات پرداخت یافت نشد. لطفاً سیدر را مجدداً اجرا کنید.
+        <div class="admin-card p-8">
+            <x-admin.empty-state title="تنظیمات پرداخت یافت نشد" description="تنظیمات پرداخت دستی در پایگاه داده مقداردهی نشده است. لطفاً سیدر را مجدداً اجرا کنید." />
         </div>
     @else
         <form wire:submit="save" class="space-y-6">
             <div class="admin-card p-6">
-                <h3 class="font-bold text-gray-900 mb-4">اطلاعات حساب</h3>
+                <h3 class="font-bold text-slate-900 mb-4">اطلاعات حساب بانکی</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="admin-label">شماره کارت</label>
-                        <input type="text" wire:model="card_number" dir="ltr" maxlength="16" placeholder="۱۶ رقم" class="admin-input" />
+                        <input type="text" wire:model="card_number" dir="ltr" maxlength="16" placeholder="۱۶ رقم" class="admin-input font-mono" />
                         @error('card_number') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="admin-label">شماره شبا</label>
-                        <input type="text" wire:model="iban" dir="ltr" maxlength="26" placeholder="IR24 0000 0000 0000 0000 0000" class="admin-input" />
+                        <input type="text" wire:model="iban" dir="ltr" maxlength="26" placeholder="IR24 0000 0000 0000 0000 0000" class="admin-input font-mono" />
                         @error('iban') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="admin-label">به نام</label>
+                        <label class="admin-label">به نام (صاحب حساب)</label>
                         <input type="text" wire:model="account_name" maxlength="255" placeholder="نام صاحب حساب" class="admin-input" />
                         @error('account_name') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
             </div>
 
-            <div class="admin-card">
-                <h3 class="font-bold text-gray-900 mb-4 p-6 pb-0">پیام‌ها</h3>
-                <div class="p-6 space-y-4">
+            <div class="admin-card p-6">
+                <h3 class="font-bold text-slate-900 mb-4">پیام‌های راهنما و رسید</h3>
+                <div class="space-y-4">
                     <div>
-                        <label class="admin-label">پیام راهنما (نمایش داده‌شده به مشتری)</label>
-                        <textarea wire:model="instruction_message" rows="3" maxlength="2000" placeholder="مثال: مبلغ را دقیقاً به این کارت واریز کنید." class="admin-input"></textarea>
+                        <label class="admin-label">پیام راهنما (نمایش داده‌شده به مشتری هنگام پرداخت)</label>
+                        <textarea wire:model="instruction_message" rows="3" maxlength="2000" placeholder="مثال: مبلغ را دقیقاً به این شماره کارت واریز کرده و تصویر فیش را بارگذاری کنید." class="admin-input"></textarea>
                         @error('instruction_message') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="admin-label">پیام موفقیت (نمایش پس از ثبت رسید)</label>
-                        <textarea wire:model="success_message" rows="3" maxlength="2000" placeholder="مثال: پرداخت شما دریافت شد و در انتظار بررسی است." class="admin-input"></textarea>
+                        <label class="admin-label">پیام موفقیت (نمایش پس از ثبت رسید توسط مشتری)</label>
+                        <textarea wire:model="success_message" rows="3" maxlength="2000" placeholder="مثال: پرداخت شما با موفقیت ثبت شد و پس از بررسی واحد مالی، سفارش شما وارد مرحله تولید خواهد شد." class="admin-input"></textarea>
                         @error('success_message') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
             </div>
 
             <div class="admin-card p-6">
-                <h3 class="font-bold text-gray-900 mb-4">وضعیت</h3>
+                <h3 class="font-bold text-slate-900 mb-4">وضعیت فعال‌سازی</h3>
                 <div class="flex items-center gap-3">
-                    <input type="checkbox" wire:model="is_active" id="is_active" class="rounded border-gray-300 text-yellow-500" />
-                    <label for="is_active" class="text-sm text-gray-700">پرداخت کارت‌به‌کارت فعال باشد</label>
+                    <input type="checkbox" wire:model="is_active" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    <label for="is_active" class="text-sm font-semibold text-slate-700">پرداخت کارت‌به‌کارت در درگاه فروشگاه فعال باشد</label>
                 </div>
                 @error('is_active') <p class="admin-error">{{ $message }}</p> @enderror
-                <p class="text-xs text-gray-500 mt-2">با فعال‌سازی، مشتریان امکان ارسال رسید پرداخت کارت‌به‌کارت را خواهند داشت.</p>
+                <p class="text-xs text-slate-500 mt-2">با فعال‌سازی این گزینه، مشتریان می‌توانند در صفحه تسویه‌حساب گزینه کارت‌به‌کارت را انتخاب و فیش واریز را بارگذاری نمایند.</p>
             </div>
 
-            <div class="flex flex-wrap gap-3">
-                <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-yellow-600 transition">ذخیره</button>
+            <div class="flex items-center gap-3">
+                <button type="submit" class="admin-btn admin-btn-primary font-semibold">ذخیره تغییرات</button>
             </div>
         </form>
     @endif

@@ -1,5 +1,8 @@
 import collapse from '@alpinejs/collapse';
 import jalaliCalendar from './jalali-calendar';
+import { registerDialogComponents, initDialogInterceptors } from './dialog-manager';
+
+initDialogInterceptors();
 
 document.addEventListener('alpine:init', () => {
     if (!window.Alpine) {
@@ -8,6 +11,7 @@ document.addEventListener('alpine:init', () => {
 
     window.Alpine.plugin(collapse);
     window.Alpine.data('jalaliCalendar', jalaliCalendar);
+    registerDialogComponents(window.Alpine);
 
     window.Alpine.data('bannerSlider', (count) => ({
         count: count,

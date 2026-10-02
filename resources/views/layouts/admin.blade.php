@@ -126,6 +126,8 @@
             </main>
         </div>
     </div>
+    <x-confirmation-modal />
+    <x-toast-container />
     @livewireScripts
 </body>
 </html>

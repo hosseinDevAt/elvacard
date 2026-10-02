@@ -1,21 +1,19 @@
 <div>
-    <div class="mb-6 flex items-center justify-between gap-4">
-        <div>
-            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">مدیریت محصولات فروشگاه</h2>
-            <p class="text-xs text-slate-500 mt-1">مدیریت، دسته‌بندی و بررسی وضعیت موجودی محصولات فروشگاه</p>
-        </div>
-        <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>افزودن محصول جدید</span>
-        </button>
-    </div>
+    <x-admin.page-header title="مدیریت محصولات فروشگاه" subtitle="مدیریت، دسته‌بندی و بررسی وضعیت موجودی محصولات فروشگاه">
+        <x-slot:actions>
+            <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>افزودن محصول جدید</span>
+            </button>
+        </x-slot:actions>
+    </x-admin.page-header>
 
     @if($showForm)
         <div class="admin-card p-6 mb-6">
-            <h3 class="font-bold text-gray-900 mb-4">{{ $editingId ? 'ویرایش محصول' : 'محصول جدید' }}</h3>
+            <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش محصول' : 'محصول جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
                 @if(! $customizationWorkflow)
                     <div class="rounded-lg border border-gray-200 p-4">
@@ -61,7 +59,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="admin-label">نوع محصول</label>
-                        <select wire:model="type" class="admin-input">
+                        <select wire:model="type" class="admin-select">
                             @foreach($typeOptions as $option)
                                 <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                             @endforeach
@@ -70,25 +68,25 @@
                     </div>
                     <div>
                         <label class="admin-label">فرآیند شخصی‌سازی</label>
-                        <select wire:model="customizationWorkflow" class="admin-input">
+                        <select wire:model="customizationWorkflow" class="admin-select">
                             @foreach($workflowOptions as $option)
                                 <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                             @endforeach
                         </select>
                         @error('customizationWorkflow') <p class="admin-error">{{ $message }}</p> @enderror
                         @if($customizationWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
-                            <div class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
+                            <div class="mt-2 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-800 space-y-1">
                                 <p class="font-bold text-amber-900">پیش‌نیازهای فعال‌سازی و فروش کارت سوخت:</p>
                                 <p class="text-amber-900">این محصول تا تکمیل پیش‌نیازهای زیر قابل فعال‌سازی نیست:</p>
                                 <ul class="list-disc ms-4 space-y-0.5">
                                     @foreach($fuelPreparation as $item)
                                         <li>
-                                            {{ $item['label'] }}
+                                             {{ $item['label'] }}
                                             @if($editingId)
                                                 @if($item['ok'])
-                                                    <span class="text-green-600">✓ تکمیل شده</span>
+                                                    <span class="text-emerald-600 font-semibold">✓ تکمیل شده</span>
                                                 @else
-                                                    <span class="text-red-500">✗ لازم است</span>
+                                                    <span class="text-rose-600 font-semibold">✗ لازم است</span>
                                                 @endif
                                             @endif
                                         </li>
@@ -96,7 +94,7 @@
                                 </ul>
                                 @if($editingId)
                                     <div class="pt-1">
-                                        <a href="{{ route('admin.product-colors', ['product' => $editingId]) }}" class="text-amber-900 underline">مدیریت رنگ و قیمت این محصول</a>
+                                        <a href="{{ route('admin.product-colors', ['product' => $editingId]) }}" class="text-indigo-600 hover:text-indigo-800 font-semibold underline">مدیریت رنگ و قیمت این محصول</a>
                                     </div>
                                 @endif
                             </div>
@@ -119,13 +117,13 @@
                     <div>
                         <label class="admin-label">تصویر اصلی</label>
                         <input type="text" wire:model="mainImage" placeholder="products/card.jpg" dir="ltr" class="admin-input">
-                        <input type="file" wire:model="mainImageUpload" accept="image/*" class="block w-full mt-2 text-sm text-gray-600 file:me-3 file:border-0 file:bg-yellow-50 file:px-4 file:py-2 file:text-yellow-700 file:cursor-pointer">
+                        <input type="file" wire:model="mainImageUpload" accept="image/*" class="block w-full mt-2 text-xs text-slate-600 file:me-3 file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-slate-700 file:rounded-xl file:font-medium file:cursor-pointer hover:file:bg-slate-200">
                         @error('mainImage') <p class="admin-error">{{ $message }}</p> @enderror
                         @error('mainImageUpload') <p class="admin-error">{{ $message }}</p> @enderror
                         @if($mainImageUpload)
-                            <img src="{{ $mainImageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                            <img src="{{ $mainImageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-xl border border-slate-200" alt="">
                         @elseif($mainImage)
-                            <img src="{{ asset('storage/'.$mainImage) }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                            <img src="{{ asset('storage/'.$mainImage) }}" class="mt-2 h-24 w-24 object-cover rounded-xl border border-slate-200" alt="">
                         @endif
                     </div>
                     @if($customizationWorkflow)
@@ -139,12 +137,12 @@
                             <label class="admin-label">قیمت پایه (تومان)</label>
                             <input type="number" wire:model="basePrice" min="0" placeholder="500000" dir="ltr" class="admin-input">
                             @error('basePrice') <p class="admin-error">{{ $message }}</p> @enderror
-                            <p class="text-xs text-gray-400 mt-1">قیمت ثابت محصول عادی؛ مشتری این مبلغ را پرداخت می‌کند.</p>
+                            <p class="text-xs text-slate-400 mt-1">قیمت ثابت محصول عادی؛ مشتری این مبلغ را پرداخت می‌کند.</p>
                         </div>
                     @else
                         <div>
                             <label class="admin-label">قیمت متغیر</label>
-                            <div class="rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800">
+                            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 px-4 py-3 text-xs text-indigo-800">
                                 @if($editingId)
                                     قیمت هر رنگ از بخش «متغیرهای محصول» همین صفحه مدیریت می‌شود.
                                 @else
@@ -158,7 +156,7 @@
                 @if(! $customizationWorkflow)
                     <div>
                         <label class="admin-label">دسته‌بندی محصول</label>
-                        <select wire:model="productCategoryId" class="admin-input">
+                        <select wire:model="productCategoryId" class="admin-select">
                             <option value="">بدون دسته‌بندی</option>
                             @foreach($categoryOptions as $option)
                                 <option value="{{ $option->id }}">{{ $option->name }}@if(! $option->is_active) (غیرفعال)@endif</option>
@@ -176,17 +174,17 @@
 
                 <div class="flex flex-wrap items-center gap-6">
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
-                        <label for="is_active" class="text-sm text-gray-700">فعال (نمایش در فروشگاه)</label>
+                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (نمایش در فروشگاه)</label>
                     </div>
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-gray-300 text-yellow-500">
-                        <label for="robots_index" class="text-sm text-gray-700">قابل ایندکس در موتورهای جستجو</label>
+                        <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="robots_index" class="text-xs font-semibold text-slate-700">قابل ایندکس در موتورهای جستجو</label>
                     </div>
                 </div>
 
-                <div class="border-t border-gray-100 pt-4">
-                    <h4 class="font-bold text-gray-900 mb-3">سئو</h4>
+                <div class="border-t border-slate-100 pt-4">
+                    <h4 class="font-bold text-slate-900 mb-3">سئو</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="admin-label">عنوان سئو</label>
@@ -206,13 +204,13 @@
                         <div>
                             <label class="admin-label">تصویر Open Graph</label>
                             <input type="text" wire:model="ogImage" dir="ltr" class="admin-input">
-                            <input type="file" wire:model="ogImageUpload" accept="image/*" class="block w-full mt-2 text-sm text-gray-600 file:me-3 file:border-0 file:bg-yellow-50 file:px-4 file:py-2 file:text-yellow-700 file:cursor-pointer">
+                            <input type="file" wire:model="ogImageUpload" accept="image/*" class="block w-full mt-2 text-xs text-slate-600 file:me-3 file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-slate-700 file:rounded-xl file:font-medium file:cursor-pointer hover:file:bg-slate-200">
                             @error('ogImage') <p class="admin-error">{{ $message }}</p> @enderror
                             @error('ogImageUpload') <p class="admin-error">{{ $message }}</p> @enderror
                             @if($ogImageUpload)
-                                <img src="{{ $ogImageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                                <img src="{{ $ogImageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-xl border border-slate-200" alt="">
                             @elseif($ogImage)
-                                <img src="{{ asset('storage/'.$ogImage) }}" class="mt-2 h-24 w-24 object-cover rounded-lg border border-gray-200" alt="">
+                                <img src="{{ asset('storage/'.$ogImage) }}" class="mt-2 h-24 w-24 object-cover rounded-xl border border-slate-200" alt="">
                             @endif
                         </div>
                     </div>
@@ -223,29 +221,29 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-end gap-4">
-                    <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">{{ $editingId ? 'ذخیره تغییرات' : ($pricingType === 'variable' ? 'ایجاد محصول و تنظیم قیمت‌ها' : 'ایجاد محصول') }}</button>
-                    <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition">لغو</button>
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">{{ $editingId ? 'ذخیره تغییرات' : ($pricingType === 'variable' ? 'ایجاد محصول و تنظیم قیمت‌ها' : 'ایجاد محصول') }}</button>
+                    <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="admin-btn admin-btn-secondary admin-btn-sm">لغو</button>
                 </div>
             </form>
 
             @if($editingId && ! $customizationWorkflow && $pricingType === 'variable')
-                <div class="border-t border-gray-100 pt-4 mt-4">
+                <div class="border-t border-slate-100 pt-4 mt-6">
                     <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-bold text-gray-900">متغیرهای محصول</h4>
-                        <button type="button" wire:click="openVariantForm" class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-xs hover:bg-yellow-600 transition">
+                        <h4 class="font-bold text-slate-900">متغیرهای محصول</h4>
+                        <button type="button" wire:click="openVariantForm" class="admin-btn admin-btn-primary admin-btn-sm text-xs font-semibold">
                             + افزودن رنگ و قیمت
                         </button>
                     </div>
 
                     @if($showVariantForm)
-                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-3">
-                            <h5 class="font-bold text-gray-800 text-sm mb-3">{{ $editingVariantId ? 'ویرایش رنگ و قیمت' : 'افزودن رنگ و قیمت' }}</h5>
+                        <div class="bg-slate-50/70 rounded-xl border border-slate-200 p-4 mb-4">
+                            <h5 class="font-bold text-slate-800 text-sm mb-3">{{ $editingVariantId ? 'ویرایش رنگ و قیمت' : 'افزودن رنگ و قیمت' }}</h5>
                             <form wire:submit="saveVariant" class="space-y-3">
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label class="admin-label">رنگ</label>
-                                        <select wire:model="variantColorId" class="admin-input">
+                                        <select wire:model="variantColorId" class="admin-select">
                                             <option value="">— انتخاب رنگ —</option>
                                             @foreach($storeColorOptions as $option)
                                                 <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
@@ -258,71 +256,73 @@
                                         <input type="number" wire:model="variantPrice" min="0" dir="ltr" class="admin-input">
                                         @error('variantPrice') <p class="admin-error">{{ $message }}</p> @enderror
                                     </div>
-                                    <div class="flex items-end">
-                                        <label class="flex items-center gap-2 text-sm text-gray-700">
-                                            <input type="checkbox" wire:model="variantIsActive" class="rounded border-gray-300 text-yellow-500">
-                                            فعال (قابل فروش)
+                                    <div class="flex items-end pb-2">
+                                        <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                                            <input type="checkbox" wire:model="variantIsActive" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            <span>فعال (قابل فروش)</span>
                                         </label>
                                     </div>
                                 </div>
                                 <div>
                                     <label class="admin-label">تصاویر این رنگ (اختیاری)</label>
-                                    <input type="file" wire:model="variantImageUploads" multiple accept="image/jpeg,image/png,image/jpg,image/webp,image/svg+xml" class="admin-input sm:w-96">
+                                    <input type="file" wire:model="variantImageUploads" multiple accept="image/jpeg,image/png,image/jpg,image/webp,image/svg+xml" class="admin-input sm:w-96 text-xs">
                                     @error('variantImageUploads.*') <p class="admin-error">{{ $message }}</p> @enderror
-                                    <p class="text-xs text-gray-400 mt-1">تصاویر جی‌پی‌جی، پی‌ان‌جی، وب‌پی یا اس‌وی‌جی تا ۲ مگابایت؛ اگر این رنگ تصویر اصلی نداشته باشد، اولین تصویر همان می‌شود.</p>
+                                    <p class="text-[11px] text-slate-400 mt-1">تصاویر جی‌پی‌جی، پی‌ان‌جی، وب‌پی یا اس‌وی‌جی تا ۲ مگابایت؛ اگر این رنگ تصویر اصلی نداشته باشد، اولین تصویر همان می‌شود.</p>
                                 </div>
-                                <div class="flex items-end gap-3">
-                                    <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">ذخیره</button>
-                                    <button type="button" wire:click="$set('showVariantForm', false); $wire.resetVariantForm()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition">لغو</button>
+                                <div class="flex items-center gap-3 pt-2">
+                                    <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">ذخیره</button>
+                                    <button type="button" wire:click="$set('showVariantForm', false); $wire.resetVariantForm()" class="admin-btn admin-btn-secondary admin-btn-sm">لغو</button>
                                 </div>
                             </form>
                         </div>
                     @endif
 
                     @if($storeVariants->isEmpty())
-                        <p class="text-sm text-gray-500">هنوز رنگی برای این محصول ثبت نشده است؛ با «+ افزودن رنگ و قیمت» اولین رنگ و قیمت را اضافه کنید.</p>
+                        <div class="py-4">
+                            <x-admin.empty-state title="رنگی ثبت نشده است" description="با کلیک روی «+ افزودن رنگ و قیمت» اولین متغیر محصول را اضافه کنید." />
+                        </div>
                     @else
-                        <div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+                        <div class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
                             <table class="w-full text-sm">
-                                <thead class="bg-gray-50">
+                                <thead class="bg-slate-50/70 border-b border-slate-100">
                                     <tr>
                                         <th class="admin-th">#</th>
                                         <th class="admin-th">رنگ</th>
                                         <th class="admin-th">قیمت</th>
                                         <th class="admin-th">وضعیت</th>
                                         <th class="admin-th">تصاویر</th>
-                                        <th class="admin-th">عملیات</th>
+                                        <th class="admin-th text-center">عملیات</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
+                                <tbody class="divide-y divide-slate-100">
                                     @foreach($storeVariants as $variant)
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="admin-td text-gray-500">{{ $variant->id }}</td>
+                                        <tr class="hover:bg-slate-50/60 transition">
+                                            <td class="admin-td text-slate-400 font-mono text-xs">{{ $variant->id }}</td>
                                             <td class="admin-td">
                                                 <div class="flex items-center gap-2">
-                                                    <div class="w-5 h-5 rounded border" style="background-color: {{ $variant->color?->code_hex }}"></div>
-                                                    <span>{{ $variant->color?->name }}</span>
+                                                    <div class="w-5 h-5 rounded-full border border-white shadow-xs" style="background-color: {{ $variant->color?->code_hex }}"></div>
+                                                    <span class="text-xs font-semibold text-slate-700">{{ $variant->color?->name }}</span>
                                                 </div>
                                             </td>
-                                            <td class="admin-td text-gray-500" dir="ltr">{{ number_format((int) $variant->price) }}</td>
+                                            <td class="admin-td font-extrabold text-indigo-600 text-xs" dir="ltr">{{ number_format((int) $variant->price) }} تومان</td>
                                             <td class="admin-td">
-                                                <span class="{{ $variant->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $variant->is_active ? 'فعال' : 'غیرفعال' }}</span>
+                                                <span class="admin-badge {{ $variant->is_active ? 'admin-badge-success' : 'admin-badge-neutral' }}">{{ $variant->is_active ? 'فعال' : 'غیرفعال' }}</span>
                                             </td>
                                             <td class="admin-td">
                                                 @if($variant->images->isEmpty())
-                                                    <span class="text-xs text-gray-400">بدون تصویر</span>
+                                                    <span class="text-xs text-slate-400">بدون تصویر</span>
                                                 @else
                                                     <div class="flex flex-wrap gap-2">
                                                         @foreach($variant->images as $image)
                                                             <div class="flex flex-col items-center gap-1">
                                                                 <div class="relative">
-                                                                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="" class="h-10 w-10 rounded border border-gray-200 object-cover">
+                                                                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="" class="h-10 w-10 rounded-xl border border-slate-200 object-cover shadow-xs">
                                                                     @if($image->is_primary)
-                                                                        <span class="absolute -top-1 -start-1 rounded-full bg-green-500 px-1 text-[8px] font-medium text-white">اصلی</span>
+                                                                        <span class="absolute -top-1 -start-1 rounded-full bg-emerald-500 px-1 text-[8px] font-medium text-white">اصلی</span>
                                                                     @endif
                                                                 </div>
                                                                 @if(! $image->is_primary)
-                                                                    <button type="button" wire:click="setPrimaryVariantImage({{ $image->id }})" class="text-[10px] text-yellow-500 hover:text-yellow-700">تعیین اصلی</button>
+                                                                    <button type="button" wire:click="setPrimaryVariantImage({{ $image->id }})" class="text-[10px] text-indigo-600 hover:text-indigo-800">تعیین اصلی</button>
                                                                 @endif
                                                                 <button type="button" wire:click="deleteVariantImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-rose-600 hover:text-rose-700">حذف</button>
                                                             </div>
@@ -330,9 +330,11 @@
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td class="admin-td">
-                                                <button type="button" wire:click="editVariant({{ $variant->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
-                                                <button type="button" wire:click="deleteVariant({{ $variant->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-rose-600 hover:text-rose-700 text-xs font-medium transition">حذف</button>
+                                            <td class="admin-td text-center">
+                                                <div class="inline-flex items-center gap-1.5">
+                                                    <button type="button" wire:click="editVariant({{ $variant->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                                                    <button type="button" wire:click="deleteVariant({{ $variant->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-rose-600 hover:text-rose-700 text-xs px-2 py-1.5 font-medium transition">حذف</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -342,7 +344,7 @@
                     @endif
 
                     @if(! $storeVariants->contains(fn ($variant) => (bool) $variant->is_active))
-                        <p class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                        <p class="mt-3 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-800">
                             این محصول هنوز قابل فعال‌سازی نیست؛ حداقل یک رنگ فعال با قیمت معتبر اضافه کنید.
                         </p>
                     @endif
@@ -363,14 +365,14 @@
                            class="admin-input py-2 text-xs">
                 </div>
                 <div class="w-full sm:w-40">
-                    <select wire:model.live="typeFilter" class="admin-input py-2 text-xs">
+                    <select wire:model.live="typeFilter" class="admin-select py-2 text-xs">
                         @foreach($typeFilterOptions as $option)
                             <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="w-full sm:w-40">
-                    <select wire:model.live="workflowFilter" class="admin-input py-2 text-xs">
+                    <select wire:model.live="workflowFilter" class="admin-select py-2 text-xs">
                         @foreach($workflowFilterOptions as $option)
                             <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                         @endforeach
@@ -474,7 +476,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="admin-empty">محصولی یافت نشد</td>
+                            <td colspan="8" class="py-8">
+                                <x-admin.empty-state title="محصولی یافت نشد" description="هیچ محصولی مطابق با فیلترهای انتخابی پیدا نشد." />
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

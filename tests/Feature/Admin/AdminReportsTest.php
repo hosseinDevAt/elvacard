@@ -54,8 +54,8 @@ class AdminReportsTest extends TestCase
     private function createOrder(?User $user = null, array $overrides = []): Order
     {
         $order = new Order([
-            'customer_name' => 'مشتری گزارش',
-            'customer_phone' => '09123456789',
+            'customer_name' => $overrides['customer_name'] ?? 'مشتری گزارش',
+            'customer_phone' => $overrides['customer_phone'] ?? '09123456789',
         ]);
         $order->user_id = $user?->id;
         $order->total_price = (int) ($overrides['total_price'] ?? 100000);
@@ -496,28 +496,25 @@ class AdminReportsTest extends TestCase
 
     // --- Active customers ---
 
-    public function test_active_customers_count_distinct_registered_with_orders(): void
+    public function test_active_customers_count_distinct_phones_with_orders(): void
     {
-        $user1 = User::factory()->create(['role' => 'customer']);
-        $user2 = User::factory()->create(['role' => 'customer']);
-
-        $this->createOrder($user1);
-        $this->createOrder($user2);
-        $this->createOrder(); // guest order
+        $this->createOrder(null, ['customer_phone' => '09121111111']);
+        $this->createOrder(null, ['customer_phone' => '09122222222']);
+        $this->createOrder(null, ['customer_phone' => '09121111111']); // duplicate phone
 
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
             ->assertSet('summary.activeCustomerCount', 2);
     }
 
-    public function test_guest_orders_excluded_from_active_customer_count(): void
+    public function test_guest_orders_with_same_phone_are_deduplicated_in_active_customer_count(): void
     {
-        $this->createOrder(); // guest
-        $this->createOrder(); // guest
+        $this->createOrder(null, ['customer_phone' => '09123333333']);
+        $this->createOrder(null, ['customer_phone' => '09123333333']);
 
         Livewire::actingAs($this->admin())
             ->test(Reports::class)
-            ->assertSet('summary.activeCustomerCount', 0);
+            ->assertSet('summary.activeCustomerCount', 1);
     }
 
     // --- Revenue trend ---

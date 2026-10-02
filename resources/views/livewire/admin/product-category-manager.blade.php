@@ -1,13 +1,19 @@
 <div>
-    <div class="mb-6 flex items-center justify-end gap-4">
-        <button wire:click="create" class="admin-btn admin-btn-primary">
-            + دسته‌بندی جدید
-        </button>
-    </div>
+    <x-admin.page-header title="دسته‌بندی محصولات" subtitle="مدیریت و دسته‌بندی محصولات برای دسترسی سریع‌تر در فروشگاه">
+        <x-slot:actions>
+            <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>دسته‌بندی جدید</span>
+            </button>
+        </x-slot:actions>
+    </x-admin.page-header>
 
     @if($showForm)
         <div class="admin-card p-6 mb-6">
-            <h3 class="font-bold text-gray-900 mb-4">{{ $editingId ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید' }}</h3>
+            <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -22,51 +28,66 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-gray-300 text-yellow-500">
-                    <label for="is_active" class="text-sm text-gray-700">فعال (قابل انتخاب در فروشگاه)</label>
+                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (قابل انتخاب در فروشگاه)</label>
                 </div>
-                <div class="flex items-end gap-4">
-                    <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">ذخیره</button>
-                    <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition">لغو</button>
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">{{ $editingId ? 'ذخیره تغییرات' : 'ایجاد دسته‌بندی' }}</button>
+                    <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="admin-btn admin-btn-secondary admin-btn-sm">لغو</button>
                 </div>
             </form>
         </div>
     @endif
 
-    <div class="admin-card overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="admin-th">#</th>
-                    <th class="admin-th">نام</th>
-                    <th class="admin-th">اسلاگ</th>
-                    <th class="admin-th">تعداد محصولات</th>
-                    <th class="admin-th">وضعیت</th>
-                    <th class="admin-th">ترتیب</th>
-                    <th class="admin-th">عملیات</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($categories as $category)
-                    <tr class="hover:bg-gray-50">
-                        <td class="admin-td text-gray-500">{{ $category->id }}</td>
-                        <td class="admin-td font-medium">{{ $category->name }}</td>
-                        <td class="admin-td text-gray-500 font-mono text-xs" dir="ltr">{{ $category->slug }}</td>
-                        <td class="admin-td text-gray-500">{{ $category->products_count }}</td>
-                        <td class="admin-td">
-                            <span class="{{ $category->is_active ? 'text-green-600' : 'text-red-500' }}">{{ $category->is_active ? 'فعال' : 'غیرفعال' }}</span>
-                        </td>
-                        <td class="admin-td text-gray-500">{{ $category->sort_order }}</td>
-                        <td class="admin-td">
-                            <button wire:click="edit({{ $category->id }})" class="text-yellow-500 hover:text-yellow-700 text-xs me-2">ویرایش</button>
-                            <button wire:click="delete({{ $category->id }})" wire:confirm="آیا از حذف این دسته‌بندی مطمئن هستید؟" class="text-rose-600 hover:text-rose-700 text-xs font-medium transition">حذف</button>
-                        </td>
+    <div class="admin-card overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900">لیست دسته‌بندی‌ها</h3>
+            <span class="text-xs text-slate-400">مجموع: {{ $categories->total() }}</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50/70 border-b border-slate-100">
+                    <tr>
+                        <th class="admin-th w-16">#</th>
+                        <th class="admin-th">نام</th>
+                        <th class="admin-th">اسلاگ</th>
+                        <th class="admin-th">تعداد محصولات</th>
+                        <th class="admin-th">وضعیت</th>
+                        <th class="admin-th">ترتیب</th>
+                        <th class="admin-th text-center">عملیات</th>
                     </tr>
-                @empty
-                    <tr><td colspan="7" class="admin-empty">دسته‌بندی‌ای وجود ندارد</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="p-4">{{ $categories->links() }}</div>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($categories as $category)
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="admin-td text-xs text-slate-400 font-mono">{{ $category->id }}</td>
+                            <td class="admin-td font-bold text-slate-900">{{ $category->name }}</td>
+                            <td class="admin-td text-slate-500 font-mono text-xs" dir="ltr">{{ $category->slug }}</td>
+                            <td class="admin-td text-slate-600 font-mono text-xs">{{ $category->products_count }}</td>
+                            <td class="admin-td">
+                                <span class="admin-badge {{ $category->is_active ? 'admin-badge-success' : 'admin-badge-neutral' }}">
+                                    {{ $category->is_active ? 'فعال' : 'غیرفعال' }}
+                                </span>
+                            </td>
+                            <td class="admin-td text-slate-400 text-xs font-mono">{{ $category->sort_order }}</td>
+                            <td class="admin-td text-center">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <button wire:click="edit({{ $category->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                                    <button wire:click="delete({{ $category->id }})" wire:confirm="آیا از حذف این دسته‌بندی مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-8">
+                                <x-admin.empty-state title="دسته‌بندی‌ای یافت نشد" description="هنوز هیچ دسته‌بندی برای محصولات تعریف نشده است." />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="p-5 border-t border-slate-100">{{ $categories->links() }}</div>
     </div>
 </div>
