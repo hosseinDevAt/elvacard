@@ -6,6 +6,17 @@
     display: none !important;
 }
 
+:root {
+    --brand-yellow: #ffde5b;
+    --brand-yellow-hover: #f5d347;
+    --brand-yellow-active: #e8c535;
+    --brand-yellow-subtle: #fff9db;
+    --brand-navy: #010619;
+    --brand-navy-card: #070e24;
+    --brand-navy-border: #152244;
+    --brand-navy-muted: #1f2e54;
+}
+
 @layer components {
     .admin-card {
         @apply rounded-2xl border border-slate-100/90 bg-white shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)];
@@ -16,11 +27,15 @@
     }
 
     .admin-btn-primary {
-        @apply bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 focus-visible:ring-indigo-400 active:bg-indigo-800;
+        @apply bg-[#ffde5b] text-[#010619] font-bold shadow-sm shadow-[#ffde5b]/25 hover:bg-[#f5d347] focus-visible:ring-[#ffde5b] active:bg-[#e8c535];
     }
 
     .admin-btn-secondary {
-        @apply border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-slate-300;
+        @apply border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 focus-visible:ring-slate-300;
+    }
+
+    .admin-btn-navy {
+        @apply bg-[#010619] text-[#ffde5b] font-bold shadow-sm hover:bg-[#091333] focus-visible:ring-[#010619];
     }
 
     .admin-btn-danger {
@@ -37,6 +52,14 @@
 
     .admin-badge {
         @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+    }
+
+    .admin-badge-brand {
+        @apply bg-[#ffde5b]/20 text-[#664d00] border border-[#ffde5b]/60;
+    }
+
+    .admin-badge-navy {
+        @apply bg-[#010619] text-[#ffde5b] border border-[#010619];
     }
 
     .admin-badge-success {
@@ -60,15 +83,19 @@
     }
 
     .admin-input {
-        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100;
+        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition placeholder:text-slate-400 focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60;
     }
 
     .admin-select {
-        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100;
+        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition placeholder:text-slate-400 focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60;
     }
 
     .admin-label {
         @apply mb-1.5 block text-xs font-semibold text-slate-600;
+    }
+
+    .admin-checkbox {
+        @apply rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b];
     }
 
     .admin-error {

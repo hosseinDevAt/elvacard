@@ -1,7 +1,7 @@
 <div>
     <x-admin.page-header title="ظاهر و هویت برند" subtitle="مدیریت لوگو، فاوآیکون، بنرهای صفحه اصلی، اطلاعات فوتر و آیکون‌ها">
         <x-slot:actions>
-            <button type="submit" form="appearance-form" class="admin-btn admin-btn-primary font-semibold shadow-md shadow-indigo-600/20">
+            <button type="submit" form="appearance-form" class="admin-btn admin-btn-primary font-semibold shadow-md shadow-[#ffde5b]/25">
                 ذخیره تغییرات
             </button>
         </x-slot:actions>
@@ -153,7 +153,7 @@
                             <p class="text-xs font-bold text-slate-900">{{ $slot['label'] }}</p>
                             @if ($slot['can_disable'])
                                 <label class="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer">
-                                    <input type="checkbox" wire:model="iconSettings.{{ $key }}.enabled" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <input type="checkbox" wire:model="iconSettings.{{ $key }}.enabled" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                                     <span>نمایش آیکون</span>
                                 </label>
                             @endif
@@ -193,7 +193,7 @@
                             <input type="number" min="0" wire:model="menuItems.{{ $id }}.sort_order" class="admin-input text-xs">
                         </div>
                         <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                            <input type="checkbox" wire:model="menuItems.{{ $id }}.is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <input type="checkbox" wire:model="menuItems.{{ $id }}.is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                             <span>نمایش</span>
                         </label>
                     </div>
@@ -203,7 +203,7 @@
         </section>
 
         <div class="flex justify-end pt-2">
-            <button type="submit" class="admin-btn admin-btn-primary font-semibold shadow-md shadow-indigo-600/20">
+            <button type="submit" class="admin-btn admin-btn-primary font-semibold shadow-md shadow-[#ffde5b]/25">
                 ذخیره تغییرات
             </button>
         </div>

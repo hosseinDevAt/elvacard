@@ -34,7 +34,7 @@ $contactPhone = site_setting('contact_phone');
 $contactEmail = site_setting('contact_email');
 $contactAddress = site_setting('contact_address');
 ?>
-<footer class="bg-gray-900 border-t border-gray-800 text-gray-300">
+<footer class="bg-[#010619] border-t border-[#152244] text-slate-300">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <!-- Brand -->
@@ -43,8 +43,8 @@ $contactAddress = site_setting('contact_address');
                     @if ($siteLogo)
                         <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
                     @else
-                        <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-primary-600 text-white">
-                            <x-icons.card class="h-6 w-6" />
+                        <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20">
+                            <x-application-logo class="h-7 w-7 text-[#010619]" />
                         </span>
                     @endif
                     <span class="text-lg font-bold text-white">{{ $siteName }}</span>

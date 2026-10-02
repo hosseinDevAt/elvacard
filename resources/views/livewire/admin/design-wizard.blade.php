@@ -29,7 +29,7 @@
                 <li class="flex items-center gap-3 flex-1 last:flex-none">
                     <div class="flex items-center gap-2.5">
                         <span aria-hidden="true"
-                              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition {{ $isCurrent ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : ($isDone ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400') }}">
+                              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition {{ $isCurrent ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/30' : ($isDone ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400') }}">
                             @if($isDone)
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -39,7 +39,7 @@
                             @endif
                         </span>
                         <div>
-                            <span class="text-xs block {{ $isCurrent ? 'font-bold text-indigo-600' : ($isDone ? 'font-medium text-slate-800' : 'text-slate-400') }}">{{ $label }}</span>
+                            <span class="text-xs block {{ $isCurrent ? 'font-bold text-[#010619]' : ($isDone ? 'font-medium text-slate-800' : 'text-slate-400') }}">{{ $label }}</span>
                             @if($step === $number)
                                 <span class="sr-only">مرحله فعلی</span>
                             @endif
@@ -79,7 +79,7 @@
                     </select>
                     @error('cateDesignId') <p class="admin-error">{{ $message }}</p> @enderror
 
-                    <button type="button" wire:click="$toggle('showCategoryForm')" class="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                    <button type="button" wire:click="$toggle('showCategoryForm')" class="mt-2 text-xs font-bold text-[#010619] hover:underline transition">
                         {{ $showCategoryForm ? 'بستن فرم دسته‌بندی جدید' : '+ دسته‌بندی جدید' }}
                     </button>
 
@@ -117,11 +117,11 @@
 
             <div class="flex flex-wrap items-center gap-6 pt-2">
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                     <label for="is_active" class="text-sm font-medium text-slate-700">فعال (نمایش در سفارشی‌ساز)</label>
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                     <label for="robots_index" class="text-sm font-medium text-slate-700">قابل ایندکس در موتورهای جستجو</label>
                 </div>
             </div>
@@ -217,7 +217,7 @@
                         @error('seoCaption') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div class="mt-4 flex items-center gap-2">
-                        <input type="checkbox" wire:model="imageIsActive" id="image_is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <input type="checkbox" wire:model="imageIsActive" id="image_is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                         <label for="image_is_active" class="text-sm font-medium text-slate-700">فعال (نمایش در سفارشی‌ساز)</label>
                     </div>
                     <div class="mt-4 flex items-center gap-2">
@@ -412,7 +412,7 @@
                 </div>
                 <div class="flex items-start justify-between gap-4 pb-3">
                     <dt class="text-slate-500">ترکیبات مجاز (تصویر × رنگ)</dt>
-                    <dd class="font-bold text-indigo-600 text-end">{{ $summary['allowedCombos'] }}</dd>
+                    <dd class="font-bold text-[#010619] text-end">{{ $summary['allowedCombos'] }}</dd>
                 </div>
             </dl>
             @if($summary['description'])

@@ -72,7 +72,7 @@
                     @error('seoCaption') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                     <label for="is_active" class="text-sm font-medium text-slate-700">فعال (نمایش در سفارشی‌ساز)</label>
                 </div>
                 <div class="flex items-center gap-2 pt-2">

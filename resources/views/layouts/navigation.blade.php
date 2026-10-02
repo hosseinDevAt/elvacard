@@ -59,8 +59,8 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     @if ($siteLogo)
                         <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
                     @else
-                        <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-accent-500 text-primary-600">
-                            <x-icons.card class="h-6 w-6" />
+                        <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20">
+                            <x-application-logo class="h-7 w-7 text-[#010619]" />
                         </span>
                     @endif
                     <span class="hidden sm:block text-lg font-bold text-white whitespace-nowrap">{{ $siteName }}</span>

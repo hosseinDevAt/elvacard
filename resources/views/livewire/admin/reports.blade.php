@@ -44,7 +44,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="admin-card p-5">
             <div class="text-xs text-slate-500 font-medium mb-1">درآمد (پرداخت موفق)</div>
-            <div class="text-xl font-extrabold text-indigo-600 font-mono" dir="ltr">{{ number_format($summary['revenue'] ?? 0) }} تومان</div>
+            <div class="text-xl font-extrabold text-[#010619] font-mono" dir="ltr">{{ number_format($summary['revenue'] ?? 0) }} تومان</div>
         </div>
         <div class="admin-card p-5">
             <div class="text-xs text-slate-500 font-medium mb-1">کل سفارشات</div>
@@ -84,7 +84,7 @@
             <div class="flex items-center gap-3 text-xs">
                 <span class="w-24 shrink-0 text-slate-500 text-left font-mono">{{ fa_digits($bucket['period']) }}</span>
                 <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
-                    <div class="bg-indigo-600 h-full rounded-full transition-all"
+                    <div class="bg-[#ffde5b] h-full rounded-full transition-all shadow-sm"
                          style="width: {{ $bucket['revenue'] > 0 ? max(1, (int) round(($bucket['revenue'] / $maxTrendRevenue) * 100)) : 0 }}%"></div>
                 </div>
                 <span class="w-36 text-left font-mono font-bold text-slate-700" dir="ltr">{{ number_format($bucket['revenue']) }} تومان</span>
@@ -123,7 +123,7 @@
                         <td class="admin-td text-xs text-slate-400 font-mono">{{ $idx + 1 }}</td>
                         <td class="admin-td font-bold text-slate-900">{{ $product['product_name'] }}</td>
                         <td class="admin-td font-mono font-bold text-slate-700">{{ number_format($product['total_qty']) }}</td>
-                        <td class="admin-td font-mono font-extrabold text-indigo-600" dir="ltr">{{ number_format($product['total_amount']) }} تومان</td>
+                        <td class="admin-td font-mono font-extrabold text-[#010619]" dir="ltr">{{ number_format($product['total_amount']) }} تومان</td>
                         <td class="admin-td font-mono text-slate-600">{{ number_format($product['order_count']) }}</td>
                         <td class="admin-td">
                             @if($product['is_active'] === true)

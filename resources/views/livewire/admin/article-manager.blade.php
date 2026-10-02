@@ -1,7 +1,7 @@
 <div>
     <x-admin.page-header title="مدیریت مقالات" subtitle="ایجاد و انتشار مقالات بلاگ، راهنماها و اخبار فروشگاه">
         <x-slot:actions>
-            <button wire:click="$set('showForm', true)" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
+            <button wire:click="$set('showForm', true)" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -93,7 +93,7 @@
                             @error('canonicalUrl') <p class="admin-error">{{ $message }}</p> @enderror
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                             <label for="robots_index" class="text-xs font-semibold text-slate-700">قابل ایندکس در موتورهای جستجو</label>
                         </div>
                     </div>

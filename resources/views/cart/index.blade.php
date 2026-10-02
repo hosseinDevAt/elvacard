@@ -75,7 +75,7 @@
                         <button type="submit" class="rounded bg-red-100 px-4 py-2 text-sm text-red-700 hover:bg-red-200 transition">پاک کردن سبد</button>
                     </form>
 
-                    <a href="{{ route('checkout.index') }}" wire:navigate class="rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">
+                    <a href="{{ route('checkout.index') }}" wire:navigate class="rounded-xl bg-[#ffde5b] px-5 py-2.5 text-sm font-bold text-[#010619] shadow-sm shadow-[#ffde5b]/20 hover:bg-[#f5d347] transition">
                         ادامه به تسویه حساب
                     </a>
                 </div>

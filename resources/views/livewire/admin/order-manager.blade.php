@@ -5,10 +5,10 @@
             <p class="text-xs text-slate-500 mt-1">مشاهده سفارشات، بررسی فیش‌های واریزی و تغییر وضعیت سفارش</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <button wire:click="$set('statusFilter', null)" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ !$statusFilter ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">همه</button>
+            <button wire:click="$set('statusFilter', null)" class="px-4 py-2 rounded-xl text-xs font-bold transition {{ !$statusFilter ? 'bg-[#010619] text-[#ffde5b] shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">همه</button>
             <button wire:click="$set('statusFilter', 'pending')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'pending' ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در انتظار پرداخت</button>
-            <button wire:click="$set('statusFilter', 'confirmed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'confirmed' ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تایید شده</button>
-            <button wire:click="$set('statusFilter', 'production')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'production' || $statusFilter === 'processing' ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در حال تولید</button>
+            <button wire:click="$set('statusFilter', 'confirmed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'confirmed' ? 'bg-sky-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تایید شده</button>
+            <button wire:click="$set('statusFilter', 'production')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'production' || $statusFilter === 'processing' ? 'bg-slate-800 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در حال تولید</button>
             <button wire:click="$set('statusFilter', 'completed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'completed' ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تکمیل شده</button>
             <button wire:click="$set('statusFilter', 'cancelled')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'cancelled' ? 'bg-rose-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">لغو شده</button>
         </div>
@@ -40,7 +40,7 @@
                             <h2 class="text-base font-extrabold text-slate-900">سفارش</h2>
                             <span class="font-mono text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200 select-all" dir="ltr">{{ $selectedOrder->reference }}</span>
                             @if ($selectedOrder->user)
-                                <span class="text-[11px] bg-indigo-50 text-indigo-700 font-medium px-2 py-0.5 rounded-full border border-indigo-100">کاربر ثبت‌نام‌شده</span>
+                                <span class="text-[11px] bg-[#ffde5b]/25 text-[#664d00] font-bold px-2 py-0.5 rounded-full border border-[#ffde5b]/60">کاربر ثبت‌نام‌شده</span>
                             @else
                                 <span class="text-[11px] bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full border border-slate-200">سفارش مهمان</span>
                             @endif
@@ -84,7 +84,7 @@
                     @if (!empty($modalTargets))
                         <div class="mt-2">
                             <select wire:change="updateStatus({{ $selectedOrder->id }}, $event.target.value)"
-                                class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-100">
+                                class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition focus:border-[#010619] focus:outline-none focus:ring-1 focus:ring-[#ffde5b]/40">
                                 <option value="">تغییر وضعیت سفارش...</option>
                                 @foreach ($modalTargets as $target)
                                     <option value="{{ $target['value'] }}">{{ $target['label'] }}</option>
@@ -752,7 +752,7 @@
                                     <span class="text-slate-400 text-xs">—</span>
                                 @else
                                     <select wire:change="updateStatus({{ $order->id }}, $event.target.value)"
-                                        class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-100">
+                                        class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition focus:border-[#010619] focus:outline-none focus:ring-1 focus:ring-[#ffde5b]/40">
                                         <option value="">تغییر وضعیت...</option>
                                         @foreach ($targets as $target)
                                             <option value="{{ $target['value'] }}">{{ $target['label'] }}</option>

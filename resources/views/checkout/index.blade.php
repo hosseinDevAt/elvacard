@@ -93,7 +93,7 @@
                         <p class="mt-1"><span class="font-semibold">مجموع نهایی:</span> {{ number_format($cart['total_price']) }} تومان</p>
                     </div>
 
-                    <button type="submit" class="w-full rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">ثبت سفارش</button>
+                    <button type="submit" class="w-full rounded-xl bg-[#ffde5b] px-4 py-3 text-sm font-bold text-[#010619] shadow-sm shadow-[#ffde5b]/20 hover:bg-[#f5d347] transition">ثبت سفارش</button>
                 </form>
             </div>
         </div>

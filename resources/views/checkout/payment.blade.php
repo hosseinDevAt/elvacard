@@ -81,7 +81,7 @@
                             <textarea id="note" name="note" rows="3" maxlength="1000" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">{{ old('note') }}</textarea>
                         </div>
 
-                        <button type="submit" class="w-full rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">ثبت رسید</button>
+                        <button type="submit" class="w-full rounded-xl bg-[#ffde5b] px-4 py-3 text-sm font-bold text-[#010619] shadow-sm shadow-[#ffde5b]/20 hover:bg-[#f5d347] transition">ثبت رسید پرداخت</button>
                     </form>
                 @else
                     <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">

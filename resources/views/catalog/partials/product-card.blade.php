@@ -43,7 +43,7 @@
 
         <a href="{{ $product->storefrontUrl() }}"
            wire:navigate
-           class="mt-auto inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700">
+           class="mt-auto inline-flex items-center justify-center rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-[#ffde5b] hover:text-[#010619] shadow-sm">
             مشاهده و سفارش
         </a>
     </div>

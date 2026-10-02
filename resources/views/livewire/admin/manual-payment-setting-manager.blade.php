@@ -55,7 +55,7 @@
             <div class="admin-card p-6">
                 <h3 class="font-bold text-slate-900 mb-4">وضعیت فعال‌سازی</h3>
                 <div class="flex items-center gap-3">
-                    <input type="checkbox" wire:model="is_active" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    <input type="checkbox" wire:model="is_active" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]" />
                     <label for="is_active" class="text-sm font-semibold text-slate-700">پرداخت کارت‌به‌کارت در درگاه فروشگاه فعال باشد</label>
                 </div>
                 @error('is_active') <p class="admin-error">{{ $message }}</p> @enderror

@@ -1,7 +1,7 @@
 <div>
     <x-admin.page-header title="مدیریت محصولات فروشگاه" subtitle="مدیریت، دسته‌بندی و بررسی وضعیت موجودی محصولات فروشگاه">
         <x-slot:actions>
-            <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-indigo-600/20">
+            <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -94,7 +94,7 @@
                                 </ul>
                                 @if($editingId)
                                     <div class="pt-1">
-                                        <a href="{{ route('admin.product-colors', ['product' => $editingId]) }}" class="text-indigo-600 hover:text-indigo-800 font-semibold underline">مدیریت رنگ و قیمت این محصول</a>
+                                        <a href="{{ route('admin.product-colors', ['product' => $editingId]) }}" class="text-[#010619] hover:underline font-bold font-semibold underline">مدیریت رنگ و قیمت این محصول</a>
                                     </div>
                                 @endif
                             </div>
@@ -174,11 +174,11 @@
 
                 <div class="flex flex-wrap items-center gap-6">
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                         <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (نمایش در فروشگاه)</label>
                     </div>
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                         <label for="robots_index" class="text-xs font-semibold text-slate-700">قابل ایندکس در موتورهای جستجو</label>
                     </div>
                 </div>
@@ -258,7 +258,7 @@
                                     </div>
                                     <div class="flex items-end pb-2">
                                         <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                                            <input type="checkbox" wire:model="variantIsActive" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" wire:model="variantIsActive" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                                             <span>فعال (قابل فروش)</span>
                                         </label>
                                     </div>
@@ -322,7 +322,7 @@
                                                                     @endif
                                                                 </div>
                                                                 @if(! $image->is_primary)
-                                                                    <button type="button" wire:click="setPrimaryVariantImage({{ $image->id }})" class="text-[10px] text-indigo-600 hover:text-indigo-800">تعیین اصلی</button>
+                                                                    <button type="button" wire:click="setPrimaryVariantImage({{ $image->id }})" class="text-[10px] text-[#010619] hover:underline font-bold">تعیین اصلی</button>
                                                                 @endif
                                                                 <button type="button" wire:click="deleteVariantImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-rose-600 hover:text-rose-700">حذف</button>
                                                             </div>
@@ -437,7 +437,7 @@
                                 @endif
 
                                 @if($product->customization_workflow)
-                                    <a href="{{ route('admin.product-colors', ['product' => $product->id]) }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-semibold mt-1">
+                                    <a href="{{ route('admin.product-colors', ['product' => $product->id]) }}" class="inline-flex items-center gap-1 text-[#010619] hover:underline font-bold text-xs font-semibold mt-1">
                                         قیمت کارت ({{ $product->color_prices_count }})
                                     </a>
                                 @else

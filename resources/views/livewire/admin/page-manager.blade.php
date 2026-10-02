@@ -47,11 +47,11 @@
 
                 <div class="flex flex-wrap items-center gap-6">
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                         <label for="is_active" class="text-sm font-medium text-slate-700">فعال (نمایش عمومی)</label>
                     </div>
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                         <label for="robots_index" class="text-sm font-medium text-slate-700">قابل ایندکس در موتورهای جستجو</label>
                     </div>
                 </div>

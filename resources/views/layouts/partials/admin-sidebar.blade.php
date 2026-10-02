@@ -1,14 +1,10 @@
-<aside class="fixed inset-y-0 start-0 z-40 flex w-72 flex-col bg-[#0b1120] text-white transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 lg:transform-none select-none"
+<aside class="fixed inset-y-0 start-0 z-40 flex w-72 flex-col bg-[#010619] text-white transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 lg:transform-none select-none"
        :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full'">
 
-    <div class="flex items-center justify-between border-b border-slate-800/80 px-6 py-5">
+    <div class="flex items-center justify-between border-b border-[#152244] px-6 py-5">
         <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex items-center gap-3.5 group">
-            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform group-hover:scale-105">
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="5" width="20" height="14" rx="3" />
-                    <line x1="2" y1="10" x2="22" y2="10" />
-                    <circle cx="7" cy="15" r="1" fill="currentColor" />
-                </svg>
+            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ffde5b] text-[#010619] shadow-lg shadow-[#ffde5b]/20 transition-transform group-hover:scale-105">
+                <x-application-logo class="h-7 w-7 text-[#010619]" />
             </span>
             <span class="flex flex-col leading-tight">
                 <span class="text-base font-bold text-white tracking-tight">ElvaCard</span>
@@ -22,8 +18,8 @@
          data-open-groups="{{ implode(' ', $openGroups) }}">
 
         <a href="{{ route('admin.dashboard') }}" wire:navigate
-           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">
-            <x-icons.dashboard class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.dashboard') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}" />
+           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 {{ request()->routeIs('admin.dashboard') ? 'bg-[#ffde5b] text-[#010619] font-bold shadow-md shadow-[#ffde5b]/20' : 'text-slate-300 hover:bg-white/5 hover:text-[#ffde5b]' }}">
+            <x-icons.dashboard class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.dashboard') ? 'text-[#010619]' : 'text-slate-400 group-hover:text-[#ffde5b]' }}" />
             <span>داشبورد</span>
         </a>
 
@@ -37,22 +33,22 @@
                         :aria-expanded="open['{{ $section['id'] }}'] === true"
                         aria-controls="group-{{ $section['id'] }}"
                         aria-label="{{ $section['label'] }}"
-                        class="group flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ $sectionActive ? 'text-white bg-slate-800/80' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white' }}">
+                        class="group flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ $sectionActive ? 'text-white bg-white/10' : 'text-slate-300 hover:bg-white/5 hover:text-[#ffde5b]' }}">
                     <span class="flex items-center gap-3.5">
-                        <x-dynamic-component :component="'icons.'.$section['icon']" class="h-5 w-5 shrink-0 {{ $sectionActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-200' }}" />
+                        <x-dynamic-component :component="'icons.'.$section['icon']" class="h-5 w-5 shrink-0 {{ $sectionActive ? 'text-[#ffde5b]' : 'text-slate-400 group-hover:text-[#ffde5b]' }}" />
                         <span>{{ $section['label'] }}</span>
                     </span>
-                    <x-icons.chevron-down class="h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200" x-bind:class="open['{{ $section['id'] }}'] ? 'rotate-180' : ''" />
+                    <x-icons.chevron-down class="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200" x-bind:class="open['{{ $section['id'] }}'] ? 'rotate-180' : ''" />
                 </button>
                 <div id="group-{{ $section['id'] }}" x-show="open['{{ $section['id'] }}']" x-collapse.duration.200ms
-                     class="mt-1 ms-4 space-y-1 border-s border-slate-800/80 ps-3">
+                     class="mt-1 ms-4 space-y-1 border-s border-[#152244] ps-3">
                     @foreach ($section['items'] as $item)
                         @php
                             $itemActive = request()->routeIs($item['routes']);
                         @endphp
                         <a href="{{ route($item['route']) }}" wire:navigate
-                           class="group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all duration-150 {{ $itemActive ? 'bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white' }}">
-                            <x-dynamic-component :component="'icons.'.$item['icon']" class="h-4 w-4 shrink-0 {{ $itemActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}" />
+                           class="group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all duration-150 {{ $itemActive ? 'bg-[#ffde5b] text-[#010619] font-bold shadow-sm' : 'text-slate-400 hover:bg-white/5 hover:text-[#ffde5b]' }}">
+                            <x-dynamic-component :component="'icons.'.$item['icon']" class="h-4 w-4 shrink-0 {{ $itemActive ? 'text-[#010619]' : 'text-slate-400 group-hover:text-[#ffde5b]' }}" />
                             <span>{{ $item['label'] }}</span>
                         </a>
                     @endforeach
@@ -61,27 +57,27 @@
         @endforeach
 
         <a href="{{ route('admin.orders') }}" wire:navigate
-           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ request()->routeIs('admin.orders') ? 'bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/25' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">
-            <x-icons.shopping-bag class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.orders') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}" />
+           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ request()->routeIs('admin.orders') ? 'bg-[#ffde5b] text-[#010619] font-bold shadow-md shadow-[#ffde5b]/20' : 'text-slate-300 hover:bg-white/5 hover:text-[#ffde5b]' }}">
+            <x-icons.shopping-bag class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.orders') ? 'text-[#010619]' : 'text-slate-400 group-hover:text-[#ffde5b]' }}" />
             <span>سفارشات</span>
         </a>
 
         <a href="{{ route('admin.users') }}" wire:navigate
-           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ request()->routeIs('admin.users') ? 'bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/25' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">
-            <x-icons.users class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.users') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}" />
+           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ request()->routeIs('admin.users') ? 'bg-[#ffde5b] text-[#010619] font-bold shadow-md shadow-[#ffde5b]/20' : 'text-slate-300 hover:bg-white/5 hover:text-[#ffde5b]' }}">
+            <x-icons.users class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.users') ? 'text-[#010619]' : 'text-slate-400 group-hover:text-[#ffde5b]' }}" />
             <span>کاربران</span>
         </a>
 
         <a href="{{ route('admin.reports') }}" wire:navigate
-           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ request()->routeIs('admin.reports') ? 'bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-600/25' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">
-            <x-icons.chart-bar class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.reports') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}" />
+           class="group relative flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 {{ request()->routeIs('admin.reports') ? 'bg-[#ffde5b] text-[#010619] font-bold shadow-md shadow-[#ffde5b]/20' : 'text-slate-300 hover:bg-white/5 hover:text-[#ffde5b]' }}">
+            <x-icons.chart-bar class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.reports') ? 'text-[#010619]' : 'text-slate-400 group-hover:text-[#ffde5b]' }}" />
             <span>گزارش‌ها</span>
         </a>
     </nav>
 
-    <div class="border-t border-slate-800/80 p-4">
-        <div class="flex items-center gap-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/60 p-3">
-            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 text-sm font-bold text-white shadow-sm">
+    <div class="border-t border-[#152244] p-4">
+        <div class="flex items-center gap-3.5 rounded-2xl bg-[#070e24] border border-[#152244] p-3">
+            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ffde5b] text-sm font-bold text-[#010619] shadow-sm">
                 {{ mb_substr(auth()->user()?->name ?? 'ا', 0, 1) }}
             </span>
             <div class="min-w-0 flex flex-col">
@@ -90,7 +86,7 @@
             </div>
         </div>
         <div class="mt-2.5 flex items-center justify-between gap-2 px-1">
-            <a href="{{ route('home') }}" class="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition py-1.5 px-2 rounded-lg hover:bg-slate-800/50">
+            <a href="{{ route('home') }}" class="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#ffde5b] transition py-1.5 px-2 rounded-lg hover:bg-white/5">
                 <x-icons.globe class="h-4 w-4" />
                 <span>بازگشت به سایت</span>
             </a>

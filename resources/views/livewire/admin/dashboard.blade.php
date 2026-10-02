@@ -75,11 +75,11 @@
                     <p class="mt-2 text-2xl font-extrabold text-slate-900 tracking-tight">
                         {{ number_format($totalOrders) }} <span class="text-sm font-semibold text-slate-600">سفارش</span>
                     </p>
-                    <p class="mt-1.5 text-[11px] font-medium text-indigo-600">
+                    <p class="mt-1.5 text-[11px] font-medium text-slate-500">
                         سفارشات ثبت شده در سیستم
                     </p>
                 </div>
-                <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#ffde5b]/20 text-[#664d00]">
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
                         <line x1="3" y1="6" x2="21" y2="6" />
@@ -119,7 +119,7 @@
                 <h3 class="text-base font-bold text-slate-900">نمودار درآمد هفتگی</h3>
                 <div class="flex items-center gap-3 text-xs text-slate-500">
                     <span class="inline-flex items-center gap-1.5">
-                        <span class="h-2.5 w-2.5 rounded-full bg-indigo-600"></span>
+                        <span class="h-2.5 w-2.5 rounded-full bg-[#ffde5b]"></span>
                         <span>درآمد مثبت</span>
                     </span>
                     <span class="inline-flex items-center gap-1.5">
@@ -135,7 +135,7 @@
                     <div class="flex flex-col items-center flex-1 h-full justify-end group">
                         <div @class([
                                 'w-full max-w-[42px] rounded-t-xl transition-all duration-300 shadow-sm',
-                                'bg-indigo-500 group-hover:bg-indigo-600' => $day['value'] >= 0,
+                                'bg-[#ffde5b] group-hover:bg-[#f5d347]' => $day['value'] >= 0,
                                 'bg-rose-400 group-hover:bg-rose-500' => $day['value'] < 0,
                             ])
                              style="height: {{ $day['height'] }}%;"
@@ -156,7 +156,7 @@
             <div>
                 <div class="flex items-center justify-between mb-5">
                     <h3 class="text-base font-bold text-slate-900">سفارشات اخیر</h3>
-                    <a href="{{ route('admin.orders') }}" wire:navigate class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                    <a href="{{ route('admin.orders') }}" wire:navigate class="text-xs font-bold text-[#010619] hover:underline transition">
                         مشاهده همه
                     </a>
                 </div>

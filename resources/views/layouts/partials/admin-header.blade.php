@@ -19,7 +19,7 @@
                     </svg>
                     @if($sectionLabel)
                         <span class="text-slate-300">/</span>
-                        <span class="text-slate-500">{{ $sectionLabel }}</span>
+                        <span class="text-slate-600 font-semibold">{{ $sectionLabel }}</span>
                     @endif
                 </div>
                 <h1 class="truncate text-xl font-extrabold tracking-tight text-slate-900">{{ $title ?? 'پنل ادمین' }}</h1>
@@ -30,7 +30,7 @@
         <div class="flex shrink-0 items-center gap-3">
             <!-- Date Badge -->
             <span class="hidden items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3.5 py-2 text-xs font-semibold text-slate-600 md:inline-flex">
-                <x-icons.sparkles class="h-3.5 w-3.5 text-indigo-500" />
+                <x-icons.sparkles class="h-3.5 w-3.5 text-[#e0b719]" />
                 {{ jalali_now('date') }}
             </span>
         </div>

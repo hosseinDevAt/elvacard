@@ -1,7 +1,12 @@
 @props([
     'title' => null,
     'subtitle' => null,
+    'description' => null,
 ])
+
+@php
+    $desc = $subtitle ?? $description;
+@endphp
 
 <div {{ $attributes->merge(['class' => 'mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4']) }}>
     <div>
@@ -11,8 +16,8 @@
             {{ $slot }}
         @endif
 
-        @if ($subtitle)
-            <p class="text-xs text-slate-500 mt-1">{{ $subtitle }}</p>
+        @if ($desc)
+            <p class="text-xs text-slate-500 mt-1">{{ $desc }}</p>
         @endif
     </div>
 

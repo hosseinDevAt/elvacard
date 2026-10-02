@@ -114,7 +114,7 @@
                     </div>
                     <div class="flex items-end pb-2">
                         <div class="flex items-center gap-2">
-                            <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                             <label for="is_active" class="text-sm font-medium text-slate-700">فعال</label>
                         </div>
                     </div>
@@ -172,7 +172,7 @@
                             <td class="admin-td text-slate-600 text-xs">{{ $item->menu?->name ?? '—' }}</td>
                             <td class="admin-td">
                                 @if($item->route_key)
-                                    <span class="admin-badge admin-badge-indigo text-xs">سیستمی</span>
+                                    <span class="admin-badge admin-badge-navy text-xs">سیستمی</span>
                                 @else
                                     <span class="admin-badge admin-badge-neutral text-xs" dir="ltr">{{ $item->item_type->value }}</span>
                                 @endif
@@ -186,7 +186,7 @@
                             <td class="admin-td text-center">
                                 @if($item->route_key)
                                     {{-- System items are managed via the appearance page --}}
-                                    <a href="{{ route('admin.appearance') }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold">مدیریت در ظاهر سایت</a>
+                                    <a href="{{ route('admin.appearance') }}" class="text-[#010619] hover:underline font-bold text-xs font-semibold">مدیریت در ظاهر سایت</a>
                                 @else
                                     <div class="inline-flex items-center gap-1.5">
                                         <button wire:click="edit({{ $item->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>

@@ -19,6 +19,8 @@ export default {
         'hover:bg-accent-500', 'hover:bg-accent-600',
         'from-primary-100', 'border-primary-200',
         'border-accent-500', 'focus:ring-accent-200', 'focus:border-accent-500',
+        'bg-[#ffde5b]', 'bg-[#010619]', 'text-[#010619]', 'text-[#ffde5b]',
+        'border-[#ffde5b]', 'border-[#010619]',
     ],
 
     theme: {
@@ -27,6 +29,19 @@ export default {
                 sans: ['Vazirmatn', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                brand: {
+                    yellow: '#ffde5b',
+                    'yellow-hover': '#f5d347',
+                    'yellow-active': '#e8c535',
+                    'yellow-light': '#fffbe6',
+                    'yellow-subtle': '#fff9db',
+                    navy: '#010619',
+                    'navy-hover': '#08112e',
+                    'navy-card': '#070e24',
+                    'navy-border': '#152244',
+                    'navy-muted': '#1f2e54',
+                    'navy-light': '#2a3b66',
+                },
                 navy: {
                     50:  '#f1f5fa',
                     100: '#dde6f2',
@@ -37,18 +52,18 @@ export default {
                     600: '#2c4270',
                     700: '#22325a',
                     800: '#182444',
-                    900: '#101a33',
-                    950: '#0a1224',
+                    900: '#010619', // Brand Dark Navy
+                    950: '#010410',
                 },
                 primary: {
-                    50:  '#f2f4f8',
-                    100: '#e3e7f0',
-                    200: '#c3cbdc',
-                    300: '#97a3c2',
-                    400: '#5f7099',
-                    500: '#2b3d68',
-                    600: '#00071a',
-                    700: '#000512',
+                    50:  '#f2f5fb',
+                    100: '#e1e8f5',
+                    200: '#c2d1ec',
+                    300: '#94b1de',
+                    400: '#5f8bcc',
+                    500: '#3866ab',
+                    600: '#010619', // Brand Dark Navy
+                    700: '#010514',
                     800: '#00030c',
                     900: '#000206',
                 },
@@ -58,7 +73,7 @@ export default {
                     200: '#fff0a8',
                     300: '#ffe77c',
                     400: '#ffe05e',
-                    500: '#ffde5b',
+                    500: '#ffde5b', // Brand Primary Yellow
                     600: '#ecc63a',
                     700: '#cfa71c',
                 },

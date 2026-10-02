@@ -51,7 +51,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50/50">
                             @forelse($products as $product)
                                 <label class="flex items-center gap-2 text-sm text-slate-700 py-1 hover:text-slate-900 cursor-pointer">
-                                    <input type="checkbox" wire:model="productIds" value="{{ $product->id }}" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <input type="checkbox" wire:model="productIds" value="{{ $product->id }}" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                                     {{ $product->name }}
                                 </label>
                             @empty
@@ -66,7 +66,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50/50">
                             @forelse($designs as $design)
                                 <label class="flex items-center gap-2 text-sm text-slate-700 py-1 hover:text-slate-900 cursor-pointer">
-                                    <input type="checkbox" wire:model="designIds" value="{{ $design->id }}" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <input type="checkbox" wire:model="designIds" value="{{ $design->id }}" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                                     {{ $design->name }}
                                 </label>
                             @empty
@@ -121,7 +121,7 @@
 
                 <div class="flex flex-wrap items-center gap-4 pt-2">
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                         <label for="is_active" class="text-sm font-medium text-slate-700">فعال</label>
                     </div>
                     <div class="flex items-center gap-2 ms-auto">
