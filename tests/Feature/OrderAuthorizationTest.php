@@ -14,18 +14,17 @@ class OrderAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function createOrderForUser(User $user): Order
+    private function createOrder(): Order
     {
         $order = new Order;
         foreach ([
-            'user_id' => $user->id,
-            'customer_name' => $user->displayName(),
-            'customer_phone' => $user->phone,
+            'customer_name' => 'مشتری تست',
+            'customer_phone' => '09120000000',
             'shipping_address' => 'تهران، خیابان ولیعصر',
             'shipping_postal_code' => '1234567890',
             'total_price' => 100000,
-            'token' => 'tok-'.Str::random(32),
-            'reference' => 'REF-'.Str::random(6),
+            'token' => Str::random(40),
+            'reference' => 'ORD-2026-000001',
             'status' => OrderStatusEnum::PENDING,
             'payment_status' => PaymentStatusEnum::UNPAID,
         ] as $key => $value) {
@@ -37,57 +36,29 @@ class OrderAuthorizationTest extends TestCase
         return $order;
     }
 
-    public function test_customer_can_view_their_own_order(): void
+    public function test_customer_order_history_routes_are_no_longer_available(): void
     {
-        $user = User::factory()->create();
-        $order = $this->createOrderForUser($user);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->createOrder();
 
-        $response = $this
-            ->actingAs($user)
-            ->get(route('orders.show', $order));
-
-        $response->assertOk();
-        $response->assertSee($order->reference);
-        $response->assertSee($order->shipping_address);
-        $response->assertSee($order->shipping_postal_code);
+        $this->actingAs($admin)->get('/orders')->assertNotFound();
+        $this->actingAs($admin)->get('/orders/'.$order->id)->assertNotFound();
+        $this->get('/orders')->assertNotFound();
     }
 
-    public function test_customer_cannot_view_another_customers_order(): void
+    public function test_order_tracking_cannot_be_accessed_with_invalid_token(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $order = $this->createOrderForUser($owner);
-
-        $response = $this
-            ->actingAs($other)
-            ->get(route('orders.show', $order));
-
-        $response->assertForbidden();
+        $this->post(route('order-tracking.check'), ['token' => Str::random(40)])
+            ->assertSessionHasErrors(['token']);
     }
 
-    public function test_guest_is_redirected_to_login_for_order_history(): void
+    public function test_order_tracking_succeeds_with_valid_token(): void
     {
-        $user = User::factory()->create();
-        $order = $this->createOrderForUser($user);
+        $order = $this->createOrder();
 
-        $this->get(route('orders.show', $order))
-            ->assertRedirect();
-    }
-
-    public function test_orders_index_only_shows_the_authed_users_orders(): void
-    {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-
-        $owned = $this->createOrderForUser($owner);
-        $foreign = $this->createOrderForUser($other);
-
-        $response = $this
-            ->actingAs($owner)
-            ->get(route('orders.index'));
-
-        $response->assertOk();
-        $response->assertSee($owned->reference);
-        $response->assertDontSee($foreign->reference);
+        $this->post(route('order-tracking.check'), ['token' => $order->token])
+            ->assertOk()
+            ->assertSee($order->reference)
+            ->assertDontSee($order->customer_phone);
     }
 }

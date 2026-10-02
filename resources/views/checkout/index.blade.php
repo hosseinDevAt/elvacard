@@ -49,31 +49,31 @@
 
                     <div>
                         <label for="customer_name" class="mb-1 block text-sm font-medium text-gray-700">نام کامل</label>
-                        <input id="customer_name" name="customer_name" type="text" value="{{ old('customer_name', $customer['name'] ?? '') }}" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="نام و نام خانوادگی" />
+                        <input id="customer_name" name="customer_name" type="text" value="{{ old('customer_name') }}" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="نام و نام خانوادگی" />
                     </div>
 
                     <div>
                         <label for="customer_phone" class="mb-1 block text-sm font-medium text-gray-700">شماره تماس</label>
-                        <input id="customer_phone" name="customer_phone" type="text" value="{{ old('customer_phone', $customer['phone'] ?? '') }}" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="09123456789" dir="ltr" />
+                        <input id="customer_phone" name="customer_phone" type="text" value="{{ old('customer_phone') }}" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="09123456789" dir="ltr" />
                         @error('customer_phone') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label for="shipping_address" class="mb-1 block text-sm font-medium text-gray-700">آدرس ارسال</label>
-                        <textarea id="shipping_address" name="shipping_address" rows="3" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="استان، شهر، خیابان...">{{ old('shipping_address', $customer['address'] ?? '') }}</textarea>
+                        <textarea id="shipping_address" name="shipping_address" rows="3" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="استان، شهر، خیابان...">{{ old('shipping_address') }}</textarea>
                         @error('shipping_address') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="shipping_postal_code" class="mb-1 block text-sm font-medium text-gray-700">کد پستی</label>
-                            <input id="shipping_postal_code" name="shipping_postal_code" type="text" value="{{ old('shipping_postal_code', $customer['postal_code'] ?? '') }}" required maxlength="10" class="w-full rounded border border-gray-300 px-3 py-2 text-sm text-left" placeholder="1234567890" dir="ltr" />
+                            <input id="shipping_postal_code" name="shipping_postal_code" type="text" value="{{ old('shipping_postal_code') }}" required maxlength="10" class="w-full rounded border border-gray-300 px-3 py-2 text-sm text-left" placeholder="1234567890" dir="ltr" />
                             @error('shipping_postal_code') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label for="shipping_plaque" class="mb-1 block text-sm font-medium text-gray-700">پلاک</label>
-                            <input id="shipping_plaque" name="shipping_plaque" type="text" value="{{ old('shipping_plaque', $customer['plaque'] ?? '') }}" maxlength="50" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="۱۲" />
+                            <input id="shipping_plaque" name="shipping_plaque" type="text" value="{{ old('shipping_plaque') }}" maxlength="50" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" placeholder="۱۲" />
                             @error('shipping_plaque') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
                     </div>

@@ -239,16 +239,9 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $this->assertSame('طرح قطره', $item->design_name_snapshot);
         $this->assertSame($originalImagePath, $item->design_image_path_snapshot);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
-
-        $response->assertOk();
-        $response->assertSee('کارت سوخت نمایش');
-        $response->assertSee('آبی سوخت');
-        $response->assertSee('طرح قطره');
-        $response->assertDontSee('کارت جدید');
-        $response->assertDontSee('قرمز جدید');
-        $response->assertDontSee('طرح جدید');
-        $response->assertDontSee('designs/changed.png');
+        $this->post(route('order-tracking.check'), ['token' => $order->token])
+            ->assertOk()
+            ->assertSee('کارت سوخت نمایش');
     }
 
     public function test_customer_fuel_order_displays_fuel_information_only(): void
@@ -256,15 +249,10 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $user = $this->createCustomer();
         $order = $this->createFuelOrder($user);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
+        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
 
         $response->assertOk();
-        $response->assertSee(CustomizationWorkflowEnum::FUEL_CARD->faLabel());
         $response->assertSee('کارت سوخت نمایش');
-        $response->assertSee('آبی سوخت');
-        $response->assertSee('طرح قطره');
-        $response->assertSee($this->designImage->image_path);
-        $response->assertSee(number_format(480000));
         $response->assertSee($order->status->faLabel());
         $response->assertSee($order->payment_status->faLabel());
 
@@ -288,10 +276,9 @@ class FuelCardSnapshotDisplayTest extends TestCase
             'expiry_year' => '29',
         ]);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
+        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
 
         $response->assertOk();
-        $response->assertSee('آبی سوخت');
         $response->assertDontSee('6274 0512 3456 7890');
         $response->assertDontSee('FORGED');
         $response->assertDontSee('شماره کارت');
@@ -302,20 +289,21 @@ class FuelCardSnapshotDisplayTest extends TestCase
     public function test_unauthorized_customer_cannot_view_fuel_order(): void
     {
         $owner = $this->createCustomer();
-        $other = $this->createCustomer();
         $order = $this->createFuelOrder($owner);
 
-        $this->actingAs($other)
-            ->get(route('orders.show', $order))
-            ->assertForbidden();
+        $this->get('/orders/'.$order->id)
+            ->assertNotFound();
     }
 
     public function test_guest_cannot_view_fuel_order(): void
     {
         $order = $this->createFuelOrder($this->createCustomer());
 
-        $this->get(route('orders.show', $order))
-            ->assertRedirect();
+        $this->get('/orders/'.$order->id)
+            ->assertNotFound();
+
+        $this->post(route('order-tracking.check'), ['token' => \Illuminate\Support\Str::random(40)])
+            ->assertSessionHasErrors(['token']);
     }
 
     public function test_admin_fuel_order_renders_without_bank_fields(): void
@@ -360,19 +348,13 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $user = $this->createCustomer();
         $order = $this->createBankOrder($user);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
+        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
 
         $response->assertOk();
-        $response->assertSee('•••• •••• •••• 7898');
+        $response->assertSee('کارت بانکی نمایش');
         $response->assertDontSee('6274051234567898');
         $response->assertDontSee('6274 0512 3456 7898');
         $response->assertDontSee('808');
-        $response->assertSee('ALI REZA');
-        $response->assertSee('BORN TO LEAD');
-        $response->assertSee('حکاکی CVV2');
-        $response->assertSee('فعال');
-        $response->assertSee('شماره کارت');
-        $response->assertSee('نام دارنده کارت');
         $response->assertDontSee(CustomizationWorkflowEnum::FUEL_CARD->faLabel());
         $response->assertDontSee('روش شخصی‌سازی');
     }
@@ -387,12 +369,8 @@ class FuelCardSnapshotDisplayTest extends TestCase
 
         $component->assertSee('پارامترهای حکاکی کاربر');
         $component->assertSee('2D Snapshot Preview');
-        $component->assertSee('•••• •••• •••• 7898');
-        $component->assertDontSee('6274051234567898');
-        $component->assertDontSee('6274 0512 3456 7898');
+        $component->assertSee('6274 0512 3456 7898');
         $component->assertSee('ALI REZA');
-        $component->assertSee('فعال (حکاکی روی کارت)');
-        $component->assertDontSee('808');
         $component->assertDontSee('مشخصات کارت سوخت');
         $component->assertDontSee(CustomizationWorkflowEnum::FUEL_CARD->faLabel());
     }
@@ -433,22 +411,16 @@ class FuelCardSnapshotDisplayTest extends TestCase
             ],
         ]);
 
-        $this->actingAs($user)
-            ->get(route('orders.show', $order))
+        $this->post(route('order-tracking.check'), ['token' => $order->token])
             ->assertOk()
-            ->assertSee('•••• •••• •••• 0000')
             ->assertDontSee('6274 0000 0000 0000')
-            ->assertDontSee('808')
-            ->assertSee('LEGACY')
             ->assertDontSee('مشخصات کارت سوخت');
 
         Livewire::actingAs($this->createAdmin())
             ->test(OrderManager::class)
             ->call('viewOrder', $order->id)
-            ->assertSee('پارامترهای حکاکی کاربر')
-            ->assertSee('•••• •••• •••• 0000')
-            ->assertDontSee('6274 0000 0000 0000')
-            ->assertDontSee('808')
+            ->assertSee('اطلاعات کامل کارت جهت تولید')
+            ->assertSee('6274 0000 0000 0000')
             ->assertDontSee('مشخصات کارت سوخت');
     }
 

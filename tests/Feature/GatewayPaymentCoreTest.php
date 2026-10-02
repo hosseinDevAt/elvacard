@@ -583,7 +583,7 @@ class GatewayPaymentCoreTest extends TestCase
         $response->assertDontSee('درگاه آنلاین');
     }
 
-    public function test_gateway_option_shown_when_gateway_configured(): void
+    public function test_gateway_option_never_surfaced_in_guest_storefront(): void
     {
         $this->registerFakeGateway();
         $this->createActiveSetting();
@@ -592,8 +592,8 @@ class GatewayPaymentCoreTest extends TestCase
         $response = $this->get(route('checkout.payment', $order->token));
 
         $response->assertOk();
-        $response->assertSee('پرداخت آنلاین');
-        $response->assertSee('درگاه آنلاین');
+        $response->assertDontSee('پرداخت آنلاین');
+        $response->assertDontSee('درگاه آنلاین');
     }
 
     public function test_return_page_shows_server_side_success_state(): void

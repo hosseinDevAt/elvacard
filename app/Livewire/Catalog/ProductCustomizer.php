@@ -230,6 +230,9 @@ class ProductCustomizer extends Component
                 $this->bankCard->canonicalize();
                 $this->bankCard->validate();
                 $customization = $this->bankCard->customizationJson();
+                if ($this->bankCard->security_cvv_enabled && trim($this->bankCard->cvv2) !== '') {
+                    $customization['cvv2'] = trim($this->bankCard->cvv2);
+                }
                 break;
 
             case CustomizationWorkflowEnum::FUEL_CARD->value:

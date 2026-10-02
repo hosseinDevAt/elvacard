@@ -287,22 +287,24 @@ class PaymentRetryTest extends TestCase
         $this->assertDatabaseCount('payments', 1);
     }
 
-    public function test_guest_cannot_retry_guest_order(): void
+    public function test_guest_can_retry_guest_order(): void
     {
         Storage::fake('local');
         $order = $this->createOrder();
         $this->createFailedPayment($order);
         $this->createActiveSetting();
 
-        $response = $this->post(route('checkout.payment.store', $order), $this->retryPayload());
-
-        $response->assertSessionHasErrors('payment');
-        $this->assertDatabaseCount('payments', 1);
-
         $page = $this->get(route('checkout.payment', $order));
         $page->assertOk();
-        $page->assertDontSee('name="receipt_image"');
-        $page->assertSee('پرداخت مجدد برای سفارش مهمان امکان‌پذیر نیست');
+        $page->assertSee('name="receipt_image"', false);
+
+        $response = $this->post(route('checkout.payment.store', $order), $this->retryPayload());
+
+        $response->assertRedirect(route('checkout.success', $order->token));
+        $this->assertDatabaseCount('payments', 2);
+
+        $latestPayment = $order->payments()->latest('id')->first();
+        $this->assertSame(PaymentStatus::PENDING_REVIEW, $latestPayment->status);
     }
 
     public function test_retry_blocked_when_manual_payment_setting_is_inactive(): void
@@ -573,7 +575,7 @@ class PaymentRetryTest extends TestCase
         $response->assertSee('name="receipt_image"', false);
     }
 
-    public function test_orders_show_page_shows_retry_link_for_failed_payment(): void
+    public function test_orders_show_route_is_retired_and_returns_404(): void
     {
         Storage::fake('local');
         $customer = $this->createCustomer();
@@ -581,27 +583,21 @@ class PaymentRetryTest extends TestCase
         $this->createFailedPayment($order);
         $this->createActiveSetting();
 
-        $response = $this->actingAs($customer)
-            ->get(route('orders.show', $order));
-
-        $response->assertOk();
-        $response->assertSee('تاریخچه پرداخت');
-        $response->assertSee('پرداخت مجدد');
-        $response->assertSee(route('checkout.payment', $order->token));
+        $this->actingAs($customer)
+            ->get('/orders/'.$order->id)
+            ->assertNotFound();
     }
 
-    public function test_orders_show_page_hides_retry_link_for_active_payment(): void
+    public function test_orders_index_route_is_retired_and_returns_404(): void
     {
         Storage::fake('local');
         $customer = $this->createCustomer();
         $order = $this->createCustomerOrder($customer);
         $this->createPendingReviewPayment($order);
 
-        $response = $this->actingAs($customer)
-            ->get(route('orders.show', $order));
-
-        $response->assertOk();
-        $response->assertDontSee('پرداخت مجدد');
+        $this->actingAs($customer)
+            ->get('/orders')
+            ->assertNotFound();
     }
 
     public function test_success_page_shows_retry_link_for_failed_payment(): void

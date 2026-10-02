@@ -118,9 +118,22 @@ class BankCardCustomization
             }
         }
 
-        // CVV2 is strictly used for live validation and discarded immediately - never persisted
         if (isset($rawCustomization['security_cvv_enabled'])) {
             $sanitizedCustomization['security_cvv_enabled'] = (bool) $rawCustomization['security_cvv_enabled'];
+        }
+
+        // Encrypt CVV2 at rest using Laravel Crypt only if security_cvv_enabled is true
+        if (! empty($sanitizedCustomization['security_cvv_enabled'])) {
+            if (! empty($rawCustomization['cvv2']) && (is_string($rawCustomization['cvv2']) || is_numeric($rawCustomization['cvv2']))) {
+                $cvvStr = strtr(trim((string) $rawCustomization['cvv2']), self::DIGIT_MAP);
+                if (preg_match('/^\d{3,4}$/', $cvvStr) === 1) {
+                    $sanitizedCustomization['cvv_encrypted'] = Crypt::encryptString($cvvStr);
+                }
+            } elseif (! empty($rawCustomization['cvv_encrypted']) && is_string($rawCustomization['cvv_encrypted'])) {
+                $sanitizedCustomization['cvv_encrypted'] = $rawCustomization['cvv_encrypted'];
+            } elseif (! empty($rawCustomization['cvv2_encrypted']) && is_string($rawCustomization['cvv2_encrypted'])) {
+                $sanitizedCustomization['cvv_encrypted'] = $rawCustomization['cvv2_encrypted'];
+            }
         }
 
         if (isset($rawCustomization['security_expiry_enabled'])) {

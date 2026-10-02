@@ -183,22 +183,9 @@
                     </div>
                 @endif
 
-                @if ($sp->status === \App\Enums\PaymentStatus::SUCCESS)
-                    @php
-                        // Authoritative refundable balance from RefundConstraintService;
-                        // never recomputed in the view.
-                        $spRefundable = $refundableByPaymentId[(int) $sp->id] ?? 0;
-                    @endphp
-                    @if ($spRefundable > 0)
-                        <div class="mt-4 flex items-center gap-2">
-                            <button wire:click="refundPayment({{ $sp->id }}, {{ $spRefundable }})" wire:confirm="آیا از بازگشت {{ number_format($spRefundable) }} تومان مطمئن هستید؟" class="px-4 py-2 rounded-lg text-sm bg-amber-600 hover:bg-amber-700 text-white">بازگشت وجه ({{ number_format($spRefundable) }} تومان)</button>
-                        </div>
-                    @endif
-                @endif
-
-                {{-- Refund rows --}}
+                {{-- Refund rows (Historical records) --}}
                 <div class="mt-6 border-t border-gray-100 pt-4">
-                    <h3 class="font-bold text-gray-900 text-sm mb-3">بازگشت‌های وجه</h3>
+                    <h3 class="font-bold text-gray-900 text-sm mb-3">سوابق بازگشت وجه</h3>
 
                     @forelse ($spRefunds as $refund)
                         <div class="rounded-xl border border-gray-200 p-4 mb-3 text-sm">
@@ -209,9 +196,6 @@
                                     </span>
                                     <span class="font-mono font-bold text-amber-600">{{ number_format($refund->amount) }} تومان</span>
                                 </div>
-                                @if (in_array($refund->status, [\App\Enums\RefundStatus::PENDING, \App\Enums\RefundStatus::REVIEW], true))
-                                    <button wire:click="reconcileReviewRefund({{ $refund->id }})" wire:confirm="آیا از بررسی مجدد نتیجه این بازگشت وجه مطمئن هستید؟" class="px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-700 text-white">بررسی مجدد نتیجه</button>
-                                @endif
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-xs">
@@ -379,14 +363,6 @@
                                         <button wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success admin-btn-sm">تایید</button>
                                         <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger admin-btn-sm">رد</button>
                                     </div>
-                                @endif
-                                @if ($payment->status === \App\Enums\PaymentStatus::SUCCESS)
-                                    @php
-                                        $refundable = $refundableByPaymentId[(int) $payment->id] ?? 0;
-                                    @endphp
-                                    @if ($refundable > 0)
-                                        <button wire:click="refundPayment({{ $payment->id }}, {{ $refundable }})" wire:confirm="آیا از بازگشت {{ number_format($refundable) }} تومان مطمئن هستید؟" class="px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-700 text-white">بازگشت وجه</button>
-                                    @endif
                                 @endif
                             </div>
                         </td>

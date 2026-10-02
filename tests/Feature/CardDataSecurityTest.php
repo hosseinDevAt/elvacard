@@ -126,7 +126,7 @@ class CardDataSecurityTest extends TestCase
             'shipping_address' => 'تهران، خیابان ولیعصر',
             'shipping_postal_code' => '1234567890',
             'total_price' => 500000,
-            'token' => 'tok-'.Str::random(32),
+            'token' => Str::random(40),
             'reference' => 'REF-'.Str::random(6),
             'status' => OrderStatusEnum::PENDING,
             'payment_status' => PaymentStatusEnum::UNPAID,
@@ -267,18 +267,15 @@ class CardDataSecurityTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs($this->customer)->get(route('orders.show', $item->order_id));
+        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
 
         $response->assertOk();
-        $response->assertSee('•••• •••• •••• 7898');
-        $response->assertSee('حکاکی CVV2');
-        $response->assertSee('فعال');
         $response->assertDontSee(self::VALID_PAN);
         $response->assertDontSee('6274 0512 3456 7898');
         $response->assertDontSee(self::CVV2_VALUE);
     }
 
-    public function test_admin_order_view_renders_masked_pan_and_never_renders_full_pan_or_cvv2(): void
+    public function test_admin_order_view_renders_full_card_production_information_for_authorized_admin(): void
     {
         $order = $this->createOrderForUser($this->customer);
 
@@ -301,6 +298,9 @@ class CardDataSecurityTest extends TestCase
                 'card_holder_name' => 'HOSSEIN REZAIE',
                 'security_cvv_enabled' => true,
                 'cvv2' => self::CVV2_VALUE,
+                'security_expiry_enabled' => true,
+                'expiry_month' => '12',
+                'expiry_year' => '28',
             ],
         ]);
 
@@ -310,11 +310,50 @@ class CardDataSecurityTest extends TestCase
 
         $html = $component->html();
 
-        $this->assertStringContainsString('•••• •••• •••• 7898', $html);
-        $this->assertStringContainsString('CVV2: •••', $html);
-        $this->assertStringNotContainsString(self::VALID_PAN, $html);
-        $this->assertStringNotContainsString('6274 0512 3456 7898', $html);
-        $this->assertStringNotContainsString(self::CVV2_VALUE, $html);
+        // Admin order view reveals full unmasked production parameters for physical manufacturing
+        $this->assertStringContainsString('6274 0512 3456 7898', $html);
+        $this->assertStringContainsString(self::CVV2_VALUE, $html);
+        $this->assertStringContainsString('12/28', $html);
+        $this->assertStringContainsString('HOSSEIN REZAIE', $html);
+        $this->assertStringContainsString($this->color->name, $html);
+        $this->assertStringContainsString($this->design->name, $html);
+        $this->assertStringNotContainsString('•••', $html);
+    }
+
+    public function test_admin_can_update_order_status_to_production_and_completed(): void
+    {
+        $order = $this->createOrderForUser($this->customer);
+        $order->status = OrderStatusEnum::CONFIRMED;
+        $order->payment_status = PaymentStatusEnum::PAID;
+        $order->save();
+
+        Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('updateStatus', $order->id, 'production')
+            ->assertHasNoErrors();
+
+        $this->assertSame(OrderStatusEnum::PRODUCTION, $order->fresh()->status);
+
+        Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('updateStatus', $order->id, 'completed')
+            ->assertHasNoErrors();
+
+        $this->assertSame(OrderStatusEnum::COMPLETED, $order->fresh()->status);
+    }
+
+    public function test_admin_invalid_order_status_is_rejected(): void
+    {
+        $order = $this->createOrderForUser($this->customer);
+        $order->status = OrderStatusEnum::CONFIRMED;
+        $order->save();
+
+        Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('updateStatus', $order->id, 'invalid_status_xyz')
+            ->assertSee('وضعیت نامعتبر است');
+
+        $this->assertSame(OrderStatusEnum::CONFIRMED, $order->fresh()->status);
     }
 
     public function test_order_item_saving_hook_automatically_secures_plaintext_card_data(): void
@@ -414,8 +453,423 @@ class CardDataSecurityTest extends TestCase
         $otherCustomer = User::factory()->create();
         $order = $this->createOrderForUser($otherCustomer);
 
-        $response = $this->actingAs($this->customer)->get(route('orders.show', $order));
+        $response = $this->get('/orders/'.$order->id);
+        $response->assertNotFound();
 
-        $response->assertForbidden();
+        $this->post(route('order-tracking.check'), ['token' => \Illuminate\Support\Str::random(40)])
+            ->assertSessionHasErrors(['token']);
+    }
+
+    public function test_admin_order_view_renders_unmasked_cvv2_when_provided_by_customer(): void
+    {
+        // 1. Customer places card order with CVV2 via designer pipeline
+        Livewire::test(ProductCustomizer::class, ['productId' => $this->bankProduct->id])
+            ->call('toggleCvv')
+            ->set('bankCard.card_number', self::VALID_PAN)
+            ->set('bankCard.cvv2', self::CVV2_VALUE)
+            ->call('addToCart')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('cart.index'));
+
+        $cart = app(CartService::class)->getCart();
+        $customization = $cart['items'][0]['customization_json'];
+        $this->assertArrayHasKey('cvv_encrypted', $customization);
+        $this->assertSame(self::CVV2_VALUE, Crypt::decryptString($customization['cvv_encrypted']));
+
+        $order = app(CartService::class)->createDraftOrder([
+            'customer_name' => 'تست CVV2',
+            'customer_phone' => '09121111111',
+        ], $this->customer->id);
+
+        $item = OrderItem::where('order_id', $order->id)->firstOrFail();
+        $this->assertSame(self::CVV2_VALUE, $item->getDecryptedCvv());
+
+        // 2. Admin inspects order details
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        // Admin sees full unmasked CVV2 and card details
+        $this->assertStringContainsString(self::CVV2_VALUE, $html);
+        $this->assertStringContainsString('6274 0512 3456 7898', $html);
+        $this->assertStringNotContainsString('•••', $html);
+        $this->assertStringNotContainsString('***', $html);
+    }
+
+    public function test_admin_order_view_renders_not_registered_for_cvv2_when_omitted(): void
+    {
+        $order = $this->createOrderForUser($this->customer);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->bankProduct->id,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD,
+            'product_name_snapshot' => $this->bankProduct->name,
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => $this->color->name,
+            'design_id' => $this->design->id,
+            'design_name_snapshot' => $this->design->name,
+            'unit_price_snapshot' => 500000,
+            'quantity' => 1,
+            'final_price' => 500000,
+            'customization_json' => [
+                'card_number' => self::VALID_PAN,
+                'card_holder_name' => 'NO CVV USER',
+                'security_cvv_enabled' => false,
+            ],
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        // Admin sees "ثبت نشده" for CVV2 and no fake placeholder
+        $this->assertStringContainsString('ثبت نشده', $html);
+        $this->assertStringNotContainsString('•••', $html);
+        $this->assertStringNotContainsString('***', $html);
+    }
+
+    public function test_ordinary_store_product_order_renders_without_card_manufacturing_fields_or_previews(): void
+    {
+        $standardProduct = Product::create([
+            'name' => 'برچسب محافظ متالیک',
+            'slug' => 'metallic-card-skin',
+            'type' => ProductTypeEnum::STANDARD->value,
+            'customization_workflow' => null,
+            'is_active' => true,
+            'is_purchasable' => true,
+            'base_price' => 120000,
+        ]);
+
+        $order = $this->createOrderForUser($this->customer);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $standardProduct->id,
+            'customization_workflow' => null,
+            'product_name_snapshot' => $standardProduct->name,
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => $this->color->name,
+            'unit_price_snapshot' => 120000,
+            'quantity' => 2,
+            'final_price' => 240000,
+            'customization_json' => [
+                'material' => 'مات ضدخش',
+            ],
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        // 1. Shows ordinary product commerce details
+        $this->assertStringContainsString('برچسب محافظ متالیک', $html);
+        $this->assertStringContainsString('محصول فروشگاهی', $html);
+        $this->assertStringContainsString('120,000', $html);
+        $this->assertStringContainsString('240,000', $html);
+        $this->assertStringContainsString('material', $html);
+        $this->assertStringContainsString('مات ضدخش', $html);
+
+        // 2. Strictly DOES NOT show card manufacturing workspace or previews
+        $this->assertStringNotContainsString('پارامترهای حکاکی کاربر', $html);
+        $this->assertStringNotContainsString('شماره کامل کارت (PAN)', $html);
+        $this->assertStringNotContainsString('کد امنیتی CVV2', $html);
+        $this->assertStringNotContainsString('2D Snapshot Preview', $html);
+        $this->assertStringNotContainsString('CR-80 Production Preview', $html);
+        $this->assertStringNotContainsString('مشخصات کارت سوخت', $html);
+    }
+
+    public function test_mixed_order_renders_custom_card_and_ordinary_product_by_their_respective_types(): void
+    {
+        $standardProduct = Product::create([
+            'name' => 'کیف چرمی کارت',
+            'slug' => 'leather-card-holder',
+            'type' => ProductTypeEnum::STANDARD->value,
+            'customization_workflow' => null,
+            'is_active' => true,
+            'is_purchasable' => true,
+            'base_price' => 250000,
+        ]);
+
+        $order = $this->createOrderForUser($this->customer);
+
+        // Item 1: Custom Bank Card
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->bankProduct->id,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD,
+            'product_name_snapshot' => $this->bankProduct->name,
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => $this->color->name,
+            'design_id' => $this->design->id,
+            'design_name_snapshot' => $this->design->name,
+            'unit_price_snapshot' => 500000,
+            'quantity' => 1,
+            'final_price' => 500000,
+            'customization_json' => [
+                'card_number' => self::VALID_PAN,
+                'card_holder_name' => 'MIXED ORDER USER',
+                'security_cvv_enabled' => true,
+                'cvv2' => '999',
+            ],
+        ]);
+
+        // Item 2: Ordinary Store Product
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $standardProduct->id,
+            'customization_workflow' => null,
+            'product_name_snapshot' => $standardProduct->name,
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => $this->color->name,
+            'unit_price_snapshot' => 250000,
+            'quantity' => 1,
+            'final_price' => 250000,
+            'customization_json' => [],
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        // 1. Custom Bank Card elements exist
+        $this->assertStringContainsString('6274 0512 3456 7898', $html);
+        $this->assertStringContainsString('MIXED ORDER USER', $html);
+        $this->assertStringContainsString('999', $html);
+        $this->assertStringContainsString('پارامترهای حکاکی کاربر', $html);
+        $this->assertStringContainsString('2D Snapshot Preview', $html);
+
+        // 2. Ordinary Product elements exist
+        $this->assertStringContainsString('کیف چرمی کارت', $html);
+        $this->assertStringContainsString('محصول فروشگاهی', $html);
+        $this->assertStringContainsString('250,000', $html);
+    }
+
+    public function test_admin_order_view_renders_bank_card_with_distinct_material_color_design_and_design_color(): void
+    {
+        $order = $this->createOrderForUser($this->customer);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->bankProduct->id,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD,
+            'product_name_snapshot' => 'کارت بانکی متالیک',
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => 'مشکی مات',
+            'design_id' => $this->design->id,
+            'design_name_snapshot' => 'طرح کوروش کبیر',
+            'unit_price_snapshot' => 600000,
+            'quantity' => 1,
+            'final_price' => 600000,
+            'customization_json' => [
+                'card_number' => self::VALID_PAN,
+                'card_holder_name' => 'CYRUS THE GREAT',
+                'design_color_name' => 'طلایی براق',
+                'design_color_hex' => '#FFD700',
+            ],
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        // 1. Material color, selected design, and design color are distinctly rendered
+        $this->assertStringContainsString('رنگ متریال کارت:', $html);
+        $this->assertStringContainsString('مشکی مات', $html);
+        $this->assertStringContainsString('طرح انتخابی:', $html);
+        $this->assertStringContainsString('طرح کوروش کبیر', $html);
+        $this->assertStringContainsString('رنگ طرح انتخابی:', $html);
+        $this->assertStringContainsString('طلایی براق', $html);
+        $this->assertStringContainsString('#FFD700', $html);
+
+        // 2. Material color and design color are not conflated
+        $this->assertNotSame('مشکی مات', 'طلایی براق');
+    }
+
+    public function test_admin_order_view_renders_fuel_card_with_distinct_material_color_design_and_design_color(): void
+    {
+        $fuelProduct = Product::create([
+            'name' => 'کارت سوخت هوشمند فلزی',
+            'slug' => 'smart-fuel-card-metal',
+            'type' => ProductTypeEnum::FUEL->value,
+            'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD->value,
+            'is_active' => true,
+            'is_purchasable' => true,
+            'base_price' => 700000,
+        ]);
+
+        $order = $this->createOrderForUser($this->customer);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $fuelProduct->id,
+            'customization_workflow' => CustomizationWorkflowEnum::FUEL_CARD,
+            'product_name_snapshot' => $fuelProduct->name,
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => 'آبی تیتانیوم',
+            'design_id' => $this->design->id,
+            'design_name_snapshot' => 'طرح شرکت ملی نفت',
+            'unit_price_snapshot' => 700000,
+            'quantity' => 1,
+            'final_price' => 700000,
+            'customization_json' => [
+                'chip_info' => 'small',
+                'vin' => 'IRAN1234567890123',
+                'owner_name' => 'رضا حسینی',
+                'design_color_name' => 'نقره‌ای لیزری',
+                'design_color_hex' => '#C0C0C0',
+            ],
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        $this->assertStringContainsString('مشخصات کارت سوخت:', $html);
+        $this->assertStringContainsString('رنگ متریال کارت:', $html);
+        $this->assertStringContainsString('آبی تیتانیوم', $html);
+        $this->assertStringContainsString('طرح انتخابی:', $html);
+        $this->assertStringContainsString('طرح شرکت ملی نفت', $html);
+        $this->assertStringContainsString('رنگ طرح انتخابی:', $html);
+        $this->assertStringContainsString('نقره‌ای لیزری', $html);
+        $this->assertStringContainsString('#C0C0C0', $html);
+    }
+
+    public function test_admin_order_view_renders_not_registered_for_historical_order_without_design_color(): void
+    {
+        $order = $this->createOrderForUser($this->customer);
+
+        $item = OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->bankProduct->id,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD,
+            'product_name_snapshot' => $this->bankProduct->name,
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => 'طلایی کلاسیک',
+            'design_id' => $this->design->id,
+            'design_name_snapshot' => 'طرح قدیمی',
+            'unit_price_snapshot' => 500000,
+            'quantity' => 1,
+            'final_price' => 500000,
+            'customization_json' => [
+                'card_number' => self::VALID_PAN,
+                'card_holder_name' => 'OLD CUSTOMER',
+            ],
+        ]);
+
+        $this->assertNull($item->getDesignColorName());
+        $this->assertNull($item->getDesignColorHex());
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        // Must show neutral "ثبت نشده" and NOT fall back to catalog or material color
+        $this->assertStringContainsString('رنگ طرح انتخابی:', $html);
+        $this->assertStringContainsString('ثبت نشده', $html);
+    }
+
+    public function test_historical_order_preserves_design_color_snapshot_after_catalog_mutation(): void
+    {
+        $order = $this->createOrderForUser($this->customer);
+
+        $item = OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->bankProduct->id,
+            'customization_workflow' => CustomizationWorkflowEnum::BANK_CARD,
+            'product_name_snapshot' => $this->bankProduct->name,
+            'color_id' => $this->color->id,
+            'color_name_snapshot' => 'رزگلد',
+            'design_id' => $this->design->id,
+            'design_name_snapshot' => 'طرح اصیل',
+            'design_image_id' => $this->designImage->id,
+            'unit_price_snapshot' => 500000,
+            'quantity' => 1,
+            'final_price' => 500000,
+            'customization_json' => [
+                'card_number' => self::VALID_PAN,
+                'design_color_name' => 'طلایی سلطنتی',
+                'design_color_hex' => '#FFD700',
+            ],
+        ]);
+
+        // Catalog is mutated / renamed / deleted after the order
+        $this->color->update(['name' => 'سبز لجنی', 'hex_code' => '#003300']);
+        $this->designImage->delete();
+
+        $component = Livewire::actingAs($this->admin)
+            ->test(OrderManager::class)
+            ->call('viewOrder', $order->id);
+
+        $html = $component->html();
+
+        // Order view still strictly shows snapshot design color and hex
+        $this->assertStringContainsString('طلایی سلطنتی', $html);
+        $this->assertStringContainsString('#FFD700', $html);
+        $this->assertStringNotContainsString('سبز لجنی', $html);
+    }
+
+    public function test_cart_service_captures_and_persists_design_color_snapshot_at_checkout(): void
+    {
+        $laserColor = Color::create([
+            'name' => 'سفید کریستالی',
+            'code_hex' => '#F8F9FA',
+            'is_active' => true,
+        ]);
+
+        $customImage = DesignImage::create([
+            'design_id' => $this->design->id,
+            'color_id' => $laserColor->id,
+            'image_path' => 'designs/crystal-white.png',
+            'is_active' => true,
+        ]);
+
+        DesignColorCompatibility::create([
+            'design_image_id' => $customImage->id,
+            'card_color_id' => $this->color->id,
+            'is_allowed' => true,
+        ]);
+
+        $cartService = app(CartService::class);
+        $cartService->clear();
+
+        $cartService->addItem([
+            'product_id' => $this->bankProduct->id,
+            'color_id' => $this->color->id,
+            'design_id' => $this->design->id,
+            'design_image_id' => $customImage->id,
+            'quantity' => 1,
+            'customization_json' => [
+                'card_number' => self::VALID_PAN,
+                'card_holder_name' => 'ORDER PIPELINE TEST',
+            ],
+        ]);
+
+        $order = $cartService->createDraftOrder([
+            'customer_name' => 'تست‌کننده',
+            'customer_phone' => '09123456789',
+        ], $this->customer->id);
+
+        $persistedItem = $order->items()->first();
+
+        $this->assertNotNull($persistedItem);
+        $this->assertSame('سفید کریستالی', $persistedItem->customization_json['design_color_name'] ?? null);
+        $this->assertSame('#F8F9FA', $persistedItem->customization_json['design_color_hex'] ?? null);
+        $this->assertSame('سفید کریستالی', $persistedItem->getDesignColorName());
+        $this->assertSame('#F8F9FA', $persistedItem->getDesignColorHex());
     }
 }

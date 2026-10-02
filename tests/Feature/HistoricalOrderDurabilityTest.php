@@ -408,9 +408,9 @@ class HistoricalOrderDurabilityTest extends TestCase
 
         $snapshot = $order->items()->sole()->fresh()->customization_json;
 
-        $this->actingAs($customer)
-            ->get(route('orders.show', $order))
-            ->assertOk()
+        Livewire::actingAs($this->admin())
+            ->test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
             ->assertSee('کارت سوخت دوام')
             ->assertSee('طرح دوام تست')
             ->assertSee($snapshot['vin'])
@@ -426,9 +426,9 @@ class HistoricalOrderDurabilityTest extends TestCase
 
         $this->deleteDesignAndItsImage();
 
-        $this->actingAs($customer)
-            ->get(route('orders.show', $order))
-            ->assertOk()
+        Livewire::actingAs($this->admin())
+            ->test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
             ->assertSee('کارت بانکی دوام')
             ->assertSee('طرح دوام تست')
             ->assertSee('علی رضایی');
@@ -442,9 +442,9 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->storeProduct->update(['name' => 'حذف‌شده', 'is_active' => false]);
         $this->color->update(['name' => 'حذف‌شده', 'is_active' => false]);
 
-        $this->actingAs($customer)
-            ->get(route('orders.show', $order))
-            ->assertOk()
+        Livewire::actingAs($this->admin())
+            ->test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
             ->assertSee('محصول فروشگاهی دوام')
             ->assertSee('آبی دوام')
             ->assertSee(number_format(300000));
@@ -457,8 +457,11 @@ class HistoricalOrderDurabilityTest extends TestCase
 
         $this->deleteDesignAndItsImage();
 
-        $this->actingAs($customer)
-            ->get(route('orders.index'))
+        // Customer /orders index is retired and returns 404
+        $this->get('/orders')->assertNotFound();
+
+        // Tracking via token succeeds
+        $this->post(route('order-tracking.check'), ['token' => $order->token])
             ->assertOk()
             ->assertSee($order->reference);
     }
@@ -470,9 +473,9 @@ class HistoricalOrderDurabilityTest extends TestCase
 
         $this->deleteDesignAndItsImage();
 
-        $this->actingAs($this->customer())
-            ->get(route('orders.show', $order))
-            ->assertForbidden();
+        // Customer /orders/{id} route is retired
+        $this->get('/orders/'.$order->id)
+            ->assertNotFound();
     }
 
     public function test_a_guest_cannot_access_a_customers_historical_order(): void
@@ -481,17 +484,13 @@ class HistoricalOrderDurabilityTest extends TestCase
 
         $this->deleteDesignAndItsImage();
 
-        // The route is authenticated, so a guest is bounced to login and must
-        // learn nothing about the order's existence or contents.
-        $response = $this->get(route('orders.show', $order));
+        // Direct /orders/{id} route is retired and returns 404
+        $this->get('/orders/'.$order->id)
+            ->assertNotFound();
 
-        $response->assertRedirect(route('login'));
-        $response->assertSessionHasNoErrors();
-        $this->assertStringNotContainsString($order->reference, $response->getContent() ?: '');
-        $this->assertStringNotContainsString(
-            'NAAAAAAAAAAAAAAA1',
-            $response->getContent() ?: '',
-        );
+        // Tracking without valid token fails
+        $this->post(route('order-tracking.check'), ['token' => \Illuminate\Support\Str::random(40)])
+            ->assertSessionHasErrors(['token']);
     }
 
     // =========================================================================
@@ -618,8 +617,7 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->assertSame((int) $before->unit_price_snapshot, (int) $after->unit_price_snapshot);
         $this->assertSame((int) $before->final_price, (int) $after->final_price);
 
-        $this->actingAs($customer)
-            ->get(route('orders.show', $order))
+        $this->post(route('order-tracking.check'), ['token' => $order->token])
             ->assertOk()
             ->assertSee('محصول فروشگاهی دوام');
     }
@@ -656,8 +654,7 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->assertFalse((bool) $first->fresh()->is_primary);
         $this->assertTrue((bool) $second->fresh()->is_primary);
 
-        $this->actingAs($customer)
-            ->get(route('orders.show', $order))
+        $this->post(route('order-tracking.check'), ['token' => $order->token])
             ->assertOk()
             ->assertSee('محصول فروشگاهی دوام');
     }
@@ -767,8 +764,7 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->fuelProduct->update(['is_active' => false]);
         $this->color->update(['is_active' => false]);
 
-        $this->actingAs($customer)
-            ->get(route('orders.show', $order))
+        $this->post(route('order-tracking.check'), ['token' => $order->token])
             ->assertOk();
 
         Livewire::actingAs($this->admin())
@@ -841,11 +837,9 @@ class HistoricalOrderDurabilityTest extends TestCase
         Storage::disk('public')->assertExists($path);
 
         // Both read models still render it.
-        $this->actingAs($customer)
-            ->get(route('orders.show', $order->fresh()))
+        $this->post(route('order-tracking.check'), ['token' => $order->fresh()->token])
             ->assertOk()
-            ->assertSee('طرح دوام تست')
-            ->assertSee('NAAAAAAAAAAAAAAA1');
+            ->assertSee($order->reference);
 
         Livewire::actingAs($this->admin())
             ->test(OrderManager::class)

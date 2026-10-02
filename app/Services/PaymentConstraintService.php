@@ -24,6 +24,7 @@ class PaymentConstraintService
     private const PAYABLE_STATUSES = [
         OrderStatusEnum::PENDING->value,
         OrderStatusEnum::CONFIRMED->value,
+        OrderStatusEnum::PRODUCTION->value,
         OrderStatusEnum::PROCESSING->value,
     ];
 

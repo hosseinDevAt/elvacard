@@ -95,7 +95,7 @@ class OrderLifecycleIntegrityTest extends TestCase
         $stateMachine = $this->adminStateMachine();
 
         $this->assertFalse($stateMachine->canTransition($order, OrderStatusEnum::CANCELLED));
-        $this->assertSame([OrderStatusEnum::PROCESSING], $stateMachine->allowedTargets($order));
+        $this->assertEquals([OrderStatusEnum::PRODUCTION, OrderStatusEnum::PROCESSING], $stateMachine->allowedTargets($order));
 
         try {
             $stateMachine->transition($order, OrderStatusEnum::CANCELLED);

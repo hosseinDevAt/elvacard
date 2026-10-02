@@ -150,24 +150,7 @@ class CheckoutAddressTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
-    public function test_checkout_prefills_address_from_the_customer_profile(): void
-    {
-        $this->addToCart($this->registerCartCatalog());
-
-        $user = User::factory()->create([
-            'address' => 'اصفهان، خیابان چهارباغ',
-            'postal_code' => '8156111111',
-            'plaque' => '۳',
-        ]);
-
-        $response = $this->actingAs($user)->get(route('checkout.index'));
-
-        $response->assertOk();
-        $response->assertSee('اصفهان، خیابان چهارباغ', false);
-        $response->assertSee('8156111111', false);
-    }
-
-    public function test_guest_checkout_has_no_profile_prefill(): void
+    public function test_guest_checkout_has_empty_inputs_by_default(): void
     {
         $this->addToCart($this->registerCartCatalog());
 

@@ -60,28 +60,7 @@
             </div>
 
             <div>
-                @if (! empty($gateways))
-                    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm mb-6">
-                        <h2 class="text-lg font-semibold text-gray-900">پرداخت آنلاین</h2>
-                        <p class="mt-1 text-sm text-gray-600">پرداخت از طریق درگاه آنلاین و تأیید خودکار.</p>
-                        <div class="mt-4 space-y-3">
-                            @foreach ($gateways as $gateway)
-                                <form method="POST" action="{{ route('checkout.payment.gateway.initiate', $order->token) }}">
-                                    @csrf
-                                    <input type="hidden" name="gateway" value="{{ $gateway }}" />
-                                    <button type="submit" class="w-full rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">پرداخت از طریق درگاه آنلاین</button>
-                                </form>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                @if ($guestRetryBlocked)
-                    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-gray-900">پرداخت مجدد</h2>
-                        <p class="mt-2 text-sm text-gray-600">پرداخت مجدد برای سفارش مهمان امکان‌پذیر نیست. لطفاً برای ادامه پرداخت با پشتیبانی تماس بگیرید یا حساب کاربری ایجاد کنید.</p>
-                    </div>
-                @elseif ($setting)
+                @if ($setting)
                     <form method="POST" action="{{ route('checkout.payment.store', $order->token) }}" enctype="multipart/form-data" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-4">
                         @csrf
                         <h2 class="text-lg font-semibold text-gray-900">ثبت رسید پرداخت</h2>

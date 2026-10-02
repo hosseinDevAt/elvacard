@@ -449,6 +449,14 @@ class FuelCardCartValidationTest extends TestCase
         );
         unset($expected['pan_encrypted'], $actual['pan_encrypted']);
 
+        if (isset($expected['cvv_encrypted'], $actual['cvv_encrypted'])) {
+            $this->assertSame(
+                Crypt::decryptString($expected['cvv_encrypted']),
+                Crypt::decryptString($actual['cvv_encrypted'])
+            );
+            unset($expected['cvv_encrypted'], $actual['cvv_encrypted']);
+        }
+
         $this->assertSame(
             $expected,
             $actual,

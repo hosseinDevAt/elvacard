@@ -162,15 +162,17 @@ class OrderSnapshotIntegrityTest extends TestCase
         $this->design->update(['name' => 'طرح عقاب', 'is_active' => false]);
         $this->product->update(['name' => 'کارت پلاستیکی', 'is_active' => false]);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
+        $admin = User::factory()->create(['role' => 'admin']);
+        $livewire = \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Livewire\Admin\OrderManager::class)
+            ->set('selectedOrderId', $order->id);
 
-        $response->assertOk();
-        $response->assertSee('کارت فلزی کلاسیک');
-        $response->assertSee('طلایی');
-        $response->assertSee('طرح شیر');
-        $response->assertDontSee('نقره‌ای');
-        $response->assertDontSee('طرح عقاب');
-        $response->assertDontSee('کارت پلاستیکی');
+        $livewire->assertSee('کارت فلزی کلاسیک');
+        $livewire->assertSee('طلایی');
+        $livewire->assertSee('طرح شیر');
+        $livewire->assertDontSee('نقره‌ای');
+        $livewire->assertDontSee('طرح عقاب');
+        $livewire->assertDontSee('کارت پلاستیکی');
     }
 
     public function test_order_detail_renders_when_catalog_records_are_missing(): void
@@ -188,13 +190,15 @@ class OrderSnapshotIntegrityTest extends TestCase
                 'design_image_id' => null,
             ]);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
+        $admin = User::factory()->create(['role' => 'admin']);
+        $livewire = \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Livewire\Admin\OrderManager::class)
+            ->set('selectedOrderId', $order->id);
 
-        $response->assertOk();
-        $response->assertSee('طلایی');
-        $response->assertSee('طرح شیر');
-        $response->assertDontSee('طرح کارت</span> '.$this->design->id);
-        $response->assertDontSee('رنگ کارت</span> '.$this->color->id);
+        $livewire->assertSee('طلایی');
+        $livewire->assertSee('طرح شیر');
+        $livewire->assertDontSee('طرح کارت</span> '.$this->design->id);
+        $livewire->assertDontSee('رنگ کارت</span> '.$this->color->id);
     }
 
     public function test_legacy_order_with_qr_and_positions_renders_without_crash(): void
@@ -234,13 +238,14 @@ class OrderSnapshotIntegrityTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
+        $admin = User::factory()->create(['role' => 'admin']);
+        $livewire = \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Livewire\Admin\OrderManager::class)
+            ->set('selectedOrderId', $order->id);
 
-        $response->assertOk();
-        $response->assertSee('•••• •••• •••• 0000');
-        $response->assertDontSee('6274 0000 0000 0000');
-        $response->assertSee('LEGACY');
-        $response->assertSee('ثبت نشده');
+        $livewire->assertSee('6274 0000 0000 0000');
+        $livewire->assertSee('LEGACY');
+        $livewire->assertSee('ثبت نشده');
     }
 
     public function test_cart_and_checkout_display_live_names_not_raw_ids(): void

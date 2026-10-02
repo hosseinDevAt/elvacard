@@ -37,25 +37,7 @@ class CheckoutController extends Controller
         return view('checkout.index', [
             'cart' => $cart,
             'submissionToken' => $submissionToken,
-            'customer' => $this->customerPrefill(),
         ]);
-    }
-
-    private function customerPrefill(): ?array
-    {
-        $user = auth()->user();
-
-        if (! $user) {
-            return null;
-        }
-
-        return [
-            'name' => $user->displayName(),
-            'phone' => $user->phone,
-            'address' => $user->address,
-            'postal_code' => $user->postal_code,
-            'plaque' => $user->plaque,
-        ];
     }
 
     public function store(Request $request): RedirectResponse
@@ -90,7 +72,7 @@ class CheckoutController extends Controller
         try {
             $order = $this->cartService->createDraftOrder(
                 $payload,
-                auth()->id(),
+                null,
                 $submissionToken,
             );
         } catch (UniqueConstraintViolationException $e) {
@@ -118,10 +100,6 @@ class CheckoutController extends Controller
             ->with('items')
             ->where('token', $token)
             ->firstOrFail();
-
-        if ($order->user_id !== null && auth()->id() !== $order->user_id) {
-            abort(403);
-        }
 
         return view('checkout.success', [
             'order' => $order,

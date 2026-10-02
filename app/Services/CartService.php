@@ -254,6 +254,22 @@ class CartService
                     $total = 0;
 
                     foreach ($validatedItems as $item) {
+                        $customization = is_array($item['customization_json'] ?? null)
+                            ? $item['customization_json']
+                            : [];
+
+                        if (($item['customization_workflow'] ?? null) === CustomizationWorkflowEnum::BANK_CARD->value) {
+                            if (! empty($item['design_image_id']) && empty($customization['design_color_name'])) {
+                                $designImage = DesignImage::query()->with('color')->find($item['design_image_id']);
+                                if ($designImage?->color) {
+                                    $customization['design_color_name'] = $designImage->color->name;
+                                    if ($designImage->color->code_hex) {
+                                        $customization['design_color_hex'] = $designImage->color->code_hex;
+                                    }
+                                }
+                            }
+                        }
+
                         OrderItem::query()->create([
                             'order_id' => $order->id,
                             'product_id' => $item['product_id'],
@@ -268,7 +284,7 @@ class CartService
                             'unit_price_snapshot' => $item['unit_price_snapshot'],
                             'quantity' => $item['quantity'],
                             'final_price' => $item['final_price'],
-                            'customization_json' => $item['customization_json'],
+                            'customization_json' => $customization,
                         ]);
 
                         $total += (int) $item['final_price'];
@@ -572,9 +588,9 @@ class CartService
             return $value;
         }
 
-        // pan_encrypted ciphertext varies per call due to random IV.
-        // Omit pan_encrypted and rely on pan_hash (blind index) for deterministic identity comparison.
-        unset($value['pan_encrypted']);
+        // pan_encrypted and cvv_encrypted ciphertext varies per call due to random IV.
+        // Omit them and rely on deterministic indexes for equality comparison.
+        unset($value['pan_encrypted'], $value['cvv_encrypted'], $value['cvv2_encrypted']);
 
         ksort($value);
 

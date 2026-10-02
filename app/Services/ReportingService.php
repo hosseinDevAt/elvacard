@@ -61,9 +61,10 @@ class ReportingService
 
         $activeCustomerCount = DB::table('orders')
             ->whereBetween('created_at', [$from, $to])
-            ->whereNotNull('user_id')
-            ->distinct('user_id')
-            ->count('user_id');
+            ->whereNotNull('customer_phone')
+            ->where('customer_phone', '!=', '')
+            ->distinct('customer_phone')
+            ->count('customer_phone');
 
         return [
             'revenue' => $revenue - $refunded,

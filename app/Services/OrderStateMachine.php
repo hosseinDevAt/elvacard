@@ -23,7 +23,12 @@ class OrderStateMachine
             OrderStatusEnum::CANCELLED->value,
         ],
         OrderStatusEnum::CONFIRMED->value => [
+            OrderStatusEnum::PRODUCTION->value,
             OrderStatusEnum::PROCESSING->value,
+            OrderStatusEnum::CANCELLED->value,
+        ],
+        OrderStatusEnum::PRODUCTION->value => [
+            OrderStatusEnum::COMPLETED->value,
             OrderStatusEnum::CANCELLED->value,
         ],
         OrderStatusEnum::PROCESSING->value => [

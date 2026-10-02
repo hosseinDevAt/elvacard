@@ -70,7 +70,7 @@
                 <p class="text-sm text-gray-700"><span class="font-semibold">مجموع سبد:</span> {{ number_format($cart['total_price']) }} تومان</p>
 
                 <div class="mt-4 flex flex-wrap items-center gap-3">
-                    <form method="POST" action="{{ route('cart.empty') }}">
+                    <form method="POST" action="{{ route('cart.empty') }}" data-confirm="آیا از پاک کردن تمام اقلام موجود در سبد خرید مطمئن هستید؟" data-confirm-title="خالی کردن سبد خرید" data-confirm-variant="warning" data-confirm-btn="بله، سبد خالی شود">
                         @csrf
                         <button type="submit" class="rounded bg-red-100 px-4 py-2 text-sm text-red-700 hover:bg-red-200 transition">پاک کردن سبد</button>
                     </form>

@@ -572,7 +572,7 @@ class FuelOrderIntegrityTest extends TestCase
         $this->assertSame('NAAAAAAAAAAAAAAA1', $item->customization_json['vin']);
         $this->assertSame('علی رضایی', $item->customization_json['owner_name']);
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
+        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
 
         $response->assertOk();
         $response->assertDontSee('کارت جدید');
@@ -907,10 +907,10 @@ class FuelOrderIntegrityTest extends TestCase
         $this->designImage->delete();
         $this->design->delete();
 
-        $response = $this->actingAs($user)->get(route('orders.show', $order));
-
-        $response->assertOk();
-        $response->assertSee('طرح سوخت تست');
+        Livewire::actingAs($this->createAdmin())
+            ->test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
+            ->assertSee('طرح سوخت تست');
     }
 
     public function test_a_paid_order_blocks_deleting_its_product(): void

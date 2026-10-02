@@ -37,7 +37,6 @@ class ManualTransferPaymentController extends Controller
             'order' => $order,
             'setting' => ManualPaymentSetting::query()->where('is_active', true)->first(),
             'lastFailedPayment' => $lastFailedPayment,
-            'guestRetryBlocked' => $lastFailedPayment !== null && $order->user_id === null,
         ]);
     }
 
@@ -71,12 +70,6 @@ class ManualTransferPaymentController extends Controller
             ->where('method', PaymentMethod::MANUAL_TRANSFER->value)
             ->where('status', PaymentStatus::FAILED->value)
             ->exists();
-
-        if ($isRetry && $order->user_id === null) {
-            Storage::disk('local')->delete($receiptPath);
-
-            return back()->withErrors(['payment' => 'پرداخت مجدد برای سفارش مهمان امکان‌پذیر نیست.']);
-        }
 
         try {
             if ($isRetry) {

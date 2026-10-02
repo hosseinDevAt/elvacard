@@ -450,7 +450,7 @@ class SecurityInfrastructureHardeningTest extends TestCase
         $blocked->forceFill(['is_active' => false])->save();
 
         $this->actingAs($blocked)
-            ->get(route('orders.index'))
+            ->get(route('home'))
             ->assertRedirect(route('login'));
 
         $this->assertGuest();
@@ -596,9 +596,13 @@ class SecurityInfrastructureHardeningTest extends TestCase
         $order = $this->placeOrder('09120000000');
         $order->forceFill(['user_id' => $owner->id])->save();
 
-        $this->actingAs($this->customer())
-            ->get(route('orders.show', $order->id))
-            ->assertForbidden();
+        // Direct /orders/{id} route is retired and returns 404
+        $this->get('/orders/'.$order->id)
+            ->assertNotFound();
+
+        // Tracking without the secret 40-char token fails
+        $this->post(route('order-tracking.check'), ['token' => Str::random(40)])
+            ->assertSessionHasErrors(['token']);
     }
 
     // =========================================================================

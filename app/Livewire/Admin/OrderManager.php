@@ -80,8 +80,8 @@ class OrderManager extends Component
 
             return;
         } catch (InvalidOrderTransitionException $e) {
-            $from = $e->from->label();
-            $to = $e->to->label();
+            $from = $e->from->faLabel();
+            $to = $e->to->faLabel();
 
             session()->flash('error', "تغییر وضعیت سفارش از «{$from}» به «{$to}» مجاز نیست.");
 
@@ -99,53 +99,6 @@ class OrderManager extends Component
     public function rejectPayment(int $paymentId, ManualPaymentReviewService $service): void
     {
         $this->reviewPayment($paymentId, $service, 'reject');
-    }
-
-    public function refundPayment(int $paymentId, int $amount, ?string $reason = null): void
-    {
-        $order = Order::find($this->selectedOrderId);
-
-        if (! $order || ! Gate::allows('updateStatus', $order)) {
-            session()->flash('error', 'شما مجاز به بازگشت وجه این سفارش نیستید');
-
-            return;
-        }
-
-        $payment = Payment::find($paymentId);
-
-        if (! $payment || (int) $payment->order_id !== (int) $order->id) {
-            session()->flash('error', 'پرداخت یافت نشد');
-
-            return;
-        }
-
-        if ($payment->status !== PaymentStatus::SUCCESS) {
-            session()->flash('error', 'تنها پرداخت‌های موفق قابل بازگشت هستند');
-
-            return;
-        }
-
-        try {
-            $refund = $payment->method === PaymentMethod::MANUAL_TRANSFER
-                ? app(ManualRefundService::class)->refund($payment, $amount, $reason)
-                : app(RefundCore::class)->processRefund($payment, $amount, $reason);
-        } catch (RefundConstraintViolationException $e) {
-            session()->flash('error', $e->getMessage());
-
-            return;
-        }
-
-        $this->flashRefundOutcome($refund);
-    }
-
-    private function flashRefundOutcome(Refund $refund): void
-    {
-        match ($refund->status) {
-            RefundStatus::COMPLETED => session()->flash('success', 'بازگشت وجه با موفقیت انجام شد.'),
-            RefundStatus::FAILED => session()->flash('error', 'بازگشت وجه ناموفق بود.'),
-            RefundStatus::REVIEW => session()->flash('error', 'نتیجه بازگشت وجه نامشخص است و برای بررسی مجدد ثبت شد.'),
-            default => session()->flash('error', 'وضعیت بازگشت وجه نامشخص است.'),
-        };
     }
 
     private function reviewPayment(int $paymentId, ManualPaymentReviewService $service, string $action): void
@@ -183,7 +136,7 @@ class OrderManager extends Component
 
     public function render(OrderStateMachine $stateMachine, RefundConstraintService $constraints)
     {
-        $query = Order::with(['user', 'items', 'payments']);
+        $query = Order::with(['user', 'items.product', 'payments']);
 
         if ($this->statusFilter !== null && $this->statusFilter !== '') {
             if (OrderStatusEnum::tryFrom($this->statusFilter)) {
@@ -196,21 +149,35 @@ class OrderManager extends Component
         $transitions = $orders->getCollection()
             ->mapWithKeys(fn (Order $order) => [
                 $order->id => collect($stateMachine->allowedTargets($order))
+                    ->unique(fn (OrderStatusEnum $status) => $status->value === 'processing' ? 'production' : $status->value)
                     ->map(fn (OrderStatusEnum $status) => [
-                        'value' => $status->value,
-                        'label' => $status->label(),
+                        'value' => $status->value === 'processing' ? 'production' : $status->value,
+                        'label' => $status->faLabel(),
                     ])
+                    ->unique('value')
                     ->values()
                     ->all(),
             ])
             ->all();
 
         $selectedOrder = $this->selectedOrderId
-            ? Order::with(['user', 'items', 'payments'])->find($this->selectedOrderId)
+            ? Order::with(['user', 'items.product', 'payments'])->find($this->selectedOrderId)
             : null;
 
         if ($this->selectedOrderId && ! $selectedOrder) {
             $this->selectedOrderId = null;
+        }
+
+        if ($selectedOrder !== null && ! isset($transitions[$selectedOrder->id])) {
+            $transitions[$selectedOrder->id] = collect($stateMachine->allowedTargets($selectedOrder))
+                ->unique(fn (OrderStatusEnum $status) => $status->value === 'processing' ? 'production' : $status->value)
+                ->map(fn (OrderStatusEnum $status) => [
+                    'value' => $status->value === 'processing' ? 'production' : $status->value,
+                    'label' => $status->faLabel(),
+                ])
+                ->unique('value')
+                ->values()
+                ->all();
         }
 
         // Same rule as the payments surface: the displayed refundable balance
