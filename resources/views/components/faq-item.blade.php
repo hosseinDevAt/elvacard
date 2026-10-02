@@ -1,18 +1,20 @@
-<div class="bg-white border border-gray-200 rounded-xl overflow-hidden" x-data="{ open: false }">
+<div class="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm transition-all duration-200" x-data="{ open: false }">
     <button type="button"
-            class="w-full px-6 py-4 text-start font-medium text-gray-900 flex items-center justify-between hover:bg-gray-50 transition"
+            class="w-full px-6 py-4 text-start font-bold text-slate-800 flex items-center justify-between hover:bg-slate-50/80 transition-colors"
             @click="open = !open"
             :aria-expanded="open.toString()"
             aria-controls="faq-answer-{{ $faq->id }}">
-        <span>{{ $faq->question }}</span>
-        <x-icons.chevron-down class="w-5 h-5 text-gray-400 ms-3 flex-shrink-0 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" />
+        <span class="text-sm sm:text-base leading-snug" :class="{ 'text-[#010619]': open }">{{ $faq->question }}</span>
+        <span class="p-1 rounded-lg transition-transform duration-200" :class="{ 'rotate-180 bg-[#ffde5b]/20 text-[#010619]': open, 'text-slate-400': !open }">
+            <x-icons.chevron-down class="w-5 h-5 shrink-0" />
+        </span>
     </button>
     <div x-show="open"
          x-collapse
          x-cloak
          id="faq-answer-{{ $faq->id }}"
-         class="px-6 pb-4 border-t border-gray-100">
-        <div class="text-gray-600 pt-4 leading-relaxed">
+         class="px-6 pb-5 border-t border-slate-100 bg-slate-50/40">
+        <div class="text-sm text-slate-600 pt-4 leading-relaxed">
             {{ $faq->answer }}
         </div>
     </div>

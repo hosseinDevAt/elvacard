@@ -21,17 +21,18 @@
 
 @if ($announcement && $announcement->title)
     <div
-        class="border-b border-gray-200 text-center py-3 px-4 sm:px-6 {{ $announcementBackground !== null ? '' : 'bg-primary-50' }} {{ $announcementText !== null ? '' : 'text-primary-900' }}"
+        class="border-b border-gray-200 text-center py-2.5 px-4 sm:px-6 {{ $announcementBackground !== null ? '' : 'bg-primary-50' }} {{ $announcementText !== null ? '' : 'text-primary-900' }}"
         @if ($announcementStyle !== '') style="{{ $announcementStyle }}" @endif
         role="alert"
     >
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm">
-            <span class="font-medium">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm">
+            <span class="inline-flex items-center gap-1.5 font-bold">
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#ffde5b] border border-amber-600 animate-pulse"></span>
                 {{ $announcement->title }}
             </span>
 
             @if ($announcement->content)
-                <span class="text-current opacity-75">
+                <span class="text-current opacity-85">
                     {{ $announcement->content }}
                 </span>
             @endif
@@ -39,7 +40,7 @@
             @if ($announcement->link)
                 <a
                     href="{{ safe_url($announcement->link) ?: '#' }}"
-                    class="underline hover:no-underline whitespace-nowrap"
+                    class="font-semibold underline hover:text-[#ffde5b] hover:no-underline whitespace-nowrap transition-colors duration-150"
                     @if (str_starts_with((string) $announcement->link, 'javascript:') || str_starts_with((string) $announcement->link, 'data:'))
                         href="#"
                     @else

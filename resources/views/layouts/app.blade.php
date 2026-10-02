@@ -24,8 +24,8 @@
 
         @livewireStyles
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100 flex flex-col">
+    <body class="font-sans antialiased text-slate-800 selection:bg-[#ffde5b] selection:text-[#010619]">
+        <div class="min-h-screen bg-[#f8fafc] flex flex-col">
             @include('layouts.announcement')
             @include('layouts.navigation')
 

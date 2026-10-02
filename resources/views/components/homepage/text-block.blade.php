@@ -24,7 +24,7 @@
         @if (isset($settings['cta_text']) && isset($settings['cta_url']))
             <div class="text-center mt-8">
                 <a href="{{ safe_url($settings['cta_url']) ?? '#' }}"
-                   class="inline-flex items-center px-8 py-3 text-base font-semibold text-white bg-primary-600 rounded-full hover:bg-primary-700 transition">
+                   class="inline-flex items-center gap-2 px-8 py-3.5 text-base font-bold text-[#010619] bg-[#ffde5b] rounded-xl hover:bg-[#f5d347] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[#ffde5b]/25">
                     {{ $settings['cta_text'] }}
                 </a>
             </div>

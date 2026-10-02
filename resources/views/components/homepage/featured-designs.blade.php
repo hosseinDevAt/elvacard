@@ -27,40 +27,44 @@
                     @php
                         $firstImage = $design->images->first();
                         $imagePath = $firstImage?->image_path;
+                        $designUrl = route('catalog.designs.index', ['category' => $design->category?->slug]) . '#design-' . $design->id;
                     @endphp
 
-                    <article class="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:border-primary-200 transition-all duration-300 group">
-                        @if ($imagePath)
-                            <a href="{{ route('catalog.designs.index', ['category' => $design->category?->slug]) . '#design-' . $design->id }}"
-                               class="block aspect-[4/3] overflow-hidden bg-gray-50">
-                                <img src="{{ asset('storage/' . $imagePath) }}"
-                                     alt="{{ $design->name }}"
-                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            </a>
-                        @else
-                            <div class="aspect-[4/3] bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                                <x-icons.image-placeholder class="text-purple-300" />
-                            </div>
-                        @endif
-
-                        <div class="p-5">
-                            <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">
-                                <a href="{{ route('catalog.designs.index', ['category' => $design->category?->slug]) . '#design-' . $design->id }}"
-                                   class="hover:text-primary-600 transition">
-                                    {{ $design->name }}
+                    <article class="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-300 transition-all duration-300 group flex flex-col justify-between hover:-translate-y-1">
+                        <div>
+                            @if ($imagePath)
+                                <a href="{{ $designUrl }}" wire:navigate
+                                   class="block aspect-[4/3] overflow-hidden rounded-xl bg-slate-50 relative">
+                                    <img src="{{ asset('storage/' . $imagePath) }}"
+                                         alt="{{ $design->name }}"
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out">
                                 </a>
-                            </h3>
-
-                            @if ($design->category)
-                                <span class="inline-block px-2 py-0.5 text-xs font-medium text-purple-700 bg-purple-100 rounded-full mb-2">
-                                    {{ $design->category->name }}
-                                </span>
+                            @else
+                                <div class="aspect-[4/3] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                                    <x-icons.image-placeholder class="text-slate-400" />
+                                </div>
                             @endif
 
-                            <a href="{{ route('catalog.designs.index', ['category' => $design->category?->slug]) . '#design-' . $design->id }}"
-                               class="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 transition">
-                                مشاهده طرح
-                                <x-icons.arrow-left class="me-1" />
+                            <div class="pt-3.5 px-1 pb-1">
+                                @if ($design->category)
+                                    <span class="inline-block px-2.5 py-0.5 text-xs font-semibold text-slate-700 bg-slate-100 rounded-full mb-1.5">
+                                        {{ $design->category->name }}
+                                    </span>
+                                @endif
+
+                                <h3 class="font-bold text-slate-900 text-sm sm:text-base mb-1.5 line-clamp-1 group-hover:text-[#010619] transition-colors">
+                                    <a href="{{ $designUrl }}" wire:navigate>
+                                        {{ $design->name }}
+                                    </a>
+                                </h3>
+                            </div>
+                        </div>
+
+                        <div class="px-1 pt-1">
+                            <a href="{{ $designUrl }}" wire:navigate
+                               class="inline-flex items-center justify-between w-full py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-[#ffde5b] text-slate-800 hover:text-[#010619] text-xs font-bold transition-all duration-200">
+                                <span>مشاهده طرح</span>
+                                <x-icons.arrow-left class="w-4 h-4" />
                             </a>
                         </div>
                     </article>

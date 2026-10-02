@@ -113,4 +113,34 @@
     .admin-empty {
         @apply px-5 py-10 text-center text-sm text-slate-400;
     }
+
+    /* Storefront Design Tokens & Component Classes */
+    .store-card {
+        @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-300 transition-all duration-300;
+    }
+
+    .btn-brand-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#ffde5b] text-[#010619] font-bold px-5 py-2.5 text-sm shadow-md shadow-[#ffde5b]/20 hover:bg-[#f5d347] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] active:scale-[0.98] transition-all duration-150;
+    }
+
+    .btn-brand-navy {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#010619] text-white hover:text-[#ffde5b] font-medium px-5 py-2.5 text-sm shadow-sm hover:bg-[#091333] focus:outline-none transition-all duration-150;
+    }
+
+    .btn-brand-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 px-5 py-2.5 text-sm font-medium transition-all duration-150;
+    }
+
+    .badge-brand {
+        @apply inline-flex items-center gap-1 rounded-full bg-[#ffde5b]/20 text-[#664d00] border border-[#ffde5b]/50 px-3 py-1 text-xs font-semibold;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

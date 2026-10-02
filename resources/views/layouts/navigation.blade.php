@@ -39,7 +39,7 @@ $siteName = site_setting('site_name', config('app.name'));
 $siteLogo = site_setting('site_logo');
 $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quantity'] ?? 0);
 ?>
-<nav x-data="{ open: false }" class="sticky top-0 z-30 bg-primary-600 border-b border-primary-700 shadow-md">
+<nav x-data="{ open: false }" class="sticky top-0 z-30 bg-[#010619]/95 backdrop-blur-md border-b border-[#152244] shadow-lg shadow-black/25">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
@@ -50,25 +50,25 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     @click="open = !open"
                     :aria-expanded="open"
                     aria-label="تغییر وضعیت منو"
-                    class="inline-flex items-center p-2 rounded-md text-white/70 hover:text-white hover:bg-white/10 focus:outline-none transition lg:hidden"
+                    class="inline-flex items-center justify-center p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 focus:outline-none transition-all duration-150 lg:hidden"
                 >
                     <x-icons.menu-toggle x-var="open" />
                 </button>
 
-                <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2 shrink-0">
+                <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2.5 shrink-0 group">
                     @if ($siteLogo)
                         <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
                     @else
-                        <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20">
+                        <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/25 group-hover:scale-105 transition-transform duration-200">
                             <x-application-logo class="h-7 w-7 text-[#010619]" />
                         </span>
                     @endif
-                    <span class="hidden sm:block text-lg font-bold text-white whitespace-nowrap">{{ $siteName }}</span>
+                    <span class="hidden sm:block text-lg font-extrabold text-white tracking-tight whitespace-nowrap">{{ $siteName }}</span>
                 </a>
             </div>
 
             <!-- Desktop Navigation Links -->
-            <div class="hidden lg:flex lg:items-center lg:gap-2">
+            <div class="hidden lg:flex lg:items-center lg:gap-1.5">
                 @foreach ($navItems as $link)
                     @if ($link->target === '_blank')
                         <x-nav-link :href="$link->url" :active="$link->active" target="{{ $link->target }}" rel="noopener noreferrer">
@@ -85,28 +85,28 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
             <!-- Desktop Search -->
             <div class="hidden lg:flex flex-1 items-center justify-center px-6">
                 <form method="GET" action="{{ route('catalog.products.index') }}" class="w-full max-w-md">
-                    <label class="relative block">
+                    <label class="relative block group">
                         <span class="sr-only">جستجو در فروشگاه</span>
                         <input
                             type="search"
                             name="search"
                             value="{{ request('search') }}"
                             placeholder="جستجو در محصولات..."
-                            class="w-full rounded-full border border-white/20 bg-white/10 py-2 ps-4 pe-10 text-sm text-white placeholder-white/60 transition focus:border-accent-400 focus:bg-white focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent-300"
+                            class="w-full rounded-xl border border-slate-700/80 bg-slate-900/60 py-2 ps-4 pe-10 text-sm text-white placeholder-slate-400 transition-all duration-200 focus:border-[#ffde5b] focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/30"
                         >
-                        <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3">
-                            <x-icons.search class="h-5 w-5 text-white/50" />
+                        <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3 text-slate-400 group-focus-within:text-[#ffde5b] transition-colors">
+                            <x-icons.search class="h-4 w-4" />
                         </span>
                     </label>
                 </form>
             </div>
 
             <!-- Cart + Auth Actions -->
-            <div class="flex items-center gap-5">
-                <a href="{{ route('cart.index') }}" wire:navigate class="relative inline-flex items-center text-white/80 hover:text-white transition" title="سبد خرید">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <a href="{{ route('cart.index') }}" wire:navigate class="relative inline-flex items-center justify-center p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-150" title="سبد خرید">
                     <x-icons.cart class="h-6 w-6" />
                     @if ($cartCount > 0)
-                        <span class="absolute -top-1.5 -end-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-1 text-[10px] font-bold leading-none text-primary-600">
+                        <span class="absolute -top-1 -end-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ffde5b] text-[#010619] px-1 text-[11px] font-extrabold leading-none shadow-sm shadow-[#ffde5b]/30">
                             {{ $cartCount }}
                         </span>
                     @endif
@@ -116,11 +116,9 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     <div class="hidden sm:block">
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white/80 bg-transparent hover:text-white focus:outline-none transition ease-in-out duration-150">
-                                    <div>{{ Auth::user()->displayName() }}</div>
-                                    <div class="ms-1">
-                                        <x-icons.dropdown-chevron />
-                                    </div>
+                                <button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-sm font-semibold rounded-xl text-white bg-white/5 hover:bg-white/10 focus:outline-none transition">
+                                    <span>{{ Auth::user()->displayName() }}</span>
+                                    <x-icons.dropdown-chevron />
                                 </button>
                             </x-slot>
 
@@ -143,7 +141,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                         </x-dropdown>
                     </div>
                 @else
-                    <a href="{{ route('order-tracking.index') }}" wire:navigate class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition">
+                    <a href="{{ route('order-tracking.index') }}" wire:navigate class="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-[#ffde5b] hover:text-[#010619] hover:border-[#ffde5b] transition-all duration-200">
                         <x-icons.search class="h-3.5 w-3.5" />
                         <span>پیگیری سفارش</span>
                     </a>
@@ -153,7 +151,17 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
     </div>
 
     <!-- Mobile / Tablet Navigation Panel -->
-    <div x-show="open" x-cloak class="border-t border-primary-800 bg-white lg:hidden">
+    <div
+        x-show="open"
+        x-cloak
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 -translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 -translate-y-2"
+        class="border-t border-[#152244] bg-[#010619] lg:hidden shadow-2xl"
+    >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-4">
             <form method="GET" action="{{ route('catalog.products.index') }}">
                 <label class="relative block">
@@ -163,10 +171,10 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                         name="search"
                         value="{{ request('search') }}"
                         placeholder="جستجو در محصولات..."
-                        class="w-full rounded-full border border-white/20 bg-white/10 py-2 ps-4 pe-10 text-sm text-white placeholder-white/60 transition focus:border-accent-400 focus:bg-white focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent-300"
+                        class="w-full rounded-xl border border-slate-700/80 bg-slate-900/80 py-2.5 ps-4 pe-10 text-sm text-white placeholder-slate-400 focus:border-[#ffde5b] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/30"
                     >
-                    <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3">
-                        <x-icons.search class="h-5 w-5 text-white/50" />
+                    <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3 text-slate-400">
+                        <x-icons.search class="h-4 w-4" />
                     </span>
                 </label>
             </form>
@@ -199,9 +207,16 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                 </div>
             @endif
 
-            <div class="pt-2 border-t border-gray-100 space-y-1">
+            <div class="pt-3 border-t border-[#152244] space-y-1">
                 <x-responsive-nav-link :href="route('cart.index')" wire:navigate @click="open = false">
-                    سبد خرید @if ($cartCount > 0)({{ $cartCount }})@endif
+                    <span class="flex items-center justify-between w-full">
+                        <span>سبد خرید</span>
+                        @if ($cartCount > 0)
+                            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ffde5b] text-[#010619] px-1.5 text-xs font-bold">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </span>
                 </x-responsive-nav-link>
 
                 <x-responsive-nav-link :href="route('order-tracking.index')" wire:navigate @click="open = false">
@@ -217,7 +232,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     <div class="pt-2">
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="block w-full ps-3 pe-4 py-2 border-s-4 border-transparent text-start text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300 focus:outline-none transition duration-150 ease-in-out">
+                            <button type="submit" class="block w-full ps-3 pe-4 py-2 border-s-4 border-transparent text-start text-base font-medium text-slate-400 hover:text-white hover:bg-white/5 focus:outline-none transition duration-150">
                                 خروج
                             </button>
                         </form>

@@ -47,9 +47,9 @@
 
                                 @if (($banner['cta_text'] ?? false) && ($banner['cta_url'] ?? false))
                                     <a href="{{ safe_url($banner['cta_url']) ?? route('catalog.products.index') }}"
-                                       class="inline-flex items-center rounded-full bg-white px-6 py-3 text-lg font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100 sm:px-8 sm:py-4">
-                                        {{ $banner['cta_text'] }}
-                                        <x-icons.arrow-left class="me-0 ms-2 h-5 w-5" />
+                                       class="inline-flex items-center gap-2 rounded-xl bg-[#ffde5b] px-7 py-3 text-base sm:text-lg font-extrabold text-[#010619] shadow-lg shadow-[#ffde5b]/30 hover:bg-[#f5d347] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                                        <span>{{ $banner['cta_text'] }}</span>
+                                        <x-icons.arrow-left class="h-5 w-5" />
                                     </a>
                                 @endif
                             </div>
@@ -60,11 +60,11 @@
 
             @if ($banners->count() > 1)
                 <button type="button" @click="prev()" :aria-label="'بنر قبلی'"
-                        class="absolute start-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white backdrop-blur-sm transition hover:bg-white/30">
+                        class="absolute start-4 top-1/2 z-20 -translate-y-1/2 rounded-2xl bg-black/30 p-2.5 text-white backdrop-blur-md border border-white/10 transition hover:bg-black/50 hover:scale-105 active:scale-95">
                     <x-icons.chevron-left />
                 </button>
                 <button type="button" @click="next()" :aria-label="'بنر بعدی'"
-                        class="absolute end-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white backdrop-blur-sm transition hover:bg-white/30">
+                        class="absolute end-4 top-1/2 z-20 -translate-y-1/2 rounded-2xl bg-black/30 p-2.5 text-white backdrop-blur-md border border-white/10 transition hover:bg-black/50 hover:scale-105 active:scale-95">
                     <x-icons.chevron-right />
                 </button>
                 <div class="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2">
@@ -73,7 +73,7 @@
                                 @click="go(i - 1)"
                                 :aria-label="'برو به بنر ' + i"
                                 class="h-2.5 rounded-full transition-all duration-300"
-                                :class="slide === i - 1 ? 'w-8 bg-white' : 'w-2.5 bg-white/40 hover:bg-white/70'">
+                                :class="slide === i - 1 ? 'w-8 bg-[#ffde5b]' : 'w-2.5 bg-white/40 hover:bg-white/70'">
                         </button>
                     </template>
                 </div>
