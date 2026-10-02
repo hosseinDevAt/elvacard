@@ -83,12 +83,12 @@
                 <button
                     type="button"
                     x-show="cell"
-                    :disabled="cell.disabled"
+                    :disabled="!cell || cell.disabled"
                     x-on:click="cell && !cell.disabled && pickDay(viewYear, viewMonth, cell.day)"
                     class="h-8 rounded-lg text-xs font-medium transition disabled:opacity-30 disabled:cursor-not-allowed"
-                    :class="cell.selected
+                    :class="(cell && cell.selected)
                         ? 'bg-[#ffde5b] text-[#010619] font-bold shadow-sm'
-                        : (cell.isToday ? 'ring-1 ring-[#010619] text-[#010619] font-bold hover:bg-[#ffde5b]/20' : 'hover:bg-slate-100 text-slate-800')"
+                        : ((cell && cell.isToday) ? 'ring-1 ring-[#010619] text-[#010619] font-bold hover:bg-[#ffde5b]/20' : 'hover:bg-slate-100 text-slate-800')"
                     x-text="cell ? toPd(cell.day) : ''"
                 ></button>
             </template>

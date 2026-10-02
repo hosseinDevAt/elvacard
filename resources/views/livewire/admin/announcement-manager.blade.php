@@ -1,7 +1,7 @@
 <div>
     <x-admin.page-header title="اطلاعیه‌ها و نوار اعلانات" subtitle="مدیریت بنرهای اعلاناتی، متون هشدار و اطلاع‌رسانی بالای سایت">
         <x-slot:actions>
-            <button wire:click="$set('showForm', true)" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25">
+            <button type="button" wire:click="$set('showForm', true)" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -109,8 +109,8 @@
                             <td class="admin-td text-slate-500 text-xs">{{ $announcement->end_date ? jalali_date($announcement->end_date, 'datetime') : '—' }}</td>
                             <td class="admin-td text-center">
                                 <div class="inline-flex items-center gap-1.5">
-                                    <button wire:click="edit({{ $announcement->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
-                                    <button wire:click="delete({{ $announcement->id }})" wire:confirm="آیا از حذف این اطلاعیه مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
+                                    <button type="button" wire:click="edit({{ $announcement->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                                    <button type="button" wire:click="delete({{ $announcement->id }})" wire:confirm="آیا از حذف این اطلاعیه مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
                                 </div>
                             </td>
                         </tr>

@@ -4,7 +4,7 @@
         description="ایجاد، ویرایش و مدیریت صفحات ایستا، متنی، راهنماها و قوانین سایت"
     >
         <x-slot:actions>
-            <button wire:click="$set('showForm', true)" class="admin-btn admin-btn-primary">
+            <button type="button" wire:click="$set('showForm', true)" class="admin-btn admin-btn-primary">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -125,8 +125,8 @@
                             </td>
                             <td class="admin-td text-center">
                                 <div class="inline-flex items-center gap-1.5">
-                                    <button wire:click="edit({{ $page->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
-                                    <button wire:click="delete({{ $page->id }})" wire:confirm="آیا از حذف این صفحه مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
+                                    <button type="button" wire:click="edit({{ $page->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                                    <button type="button" wire:click="delete({{ $page->id }})" wire:confirm="آیا از حذف این صفحه مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
                                 </div>
                             </td>
                         </tr>

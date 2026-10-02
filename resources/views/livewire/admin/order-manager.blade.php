@@ -5,12 +5,12 @@
             <p class="text-xs text-slate-500 mt-1">مشاهده سفارشات، بررسی فیش‌های واریزی و تغییر وضعیت سفارش</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <button wire:click="$set('statusFilter', null)" class="px-4 py-2 rounded-xl text-xs font-bold transition {{ !$statusFilter ? 'bg-[#010619] text-[#ffde5b] shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">همه</button>
-            <button wire:click="$set('statusFilter', 'pending')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'pending' ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در انتظار پرداخت</button>
-            <button wire:click="$set('statusFilter', 'confirmed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'confirmed' ? 'bg-sky-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تایید شده</button>
-            <button wire:click="$set('statusFilter', 'production')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'production' || $statusFilter === 'processing' ? 'bg-slate-800 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در حال تولید</button>
-            <button wire:click="$set('statusFilter', 'completed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'completed' ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تکمیل شده</button>
-            <button wire:click="$set('statusFilter', 'cancelled')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'cancelled' ? 'bg-rose-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">لغو شده</button>
+            <button type="button" wire:click="$set('statusFilter', null)" class="px-4 py-2 rounded-xl text-xs font-bold transition {{ !$statusFilter ? 'bg-[#010619] text-[#ffde5b] shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">همه</button>
+            <button type="button" wire:click="$set('statusFilter', 'pending')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'pending' ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در انتظار پرداخت</button>
+            <button type="button" wire:click="$set('statusFilter', 'confirmed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'confirmed' ? 'bg-sky-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تایید شده</button>
+            <button type="button" wire:click="$set('statusFilter', 'production')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'production' || $statusFilter === 'processing' ? 'bg-slate-800 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">در حال تولید</button>
+            <button type="button" wire:click="$set('statusFilter', 'completed')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'completed' ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">تکمیل شده</button>
+            <button type="button" wire:click="$set('statusFilter', 'cancelled')" class="px-4 py-2 rounded-xl text-xs font-semibold transition {{ $statusFilter === 'cancelled' ? 'bg-rose-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">لغو شده</button>
         </div>
     </div>
 
@@ -676,8 +676,8 @@
 
                         @if ($payment->status === \App\Enums\PaymentStatus::PENDING_REVIEW && $payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER)
                             <div class="mt-4 flex items-center gap-2">
-                                <button wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success">تایید پرداخت</button>
-                                <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger">رد پرداخت</button>
+                                <button type="button" wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success">تایید پرداخت</button>
+                                <button type="button" wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger">رد پرداخت</button>
                             </div>
                         @endif
                     </div>
@@ -742,7 +742,7 @@
                             </td>
                             <td class="admin-td text-slate-400 text-xs">{{ jalali_relative($order->created_at) }}</td>
                             <td class="admin-td text-center">
-                                <button wire:click="viewOrder({{ $order->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
+                                <button type="button" wire:click="viewOrder({{ $order->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
                                     جزئیات
                                 </button>
                             </td>

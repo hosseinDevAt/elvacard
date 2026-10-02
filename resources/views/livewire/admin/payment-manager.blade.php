@@ -1,6 +1,6 @@
 <div>
     <div class="mb-6 flex items-center justify-end gap-4">
-        <button wire:click="resetFilters" class="admin-btn admin-btn-secondary admin-btn-sm">پاک‌سازی فیلترها</button>
+        <button type="button" wire:click="resetFilters" class="admin-btn admin-btn-secondary admin-btn-sm">پاک‌سازی فیلترها</button>
     </div>
 
     @if (session('success'))
@@ -95,7 +95,7 @@
         <div class="mb-6 admin-card overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <h2 class="text-lg font-bold text-gray-900 min-w-0">جزئیات پرداخت <span class="text-gray-500 text-sm" dir="ltr">#{{ $sp->id }}</span></h2>
-                <button wire:click="closePaymentDetail" class="px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200">بازگشت به لیست</button>
+                <button type="button" wire:click="closePaymentDetail" class="px-3 py-1.5 rounded-lg text-xs bg-gray-100 text-gray-600 hover:bg-gray-200">بازگشت به لیست</button>
             </div>
 
             <div class="px-6 py-4">
@@ -178,8 +178,8 @@
 
                 @if ($sp->status === \App\Enums\PaymentStatus::PENDING_REVIEW && $sp->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER)
                     <div class="mt-4 flex items-center gap-2">
-                        <button wire:click="approvePayment({{ $sp->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success">تایید پرداخت</button>
-                        <button wire:click="rejectPayment({{ $sp->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger">رد پرداخت</button>
+                        <button type="button" wire:click="approvePayment({{ $sp->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success">تایید پرداخت</button>
+                        <button type="button" wire:click="rejectPayment({{ $sp->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger">رد پرداخت</button>
                     </div>
                 @endif
 
@@ -351,7 +351,7 @@
                         </td>
                         <td class="admin-td">
                             <div class="flex flex-col items-start gap-2">
-                                <button wire:click="viewPayment({{ $payment->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">جزئیات</button>
+                                <button type="button" wire:click="viewPayment({{ $payment->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">جزئیات</button>
                                 @if ($payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER && $payment->receipt_path)
                                     <div class="flex items-center gap-2">
                                         <a href="{{ route('admin.payments.receipt', ['order' => $payment->order, 'payment' => $payment]) }}" target="_blank" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">رسید</a>
@@ -360,8 +360,8 @@
                                 @endif
                                 @if ($payment->status === \App\Enums\PaymentStatus::PENDING_REVIEW && $payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER)
                                     <div class="flex items-center gap-2">
-                                        <button wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success admin-btn-sm">تایید</button>
-                                        <button wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger admin-btn-sm">رد</button>
+                                        <button type="button" wire:click="approvePayment({{ $payment->id }})" wire:confirm="آیا از تأیید این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-success admin-btn-sm">تایید</button>
+                                        <button type="button" wire:click="rejectPayment({{ $payment->id }})" wire:confirm="آیا از رد این پرداخت مطمئن هستید؟" class="admin-btn admin-btn-danger admin-btn-sm">رد</button>
                                     </div>
                                 @endif
                             </div>

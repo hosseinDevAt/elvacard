@@ -29,7 +29,7 @@
                         <p class="text-xs text-slate-400 mt-0.5">عضویت: {{ jalali_date($selectedUser->created_at, 'datetime') }}</p>
                     </div>
                 </div>
-                <button wire:click="closeUserDetail" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
+                <button type="button" wire:click="closeUserDetail" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
                     بازگشت به لیست
                 </button>
             </div>
@@ -270,7 +270,7 @@
                                 </div>
                             </td>
                             <td class="admin-td text-center">
-                                <button wire:click="viewUser({{ $user->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
+                                <button type="button" wire:click="viewUser({{ $user->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
                                     جزئیات
                                 </button>
                             </td>

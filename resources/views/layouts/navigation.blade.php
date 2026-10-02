@@ -116,7 +116,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     <div class="hidden sm:block">
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-sm font-semibold rounded-xl text-white bg-white/5 hover:bg-white/10 focus:outline-none transition">
+                                <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-sm font-semibold rounded-xl text-white bg-white/5 hover:bg-white/10 focus:outline-none transition">
                                     <span>{{ Auth::user()->displayName() }}</span>
                                     <x-icons.dropdown-chevron />
                                 </button>

@@ -4,7 +4,7 @@
         description="دسته‌بندی و سازماندهی موضوعی طرح‌های چاپ و سفارشی‌سازی کارت"
     >
         <x-slot:actions>
-            <button wire:click="create" class="admin-btn admin-btn-primary">
+            <button type="button" wire:click="create" class="admin-btn admin-btn-primary">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -52,8 +52,8 @@
                         <p class="text-xs text-slate-500 mt-1">{{ $category->designs->count() }} طرح متصل</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button wire:click="edit({{ $category->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
-                        <button wire:click="delete({{ $category->id }})" wire:confirm="آیا از حذف این دسته‌بندی مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
+                        <button type="button" wire:click="edit({{ $category->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                        <button type="button" wire:click="delete({{ $category->id }})" wire:confirm="آیا از حذف این دسته‌بندی مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
                     </div>
                 </div>
                 @if($category->designs->isNotEmpty())

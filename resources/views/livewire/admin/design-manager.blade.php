@@ -71,7 +71,7 @@
                                     <a href="{{ route('admin.designs.edit', $design->id) }}" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
                                         ویرایش
                                     </a>
-                                    <button wire:click="delete({{ $design->id }})" wire:confirm="آیا از حذف این طرح مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">
+                                    <button type="button" wire:click="delete({{ $design->id }})" wire:confirm="آیا از حذف این طرح مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">
                                         حذف
                                     </button>
                                 </div>

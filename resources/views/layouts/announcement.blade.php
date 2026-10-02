@@ -39,10 +39,10 @@
 
             @if ($announcement->link)
                 <a
-                    href="{{ safe_url($announcement->link) ?: '#' }}"
+                    href="{{ safe_url($announcement->link) ?: 'javascript:void(0)' }}"
                     class="font-semibold underline hover:text-[#ffde5b] hover:no-underline whitespace-nowrap transition-colors duration-150"
                     @if (str_starts_with((string) $announcement->link, 'javascript:') || str_starts_with((string) $announcement->link, 'data:'))
-                        href="#"
+                        href="javascript:void(0)"
                     @else
                         rel="noopener noreferrer"
                     @endif

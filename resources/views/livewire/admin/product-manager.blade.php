@@ -1,7 +1,7 @@
 <div>
     <x-admin.page-header title="مدیریت محصولات فروشگاه" subtitle="مدیریت، دسته‌بندی و بررسی وضعیت موجودی محصولات فروشگاه">
         <x-slot:actions>
-            <button wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25">
+            <button type="button" wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -465,10 +465,10 @@
                             </td>
                             <td class="admin-td text-center">
                                 <div class="inline-flex items-center gap-1.5">
-                                    <button wire:click="edit({{ $product->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
+                                    <button type="button" wire:click="edit({{ $product->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">
                                         ویرایش
                                     </button>
-                                    <button wire:click="delete({{ $product->id }})" wire:confirm="آیا از حذف این محصول مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">
+                                    <button type="button" wire:click="delete({{ $product->id }})" wire:confirm="آیا از حذف این محصول مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">
                                         حذف
                                     </button>
                                 </div>
