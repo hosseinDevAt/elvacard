@@ -63,7 +63,7 @@
                 </template>
 
                 <template x-if="variant === 'primary' || variant === 'info'">
-                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200/60">
+                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#010619]/10 text-[#010619] ring-1 ring-[#010619]/20">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>

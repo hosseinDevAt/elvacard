@@ -75,7 +75,7 @@
     }
 
     .admin-badge-info {
-        @apply bg-indigo-50 text-indigo-600 border border-indigo-100/80;
+        @apply bg-[#010619]/10 text-[#010619] border border-[#010619]/20;
     }
 
     .admin-badge-neutral {

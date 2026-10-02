@@ -142,7 +142,7 @@
                     @else
                         <div>
                             <label class="admin-label">قیمت متغیر</label>
-                            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 px-4 py-3 text-xs text-indigo-800">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs text-slate-700">
                                 @if($editingId)
                                     قیمت هر رنگ از بخش «متغیرهای محصول» همین صفحه مدیریت می‌شود.
                                 @else
@@ -304,7 +304,7 @@
                                                     <span class="text-xs font-semibold text-slate-700">{{ $variant->color?->name }}</span>
                                                 </div>
                                             </td>
-                                            <td class="admin-td font-extrabold text-indigo-600 text-xs" dir="ltr">{{ number_format((int) $variant->price) }} تومان</td>
+                                            <td class="admin-td font-extrabold text-slate-900 text-xs" dir="ltr">{{ number_format((int) $variant->price) }} تومان</td>
                                             <td class="admin-td">
                                                 <span class="admin-badge {{ $variant->is_active ? 'admin-badge-success' : 'admin-badge-neutral' }}">{{ $variant->is_active ? 'فعال' : 'غیرفعال' }}</span>
                                             </td>
@@ -417,7 +417,7 @@
                                     @endif
                                     <span class="text-[10px] text-slate-400 font-mono" dir="ltr">{{ $product->slug }}</span>
                                     @if($product->customization_workflow)
-                                        <span class="admin-badge bg-indigo-50 text-indigo-700 text-[10px] px-2 py-0.5">
+                                        <span class="admin-badge bg-[#010619]/10 text-[#010619] border border-[#010619]/20 text-[10px] px-2 py-0.5">
                                             {{ $product->customization_workflow->faLabel() }}
                                         </span>
                                     @endif
@@ -425,11 +425,11 @@
                             </td>
                             <td class="admin-td">
                                 @if($product->color_prices_count > 0)
-                                    <span class="font-bold text-indigo-600 block text-sm">
+                                    <span class="font-bold text-slate-900 block text-sm">
                                         {{ $product->active_color_prices_min_price !== null ? 'از ' . number_format($product->active_color_prices_min_price) . ' تومان' : 'تغییر قیمت بر اساس رنگ' }}
                                     </span>
                                 @elseif($product->base_price !== null)
-                                    <span class="font-bold text-indigo-600 block text-sm">
+                                    <span class="font-bold text-slate-900 block text-sm">
                                         {{ number_format($product->base_price) }} تومان
                                     </span>
                                 @else

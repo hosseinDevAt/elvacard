@@ -170,8 +170,8 @@
                     <div class="mt-4">
                         <div class="text-gray-400 text-xs mb-2">رسید</div>
                         <div class="flex items-center gap-3">
-                            <a href="{{ route('admin.payments.receipt', ['order' => $sp->order, 'payment' => $sp]) }}" target="_blank" class="px-3 py-1.5 rounded-lg text-xs bg-yellow-500 hover:bg-yellow-600 text-white">مشاهده رسید</a>
-                            <a href="{{ route('admin.payments.receipt', ['order' => $sp->order, 'payment' => $sp, 'download' => 1]) }}" class="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-900 text-white">دانلود رسید</a>
+                            <a href="{{ route('admin.payments.receipt', ['order' => $sp->order, 'payment' => $sp]) }}" target="_blank" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">مشاهده رسید</a>
+                            <a href="{{ route('admin.payments.receipt', ['order' => $sp->order, 'payment' => $sp, 'download' => 1]) }}" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">دانلود رسید</a>
                         </div>
                     </div>
                 @endif
@@ -297,7 +297,7 @@
                     <tr class="hover:bg-gray-50 align-top">
                         <td class="admin-td">
                             <div class="font-mono text-xs" dir="ltr">{{ $payment->order?->reference ?? '—' }}</div>
-                            <a href="{{ route('admin.orders') }}" wire:navigate class="text-xs text-yellow-600 hover:underline">
+                            <a href="{{ route('admin.orders') }}" wire:navigate class="text-xs text-[#010619] font-bold hover:underline">
                                 سفارش #{{ $payment->order_id }}
                             </a>
                         </td>
@@ -351,11 +351,11 @@
                         </td>
                         <td class="admin-td">
                             <div class="flex flex-col items-start gap-2">
-                                <button wire:click="viewPayment({{ $payment->id }})" class="px-2 py-1 rounded-lg text-xs bg-yellow-500 hover:bg-yellow-600 text-white">جزئیات</button>
+                                <button wire:click="viewPayment({{ $payment->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">جزئیات</button>
                                 @if ($payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER && $payment->receipt_path)
                                     <div class="flex items-center gap-2">
-                                        <a href="{{ route('admin.payments.receipt', ['order' => $payment->order, 'payment' => $payment]) }}" target="_blank" class="px-2 py-1 rounded-lg text-xs bg-yellow-500 hover:bg-yellow-600 text-white">رسید</a>
-                                        <a href="{{ route('admin.payments.receipt', ['order' => $payment->order, 'payment' => $payment, 'download' => 1]) }}" class="px-2 py-1 rounded-lg text-xs bg-gray-800 hover:bg-gray-900 text-white">دانلود</a>
+                                        <a href="{{ route('admin.payments.receipt', ['order' => $payment->order, 'payment' => $payment]) }}" target="_blank" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">رسید</a>
+                                        <a href="{{ route('admin.payments.receipt', ['order' => $payment->order, 'payment' => $payment, 'download' => 1]) }}" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">دانلود</a>
                                     </div>
                                 @endif
                                 @if ($payment->status === \App\Enums\PaymentStatus::PENDING_REVIEW && $payment->method === \App\Enums\PaymentMethod::MANUAL_TRANSFER)

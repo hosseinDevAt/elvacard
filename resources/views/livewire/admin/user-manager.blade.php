@@ -16,7 +16,7 @@
         <div class="mb-6 admin-card overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
                 <div class="flex items-center gap-3">
-                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#010619]/10 text-[#010619] font-bold text-sm">
                         {{ mb_substr($selectedUser->displayName(), 0, 1) }}
                     </span>
                     <div>
@@ -83,8 +83,8 @@
                         <div class="text-xs text-emerald-700 font-medium mb-1">سفارشات پرداخت‌شده</div>
                         <div class="text-xl font-extrabold text-slate-900">{{ number_format($customerStats['paidOrders']) }}</div>
                     </div>
-                    <div class="rounded-xl bg-indigo-50/60 border border-indigo-100 p-4">
-                        <div class="text-xs text-indigo-700 font-medium mb-1">مجموع خرید</div>
+                    <div class="rounded-xl bg-slate-50/80 border border-slate-200/80 p-4">
+                        <div class="text-xs text-slate-600 font-medium mb-1">مجموع خرید</div>
                         <div class="text-xl font-extrabold text-slate-900 font-mono">{{ number_format($customerStats['totalSpent']) }} تومان</div>
                     </div>
                     <div class="rounded-xl bg-slate-50 border border-slate-200/80 p-4">

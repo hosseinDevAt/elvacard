@@ -13,7 +13,7 @@
 
     @if($selectedProduct)
         <div class="mb-4 -mt-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[#ffde5b]/20 text-[#010619] border border-[#ffde5b]/60">
                 <span>در حال مدیریت رنگ و قیمت:</span>
                 <span class="font-bold">{{ $selectedProduct->name }}</span>
             </span>
@@ -31,11 +31,11 @@
         <h3 class="text-sm font-bold text-slate-700 mb-5">لیست قیمت پایه بر اساس رنگ کارت</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             @forelse($prices->take(5) as $cardPrice)
-                <div class="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-white hover:shadow-sm hover:border-indigo-100 transition group text-center">
+                <div class="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-white hover:shadow-sm hover:border-slate-300 transition group text-center">
                     <div class="w-12 h-12 rounded-full border-2 border-white shadow-md mb-3 transition-transform group-hover:scale-105"
                          style="background-color: {{ $cardPrice->color?->code_hex ?? '#ccc' }};"></div>
                     <span class="text-xs font-bold text-slate-800 block mb-1">{{ $cardPrice->color?->name ?? 'رنگ' }}</span>
-                    <span class="text-xs font-extrabold text-indigo-600 block">{{ number_format((int)$cardPrice->price) }} تومان</span>
+                    <span class="text-xs font-extrabold text-slate-900 block">{{ number_format((int)$cardPrice->price) }} تومان</span>
                 </div>
             @empty
                 <div class="col-span-full py-6 text-center text-xs text-slate-400">
@@ -129,7 +129,7 @@
                                     <span class="text-xs font-semibold text-slate-700">{{ $priceItem->color?->name }}</span>
                                 </div>
                             </td>
-                            <td class="admin-td font-extrabold text-indigo-600" dir="ltr">{{ number_format((int) $priceItem->price) }} تومان</td>
+                            <td class="admin-td font-extrabold text-slate-900" dir="ltr">{{ number_format((int) $priceItem->price) }} تومان</td>
                             <td class="admin-td">
                                 <span class="admin-badge {{ $priceItem->is_active ? 'admin-badge-success' : 'admin-badge-neutral' }}">
                                     {{ $priceItem->is_active ? 'فعال' : 'غیرفعال' }}

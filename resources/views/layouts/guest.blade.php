@@ -23,15 +23,17 @@
         @livewireStyles
     </head>
     <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
+        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-8 sm:pt-0 bg-[#f8fafc] px-4">
             <div>
-                <a href="/" wire:navigate class="flex flex-col items-center gap-2">
-                    <x-application-logo class="w-20 h-20 fill-current text-primary-600" />
-                    <span class="text-lg font-bold text-primary-600">{{ site_setting('site_name', config('app.name')) }}</span>
+                <a href="/" wire:navigate class="flex flex-col items-center gap-3 group">
+                    <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffde5b] text-[#010619] shadow-lg shadow-[#ffde5b]/20 transition-transform group-hover:scale-105">
+                        <x-application-logo class="w-9 h-9 fill-current text-[#010619]" />
+                    </span>
+                    <span class="text-xl font-extrabold text-[#010619] tracking-tight">{{ site_setting('site_name', config('app.name')) }}</span>
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+            <div class="w-full sm:max-w-md mt-6 px-6 py-6 bg-white shadow-xl shadow-slate-200/50 border border-slate-200/80 overflow-hidden sm:rounded-2xl">
                 {{ $slot }}
             </div>
         </div>

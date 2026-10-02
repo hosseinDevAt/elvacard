@@ -209,27 +209,27 @@
             <div class="mt-6 pt-5 border-t border-slate-100">
                 <p class="text-[11px] font-semibold text-slate-400 mb-3">دسترسی سریع بخش‌های مدیریتی:</p>
                 <div class="flex flex-wrap gap-2">
-                    <a href="{{ route('admin.products') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 transition">
+                    <a href="{{ route('admin.products') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white hover:text-[#010619] hover:border-[#010619]/30 transition group">
                         <x-icons.box class="h-3.5 w-3.5 text-indigo-500" />
                         <span>محصولات</span>
                     </a>
-                    <a href="{{ route('admin.colors') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 transition">
+                    <a href="{{ route('admin.colors') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white hover:text-[#010619] hover:border-[#010619]/30 transition group">
                         <x-icons.droplet class="h-3.5 w-3.5 text-indigo-500" />
                         <span>رنگ‌ها</span>
                     </a>
-                    <a href="{{ route('admin.designs') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 transition">
+                    <a href="{{ route('admin.designs') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white hover:text-[#010619] hover:border-[#010619]/30 transition group">
                         <x-icons.palette class="h-3.5 w-3.5 text-indigo-500" />
                         <span>طرح‌ها</span>
                     </a>
-                    <a href="{{ route('admin.pages') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 transition">
+                    <a href="{{ route('admin.pages') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white hover:text-[#010619] hover:border-[#010619]/30 transition group">
                         <x-icons.document-text class="h-3.5 w-3.5 text-indigo-500" />
                         <span>صفحات</span>
                     </a>
-                    <a href="{{ route('admin.orders') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 transition">
+                    <a href="{{ route('admin.orders') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white hover:text-[#010619] hover:border-[#010619]/30 transition group">
                         <x-icons.shopping-bag class="h-3.5 w-3.5 text-indigo-500" />
                         <span>سفارشات</span>
                     </a>
-                    <a href="{{ route('admin.payments') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 transition">
+                    <a href="{{ route('admin.payments') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white hover:text-[#010619] hover:border-[#010619]/30 transition group">
                         <x-icons.wallet class="h-3.5 w-3.5 text-indigo-500" />
                         <span>پرداخت‌ها</span>
                     </a>

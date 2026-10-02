@@ -79,7 +79,7 @@
         <div class="admin-card overflow-hidden mb-6">
             <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold">
+                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-[#010619]/10 text-[#010619] text-xs font-bold">
                         #
                     </span>
                     <h3 class="text-sm font-extrabold text-slate-800 font-mono tracking-wide uppercase">{{ $group }}</h3>
