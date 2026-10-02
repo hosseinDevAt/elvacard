@@ -22,6 +22,8 @@
             <a href="{{ route('home') }}" class="text-sm text-gray-500 hover:text-gray-700">بازگشت به خانه</a>
         </div>
     </div>
+    <x-confirmation-modal />
+    <x-toast-container />
     @livewireScripts
 </body>
 </html>

@@ -11,10 +11,7 @@ use App\Http\Controllers\Cms\FaqController;
 use App\Http\Controllers\Cms\HomepageController;
 use App\Http\Controllers\Cms\PageController;
 use App\Http\Controllers\CustomDesign\CustomDesignController;
-use App\Http\Controllers\CustomerDashboardController;
-use App\Http\Controllers\Order\OrderHistoryController;
 use App\Http\Controllers\Order\OrderTrackingController;
-use App\Http\Controllers\ProfileController;
 use App\Livewire\Admin\AnnouncementManager;
 use App\Livewire\Admin\AppearanceManager;
 use App\Livewire\Admin\ArticleCategoryManager;
@@ -125,16 +122,5 @@ Route::get('/articles/category/{slug}', [ArticleController::class, 'category'])-
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
 
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/account', CustomerDashboardController::class)->name('account.dashboard');
-
-    Route::get('/orders', [OrderHistoryController::class, 'index'])->name('orders.index');
-    Route::get('/orders/{order}', [OrderHistoryController::class, 'show'])->name('orders.show');
-
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
 
 require __DIR__.'/auth.php';

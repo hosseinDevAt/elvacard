@@ -19,17 +19,29 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    public function test_admin_can_authenticate_using_the_login_screen(): void
     {
-        $user = User::factory()->create();
+        $admin = User::factory()->create(['role' => 'admin']);
 
         Livewire::test(Login::class)
-            ->set('phone', $user->phone)
+            ->set('phone', $admin->phone)
             ->set('password', 'password')
             ->call('login');
 
         $this->assertAuthenticated();
-        $this->assertAuthenticatedAs($user);
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_customer_cannot_authenticate_via_login_screen(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+
+        Livewire::test(Login::class)
+            ->set('phone', $customer->phone)
+            ->set('password', 'password')
+            ->call('login');
+
+        $this->assertGuest();
     }
 
     public function test_login_rejects_invalid_phone_format(): void

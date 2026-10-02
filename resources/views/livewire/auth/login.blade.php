@@ -30,7 +30,4 @@
         </button>
     </form>
 
-    <div class="mt-6 text-center space-y-2">
-        <p class="text-xs text-gray-400">رمز عبور خود را فراموش کرده‌اید؟ <a href="{{ route('password.request') }}" class="text-yellow-600 hover:underline">بازیابی رمز</a></p>
-    </div>
 </div>

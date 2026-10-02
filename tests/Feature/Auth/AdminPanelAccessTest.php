@@ -41,7 +41,7 @@ class AdminPanelAccessTest extends TestCase
         $this->assertAuthenticatedAs($admin);
     }
 
-    public function test_customer_login_redirects_to_account_dashboard(): void
+    public function test_non_admin_cannot_log_in(): void
     {
         $customer = $this->customer();
 
@@ -49,9 +49,9 @@ class AdminPanelAccessTest extends TestCase
             ->set('phone', $customer->phone)
             ->set('password', 'password')
             ->call('login')
-            ->assertRedirect('/account');
+            ->assertSee('شماره تلفن یا رمز عبور صحیح نیست.');
 
-        $this->assertAuthenticatedAs($customer);
+        $this->assertGuest();
     }
 
     public function test_admin_can_access_admin_dashboard_over_http(): void

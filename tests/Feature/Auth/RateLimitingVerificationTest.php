@@ -50,6 +50,11 @@ class RateLimitingVerificationTest extends TestCase
         return User::factory()->create(array_merge(['role' => 'customer'], $overrides));
     }
 
+    private function admin(array $overrides = []): User
+    {
+        return User::factory()->create(array_merge(['role' => 'admin'], $overrides));
+    }
+
     private function loginKey(string $phone, ?string $ip = null): string
     {
         return 'login:'.$phone.':'.($ip ?? '127.0.0.1');
@@ -145,7 +150,7 @@ class RateLimitingVerificationTest extends TestCase
 
     public function test_a_successful_login_clears_the_throttle_counter(): void
     {
-        $user = $this->customer(['phone' => '09120000006']);
+        $user = $this->admin(['phone' => '09120000006', 'password' => 'password']);
 
         for ($attempt = 1; $attempt <= 4; $attempt++) {
             Livewire::test(Login::class)
@@ -171,7 +176,7 @@ class RateLimitingVerificationTest extends TestCase
 
     public function test_login_throttle_window_is_120_seconds(): void
     {
-        $this->customer(['phone' => '09120000007']);
+        $this->admin(['phone' => '09120000007', 'password' => 'password']);
 
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             Livewire::test(Login::class)

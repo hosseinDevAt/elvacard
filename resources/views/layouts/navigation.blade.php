@@ -112,10 +112,7 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     @endif
                 </a>
 
-                @if (Auth::guest())
-                    <a href="{{ route('login') }}" wire:navigate class="hidden sm:block text-sm font-medium text-white/80 hover:text-white transition">ورود</a>
-                    <a href="{{ route('register') }}" wire:navigate class="hidden sm:block rounded-lg bg-accent-500 px-4 py-2 text-sm font-bold text-primary-600 hover:bg-accent-600 transition">ثبت نام</a>
-                @else
+                @if (Auth::check() && Auth::user()->role === 'admin')
                     <div class="hidden sm:block">
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
@@ -128,19 +125,11 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                             </x-slot>
 
                             <x-slot name="content">
-                                @if (Auth::user()->role === 'admin' && Route::has('admin.dashboard'))
+                                @if (Route::has('admin.dashboard'))
                                     <x-dropdown-link :href="route('admin.dashboard')" wire:navigate>
                                         پنل مدیریت
                                     </x-dropdown-link>
                                 @endif
-
-                                <x-dropdown-link :href="route('account.dashboard')" wire:navigate>
-                                    حساب کاربری
-                                </x-dropdown-link>
-
-                                <x-dropdown-link :href="route('orders.index')" wire:navigate>
-                                    سفارش‌های من
-                                </x-dropdown-link>
 
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -153,6 +142,11 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                             </x-slot>
                         </x-dropdown>
                     </div>
+                @else
+                    <a href="{{ route('order-tracking.index') }}" wire:navigate class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition">
+                        <x-icons.search class="h-3.5 w-3.5" />
+                        <span>پیگیری سفارش</span>
+                    </a>
                 @endif
             </div>
         </div>
@@ -210,28 +204,16 @@ $cartCount = (int) (app(\App\Services\CartService::class)->getCart()['total_quan
                     سبد خرید @if ($cartCount > 0)({{ $cartCount }})@endif
                 </x-responsive-nav-link>
 
-                @if (Auth::guest())
-                    <x-responsive-nav-link :href="route('login')" wire:navigate @click="open = false">
-                        ورود
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('register')" wire:navigate @click="open = false">
-                        ثبت نام
-                    </x-responsive-nav-link>
-                @else
-                    @if (Auth::user()->role === 'admin' && Route::has('admin.dashboard'))
+                <x-responsive-nav-link :href="route('order-tracking.index')" wire:navigate @click="open = false">
+                    پیگیری سفارش
+                </x-responsive-nav-link>
+
+                @if (Auth::check() && Auth::user()->role === 'admin')
+                    @if (Route::has('admin.dashboard'))
                         <x-responsive-nav-link :href="route('admin.dashboard')" wire:navigate @click="open = false">
                             پنل مدیریت
                         </x-responsive-nav-link>
                     @endif
-                    <x-responsive-nav-link :href="route('account.dashboard')" wire:navigate @click="open = false">
-                        حساب کاربری
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('orders.index')" wire:navigate @click="open = false">
-                        سفارش‌های من
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('profile.edit')" wire:navigate @click="open = false">
-                        پروفایل
-                    </x-responsive-nav-link>
                     <div class="pt-2">
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf

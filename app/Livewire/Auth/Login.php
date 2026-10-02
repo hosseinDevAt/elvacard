@@ -46,11 +46,11 @@ class Login extends Component
 
         $user = Auth::user();
 
-        // Deactivated customers must not authenticate. Staff (role === 'admin')
-        // are never gated by customer status; the literal admin role mechanism
-        // stays authoritative. The response stays identical to a failed login
-        // so account status is not disclosed.
-        if ($user->role !== 'admin' && ! (bool) $user->is_active) {
+        // Customer accounts are retired. Only staff accounts (role === 'admin')
+        // are permitted to authenticate into the administrative management console.
+        // Non-admin logins receive the identical failure response so account status
+        // and existence are never disclosed.
+        if ($user->role !== 'admin' || ! (bool) $user->is_active) {
             Auth::logout();
             RateLimiter::hit($throttleKey, 120);
             session()->flash('error', 'شماره تلفن یا رمز عبور صحیح نیست.');

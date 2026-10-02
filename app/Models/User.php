@@ -73,6 +73,6 @@ class User extends Authenticatable
     {
         return $this->role === 'admin'
             ? route('admin.dashboard', absolute: false)
-            : route('account.dashboard', absolute: false);
+            : route('home', absolute: false);
     }
 }
