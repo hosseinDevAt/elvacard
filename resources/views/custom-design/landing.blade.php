@@ -8,76 +8,107 @@
 @endsection
 
 @section('content')
-    <section class="relative overflow-hidden">
-        <div class="relative flex min-h-[40vh] items-center justify-center overflow-hidden bg-gradient-to-b from-primary-900 via-primary-800 to-primary-600">
-            <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
-            <div class="relative z-10 mx-auto max-w-7xl px-4 py-14 text-center sm:px-6 sm:py-20 lg:px-8">
-                <h1 class="mb-4 text-3xl font-bold text-white sm:text-5xl lg:text-6xl leading-tight">
-                    طراحی کارت اختصاصی
-                </h1>
-                <p class="mx-auto max-w-3xl text-lg leading-relaxed text-white/90 sm:text-xl">
-                    کارت شخصی خود را با طرح دلخواه‌تان بسازید؛ نوع کارت را انتخاب کنید و رنگ، طرح و متن را تعیین کنید.
-                </p>
-            </div>
+    {{-- Hero Section --}}
+    <section class="relative overflow-hidden bg-[#010619] py-16 sm:py-24 text-white">
+        {{-- Background Gradients & Glows --}}
+        <div class="pointer-events-none absolute -top-24 right-1/4 h-96 w-96 rounded-full bg-[#ffde5b]/10 blur-3xl"></div>
+        <div class="pointer-events-none absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl"></div>
+
+        <div class="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+            <span class="inline-flex items-center gap-2 rounded-full border border-[#ffde5b]/40 bg-[#ffde5b]/10 px-4 py-1.5 text-xs font-bold text-[#ffde5b] mb-6">
+                <span class="h-2 w-2 rounded-full bg-[#ffde5b] animate-pulse"></span>
+                <span>استودیوی ساخت کارت فلزی شخصی‌سازی‌شده</span>
+            </span>
+
+            <h1 class="text-3xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl leading-tight">
+                طراحی کارت اختصاصی
+            </h1>
+            <p class="mx-auto mt-5 max-w-2xl text-sm sm:text-base leading-relaxed text-slate-300">
+                کارت شخصی خود را با طرح دلخواه‌تان بسازید؛ نوع کارت را انتخاب کنید و رنگ، طرح و متن را تعیین کنید.
+            </p>
         </div>
     </section>
 
-    <section class="bg-gray-50 py-12 sm:py-16">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    {{-- Cards Chooser Grid --}}
+    <section class="bg-slate-50/60 py-12 sm:py-20">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
+                {{-- Bank Card Option --}}
                 <a href="{{ route('custom-card.bank') }}" wire:navigate
-                   class="group rounded-2xl border border-gray-100 bg-white p-8 transition hover:border-primary-200 hover:shadow-lg">
-                    <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 transition group-hover:bg-primary-600 group-hover:text-white">
-                        <x-icons.card class="h-7 w-7" />
+                   class="group relative store-card overflow-hidden p-8 transition-all duration-300 hover:-translate-y-1 hover:border-[#ffde5b]">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#010619] text-[#ffde5b] shadow-md shadow-[#010619]/15 group-hover:scale-105 transition">
+                            <x-icons.card class="h-7 w-7" />
+                        </div>
+                        <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200/60">محبوب‌ترین</span>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-900">طراحی کارت بانکی</h2>
-                    <p class="mt-2 text-sm leading-relaxed text-gray-600">
+
+                    <h2 class="text-xl font-black text-[#010619] group-hover:text-slate-900 transition">طراحی کارت بانکی</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-slate-600">
                         برای کارت بانکی خود طرح اختصاصی بسازید؛ رنگ، طرح و متن دلخواه را انتخاب کنید و سفارش دهید.
                     </p>
-                    <span class="mt-5 inline-flex items-center text-sm font-semibold text-primary-600 group-hover:text-primary-700">
-                        شروع طراحی
-                        <x-icons.arrow-left class="me-0 ms-2 h-4 w-4" />
-                    </span>
+
+                    <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <span class="inline-flex items-center gap-2 text-sm font-bold text-[#010619] group-hover:text-[#664d00] transition">
+                            <span>شروع طراحی</span>
+                            <x-icons.arrow-left class="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                        </span>
+                        <span class="text-xs text-slate-400 font-medium">حکاکی دوطرفه</span>
+                    </div>
                 </a>
 
+                {{-- Fuel Card Option --}}
                 <a href="{{ route('custom-card.fuel') }}" wire:navigate
-                   class="group rounded-2xl border border-gray-100 bg-white p-8 transition hover:border-primary-200 hover:shadow-lg">
-                    <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 transition group-hover:bg-primary-600 group-hover:text-white">
-                        <x-icons.grid class="h-7 w-7" />
+                   class="group relative store-card overflow-hidden p-8 transition-all duration-300 hover:-translate-y-1 hover:border-[#ffde5b]">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#010619] text-[#ffde5b] shadow-md shadow-[#010619]/15 group-hover:scale-105 transition">
+                            <x-icons.grid class="h-7 w-7" />
+                        </div>
+                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 border border-slate-200">کارت سوخت هوشمند</span>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-900">طراحی کارت سوخت</h2>
-                    <p class="mt-2 text-sm leading-relaxed text-gray-600">
+
+                    <h2 class="text-xl font-black text-[#010619] group-hover:text-slate-900 transition">طراحی کارت سوخت</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-slate-600">
                         مشخصات خودرو، شماره شاسی و سامانه سوخت خود را وارد کنید و کارت سوخت اختصاصی سفارش دهید.
                     </p>
-                    <span class="mt-5 inline-flex items-center text-sm font-semibold text-primary-600 group-hover:text-primary-700">
-                        شروع طراحی
-                        <x-icons.arrow-left class="me-0 ms-2 h-4 w-4" />
-                    </span>
+
+                    <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <span class="inline-flex items-center gap-2 text-sm font-bold text-[#010619] group-hover:text-[#664d00] transition">
+                            <span>شروع طراحی</span>
+                            <x-icons.arrow-left class="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                        </span>
+                        <span class="text-xs text-slate-400 font-medium">جایگذاری چیپست</span>
+                    </div>
                 </a>
             </div>
         </div>
     </section>
 
-    <section class="bg-white py-12 sm:py-16">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 class="text-center text-2xl font-bold text-gray-900 sm:text-3xl">مراحل سفارش</h2>
-            <p class="mx-auto mt-3 max-w-2xl text-center text-gray-600">طراحی و سفارش کارت اختصاصی شما فقط چند قدم ساده دارد.</p>
+    {{-- Order Steps Section --}}
+    <section class="bg-white py-14 sm:py-20 border-t border-slate-100">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl font-black text-[#010619] sm:text-3xl">مراحل سفارش</h2>
+                <p class="mt-2 text-sm text-slate-500">طراحی و سفارش کارت اختصاصی شما فقط چند قدم ساده دارد.</p>
+            </div>
 
-            <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-                <div class="rounded-2xl border border-gray-100 bg-white p-6 text-center">
-                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-xl font-bold text-primary-700">۱</span>
-                    <h3 class="mt-4 text-lg font-semibold text-gray-900">انتخاب نوع کارت</h3>
-                    <p class="mt-2 text-sm text-gray-600 leading-relaxed">کارت بانکی یا سوخت خود را انتخاب کنید.</p>
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                <div class="rounded-3xl border border-slate-100 bg-slate-50/60 p-7 text-center transition hover:bg-slate-50">
+                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffde5b] text-base font-black text-[#010619] shadow-sm">۱</span>
+                    <h3 class="mt-4 text-base font-bold text-[#010619]">انتخاب نوع کارت</h3>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-500">کارت بانکی یا سوخت خود را انتخاب کنید.</p>
                 </div>
-                <div class="rounded-2xl border border-gray-100 bg-white p-6 text-center">
-                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-xl font-bold text-primary-700">۲</span>
-                    <h3 class="mt-4 text-lg font-semibold text-gray-900">انتخاب طرح و رنگ</h3>
-                    <p class="mt-2 text-sm text-gray-600 leading-relaxed">رنگ، طرح و متن دلخواه خود را روی کارت تعیین کنید.</p>
+
+                <div class="rounded-3xl border border-slate-100 bg-slate-50/60 p-7 text-center transition hover:bg-slate-50">
+                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffde5b] text-base font-black text-[#010619] shadow-sm">۲</span>
+                    <h3 class="mt-4 text-base font-bold text-[#010619]">انتخاب طرح و رنگ</h3>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-500">رنگ، طرح و متن دلخواه خود را روی کارت تعیین کنید.</p>
                 </div>
-                <div class="rounded-2xl border border-gray-100 bg-white p-6 text-center">
-                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-xl font-bold text-primary-700">۳</span>
-                    <h3 class="mt-4 text-lg font-semibold text-gray-900">تحویل سفارش</h3>
-                    <p class="mt-2 text-sm text-gray-600 leading-relaxed">سفارش شما با دقت تولید و در سریع‌ترین زمان ارسال می‌شود.</p>
+
+                <div class="rounded-3xl border border-slate-100 bg-slate-50/60 p-7 text-center transition hover:bg-slate-50">
+                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffde5b] text-base font-black text-[#010619] shadow-sm">۳</span>
+                    <h3 class="mt-4 text-base font-bold text-[#010619]">تحویل سفارش</h3>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-500">سفارش شما با دقت تولید و در سریع‌ترین زمان ارسال می‌شود.</p>
                 </div>
             </div>
         </div>

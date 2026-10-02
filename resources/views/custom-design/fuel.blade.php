@@ -8,17 +8,21 @@
 @endsection
 
 @section('content')
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="mb-6">
-            <a href="{{ route('custom-card.design') }}" wire:navigate
-               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-800 transition">
-                <x-icons.arrow-left class="ms-1" />
-                بازگشت به صفحه طراحی کارت اختصاصی
-            </a>
-            <h1 class="mt-2 text-2xl font-bold text-gray-900">طراحی کارت سوخت</h1>
-            <p class="mt-1 text-sm text-gray-500">{{ $product->name }}</p>
-        </div>
+    <div class="min-h-screen bg-slate-50/60 py-8 sm:py-12">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <a href="{{ route('custom-card.design') }}" wire:navigate
+                       class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#010619] transition">
+                        <x-icons.arrow-left class="h-4 w-4" />
+                        <span>بازگشت به صفحه طراحی کارت اختصاصی</span>
+                    </a>
+                    <h1 class="mt-2 text-2xl font-black text-[#010619] sm:text-3xl">طراحی کارت سوخت</h1>
+                    <p class="mt-1 text-xs font-medium text-slate-500">{{ $product->name }}</p>
+                </div>
+            </div>
 
-        <livewire:catalog.product-customizer :productId="$product->id" />
+            <livewire:catalog.product-customizer :productId="$product->id" />
+        </div>
     </div>
 @endsection

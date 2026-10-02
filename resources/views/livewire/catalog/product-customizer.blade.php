@@ -3,27 +3,27 @@
     $bankCardWorkflow = \App\Enums\CustomizationWorkflowEnum::BANK_CARD->value;
     $fuelCardWorkflow = \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value;
 @endphp
-<div class="min-h-screen bg-gray-950 text-gray-100 rounded-3xl overflow-hidden shadow-2xl border border-gray-800 flex flex-col font-sans">
+<div class="min-h-screen bg-[#010619] text-slate-100 rounded-3xl overflow-hidden shadow-2xl border border-[#152244] flex flex-col font-sans">
     {{-- Header Bar --}}
-    <header class="flex items-center justify-between border-b border-gray-800 bg-gray-900/80 px-6 py-4 backdrop-blur-md">
+    <header class="flex items-center justify-between border-b border-[#152244] bg-[#070e24]/90 px-6 py-4 backdrop-blur-md">
         <div class="flex items-center gap-3">
-            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-gray-950 font-black shadow-lg shadow-amber-500/20">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ffde5b] text-[#010619] font-black shadow-md shadow-[#ffde5b]/20">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
             </span>
-            <span class="text-xl font-extrabold tracking-wider text-white">ElvaCard</span>
+            <span class="text-xl font-extrabold tracking-wider text-white">الواکارت</span>
         </div>
 
         <div class="flex items-center gap-3">
-            <span class="text-sm font-semibold text-gray-400 hidden sm:inline">
+            <span class="text-xs font-semibold text-slate-300 hidden sm:inline">
                 @if ($step === 1)
                     اطلاعات و انتخاب طرح روی کارت
                 @else
                     اطلاعات و مشخصات پشت کارت
                 @endif
             </span>
-            <span class="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-400 border border-amber-500/30">
+            <span class="rounded-full bg-[#ffde5b]/15 px-3 py-1 text-xs font-bold text-[#ffde5b] border border-[#ffde5b]/30">
                 مرحله {{ $step }} از ۲
             </span>
         </div>
@@ -32,23 +32,23 @@
     {{-- Main Workspace Content --}}
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0">
         {{-- Left Control Panel --}}
-        <div class="lg:col-span-5 min-w-0 p-6 sm:p-8 bg-gray-900/50 border-b lg:border-b-0 lg:border-e border-gray-800 flex flex-col justify-between space-y-6 overflow-y-auto">
+        <div class="lg:col-span-5 min-w-0 p-6 sm:p-8 bg-[#070e24]/60 border-b lg:border-b-0 lg:border-e border-[#152244] flex flex-col justify-between space-y-6 overflow-y-auto">
             @if ($step === 1)
                 {{-- STEP 1: Front of Card Customization --}}
                 <div class="space-y-6">
                     <div>
-                        <h2 class="text-lg font-bold text-white mb-1">۱. انتخاب طرح لیزر روی کارت</h2>
-                        <p class="text-xs text-gray-400">طرح و دسته مورد نظر برای حکاکی روی کارت را انتخاب کنید.</p>
+                        <h2 class="text-base font-bold text-white mb-1">۱. انتخاب طرح لیزر روی کارت</h2>
+                        <p class="text-xs text-slate-400">طرح و دسته مورد نظر برای حکاکی روی کارت را انتخاب کنید.</p>
                     </div>
 
                     {{-- Category Tabs --}}
                     @if (count($categories) > 0)
-                        <div class="flex flex-wrap gap-2 border-b border-gray-800 pb-4">
+                        <div class="flex flex-wrap gap-2 border-b border-[#152244] pb-4">
                             @foreach ($categories as $category)
                                 <button
                                     type="button"
                                     wire:click="selectCategory({{ $category['id'] }})"
-                                    class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 {{ (int) $selected_category_id === (int) $category['id'] ? 'bg-amber-500 text-gray-950 shadow-md shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-800 hover:text-white' }}"
+                                    class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 cursor-pointer {{ (int) $selected_category_id === (int) $category['id'] ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/60' }}"
                                 >
                                     {{ $category['name'] }}
                                 </button>
@@ -62,23 +62,23 @@
                             <button
                                 type="button"
                                 wire:click="selectDesign({{ $design['id'] }})"
-                                class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-gray-900/90 overflow-hidden {{ (int) $design_id === (int) $design['id'] ? 'border-amber-500 ring-2 ring-amber-500/50 shadow-lg shadow-amber-500/10' : 'border-gray-800 hover:border-gray-700' }}"
+                                class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-[#010619]/90 overflow-hidden cursor-pointer {{ (int) $design_id === (int) $design['id'] ? 'border-[#ffde5b] ring-2 ring-[#ffde5b]/50 shadow-lg shadow-[#ffde5b]/10' : 'border-[#152244] hover:border-slate-700' }}"
                             >
-                                <div class="relative aspect-[16/10] w-full rounded-xl bg-gray-950 overflow-hidden flex items-center justify-center p-2 border border-gray-800">
+                                <div class="relative aspect-[16/10] w-full rounded-xl bg-black/50 overflow-hidden flex items-center justify-center p-2 border border-[#152244]">
                                     @if ($design['preview_image_path'])
-                                        <img src="{{ asset('storage/' . $design['preview_image_path']) }}" alt="{{ $design['name'] }}" class="h-full w-full object-contain transition group-hover:scale-105">
+                                        <img src="{{ asset('storage/' . $design['preview_image_path']) }}" alt="{{ $design['name'] }}" class="h-full w-full object-contain transition duration-200 group-hover:scale-105">
                                     @else
-                                        <div class="flex flex-col items-center text-gray-600">
+                                        <div class="flex flex-col items-center text-slate-600">
                                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
                                         </div>
                                     @endif
                                 </div>
-                                <span class="mt-2 text-xs font-bold text-gray-200 line-clamp-1 truncate">{{ $design['name'] }}</span>
+                                <span class="mt-2 text-xs font-bold text-slate-200 line-clamp-1 truncate">{{ $design['name'] }}</span>
                             </button>
                         @empty
-                            <div class="col-span-2 py-8 text-center text-xs text-gray-500">
+                            <div class="col-span-2 py-8 text-center text-xs text-slate-500">
                                 طرحی در این دسته‌بندی با رنگ انتخابی موجود نیست.
                             </div>
                         @endforelse
@@ -96,14 +96,14 @@
                             $availableImages = collect($designImages)->where('design_id', $design_id)->values();
                         @endphp
                         @if ($availableImages->isNotEmpty())
-                            <div class="pt-2 border-t border-gray-800">
-                                <label class="block text-xs font-bold text-gray-300 mb-2">انتخاب رنگ حکاکی لیزری طرح</label>
+                            <div class="pt-2 border-t border-[#152244]">
+                                <label class="block text-xs font-bold text-slate-300 mb-2">انتخاب رنگ حکاکی لیزری طرح</label>
                                 <div class="flex flex-wrap gap-2">
                                     @foreach ($availableImages as $img)
                                         <button
                                             type="button"
                                             wire:click="selectDesignImage({{ $img['id'] }})"
-                                            class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition {{ (int) $design_image_id === (int) $img['id'] ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-gray-800 bg-gray-900 text-gray-400 hover:border-gray-700' }}"
+                                            class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition cursor-pointer {{ (int) $design_image_id === (int) $img['id'] ? 'border-[#ffde5b] bg-[#ffde5b]/10 text-[#ffde5b]' : 'border-[#152244] bg-[#010619] text-slate-400 hover:border-slate-700' }}"
                                         >
                                             <span class="h-3 w-3 rounded-full border border-white/20" style="background-color: {{ $img['color_hex'] ?? '#cccccc' }};"></span>
                                             <span>{{ $img['color_name'] ?? 'رنگ لیزر' }}</span>
@@ -125,11 +125,11 @@
         </div>
 
         {{-- Right Panel — Live 2D Fixed-Layout Preview --}}
-        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-gray-950 flex flex-col items-center justify-between space-y-6">
+        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-[#010619] flex flex-col items-center justify-between space-y-6">
             <div class="w-full flex flex-col items-center space-y-6">
                 {{-- Preview Header & Controls --}}
                 <div class="w-full flex flex-wrap items-center justify-between gap-4">
-                    <h3 class="text-sm font-bold text-gray-300">
+                    <h3 class="text-xs font-bold text-slate-300">
                         @if ($step === 1)
                             انتخاب رنگ ورقه فلزی کارت
                         @else
@@ -138,18 +138,18 @@
                     </h3>
 
                     {{-- Front / Back View Switcher Tabs --}}
-                    <div class="flex items-center rounded-xl bg-gray-900 p-1 border border-gray-800">
+                    <div class="flex items-center rounded-xl bg-[#070e24] p-1 border border-[#152244]">
                         <button
                             type="button"
                             wire:click="setActiveView('front')"
-                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition {{ $activeView === 'front' ? 'bg-amber-500 text-gray-950 shadow' : 'text-gray-400 hover:text-white' }}"
+                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'front' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-400 hover:text-white' }}"
                         >
                             جلو
                         </button>
                         <button
                             type="button"
                             wire:click="setActiveView('back')"
-                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition {{ $activeView === 'back' ? 'bg-amber-500 text-gray-950 shadow' : 'text-gray-400 hover:text-white' }}"
+                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'back' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-400 hover:text-white' }}"
                         >
                             پشت
                         </button>
@@ -158,13 +158,11 @@
 
                 {{-- Color Swatches (Step 1) --}}
                 @if ($workflow === $fuelCardWorkflow)
-                    {{-- Fuel: the single configured color is resolved from the product
-                         configuration and is locked; the browser is never offered a selector. --}}
                     @if ($selectedColor)
                         <div class="flex flex-wrap items-center justify-center gap-3">
                             <div class="flex flex-col items-center gap-1">
                                 <span class="h-8 w-8 rounded-full border border-white/20" style="background-color: {{ $selectedColor['color_hex'] ?? '#111' }};"></span>
-                                <span class="text-[10px] font-medium text-gray-400">{{ $selectedColor['name'] }}</span>
+                                <span class="text-[10px] font-medium text-slate-400">{{ $selectedColor['name'] }}</span>
                             </div>
                         </div>
                     @endif
@@ -177,12 +175,12 @@
                             <button
                                 type="button"
                                 wire:click="selectColor({{ $cp['color_id'] }})"
-                                class="group flex flex-col items-center gap-1 focus:outline-none"
+                                class="group flex flex-col items-center gap-1 focus:outline-none cursor-pointer"
                             >
-                                <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-gray-950 scale-110' : 'hover:scale-105' }}"
+                                <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-[#ffde5b] ring-offset-2 ring-offset-[#010619] scale-110' : 'hover:scale-105' }}"
                                       style="background-color: {{ $cp['color_hex'] ?? '#111' }};"
                                 ></span>
-                                <span class="text-[10px] font-medium {{ $isSelected ? 'text-amber-400 font-bold' : 'text-gray-400' }}">{{ $cp['name'] }}</span>
+                                <span class="text-[10px] font-medium {{ $isSelected ? 'text-[#ffde5b] font-bold' : 'text-slate-400' }}">{{ $cp['name'] }}</span>
                             </button>
                         @endforeach
                     </div>
@@ -326,14 +324,14 @@
     </div>
 
     {{-- Workspace Footer Bar --}}
-    <footer class="border-t border-gray-800 bg-gray-900/90 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md">
+    <footer class="border-t border-[#152244] bg-[#070e24]/90 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md">
         {{-- Navigation Actions --}}
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             @if ($step === 1)
                 <button
                     type="button"
                     wire:click="setStep(2)"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 w-full sm:w-auto text-xs font-extrabold text-gray-950 transition duration-200 hover:bg-amber-400 shadow-lg shadow-amber-500/20"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ffde5b] px-6 py-3 w-full sm:w-auto text-xs font-bold text-[#010619] transition duration-200 hover:bg-[#f5d347] active:scale-[0.99] shadow-md shadow-[#ffde5b]/20 cursor-pointer"
                 >
                     <span>مرحله بعد: اطلاعات پشت کارت</span>
                     <svg class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -344,7 +342,7 @@
                 <button
                     type="button"
                     wire:click="setStep(1)"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-800 px-4 py-3 w-full sm:w-auto text-xs font-bold text-gray-300 transition hover:bg-gray-700 hover:text-white border border-gray-700"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 px-5 py-3 w-full sm:w-auto text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white border border-slate-700 cursor-pointer"
                 >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
@@ -356,11 +354,11 @@
                     type="button"
                     wire:click="addToCart"
                     wire:loading.attr="disabled"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 w-full sm:w-auto text-xs font-extrabold text-gray-950 transition duration-200 hover:bg-amber-400 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ffde5b] px-6 py-3 w-full sm:w-auto text-xs font-bold text-[#010619] transition duration-200 hover:bg-[#f5d347] active:scale-[0.99] shadow-md shadow-[#ffde5b]/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                     <span wire:loading.remove>ثبت نهایی و افزودن به سبد خرید</span>
                     <span wire:loading class="inline-flex items-center gap-2">
-                        <svg class="animate-spin h-4 w-4 text-gray-950" fill="none" viewBox="0 0 24 24">
+                        <svg class="animate-spin h-4 w-4 text-[#010619]" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -371,15 +369,15 @@
         </div>
 
         {{-- Step Counter Indicator --}}
-        <div class="text-xs font-mono text-gray-400 bg-gray-950/80 px-4 py-1.5 rounded-full border border-gray-800">
+        <div class="text-xs font-mono text-slate-400 bg-black/60 px-4 py-1.5 rounded-full border border-[#152244]">
             {{ $step }} / ۲
         </div>
 
         {{-- Dynamic Server-side Total Price Display --}}
         <div class="text-end">
-            <span class="text-xs text-gray-400 block">مبلغ قابل پرداخت:</span>
-            <span class="text-lg font-black text-amber-400 tracking-tight">
-                {{ number_format($totalPrice) }} <span class="text-xs font-normal text-gray-400">تومان</span>
+            <span class="text-xs text-slate-400 block">مبلغ قابل پرداخت:</span>
+            <span class="text-lg font-black text-[#ffde5b] tracking-tight">
+                {{ number_format($totalPrice) }} <span class="text-xs font-normal text-slate-400">تومان</span>
             </span>
         </div>
     </footer>
