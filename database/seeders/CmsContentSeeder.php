@@ -169,12 +169,23 @@ class CmsContentSeeder extends Seeder
         );
 
         HomepageSection::firstOrCreate(
+            ['section_type' => 'faq'],
+            [
+                'title' => 'سوالات متداول',
+                'content' => 'پاسخ به سوالات پرتکرار شما درباره سفارش، چاپ و ارسال کارت‌های شخصی',
+                'settings' => ['limit' => 8],
+                'sort_order' => 4,
+                'is_active' => true,
+            ]
+        );
+
+        HomepageSection::firstOrCreate(
             ['section_type' => 'articles'],
             [
                 'title' => 'آخرین مقالات',
                 'content' => null,
                 'settings' => ['limit' => 3],
-                'sort_order' => 3,
+                'sort_order' => 5,
                 'is_active' => true,
             ]
         );
