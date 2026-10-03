@@ -27,7 +27,7 @@
                                     <td class="px-4 py-3 text-gray-500 text-xs">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                     <td class="px-4 py-3">{{ $order->status?->faLabel() ?? $order->status }}</td>
                                     <td class="px-4 py-3">{{ $order->payment_status?->faLabel() ?? $order->payment_status }}</td>
-                                    <td class="px-4 py-3 font-mono" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
+                                    <td class="px-4 py-3 font-semibold text-slate-900">{{ number_format($order->total_price) }} تومان</td>
                                     <td class="px-4 py-3">
                                         <a href="{{ route('orders.show', $order) }}" wire:navigate class="text-primary-600 hover:text-primary-800 text-xs transition">مشاهده سفارش</a>
                                     </td>

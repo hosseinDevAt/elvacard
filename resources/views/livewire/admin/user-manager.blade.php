@@ -85,7 +85,7 @@
                     </div>
                     <div class="rounded-xl bg-slate-50/80 border border-slate-200/80 p-4">
                         <div class="text-xs text-slate-600 font-medium mb-1">مجموع خرید</div>
-                        <div class="text-xl font-extrabold text-slate-900 font-mono">{{ number_format($customerStats['totalSpent']) }} تومان</div>
+                        <div class="text-xl font-extrabold text-slate-900">{{ number_format($customerStats['totalSpent']) }} تومان</div>
                     </div>
                     <div class="rounded-xl bg-slate-50 border border-slate-200/80 p-4">
                         <div class="text-xs text-slate-500 font-medium mb-1">آخرین سفارش</div>
@@ -155,7 +155,7 @@
                                         </span>
                                     </td>
                                     <td class="admin-td text-xs">{{ $order->payment_status->faLabel() }}</td>
-                                    <td class="admin-td font-mono text-xs font-bold text-slate-800" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
+                                    <td class="admin-td text-xs font-bold text-slate-800">{{ number_format($order->total_price) }} تومان</td>
                                     <td class="admin-td text-xs text-slate-400">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                 </tr>
                             @empty
@@ -197,7 +197,7 @@
                                         </span>
                                     </td>
                                     <td class="admin-td text-xs">{{ $order->payment_status->faLabel() }}</td>
-                                    <td class="admin-td font-mono text-xs font-bold text-slate-800" dir="ltr">{{ number_format($order->total_price) }} تومان</td>
+                                    <td class="admin-td text-xs font-bold text-slate-800">{{ number_format($order->total_price) }} تومان</td>
                                     <td class="admin-td text-xs text-slate-400">{{ jalali_date($order->created_at, 'datetime') }}</td>
                                 </tr>
                             @empty

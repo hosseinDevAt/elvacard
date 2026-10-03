@@ -121,7 +121,7 @@
                     </div>
                     <div>
                         <div class="text-gray-400 text-xs">مبلغ / پرداخت‌شده</div>
-                        <div class="text-gray-900 font-mono" dir="ltr">{{ number_format($sp->amount) }} / {{ $sp->paid_amount !== null ? number_format($sp->paid_amount) : '—' }} تومان</div>
+                        <div class="text-gray-900 font-semibold">{{ number_format($sp->amount) }} / {{ $sp->paid_amount !== null ? number_format($sp->paid_amount) : '—' }} تومان</div>
                     </div>
                     <div>
                         <div class="text-gray-400 text-xs">درگاه</div>
@@ -194,7 +194,7 @@
                                     <span class="{{ $refundStatusColors[$refund->status->value] ?? 'bg-gray-100 text-gray-700' }} admin-badge">
                                         {{ $refund->status->faLabel() }}
                                     </span>
-                                    <span class="font-mono font-bold text-amber-600">{{ number_format($refund->amount) }} تومان</span>
+                                    <span class="font-bold text-amber-600">{{ number_format($refund->amount) }} تومان</span>
                                 </div>
                             </div>
 

@@ -53,12 +53,56 @@ if (! function_exists('jalali_now')) {
 
 if (! function_exists('fa_digits')) {
     /**
-     * Convert ASCII digits to Persian (Farsi-Extended) digits.
-     * Only intended for calendar/date UI.
+     * Convert ASCII digits to Persian digits.
+     * Idempotent: already Persian digits remain unchanged.
      */
-    function fa_digits(string|int|float $value): string
+    function fa_digits(string|int|float|null $value): string
     {
-        return app(DateService::class)->digits($value);
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        return app(DateService::class)->digits((string) $value);
+    }
+}
+
+if (! function_exists('fa_number')) {
+    /**
+     * Format a numeric value with Persian digits and optional thousands separator.
+     * Idempotent: safe for already-formatted strings or already-Persian digits.
+     */
+    function fa_number(mixed $value, bool $thousands = false, int $decimals = 0): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        if (is_numeric($value)) {
+            $formatted = $thousands
+                ? number_format((float) $value, $decimals)
+                : (string) $value;
+        } else {
+            $formatted = (string) $value;
+        }
+
+        return fa_digits($formatted);
+    }
+}
+
+if (! function_exists('format_price')) {
+    /**
+     * Format a currency price in Tomans with Persian digits and thousands separator.
+     * Idempotent: safe for already-formatted strings or already-Persian digits.
+     */
+    function format_price(mixed $amount, bool $withUnit = false): string
+    {
+        if ($amount === null || $amount === '') {
+            return $withUnit ? '۰ تومان' : '۰';
+        }
+
+        $formatted = fa_number($amount, true);
+
+        return $withUnit ? $formatted . ' تومان' : $formatted;
     }
 }
 

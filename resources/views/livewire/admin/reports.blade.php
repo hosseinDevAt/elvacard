@@ -44,7 +44,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="admin-card p-5">
             <div class="text-xs text-slate-500 font-medium mb-1">درآمد (پرداخت موفق)</div>
-            <div class="text-xl font-extrabold text-[#010619] font-mono" dir="ltr">{{ number_format($summary['revenue'] ?? 0) }} تومان</div>
+            <div class="text-xl font-extrabold text-[#010619]">{{ number_format($summary['revenue'] ?? 0) }} تومان</div>
         </div>
         <div class="admin-card p-5">
             <div class="text-xs text-slate-500 font-medium mb-1">کل سفارشات</div>
@@ -87,8 +87,8 @@
                     <div class="bg-[#ffde5b] h-full rounded-full transition-all shadow-sm"
                          style="width: {{ $bucket['revenue'] > 0 ? max(1, (int) round(($bucket['revenue'] / $maxTrendRevenue) * 100)) : 0 }}%"></div>
                 </div>
-                <span class="w-36 text-left font-mono font-bold text-slate-700" dir="ltr">{{ number_format($bucket['revenue']) }} تومان</span>
-                <span class="w-16 text-left font-mono text-slate-400">({{ $bucket['count'] }} تراکنش)</span>
+                <span class="w-36 text-start font-bold text-slate-700">{{ number_format($bucket['revenue']) }} تومان</span>
+                <span class="w-20 text-start text-slate-400">({{ fa_number($bucket['count']) }} تراکنش)</span>
             </div>
             @endforeach
         </div>
@@ -120,11 +120,11 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach($topProducts as $idx => $product)
                     <tr class="hover:bg-slate-50/60 transition">
-                        <td class="admin-td text-xs text-slate-400 font-mono">{{ $idx + 1 }}</td>
+                        <td class="admin-td text-xs text-slate-400">{{ $idx + 1 }}</td>
                         <td class="admin-td font-bold text-slate-900">{{ $product['product_name'] }}</td>
-                        <td class="admin-td font-mono font-bold text-slate-700">{{ number_format($product['total_qty']) }}</td>
-                        <td class="admin-td font-mono font-extrabold text-[#010619]" dir="ltr">{{ number_format($product['total_amount']) }} تومان</td>
-                        <td class="admin-td font-mono text-slate-600">{{ number_format($product['order_count']) }}</td>
+                        <td class="admin-td font-bold text-slate-700">{{ number_format($product['total_qty']) }}</td>
+                        <td class="admin-td font-extrabold text-[#010619]">{{ number_format($product['total_amount']) }} تومان</td>
+                        <td class="admin-td text-slate-600">{{ number_format($product['order_count']) }}</td>
                         <td class="admin-td">
                             @if($product['is_active'] === true)
                                 <span class="admin-badge admin-badge-success">فعال</span>
@@ -152,23 +152,23 @@
             <div class="space-y-2 text-xs">
                 <div class="flex justify-between items-center">
                     <span class="text-slate-500">درآمد موفق</span>
-                    <span class="font-mono font-extrabold text-emerald-600" dir="ltr">{{ number_format($method['success_revenue']) }} تومان</span>
+                    <span class="font-extrabold text-emerald-600">{{ number_format($method['success_revenue']) }} تومان</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-slate-500">تعداد پرداخت موفق</span>
-                    <span class="font-mono font-bold text-slate-800">{{ number_format($method['success_count']) }}</span>
+                    <span class="font-bold text-slate-800">{{ number_format($method['success_count']) }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-slate-500">در انتظار بررسی</span>
-                    <span class="font-mono font-bold text-amber-600">{{ number_format($method['pending_review_count']) }}</span>
+                    <span class="font-bold text-amber-600">{{ number_format($method['pending_review_count']) }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-slate-500">ناموفق</span>
-                    <span class="font-mono font-bold text-rose-600">{{ number_format($method['failed_count']) }}</span>
+                    <span class="font-bold text-rose-600">{{ number_format($method['failed_count']) }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-slate-500">لغو شده</span>
-                    <span class="font-mono text-slate-400">{{ number_format($method['cancelled_count']) }}</span>
+                    <span class="text-slate-400">{{ number_format($method['cancelled_count']) }}</span>
                 </div>
             </div>
         </div>
@@ -181,7 +181,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
             @foreach($orderStatusBreakdown as $statusKey => $status)
             <div class="text-center p-4 rounded-xl bg-slate-50 border border-slate-100">
-                <div class="text-2xl font-extrabold font-mono text-slate-900">{{ number_format($status['count']) }}</div>
+                <div class="text-2xl font-extrabold text-slate-900">{{ number_format($status['count']) }}</div>
                 <div class="text-xs font-medium text-slate-500 mt-1">{{ $status['label'] }}</div>
             </div>
             @endforeach
