@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @include('components.favicon-links')
     <title>صفحه مورد نظر یافت نشد - {{ site_setting('site_name', 'الواکارت') }}</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=vazirmatn:400,500,600,700,800,900&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4 selection:bg-[#ffde5b] selection:text-[#010619]">

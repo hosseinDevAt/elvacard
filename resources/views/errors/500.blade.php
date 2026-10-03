@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @include('components.favicon-links')
     <title>خطای داخلی سرور - {{ site_setting('site_name', 'الواکارت') }}</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=vazirmatn:400,500,600,700,800,900&display=swap" rel="stylesheet" />
     <style>
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url('/fonts/Vazirmatn[wght].woff2') format('woff2');
+            font-weight: 100 900;
+            font-style: normal;
+            font-display: swap;
+        }
         body { font-family: Vazirmatn, Tahoma, sans-serif; background: #f8fafc; color: #010619; margin: 0; padding: 20px; }
         .wrap { min-height: 90vh; display: flex; align-items: center; justify-content: center; }
         .box { max-width: 440px; width: 100%; text-align: center; }
