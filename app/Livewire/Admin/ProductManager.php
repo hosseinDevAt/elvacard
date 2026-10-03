@@ -1281,7 +1281,6 @@ class ProductManager extends Component
             'storeVariants' => $storeVariants,
             'storeColorOptions' => $this->storeColorOptions,
             'fuelPreparation' => $this->fuelPreparation,
-            'typeOptions' => ProductTypeEnum::options(),
             'categoryOptions' => ProductCategory::query()
                 ->orderBy('sort_order')
                 ->orderBy('name')
@@ -1296,11 +1295,6 @@ class ProductManager extends Component
             'workflowFilterOptions' => [
                 ['value' => '', 'label' => 'همه فرآیندها'],
                 ['value' => 'none', 'label' => 'بدون شخصی‌سازی'],
-                ['value' => CustomizationWorkflowEnum::BANK_CARD->value, 'label' => CustomizationWorkflowEnum::BANK_CARD->faLabel()],
-                ['value' => CustomizationWorkflowEnum::FUEL_CARD->value, 'label' => CustomizationWorkflowEnum::FUEL_CARD->faLabel()],
-            ],
-            'workflowOptions' => [
-                ['value' => '', 'label' => 'بدون شخصی‌سازی'],
                 ['value' => CustomizationWorkflowEnum::BANK_CARD->value, 'label' => CustomizationWorkflowEnum::BANK_CARD->faLabel()],
                 ['value' => CustomizationWorkflowEnum::FUEL_CARD->value, 'label' => CustomizationWorkflowEnum::FUEL_CARD->faLabel()],
             ],
