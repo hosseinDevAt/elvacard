@@ -149,12 +149,6 @@
                 </div>
 
 
-                <div>
-                    <label class="admin-label">پیکربندی طراحی (JSON، اختیاری)</label>
-                    <textarea wire:model="designConfig" rows="2" dir="ltr" placeholder='{"note":"رایگان"}' class="admin-input"></textarea>
-                    @error('designConfig') <p class="admin-error">{{ $message }}</p> @enderror
-                </div>
-
                 <div class="flex flex-wrap items-center gap-6">
                     <div class="flex items-center gap-2">
                         <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">

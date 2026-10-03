@@ -73,7 +73,6 @@ class ProductManagerFormRegressionTest extends TestCase
             ->set('description', '')
             ->set('mainImage', '')
             ->set('basePrice', '')
-            ->set('designConfig', '')
             ->set('metaTitle', '')
             ->set('metaDescription', '')
             ->set('canonicalUrl', '')

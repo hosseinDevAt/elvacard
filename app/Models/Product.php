@@ -19,7 +19,6 @@ class Product extends Model
         'main_image',
         'base_price',
         'product_category_id',
-        'design_config',
         'meta_title',
         'meta_description',
         'canonical_url',
@@ -33,7 +32,6 @@ class Product extends Model
     protected $casts = [
         'type' => ProductTypeEnum::class,
         'customization_workflow' => CustomizationWorkflowEnum::class,
-        'design_config' => 'array',
         'specifications' => 'array',
         'robots_index' => 'boolean',
         'is_active' => 'boolean',
