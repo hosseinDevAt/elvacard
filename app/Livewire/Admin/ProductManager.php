@@ -29,7 +29,7 @@ class ProductManager extends Component
     use WithFileUploads;
     use WithPagination;
 
-    public string $type = 'bank';
+    public string $type = 'standard';
 
     public ?string $customizationWorkflow = null;
 
@@ -503,7 +503,7 @@ class ProductManager extends Component
 
     public function resetForm(): void
     {
-        $this->type = 'bank';
+        $this->type = ProductTypeEnum::STANDARD->value;
         $this->customizationWorkflow = null;
         $this->name = '';
         $this->description = null;

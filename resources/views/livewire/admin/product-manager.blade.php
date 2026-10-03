@@ -56,55 +56,50 @@
                         @endif
                     </div>
                 @endif
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="admin-label">نوع محصول</label>
-                        <select wire:model="type" class="admin-select">
-                            @foreach($typeOptions as $option)
-                                <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                @if($customizationWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
+                    <div class="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-800 space-y-1">
+                        <p class="font-bold text-amber-900">پیش‌نیازهای فعال‌سازی و فروش کارت سوخت:</p>
+                        <p class="text-amber-900">این محصول تا تکمیل پیش‌نیازهای زیر قابل فعال‌سازی نیست:</p>
+                        <ul class="list-disc ms-4 space-y-0.5">
+                            @foreach($fuelPreparation as $item)
+                                <li>
+                                     {{ $item['label'] }}
+                                    @if($editingId)
+                                        @if($item['ok'])
+                                            <span class="text-emerald-600 font-semibold">✓ تکمیل شده</span>
+                                        @else
+                                            <span class="text-rose-600 font-semibold">✗ لازم است</span>
+                                        @endif
+                                    @endif
+                                </li>
                             @endforeach
-                        </select>
-                        @error('type') <p class="admin-error">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="admin-label">فرآیند شخصی‌سازی</label>
-                        <select wire:model="customizationWorkflow" class="admin-select">
-                            @foreach($workflowOptions as $option)
-                                <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
-                            @endforeach
-                        </select>
-                        @error('customizationWorkflow') <p class="admin-error">{{ $message }}</p> @enderror
-                        @if($customizationWorkflow === \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value)
-                            <div class="mt-2 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-800 space-y-1">
-                                <p class="font-bold text-amber-900">پیش‌نیازهای فعال‌سازی و فروش کارت سوخت:</p>
-                                <p class="text-amber-900">این محصول تا تکمیل پیش‌نیازهای زیر قابل فعال‌سازی نیست:</p>
-                                <ul class="list-disc ms-4 space-y-0.5">
-                                    @foreach($fuelPreparation as $item)
-                                        <li>
-                                             {{ $item['label'] }}
-                                            @if($editingId)
-                                                @if($item['ok'])
-                                                    <span class="text-emerald-600 font-semibold">✓ تکمیل شده</span>
-                                                @else
-                                                    <span class="text-rose-600 font-semibold">✗ لازم است</span>
-                                                @endif
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
-                                @if($editingId)
-                                    <div class="pt-1">
-                                        <a href="{{ route('admin.product-colors', ['product' => $editingId]) }}" class="text-[#010619] hover:underline font-bold font-semibold underline">مدیریت رنگ و قیمت این محصول</a>
-                                    </div>
-                                @endif
+                        </ul>
+                        @if($editingId)
+                            <div class="pt-1">
+                                <a href="{{ route('admin.product-colors', ['product' => $editingId]) }}" class="text-[#010619] hover:underline font-bold font-semibold underline">مدیریت رنگ و قیمت این محصول</a>
                             </div>
                         @endif
                     </div>
+                @endif
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="admin-label">نام محصول</label>
                         <input type="text" wire:model="name" class="admin-input">
                         @error('name') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
+                    @if(! $customizationWorkflow)
+                        <div>
+                            <label class="admin-label">دسته‌بندی محصول</label>
+                            <select wire:model="productCategoryId" class="admin-select">
+                                <option value="">بدون دسته‌بندی</option>
+                                @foreach($categoryOptions as $option)
+                                    <option value="{{ $option->id }}">{{ $option->name }}@if(! $option->is_active) (غیرفعال)@endif</option>
+                                @endforeach
+                            </select>
+                            @error('productCategoryId') <p class="admin-error">{{ $message }}</p> @enderror
+                        </div>
+                    @endif
                 </div>
 
                 <div>
@@ -153,18 +148,6 @@
                     @endif
                 </div>
 
-                @if(! $customizationWorkflow)
-                    <div>
-                        <label class="admin-label">دسته‌بندی محصول</label>
-                        <select wire:model="productCategoryId" class="admin-select">
-                            <option value="">بدون دسته‌بندی</option>
-                            @foreach($categoryOptions as $option)
-                                <option value="{{ $option->id }}">{{ $option->name }}@if(! $option->is_active) (غیرفعال)@endif</option>
-                            @endforeach
-                        </select>
-                        @error('productCategoryId') <p class="admin-error">{{ $message }}</p> @enderror
-                    </div>
-                @endif
 
                 <div>
                     <label class="admin-label">پیکربندی طراحی (JSON، اختیاری)</label>
