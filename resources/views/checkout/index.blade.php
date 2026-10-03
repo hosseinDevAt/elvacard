@@ -2,6 +2,11 @@
 
 @section('content')
     <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <x-breadcrumbs :items="[
+            ['label' => 'سبد خرید', 'url' => route('cart.index')],
+            ['label' => 'تسویه حساب']
+        ]" />
+
         <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl tracking-tight">تسویه حساب</h1>
@@ -9,7 +14,7 @@
             </div>
 
             <a href="{{ route('cart.index') }}" wire:navigate class="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-[#010619] bg-white border border-slate-200/90 px-4 py-2 rounded-xl shadow-xs transition hover:border-slate-300">
-                <x-icons.arrow-left class="w-4 h-4" />
+                <x-icons.arrow-right class="w-4 h-4" />
                 <span>بازگشت به سبد خرید</span>
             </a>
         </div>
@@ -101,7 +106,7 @@
 
                         <div>
                             <label for="customer_phone" class="mb-1.5 block text-xs font-bold text-slate-700">شماره موبایل <span class="text-rose-500">*</span></label>
-                            <input id="customer_phone" name="customer_phone" type="text" value="{{ old('customer_phone') }}" required dir="ltr"
+                            <input id="customer_phone" name="customer_phone" type="tel" inputmode="tel" value="{{ old('customer_phone') }}" required dir="ltr"
                                    class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 transition"
                                    placeholder="09123456789" />
                             @error('customer_phone') <p class="mt-1 text-xs text-rose-600 font-medium">{{ $message }}</p> @enderror
@@ -119,7 +124,7 @@
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div>
                             <label for="shipping_postal_code" class="mb-1.5 block text-xs font-bold text-slate-700">کد پستی ۱۰ رقمی <span class="text-rose-500">*</span></label>
-                            <input id="shipping_postal_code" name="shipping_postal_code" type="text" value="{{ old('shipping_postal_code') }}" required maxlength="10" dir="ltr"
+                            <input id="shipping_postal_code" name="shipping_postal_code" type="text" inputmode="numeric" value="{{ old('shipping_postal_code') }}" required maxlength="10" dir="ltr"
                                    class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 text-left focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 transition"
                                    placeholder="1234567890" />
                             @error('shipping_postal_code') <p class="mt-1 text-xs text-rose-600 font-medium">{{ $message }}</p> @enderror

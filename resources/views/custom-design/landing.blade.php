@@ -14,7 +14,13 @@
         <div class="pointer-events-none absolute -top-24 right-1/4 h-96 w-96 rounded-full bg-[#ffde5b]/10 blur-3xl"></div>
         <div class="pointer-events-none absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl"></div>
 
-        <div class="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <div class="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-center sm:justify-start mb-6">
+                <x-breadcrumbs :dark="true" :items="[
+                    ['label' => 'طراحی کارت اختصاصی']
+                ]" />
+            </div>
+
             <span class="inline-flex items-center gap-2 rounded-full border border-[#ffde5b]/40 bg-[#ffde5b]/10 px-4 py-1.5 text-xs font-bold text-[#ffde5b] mb-6">
                 <span class="h-2 w-2 rounded-full bg-[#ffde5b] animate-pulse"></span>
                 <span>استودیوی ساخت کارت فلزی شخصی‌سازی‌شده</span>

@@ -2,6 +2,10 @@
 
 @section('content')
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <x-breadcrumbs :items="[
+            ['label' => 'فروشگاه محصولات']
+        ]" />
+
         <header class="mb-8">
             <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl tracking-tight">فروشگاه محصولات</h1>
             <p class="mt-2 text-sm text-slate-500 sm:text-base">محصولات فیزیکی، اکسسوری‌ها و کارت‌های استاندارد موجود را بررسی و انتخاب کنید.</p>

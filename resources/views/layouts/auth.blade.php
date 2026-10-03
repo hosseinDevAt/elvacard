@@ -32,7 +32,7 @@
         {{-- Footer Link --}}
         <div class="text-center mt-6">
             <a href="{{ route('home') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#010619] transition">
-                <x-icons.arrow-left class="h-3.5 w-3.5" />
+                <x-icons.arrow-right class="h-3.5 w-3.5" />
                 <span>بازگشت به صفحه اصلی</span>
             </a>
         </div>

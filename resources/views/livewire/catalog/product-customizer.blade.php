@@ -334,7 +334,7 @@
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ffde5b] px-6 py-3 w-full sm:w-auto text-xs font-bold text-[#010619] transition duration-200 hover:bg-[#f5d347] active:scale-[0.99] shadow-md shadow-[#ffde5b]/20 cursor-pointer"
                 >
                     <span>مرحله بعد: اطلاعات پشت کارت</span>
-                    <svg class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
@@ -344,7 +344,7 @@
                     wire:click="setStep(1)"
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 px-5 py-3 w-full sm:w-auto text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white border border-slate-700 cursor-pointer"
                 >
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <svg class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                     <span>بازگشت به مرحله قبل</span>

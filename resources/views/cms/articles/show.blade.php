@@ -1,6 +1,13 @@
 @extends('layouts.app')
 
-@section('title'){{ $article->meta_title ?: $article->title }} - {{ site_setting('site_name', config('app.name')) }}@endsection
+@php
+    $siteName = site_setting('site_name', config('app.name'));
+    $pageTitle = $article->meta_title ?: $article->title;
+    if (!str_contains($pageTitle, $siteName)) {
+        $pageTitle .= ' - ' . $siteName;
+    }
+@endphp
+@section('title', $pageTitle)
 
 @section('meta')
     @if ($article->meta_description)
@@ -23,6 +30,12 @@
 @section('content')
 <main class="min-h-[70vh] bg-slate-50/50 py-10 sm:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <x-breadcrumbs :items="array_values(array_filter([
+            ['label' => 'مقالات و راهنماها', 'url' => route('articles.index')],
+            $article->category ? ['label' => $article->category->name, 'url' => route('articles.category', $article->category)] : null,
+            ['label' => $article->title]
+        ]))" />
+
         <article class="overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 shadow-sm">
             <header class="mb-8 border-b border-slate-100 pb-6">
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -62,12 +75,12 @@
             <div class="mt-10 pt-6 border-t border-slate-100 flex items-center justify-between">
                 @if ($article->category)
                     <a href="{{ route('articles.category', $article->category) }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition">
-                        <x-icons.arrow-left class="h-4 w-4" />
+                        <x-icons.arrow-right class="h-4 w-4" />
                         <span>بازگشت به مقالات {{ $article->category->name }}</span>
                     </a>
                 @else
                     <a href="{{ route('articles.index') }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition">
-                        <x-icons.arrow-left class="h-4 w-4" />
+                        <x-icons.arrow-right class="h-4 w-4" />
                         <span>بازگشت به لیست مقالات</span>
                     </a>
                 @endif

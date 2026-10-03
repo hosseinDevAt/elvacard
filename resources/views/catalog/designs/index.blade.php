@@ -5,6 +5,10 @@
 @section('content')
     <div class="min-h-[70vh] bg-slate-50/50 py-10 sm:py-14">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <x-breadcrumbs :items="[
+                ['label' => 'فهرست طرح‌ها']
+            ]" />
+
             {{-- Header --}}
             <div class="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-slate-200/80 pb-6">
                 <div>

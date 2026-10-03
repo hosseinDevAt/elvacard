@@ -2,6 +2,10 @@
 
 @section('content')
     <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <x-breadcrumbs :items="[
+            ['label' => 'سبد خرید']
+        ]" />
+
         <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl tracking-tight">سبد خرید</h1>
@@ -9,7 +13,7 @@
             </div>
 
             <a href="{{ route('catalog.products.index') }}" wire:navigate class="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-[#010619] bg-white border border-slate-200/90 px-4 py-2 rounded-xl shadow-xs transition hover:border-slate-300">
-                <x-icons.arrow-left class="w-4 h-4" />
+                <x-icons.arrow-right class="w-4 h-4" />
                 <span>ادامه خرید</span>
             </a>
         </div>

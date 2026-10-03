@@ -5,6 +5,11 @@
 @section('content')
     <div class="min-h-[70vh] bg-slate-50/60 py-10 sm:py-16">
         <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <x-breadcrumbs :items="[
+                ['label' => 'پیگیری سفارش', 'url' => route('order-tracking.index')],
+                ['label' => 'سفارش ' . $order->reference]
+            ]" />
+
             <div class="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm">
                 {{-- Card Header --}}
                 <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-6 sm:px-8 flex flex-wrap items-center justify-between gap-4">
@@ -16,9 +21,7 @@
                     </div>
 
                     <a href="{{ route('order-tracking.index') }}" wire:navigate class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-[#010619] bg-white border border-slate-200 px-4 py-2 rounded-xl transition hover:border-slate-300">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                        <x-icons.arrow-right class="h-4 w-4" />
                         <span>پیگیری سفارش دیگر</span>
                     </a>
                 </div>

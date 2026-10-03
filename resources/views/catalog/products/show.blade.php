@@ -39,9 +39,14 @@
 
 @section('content')
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <x-breadcrumbs :items="[
+            ['label' => 'فروشگاه محصولات', 'url' => route('catalog.products.index')],
+            ['label' => $product->name]
+        ]" />
+
         <div class="mb-8">
             <a href="{{ route('catalog.products.index') }}" wire:navigate class="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-[#010619] bg-white border border-slate-200/90 px-3.5 py-2 rounded-xl shadow-xs transition hover:border-slate-300">
-                <x-icons.arrow-left class="w-4 h-4" />
+                <x-icons.arrow-right class="w-4 h-4" />
                 <span>بازگشت به محصولات</span>
             </a>
             <div class="mt-4 flex flex-wrap items-center gap-3">

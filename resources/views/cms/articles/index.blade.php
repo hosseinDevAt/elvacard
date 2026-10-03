@@ -13,11 +13,22 @@
 @section('content')
 <main class="min-h-[70vh] bg-slate-50/50 py-10 sm:py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        @if (isset($category))
+            <x-breadcrumbs :items="[
+                ['label' => 'مقالات و راهنماها', 'url' => route('articles.index')],
+                ['label' => $category->name]
+            ]" />
+        @else
+            <x-breadcrumbs :items="[
+                ['label' => 'مقالات و راهنماها']
+            ]" />
+        @endif
+
         {{-- Header --}}
         <header class="mb-10 text-center sm:text-start border-b border-slate-200/80 pb-6">
             @if (isset($category))
                 <a href="{{ route('articles.index') }}" wire:navigate class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#010619] mb-3 transition">
-                    <x-icons.arrow-left class="h-4 w-4" />
+                    <x-icons.arrow-right class="h-4 w-4" />
                     <span>همه مقالات</span>
                 </a>
                 <h1 class="text-2xl sm:text-4xl font-black text-[#010619] tracking-tight mb-2">{{ $category->name }}</h1>

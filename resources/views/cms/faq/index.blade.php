@@ -9,6 +9,10 @@
 @section('content')
 <main class="min-h-[70vh] bg-slate-50/50 py-12 sm:py-16">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <x-breadcrumbs :items="[
+            ['label' => 'سوالات متداول']
+        ]" />
+
         {{-- Header --}}
         <header class="mb-10 text-center">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-[#ffde5b]/20 text-[#664d00] border border-[#ffde5b]/60 px-3.5 py-1 text-xs font-bold mb-3">

@@ -24,7 +24,7 @@ class CheckoutController extends Controller
         $cart = $this->cartService->getCart();
 
         if (empty($cart['items'])) {
-            return redirect()->route('cart.index')->with('error', 'Cart is empty.');
+            return redirect()->route('cart.index')->with('error', 'سبد خرید شما خالی است.');
         }
 
         $submissionToken = session('checkout_submission_token');

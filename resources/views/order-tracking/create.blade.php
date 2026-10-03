@@ -5,6 +5,10 @@
 @section('content')
     <div class="min-h-[65vh] bg-slate-50/60 py-12 sm:py-16">
         <div class="mx-auto max-w-xl px-4 sm:px-6 lg:px-8">
+            <x-breadcrumbs :items="[
+                ['label' => 'پیگیری سفارش']
+            ]" />
+
             <div class="overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 shadow-sm">
                 {{-- Header Icon & Title --}}
                 <div class="text-center">
@@ -49,7 +53,7 @@
                                 required
                                 autocomplete="off"
                                 spellcheck="false"
-                                placeholder="مثلاً: 0M1Msl8znVAVii3BWmhh..."
+                                placeholder="0M1Msl8znVAVii3BWmhh..."
                                 dir="ltr"
                                 class="w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm font-semibold text-slate-800 placeholder-slate-400 text-left focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 transition"
                             />
@@ -74,6 +78,14 @@
                         <span>کد پیگیری بدون نیاز به ورود به حساب کاربری، وضعیت پردازش، تولید، ثبت پرداخت و ارسال سفارش شما را نمایش می‌دهد.</span>
                     </div>
                 </div>
+            </div>
+
+            {{-- Secondary action --}}
+            <div class="mt-6 text-center">
+                <a href="{{ route('catalog.products.index') }}" wire:navigate class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#010619] transition">
+                    <x-icons.arrow-right class="w-3.5 h-3.5" />
+                    <span>بازگشت به فروشگاه محصولات</span>
+                </a>
             </div>
         </div>
     </div>
