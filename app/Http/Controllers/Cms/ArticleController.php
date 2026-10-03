@@ -53,8 +53,30 @@ class ArticleController extends Controller
             ->first();
 
         if ($article !== null) {
+            $relatedArticles = $this->publishedQuery()
+                ->whereKeyNot($article->id)
+                ->when($article->article_category_id, function ($q) use ($article) {
+                    $q->where('article_category_id', $article->article_category_id);
+                })
+                ->with('category')
+                ->latest('published_at')
+                ->take(3)
+                ->get();
+
+            if ($relatedArticles->count() < 3) {
+                $more = $this->publishedQuery()
+                    ->whereKeyNot($article->id)
+                    ->whereNotIn('id', $relatedArticles->pluck('id'))
+                    ->with('category')
+                    ->latest('published_at')
+                    ->take(3 - $relatedArticles->count())
+                    ->get();
+                $relatedArticles = $relatedArticles->concat($more);
+            }
+
             return view('cms.articles.show', [
                 'article' => $article,
+                'relatedArticles' => $relatedArticles,
             ]);
         }
 

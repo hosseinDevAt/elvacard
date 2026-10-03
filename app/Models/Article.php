@@ -38,6 +38,11 @@ class Article extends Model
         return $this->belongsTo(ArticleCategory::class, 'article_category_id');
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', ArticleStatusEnum::PUBLISHED->value);

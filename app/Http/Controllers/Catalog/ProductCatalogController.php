@@ -177,12 +177,41 @@ class ProductCatalogController extends Controller
 
         $canonicalUrl = $this->canonicalUrl($product);
 
+        $similarProducts = Product::query()
+            ->active()
+            ->whereKeyNot($product->id)
+            ->whereNull('customization_workflow')
+            ->purchasable()
+            ->when($product->product_category_id, function ($q) use ($product) {
+                $q->where('product_category_id', $product->product_category_id);
+            })
+            ->with('category:id,name')
+            ->withCatalog()
+            ->take(4)
+            ->get();
+
+        if ($similarProducts->count() < 4) {
+            $moreProducts = Product::query()
+                ->active()
+                ->whereKeyNot($product->id)
+                ->whereNotIn('id', $similarProducts->pluck('id'))
+                ->whereNull('customization_workflow')
+                ->purchasable()
+                ->with('category:id,name')
+                ->withCatalog()
+                ->latest()
+                ->take(4 - $similarProducts->count())
+                ->get();
+            $similarProducts = $similarProducts->concat($moreProducts);
+        }
+
         return view('catalog.products.show', [
             'product' => $product,
             'selectedColorId' => $selectedColorId,
             'hasCustomization' => $hasCustomization,
             'customizationAvailable' => $customizationAvailable,
             'purchasable' => $purchasable,
+            'similarProducts' => $similarProducts,
             'canonicalUrl' => $canonicalUrl,
             'ogImageUrl' => $this->publicAssetUrl($product->og_image ?: $product->main_image),
             'schemaJson' => $this->productSchemaJson($product, $purchasable, $canonicalUrl, $selectedColorId),
