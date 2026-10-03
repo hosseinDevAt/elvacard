@@ -116,25 +116,41 @@ class Product extends Model
      */
     public function galleryPaths(?int $colorId): array
     {
-        $paths = $this->images
+        $colorPaths = $this->images
             ->filter(fn ($image) => (int) $image->color_id === $colorId)
+            ->sortBy([
+                ['is_primary', 'desc'],
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])
             ->map(fn ($image) => $image->image_path)
             ->values()
             ->all();
 
-        if ($paths === []) {
-            $paths = $this->images
-                ->filter(fn ($image) => $image->color_id === null)
-                ->map(fn ($image) => $image->image_path)
-                ->values()
-                ->all();
+        if ($colorPaths !== []) {
+            return $colorPaths;
         }
 
-        if ($paths === [] && $this->main_image) {
-            $paths = [$this->main_image];
+        $untintedPaths = $this->images
+            ->filter(fn ($image) => $image->color_id === null)
+            ->sortBy([
+                ['is_primary', 'desc'],
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->map(fn ($image) => $image->image_path)
+            ->values()
+            ->all();
+
+        if ($untintedPaths !== []) {
+            return $untintedPaths;
         }
 
-        return $paths;
+        if ($this->main_image) {
+            return [$this->main_image];
+        }
+
+        return [];
     }
 
     /**

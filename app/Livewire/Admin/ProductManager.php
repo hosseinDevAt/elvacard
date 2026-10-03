@@ -41,6 +41,12 @@ class ProductManager extends Component
 
     public $mainImageUpload;
 
+    public $galleryUploads = [];
+
+    public array $existingImages = [];
+
+    public int $primaryUploadIndex = 0;
+
     public ?int $basePrice = null;
 
     public ?int $productCategoryId = null;
@@ -99,6 +105,8 @@ class ProductManager extends Component
         'description' => 'nullable|string',
         'mainImage' => 'nullable|string|max:255',
         'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        'galleryUploads' => 'nullable|array|max:10',
+        'galleryUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         'basePrice' => 'nullable|integer|min:0',
         'productCategoryId' => 'nullable|integer|exists:product_categories,id',
         'metaTitle' => 'nullable|string|max:255',
@@ -330,11 +338,108 @@ class ProductManager extends Component
             }
 
             $product->update($data);
+
+            if (! empty($this->galleryUploads)) {
+                $hasPrimary = ProductImage::query()
+                    ->where('product_id', $product->id)
+                    ->whereNull('color_id')
+                    ->where('is_primary', true)
+                    ->exists();
+
+                $maxSortOrder = (int) ProductImage::query()
+                    ->where('product_id', $product->id)
+                    ->whereNull('color_id')
+                    ->max('sort_order');
+
+                foreach ($this->galleryUploads as $idx => $uploadFile) {
+                    if ($uploadFile) {
+                        $storedPath = $uploadFile->store('products', 'public');
+                        $isPrimary = (! $hasPrimary && $idx === 0);
+                        ProductImage::query()->create([
+                            'product_id' => $product->id,
+                            'color_id' => null,
+                            'image_path' => $storedPath,
+                            'sort_order' => $maxSortOrder + $idx + 1,
+                            'is_primary' => $isPrimary,
+                        ]);
+
+                        if ($isPrimary) {
+                            $hasPrimary = true;
+                            $product->update(['main_image' => $storedPath]);
+                            $this->mainImage = $storedPath;
+                        }
+                    }
+                }
+                $this->galleryUploads = [];
+            }
+
+            if ($this->mainImage && ! ProductImage::query()->where('product_id', $product->id)->whereNull('color_id')->where('image_path', $this->mainImage)->exists()) {
+                ProductImage::query()
+                    ->where('product_id', $product->id)
+                    ->whereNull('color_id')
+                    ->update(['is_primary' => false]);
+
+                ProductImage::query()->create([
+                    'product_id' => $product->id,
+                    'color_id' => null,
+                    'image_path' => $this->mainImage,
+                    'sort_order' => 0,
+                    'is_primary' => true,
+                ]);
+            }
+
+            $primaryImg = ProductImage::query()
+                ->where('product_id', $product->id)
+                ->whereNull('color_id')
+                ->where('is_primary', true)
+                ->first();
+
+            if ($primaryImg && $product->main_image !== $primaryImg->image_path) {
+                $product->update(['main_image' => $primaryImg->image_path]);
+                $this->mainImage = $primaryImg->image_path;
+            }
+
             session()->flash('success', 'محصول با موفقیت ویرایش شد');
         } else {
             /** @var Product $createdProduct */
             $createdProduct = Product::create($data);
             $createdProductId = $createdProduct->id;
+
+            if (! empty($this->galleryUploads)) {
+                $primaryPath = null;
+                foreach ($this->galleryUploads as $idx => $uploadFile) {
+                    if ($uploadFile) {
+                        $storedPath = $uploadFile->store('products', 'public');
+                        $isPrimary = ($idx === $this->primaryUploadIndex);
+                        ProductImage::query()->create([
+                            'product_id' => $createdProduct->id,
+                            'color_id' => null,
+                            'image_path' => $storedPath,
+                            'sort_order' => $idx + 1,
+                            'is_primary' => $isPrimary,
+                        ]);
+
+                        if ($isPrimary) {
+                            $primaryPath = $storedPath;
+                        }
+                    }
+                }
+
+                if ($primaryPath !== null) {
+                    $createdProduct->update(['main_image' => $primaryPath]);
+                    $this->mainImage = $primaryPath;
+                }
+                $this->galleryUploads = [];
+            } elseif (! empty($createdProduct->main_image)) {
+                ProductImage::query()->create([
+                    'product_id' => $createdProduct->id,
+                    'color_id' => null,
+                    'image_path' => $createdProduct->main_image,
+                    'sort_order' => 1,
+                    'is_primary' => true,
+                ]);
+            }
+
             session()->flash('success', 'محصول با موفقیت اضافه شد');
         }
 
@@ -428,6 +533,9 @@ class ProductManager extends Component
             && ProductColorPrice::query()->where('product_id', $product->id)->exists()
                 ? 'variable'
                 : 'simple';
+        $this->galleryUploads = [];
+        $this->primaryUploadIndex = 0;
+        $this->refreshExistingImages();
         $this->resetVariantForm();
         $this->showVariantForm = false;
         $this->showForm = true;
@@ -492,7 +600,8 @@ class ProductManager extends Component
                 ->where(function ($query) use ($path) {
                     $query->where('main_image', $path)->orWhere('og_image', $path);
                 })
-                ->exists(),
+                ->exists()
+                || ProductImage::query()->where('image_path', $path)->exists(),
         );
     }
 
@@ -504,6 +613,9 @@ class ProductManager extends Component
         $this->description = null;
         $this->mainImage = null;
         $this->mainImageUpload = null;
+        $this->galleryUploads = [];
+        $this->existingImages = [];
+        $this->primaryUploadIndex = 0;
         $this->basePrice = null;
         $this->productCategoryId = null;
         $this->metaTitle = null;
@@ -519,6 +631,201 @@ class ProductManager extends Component
         $this->specifications = [];
         $this->resetVariantForm();
         $this->showVariantForm = false;
+    }
+
+    public function refreshExistingImages(): void
+    {
+        if (! $this->editingId) {
+            $this->existingImages = [];
+
+            return;
+        }
+
+        $product = Product::find($this->editingId);
+        if (! $product) {
+            $this->existingImages = [];
+
+            return;
+        }
+
+        $images = ProductImage::query()
+            ->where('product_id', $product->id)
+            ->whereNull('color_id')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        // If product has main_image but no product_images row with color_id = null, auto-seed it into product_images
+        if ($images->isEmpty() && ! empty($product->main_image)) {
+            ProductImage::query()->create([
+                'product_id' => $product->id,
+                'color_id' => null,
+                'image_path' => $product->main_image,
+                'sort_order' => 1,
+                'is_primary' => true,
+            ]);
+
+            $images = ProductImage::query()
+                ->where('product_id', $product->id)
+                ->whereNull('color_id')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+        }
+
+        if ($images->isNotEmpty() && ! $images->contains(fn ($img) => (bool) $img->is_primary)) {
+            $first = $images->first();
+            $first->update(['is_primary' => true]);
+            $first->is_primary = true;
+            if ($product->main_image !== $first->image_path) {
+                $product->update(['main_image' => $first->image_path]);
+                $this->mainImage = $first->image_path;
+            }
+        }
+
+        $this->existingImages = $images->map(fn (ProductImage $img) => [
+            'id' => $img->id,
+            'image_path' => $img->image_path,
+            'is_primary' => (bool) $img->is_primary,
+            'sort_order' => (int) $img->sort_order,
+        ])->all();
+    }
+
+    public function setPrimaryProductImage(int $imageId): void
+    {
+        if (! $this->editingId) {
+            return;
+        }
+
+        $image = ProductImage::query()
+            ->where('product_id', $this->editingId)
+            ->whereNull('color_id')
+            ->whereKey($imageId)
+            ->first();
+
+        if (! $image) {
+            session()->flash('error', 'تصویر موردنظر یافت نشد.');
+
+            return;
+        }
+
+        ProductImage::query()
+            ->where('product_id', $this->editingId)
+            ->whereNull('color_id')
+            ->update(['is_primary' => false]);
+
+        $image->update(['is_primary' => true]);
+
+        $product = Product::find($this->editingId);
+        if ($product) {
+            $product->update(['main_image' => $image->image_path]);
+            $this->mainImage = $image->image_path;
+        }
+
+        $this->refreshExistingImages();
+        session()->flash('success', 'تصویر اصلی گالری با موفقیت تنظیم شد.');
+    }
+
+    public function deleteProductImage(int $imageId): void
+    {
+        if (! $this->editingId) {
+            return;
+        }
+
+        $image = ProductImage::query()
+            ->where('product_id', $this->editingId)
+            ->whereNull('color_id')
+            ->whereKey($imageId)
+            ->first();
+
+        if (! $image) {
+            session()->flash('error', 'تصویر موردنظر یافت نشد.');
+
+            return;
+        }
+
+        $wasPrimary = (bool) $image->is_primary;
+        $image->delete();
+
+        $remaining = ProductImage::query()
+            ->where('product_id', $this->editingId)
+            ->whereNull('color_id')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $product = Product::find($this->editingId);
+
+        if ($remaining->isNotEmpty()) {
+            if ($wasPrimary || ! $remaining->contains(fn ($img) => (bool) $img->is_primary)) {
+                $newPrimary = $remaining->first();
+                $newPrimary->update(['is_primary' => true]);
+                if ($product) {
+                    $product->update(['main_image' => $newPrimary->image_path]);
+                    $this->mainImage = $newPrimary->image_path;
+                }
+            }
+        } else {
+            if ($product) {
+                $product->update(['main_image' => null]);
+                $this->mainImage = null;
+            }
+        }
+
+        $this->refreshExistingImages();
+        session()->flash('success', 'تصویر با موفقیت از گالری حذف شد.');
+    }
+
+    public function moveProductImageUp(int $index): void
+    {
+        if ($index <= 0 || ! isset($this->existingImages[$index])) {
+            return;
+        }
+
+        $temp = $this->existingImages[$index - 1];
+        $this->existingImages[$index - 1] = $this->existingImages[$index];
+        $this->existingImages[$index] = $temp;
+
+        foreach ($this->existingImages as $order => $item) {
+            ProductImage::query()->where('id', $item['id'])->update(['sort_order' => $order + 1]);
+        }
+
+        $this->refreshExistingImages();
+    }
+
+    public function moveProductImageDown(int $index): void
+    {
+        if ($index >= count($this->existingImages) - 1 || ! isset($this->existingImages[$index])) {
+            return;
+        }
+
+        $temp = $this->existingImages[$index + 1];
+        $this->existingImages[$index + 1] = $this->existingImages[$index];
+        $this->existingImages[$index] = $temp;
+
+        foreach ($this->existingImages as $order => $item) {
+            ProductImage::query()->where('id', $item['id'])->update(['sort_order' => $order + 1]);
+        }
+
+        $this->refreshExistingImages();
+    }
+
+    public function removeGalleryUpload(int $index): void
+    {
+        if (isset($this->galleryUploads[$index])) {
+            unset($this->galleryUploads[$index]);
+            $this->galleryUploads = array_values($this->galleryUploads);
+            if ($this->primaryUploadIndex >= count($this->galleryUploads)) {
+                $this->primaryUploadIndex = max(0, count($this->galleryUploads) - 1);
+            }
+        }
+    }
+
+    public function setPrimaryUpload(int $index): void
+    {
+        if (isset($this->galleryUploads[$index])) {
+            $this->primaryUploadIndex = $index;
+        }
     }
 
     public function addSpecificationRow(): void

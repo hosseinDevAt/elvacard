@@ -108,44 +108,183 @@
                     @error('description') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {{-- Product Price Section --}}
+                @if($customizationWorkflow)
                     <div>
-                        <label class="admin-label">تصویر اصلی</label>
-                        <input type="text" wire:model="mainImage" placeholder="products/card.jpg" dir="ltr" class="admin-input">
-                        <input type="file" wire:model="mainImageUpload" accept="image/*" class="block w-full mt-2 text-xs text-slate-600 file:me-3 file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-slate-700 file:rounded-xl file:font-medium file:cursor-pointer hover:file:bg-slate-200">
-                        @error('mainImage') <p class="admin-error">{{ $message }}</p> @enderror
-                        @error('mainImageUpload') <p class="admin-error">{{ $message }}</p> @enderror
-                        @if($mainImageUpload)
-                            <img src="{{ $mainImageUpload->temporaryUrl() }}" class="mt-2 h-24 w-24 object-cover rounded-xl border border-slate-200" alt="">
-                        @elseif($mainImage)
-                            <img src="{{ asset('storage/'.$mainImage) }}" class="mt-2 h-24 w-24 object-cover rounded-xl border border-slate-200" alt="">
-                        @endif
+                        <label class="admin-label">قیمت پایه (تومان)</label>
+                        <input type="number" wire:model="basePrice" min="0" placeholder="500000" dir="ltr" class="admin-input">
+                        @error('basePrice') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
-                    @if($customizationWorkflow)
-                        <div>
-                            <label class="admin-label">قیمت پایه (تومان)</label>
-                            <input type="number" wire:model="basePrice" min="0" placeholder="500000" dir="ltr" class="admin-input">
-                            @error('basePrice') <p class="admin-error">{{ $message }}</p> @enderror
+                @elseif($pricingType === 'simple')
+                    <div>
+                        <label class="admin-label">قیمت پایه (تومان)</label>
+                        <input type="number" wire:model="basePrice" min="0" placeholder="500000" dir="ltr" class="admin-input">
+                        @error('basePrice') <p class="admin-error">{{ $message }}</p> @enderror
+                        <p class="text-xs text-slate-400 mt-1">قیمت ثابت محصول عادی؛ مشتری این مبلغ را پرداخت می‌کند.</p>
+                    </div>
+                @else
+                    <div>
+                        <label class="admin-label">قیمت متغیر</label>
+                        <div class="rounded-xl border border-slate-300 bg-slate-50/80 px-4 py-3 text-xs text-slate-700">
+                            @if($editingId)
+                                قیمت هر رنگ از بخش «متغیرهای محصول» همین صفحه مدیریت می‌شود.
+                            @else
+                                محصول بدون قیمت پایه ذخیره می‌شود؛ پس از ذخیره قیمت هر رنگ را تعیین می‌کنید.
+                            @endif
                         </div>
-                    @elseif($pricingType === 'simple')
+                    </div>
+                @endif
+
+                {{-- Product Image Gallery Section --}}
+                <div class="border-t border-slate-200 pt-5 mt-2 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
-                            <label class="admin-label">قیمت پایه (تومان)</label>
-                            <input type="number" wire:model="basePrice" min="0" placeholder="500000" dir="ltr" class="admin-input">
-                            @error('basePrice') <p class="admin-error">{{ $message }}</p> @enderror
-                            <p class="text-xs text-slate-400 mt-1">قیمت ثابت محصول عادی؛ مشتری این مبلغ را پرداخت می‌کند.</p>
+                            <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-[#ffde5b]"></span>
+                                <span>تصاویر و گالری محصول</span>
+                            </h4>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                می‌توانید چندین تصویر برای محصول بارگذاری کنید. تصویر با نشان «اصلی» در کاتالوگ فروشگاه و سبد خرید نمایش داده شده و همه تصاویر در گالری صفحه محصول ارائه می‌شوند.
+                            </p>
                         </div>
-                    @else
+                    </div>
+
+                    {{-- Existing Images Grid (When Editing) --}}
+                    @if(! empty($existingImages))
                         <div>
-                            <label class="admin-label">قیمت متغیر</label>
-                            <div class="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs text-slate-700">
-                                @if($editingId)
-                                    قیمت هر رنگ از بخش «متغیرهای محصول» همین صفحه مدیریت می‌شود.
-                                @else
-                                    محصول بدون قیمت پایه ذخیره می‌شود؛ پس از ذخیره قیمت هر رنگ را تعیین می‌کنید.
-                                @endif
+                            <span class="block text-xs font-semibold text-slate-700 mb-2">تصاویر ثبت‌شده در گالری ({{ count($existingImages) }} تصویر)</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+                                @foreach($existingImages as $imgIndex => $img)
+                                    <div class="relative group bg-white rounded-2xl border-2 {{ $img['is_primary'] ? 'border-[#010619] shadow-sm' : 'border-slate-200' }} p-2 flex flex-col items-center justify-between transition-all" wire:key="gallery-img-{{ $img['id'] }}">
+                                        {{-- Image Thumbnail --}}
+                                        <div class="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
+                                            <img src="{{ asset('storage/' . $img['image_path']) }}" alt="تصویر گالری" class="w-full h-full object-cover">
+                                            @if($img['is_primary'])
+                                                <div class="absolute top-1.5 start-1.5">
+                                                    <span class="inline-flex items-center gap-1 bg-[#010619] text-[#ffde5b] text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                                                        <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                                        <span>تصویر اصلی</span>
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Image Controls --}}
+                                        <div class="w-full mt-2 space-y-1.5">
+                                            @if(! $img['is_primary'])
+                                                <button type="button"
+                                                        wire:click="setPrimaryProductImage({{ $img['id'] }})"
+                                                        class="w-full py-1 px-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-[#ffde5b] hover:text-[#010619] rounded-lg transition-colors cursor-pointer text-center">
+                                                    انتخاب به عنوان اصلی
+                                                </button>
+                                            @endif
+
+                                            <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-100">
+                                                {{-- Reorder Controls --}}
+                                                <div class="flex items-center gap-0.5">
+                                                    <button type="button"
+                                                            wire:click="moveProductImageUp({{ $imgIndex }})"
+                                                            @if($imgIndex === 0) disabled @endif
+                                                            class="p-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-20 cursor-pointer"
+                                                            title="انتقال به قبل">
+                                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                                    </button>
+                                                    <button type="button"
+                                                            wire:click="moveProductImageDown({{ $imgIndex }})"
+                                                            @if($imgIndex === count($existingImages) - 1) disabled @endif
+                                                            class="p-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-20 cursor-pointer"
+                                                            title="انتقال به بعد">
+                                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                    </button>
+                                                </div>
+
+                                                {{-- Delete Control --}}
+                                                <button type="button"
+                                                        wire:click="deleteProductImage({{ $img['id'] }})"
+                                                        wire:confirm="آیا از حذف این تصویر از گالری محصول مطمئن هستید؟"
+                                                        class="p-1 rounded text-rose-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
+                                                        title="حذف تصویر">
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     @endif
+
+                    {{-- Upload Multiple New Images Area --}}
+                    <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/60 p-4 transition-colors hover:border-[#010619]/40">
+                        <div class="flex flex-col sm:flex-row items-center gap-4">
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-slate-800 mb-1">بارگذاری تصاویر جدید برای گالری</label>
+                                <p class="text-[11px] text-slate-500 mb-2">می‌توانید چندین تصویر را همزمان انتخاب کنید (فرمت‌های JPG, PNG, WEBP تا سقف ۲ مگابایت).</p>
+                                <input type="file" wire:model="galleryUploads" multiple accept="image/*" class="block w-full text-xs text-slate-600 file:me-3 file:border-0 file:bg-[#010619] file:text-[#ffde5b] file:px-4 file:py-2 file:text-xs file:rounded-xl file:font-bold file:cursor-pointer hover:file:bg-black cursor-pointer">
+                            </div>
+                            <div wire:loading wire:target="galleryUploads" class="shrink-0 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 flex items-center gap-2">
+                                <svg class="animate-spin h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                <span>در حال ارسال تصاویر به سرور...</span>
+                            </div>
+                        </div>
+
+                        @error('galleryUploads') <p class="admin-error mt-2">{{ $message }}</p> @enderror
+                        @error('galleryUploads.*') <p class="admin-error mt-2">{{ $message }}</p> @enderror
+
+                        {{-- Previews of Staged Uploads --}}
+                        @if(! empty($galleryUploads))
+                            <div class="mt-4 pt-3 border-t border-slate-200">
+                                <span class="block text-xs font-bold text-slate-700 mb-2">تصاویر جدید آماده ذخیره ({{ count($galleryUploads) }} مورد):</span>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                                    @foreach($galleryUploads as $uploadIdx => $uploadFile)
+                                        <div class="relative bg-white rounded-xl border {{ $editingId === null && $primaryUploadIndex === $uploadIdx ? 'border-[#010619] ring-2 ring-[#ffde5b]' : 'border-slate-200' }} p-1.5 flex flex-col items-center gap-1.5 shadow-2xs" wire:key="staged-upload-{{ $uploadIdx }}">
+                                            @if($uploadFile)
+                                                <div class="relative w-full aspect-square rounded-lg overflow-hidden bg-slate-100">
+                                                    <img src="{{ $uploadFile->temporaryUrl() }}" class="w-full h-full object-cover" alt="پیش‌نمایش تصویر">
+                                                    @if($editingId === null && $primaryUploadIndex === $uploadIdx)
+                                                        <span class="absolute top-1 start-1 bg-[#010619] text-[#ffde5b] text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                                                            اصلی
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endif
+
+                                            <div class="w-full flex items-center justify-between gap-1 pt-1">
+                                                @if($editingId === null)
+                                                    <button type="button"
+                                                            wire:click="setPrimaryUpload({{ $uploadIdx }})"
+                                                            class="text-[10px] font-bold {{ $primaryUploadIndex === $uploadIdx ? 'text-amber-700' : 'text-slate-500 hover:text-slate-900' }} cursor-pointer">
+                                                        {{ $primaryUploadIndex === $uploadIdx ? '✓ اصلی' : 'انتخاب اصلی' }}
+                                                    </button>
+                                                @endif
+                                                <button type="button"
+                                                        wire:click="removeGalleryUpload({{ $uploadIdx }})"
+                                                        class="text-[10px] font-bold text-rose-500 hover:text-rose-700 cursor-pointer p-0.5"
+                                                        title="حذف پیش‌نمایش">
+                                                    ✕ حذف
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Direct image path / legacy single upload (preserved for backward compatibility) --}}
+                    <details class="text-xs text-slate-500 group">
+                        <summary class="cursor-pointer font-medium hover:text-slate-700 flex items-center gap-1 select-none">
+                            <span>تنظیمات پیشرفته مسیر فایل تصویر شاخص</span>
+                            <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                            <label class="block text-[11px] font-medium text-slate-600">مسیر مستقیم تصویر شاخص (اختیاری یا ذخیره‌شده):</label>
+                            <input type="text" wire:model="mainImage" placeholder="products/card.jpg" dir="ltr" class="admin-input text-xs">
+                            <input type="file" wire:model="mainImageUpload" accept="image/*" class="block w-full text-xs text-slate-600 file:me-3 file:border-0 file:bg-slate-200 file:px-3 file:py-1 file:text-slate-700 file:rounded-lg file:cursor-pointer">
+                            @error('mainImage') <p class="admin-error">{{ $message }}</p> @enderror
+                            @error('mainImageUpload') <p class="admin-error">{{ $message }}</p> @enderror
+                        </div>
+                    </details>
                 </div>
 
 
