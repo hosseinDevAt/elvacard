@@ -7,13 +7,20 @@
     <title>خطای داخلی سرور - {{ site_setting('site_name', 'الواکارت') }}</title>
     <style>
         @font-face {
-            font-family: 'Vazirmatn';
-            src: url('/fonts/Vazirmatn[wght].woff2') format('woff2');
-            font-weight: 100 900;
+            font-family: 'Yekan Bakh';
+            src: url('/fonts/Yekan_Bakh_Fanum_Regular.TTF') format('truetype');
+            font-weight: 400;
             font-style: normal;
             font-display: swap;
         }
-        body { font-family: Vazirmatn, Tahoma, sans-serif; background: #f8fafc; color: #010619; margin: 0; padding: 20px; }
+        @font-face {
+            font-family: 'Yekan Bakh';
+            src: url('/fonts/Yekan_Bakh_Fanum_Bold.TTF') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        body { font-family: 'Yekan Bakh', Tahoma, sans-serif; background: #f8fafc; color: #010619; margin: 0; padding: 20px; }
         .wrap { min-height: 90vh; display: flex; align-items: center; justify-content: center; }
         .box { max-width: 440px; width: 100%; text-align: center; }
         .badge { display: inline-flex; width: 90px; height: 90px; border-radius: 24px; background: #010619; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(1,6,25,0.2); }

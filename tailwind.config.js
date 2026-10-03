@@ -26,7 +26,7 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Vazirmatn', ...defaultTheme.fontFamily.sans],
+                sans: ['Yekan Bakh', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 brand: {
