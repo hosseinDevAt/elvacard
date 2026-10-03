@@ -176,32 +176,23 @@
                     <span>مشخصات فنی و ساختار محصول</span>
                 </h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
-                    <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-slate-500 font-medium">جنس بدنه و آلیاژ</span>
-                        <span class="text-slate-900 font-bold">استیل ضدزنگ گرید ۳۱۶L / تیتانیوم</span>
+                @php $specList = $product->specificationsList(); @endphp
+
+                @if(! empty($specList))
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
+                        @foreach($specList as $spec)
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 gap-4">
+                                <span class="text-slate-500 font-medium shrink-0">{{ $spec['label'] }}</span>
+                                <span class="text-slate-900 font-bold text-end break-words">{{ $spec['value'] }}</span>
+                            </div>
+                        @endforeach
                     </div>
-                    <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-slate-500 font-medium">نوع پرداخت و رنگ‌آمیزی</span>
-                        <span class="text-slate-900 font-bold">آبکاری PVD مقاوم در برابر سایش</span>
+                @else
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center text-xs text-slate-500">
+                        <x-icons.card class="w-6 h-6 mx-auto mb-2 text-slate-400" />
+                        <span>مشخصات فنی ثبت‌شده‌ای برای این محصول تعریف نشده است.</span>
                     </div>
-                    <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-slate-500 font-medium">مقاومت در برابر رطوبت و تعریق</span>
-                        <span class="text-emerald-700 font-bold">۱۰۰٪ ضدآب و ضدزنگ</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-slate-500 font-medium">دقت ساخت و پرداخت لبه‌ها</span>
-                        <span class="text-slate-900 font-bold">برش لیزری با لبه‌های پخ‌خورده نرم</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-slate-500 font-medium">دسته‌بندی محصول</span>
-                        <span class="text-slate-900 font-bold">{{ $product->category?->name ?? 'اکسسوری الواکارت' }}</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                        <span class="text-slate-500 font-medium">ضمانت ثبات رنگ</span>
-                        <span class="text-slate-900 font-bold">تضمین دائمی ثبات رنگ الواکارت</span>
-                    </div>
-                </div>
+                @endif
             </div>
 
             {{-- Tab 3: Shipping & Delivery --}}

@@ -26,6 +26,7 @@ class Product extends Model
         'robots_index',
         'og_image',
         'seo_content',
+        'specifications',
         'is_active',
     ];
 
@@ -33,9 +34,32 @@ class Product extends Model
         'type' => ProductTypeEnum::class,
         'customization_workflow' => CustomizationWorkflowEnum::class,
         'design_config' => 'array',
+        'specifications' => 'array',
         'robots_index' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function specificationsList(): array
+    {
+        if (! is_array($this->specifications)) {
+            return [];
+        }
+
+        return collect($this->specifications)
+            ->map(function ($spec) {
+                if (is_array($spec)) {
+                    return [
+                        'label' => trim((string) ($spec['label'] ?? $spec['name'] ?? '')),
+                        'value' => trim((string) ($spec['value'] ?? '')),
+                    ];
+                }
+
+                return null;
+            })
+            ->filter(fn ($spec) => $spec !== null && ($spec['label'] !== '' || $spec['value'] !== ''))
+            ->values()
+            ->all();
+    }
 
     /**
      * Reserve the product's current slug forever when it is deleted, so a

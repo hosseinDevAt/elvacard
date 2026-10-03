@@ -92,6 +92,8 @@ class ProductManager extends Component
 
     public bool $showVariantForm = false;
 
+    public array $specifications = [];
+
     protected $rules = [
         'type' => 'required|in:bank,fuel,standard',
         'customizationWorkflow' => 'nullable|in:bank_card,fuel_card',
@@ -108,6 +110,9 @@ class ProductManager extends Component
         'ogImage' => 'nullable|string|max:255',
         'ogImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         'seoContent' => 'nullable|string',
+        'specifications' => 'nullable|array|max:50',
+        'specifications.*.label' => 'nullable|string|max:120',
+        'specifications.*.value' => 'nullable|string|max:500',
         'robotsIndex' => 'boolean',
         'isActive' => 'boolean',
     ];
@@ -282,6 +287,21 @@ class ProductManager extends Component
             $this->basePrice = null;
         }
 
+        $cleanedSpecs = collect($this->specifications)
+            ->map(function ($spec) {
+                if (! is_array($spec)) {
+                    return null;
+                }
+
+                return [
+                    'label' => trim((string) ($spec['label'] ?? $spec['name'] ?? '')),
+                    'value' => trim((string) ($spec['value'] ?? '')),
+                ];
+            })
+            ->filter(fn ($spec) => $spec !== null && ($spec['label'] !== '' || $spec['value'] !== ''))
+            ->values()
+            ->all();
+
         $data = [
             'type' => $this->type,
             'customization_workflow' => $this->customizationWorkflow ?: null,
@@ -297,6 +317,7 @@ class ProductManager extends Component
             'canonical_url' => $this->canonicalUrl ?: null,
             'og_image' => $this->ogImage ?: null,
             'seo_content' => $this->seoContent ?: null,
+            'specifications' => $cleanedSpecs !== [] ? $cleanedSpecs : null,
             'robots_index' => $this->robotsIndex,
             'is_active' => $this->isActive,
         ];
@@ -407,6 +428,7 @@ class ProductManager extends Component
         $this->ogImage = $product->og_image;
         $this->seoContent = $product->seo_content;
         $this->isActive = (bool) $product->is_active;
+        $this->specifications = $product->specificationsList();
         $this->pricingType = $this->customizationWorkflow === null
             && ProductColorPrice::query()->where('product_id', $product->id)->exists()
                 ? 'variable'
@@ -500,8 +522,40 @@ class ProductManager extends Component
         $this->isActive = true;
         $this->editingId = null;
         $this->pricingType = 'simple';
+        $this->specifications = [];
         $this->resetVariantForm();
         $this->showVariantForm = false;
+    }
+
+    public function addSpecificationRow(): void
+    {
+        $this->specifications[] = ['label' => '', 'value' => ''];
+    }
+
+    public function removeSpecificationRow(int $index): void
+    {
+        unset($this->specifications[$index]);
+        $this->specifications = array_values($this->specifications);
+    }
+
+    public function moveSpecificationUp(int $index): void
+    {
+        if ($index > 0 && isset($this->specifications[$index])) {
+            $temp = $this->specifications[$index - 1];
+            $this->specifications[$index - 1] = $this->specifications[$index];
+            $this->specifications[$index] = $temp;
+            $this->specifications = array_values($this->specifications);
+        }
+    }
+
+    public function moveSpecificationDown(int $index): void
+    {
+        if ($index < count($this->specifications) - 1 && isset($this->specifications[$index])) {
+            $temp = $this->specifications[$index + 1];
+            $this->specifications[$index + 1] = $this->specifications[$index];
+            $this->specifications[$index] = $temp;
+            $this->specifications = array_values($this->specifications);
+        }
     }
 
     /**

@@ -183,6 +183,81 @@
                     </div>
                 </div>
 
+                {{-- Dynamic Technical Specifications Editor --}}
+                <div class="border-t border-slate-100 pt-5 mt-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-[#ffde5b]"></span>
+                                <span>مشخصات فنی و ویژگی‌های محصول</span>
+                            </h4>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                ویژگی‌های اختصاصی این محصول (مانند: جنس بدنه، ابعاد، ضخامت، وزن، سازگاری و...) را تعریف کنید.
+                            </p>
+                        </div>
+                        <button type="button" wire:click="addSpecificationRow" class="admin-btn admin-btn-secondary admin-btn-sm text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>افزودن ردیف مشخصات</span>
+                        </button>
+                    </div>
+
+                    @if(! empty($specifications))
+                        <div class="space-y-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-200">
+                            @foreach($specifications as $index => $specRow)
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs" wire:key="spec-row-{{ $index }}">
+                                    {{-- Reorder buttons --}}
+                                    <div class="flex items-center gap-1 shrink-0 self-center sm:self-auto">
+                                        <button type="button"
+                                                wire:click="moveSpecificationUp({{ $index }})"
+                                                @if($index === 0) disabled @endif
+                                                class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                                                title="انتقال به بالا">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                                        </button>
+                                        <button type="button"
+                                                wire:click="moveSpecificationDown({{ $index }})"
+                                                @if($index === count($specifications) - 1) disabled @endif
+                                                class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                                                title="انتقال به پایین">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        </button>
+                                    </div>
+
+                                    {{-- Specification Label input --}}
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text"
+                                               wire:model="specifications.{{ $index }}.label"
+                                               placeholder="عنوان مشخصه (مثال: جنس بدنه، ابعاد، وزن)"
+                                               class="admin-input text-xs">
+                                        @error('specifications.' . $index . '.label') <p class="admin-error">{{ $message }}</p> @enderror
+                                    </div>
+
+                                    {{-- Specification Value input --}}
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text"
+                                               wire:model="specifications.{{ $index }}.value"
+                                               placeholder="مقدار مشخصه (مثال: استیل ضدزنگ ۳۱۶L)"
+                                               class="admin-input text-xs">
+                                        @error('specifications.' . $index . '.value') <p class="admin-error">{{ $message }}</p> @enderror
+                                    </div>
+
+                                    {{-- Delete button --}}
+                                    <button type="button"
+                                            wire:click="removeSpecificationRow({{ $index }})"
+                                            class="p-2 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition shrink-0 cursor-pointer"
+                                            title="حذف ردیف">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-xs text-slate-500">
+                            <span>هنوز مشخصات فنی برای این محصول تعریف نشده است. با کلیک بر روی «افزودن ردیف مشخصات» می‌توانید مشخصات فنی اختصاصی اضافه کنید.</span>
+                        </div>
+                    @endif
+                </div>
+
                 <div class="border-t border-slate-100 pt-4">
                     <h4 class="font-bold text-slate-900 mb-3">سئو</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
