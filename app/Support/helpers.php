@@ -111,18 +111,25 @@ if (! function_exists('site_setting')) {
      * Get a public site setting by key, cast according to its `type` column.
      * Only public settings are cached; private settings are never cached.
      * The cache is invalidated on create/update/delete via the model hook.
+     * Uses in-request memoization to avoid redundant database cache lookups.
      */
     function site_setting(string $key, mixed $default = null): mixed
     {
-        $publicSettings = Cache::remember('settings.public', 3600, function () {
-            $map = [];
+        $publicSettings = SiteSetting::getRuntimeCache();
 
-            foreach (SiteSetting::query()->where('is_public', true)->get(['key', 'value', 'type']) as $setting) {
-                $map[$setting->key] = ['value' => $setting->value, 'type' => $setting->type];
-            }
+        if ($publicSettings === null) {
+            $publicSettings = Cache::remember('settings.public', 3600, function () {
+                $map = [];
 
-            return $map;
-        });
+                foreach (SiteSetting::query()->where('is_public', true)->get(['key', 'value', 'type']) as $setting) {
+                    $map[$setting->key] = ['value' => $setting->value, 'type' => $setting->type];
+                }
+
+                return $map;
+            });
+
+            SiteSetting::setRuntimeCache($publicSettings);
+        }
 
         if (! isset($publicSettings[$key]) || $publicSettings[$key]['value'] === null) {
             return $default;

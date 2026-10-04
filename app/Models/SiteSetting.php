@@ -12,6 +12,13 @@ class SiteSetting extends Model
 
     public $timestamps = false;
 
+    /**
+     * In-memory request-level cache of public settings.
+     *
+     * @var array<string, array{value: mixed, type: string}>|null
+     */
+    protected static ?array $runtimeCache = null;
+
     protected $fillable = [
         'key',
         'value',
@@ -25,13 +32,35 @@ class SiteSetting extends Model
         'is_public' => 'boolean',
     ];
 
+    public static function getRuntimeCache(): ?array
+    {
+        return static::$runtimeCache;
+    }
+
+    public static function setRuntimeCache(array $settings): void
+    {
+        static::$runtimeCache = $settings;
+    }
+
+    public static function clearRuntimeCache(): void
+    {
+        static::$runtimeCache = null;
+    }
+
     /**
      * Invalidate the public settings cache after any persist/delete
      * so site_setting() never serves stale values.
      */
     protected static function booted(): void
     {
-        static::saved(fn () => Cache::forget('settings.public'));
-        static::deleted(fn () => Cache::forget('settings.public'));
+        static::saved(function () {
+            static::clearRuntimeCache();
+            Cache::forget('settings.public');
+        });
+
+        static::deleted(function () {
+            static::clearRuntimeCache();
+            Cache::forget('settings.public');
+        });
     }
 }

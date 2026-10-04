@@ -34,6 +34,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->terminating(function (): void {
+            \App\Models\SiteSetting::clearRuntimeCache();
+        });
+
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Cache\Events\KeyForgotten::class, function ($event): void {
+            if ($event->key === 'settings.public' || $event->key === 'laravel-cache-settings.public') {
+                \App\Models\SiteSetting::clearRuntimeCache();
+            }
+        });
+
         ViewFacade::composer('checkout.payment', function (View $view): void {
             if (! $view->offsetExists('gateways')) {
                 $view->with('gateways', app(PaymentGatewayManager::class)->names());
