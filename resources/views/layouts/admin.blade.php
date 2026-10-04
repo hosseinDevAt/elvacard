@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @include('components.favicon-links')
     <title>{{ $title ?? 'پنل ادمین' }}</title>
+    <link rel="preload" href="/fonts/Yekan_Bakh_Fanum_Regular.TTF" as="font" type="font/ttf" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>

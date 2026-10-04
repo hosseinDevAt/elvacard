@@ -15,6 +15,8 @@
 
         @yield('meta')
 
+        {{-- Preload primary font to eliminate FOIT/FOUT and improve FCP --}}
+        <link rel="preload" href="/fonts/Yekan_Bakh_Fanum_Regular.TTF" as="font" type="font/ttf" crossorigin>
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
