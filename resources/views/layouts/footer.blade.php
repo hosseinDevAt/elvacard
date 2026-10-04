@@ -2,26 +2,18 @@
 
 use App\Models\Menu;
 
-$footerMenu = Menu::query()
-    ->where('location', 'footer')
-    ->with([
-        'items' => fn ($query) => $query
-            ->active()
-            ->orderBy('sort_order'),
-    ])
-    ->first();
-
+$footerMenuData = Menu::getCachedForLocation('footer');
 $footerItems = collect();
 
-if ($footerMenu && $footerMenu->items && $footerMenu->items->isNotEmpty()) {
-    foreach ($footerMenu->items as $menuItem) {
-        $url = $menuItem->resolveUrl();
+if ($footerMenuData && ! empty($footerMenuData['items'])) {
+    foreach ($footerMenuData['items'] as $item) {
+        $url = $item['url'];
 
         if ($url !== null) {
             $footerItems->push((object) [
-                'title' => $menuItem->title,
+                'title' => $item['title'],
                 'url' => $url,
-                'target' => $menuItem->target ?? '_self',
+                'target' => $item['target'] ?? '_self',
             ]);
         }
     }

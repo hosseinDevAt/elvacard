@@ -2,20 +2,12 @@
 
 use App\Models\Menu;
 
-$headerMenu = Menu::query()
-    ->where('location', 'header')
-    ->with([
-        'items' => fn ($query) => $query
-            ->active()
-            ->orderBy('sort_order'),
-    ])
-    ->first();
-
+$menuData = Menu::getCachedForLocation('header');
 $navItems = collect();
 
-if ($headerMenu && $headerMenu->items && $headerMenu->items->isNotEmpty()) {
-    foreach ($headerMenu->items as $menuItem) {
-        $url = $menuItem->resolveUrl();
+if ($menuData && ! empty($menuData['items'])) {
+    foreach ($menuData['items'] as $item) {
+        $url = $item['url'];
 
         if ($url !== null) {
             $parsedPath = parse_url($url, PHP_URL_PATH) ?: '/';
@@ -24,9 +16,9 @@ if ($headerMenu && $headerMenu->items && $headerMenu->items->isNotEmpty()) {
                 || ($parsedPath !== '/' && ($currentPath === $parsedPath || str_starts_with($currentPath, $parsedPath . '/')));
 
             $link = [
-                'title' => $menuItem->title,
+                'title' => $item['title'],
                 'url' => $url,
-                'target' => $menuItem->target ?? '_self',
+                'target' => $item['target'] ?? '_self',
                 'active' => $isActive,
             ];
 

@@ -135,4 +135,28 @@ class MenuItem extends Model
 
         return $article ? route('articles.show', $article->slug) : null;
     }
+
+    protected static function booted(): void
+    {
+        static::saved(function (MenuItem $item) {
+            $currentMenuId = $item->menu_id;
+            $originalMenuId = $item->getOriginal('menu_id');
+
+            $currentMenu = $item->relationLoaded('menu') ? $item->menu : Menu::find($currentMenuId);
+            Menu::clearLocationCache($currentMenu?->location);
+
+            if ($originalMenuId && $originalMenuId !== $currentMenuId) {
+                $originalMenu = Menu::find($originalMenuId);
+                Menu::clearLocationCache($originalMenu?->location);
+            }
+        });
+
+        static::deleted(function (MenuItem $item) {
+            $menuId = $item->menu_id ?? $item->getOriginal('menu_id');
+            if ($menuId) {
+                $menu = $item->relationLoaded('menu') ? $item->menu : Menu::find($menuId);
+                Menu::clearLocationCache($menu?->location);
+            }
+        });
+    }
 }

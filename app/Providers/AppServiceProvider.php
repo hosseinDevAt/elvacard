@@ -36,11 +36,15 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->terminating(function (): void {
             \App\Models\SiteSetting::clearRuntimeCache();
+            \App\Models\Menu::clearRuntimeCache();
         });
 
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Cache\Events\KeyForgotten::class, function ($event): void {
             if ($event->key === 'settings.public' || $event->key === 'laravel-cache-settings.public') {
                 \App\Models\SiteSetting::clearRuntimeCache();
+            }
+            if (str_contains($event->key, 'menus.location.')) {
+                \App\Models\Menu::clearRuntimeCache();
             }
         });
 
