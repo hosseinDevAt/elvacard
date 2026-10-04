@@ -5,7 +5,6 @@
         site_setting('homepage_banner_3', \App\Livewire\Admin\AppearanceManager::defaultBanner(3)),
     ])->filter(fn ($banner) => is_array($banner) && (! empty($banner['title']) || ! empty($banner['image_path'])))->values();
 
-    $siteName = site_setting('site_name', config('app.name'));
     $gradients = [
         'from-primary-900 via-primary-800 to-primary-600',
         'from-gray-900 via-gray-800 to-gray-700',
@@ -18,41 +17,48 @@
         <div class="relative overflow-hidden bg-gray-900">
             <div class="flex transition-transform duration-500 ease-out" :style="{ transform: 'translateX(' + (slide * 100) + '%)' }">
                 @foreach ($banners as $index => $banner)
+                    @php
+                        $hasImage = ($banner['image_path'] ?? null) && \Illuminate\Support\Facades\Storage::disk('public')->exists($banner['image_path']);
+                        $hasTitle = filled($banner['title'] ?? null);
+                        $hasSubtitle = filled($banner['subtitle'] ?? null);
+                        $hasCta = filled($banner['cta_text'] ?? null) && filled($banner['cta_url'] ?? null);
+                        $hasTextContent = $hasTitle || $hasSubtitle || $hasCta;
+                    @endphp
                     <div class="w-full shrink-0" @mouseenter="pause()" @mouseleave="play()">
                         <div class="relative flex min-h-[45vh] sm:min-h-[55vh] lg:min-h-[65vh] items-center justify-center overflow-hidden {{ $gradients[$index % count($gradients)] }}">
-                            <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+                            @if ($hasTextContent)
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+                            @endif
 
-                            @if (($banner['image_path'] ?? null) && \Illuminate\Support\Facades\Storage::disk('public')->exists($banner['image_path']))
+                            @if ($hasImage)
                                 <img src="{{ asset('storage/' . $banner['image_path']) }}"
                                      alt="{{ $banner['title'] ?? '' }}"
                                      class="absolute inset-0 h-full w-full object-cover">
                             @endif
 
-                            <div class="relative z-10 mx-auto max-w-7xl px-4 py-14 text-center sm:px-6 sm:py-20 lg:px-8">
-                                @if ($banner['title'] ?? false)
-                                    <h2 class="mb-4 text-3xl font-bold text-white sm:text-5xl lg:text-6xl leading-tight">
-                                        {{ $banner['title'] }}
-                                    </h2>
-                                @else
-                                    <h2 class="mb-4 text-3xl font-bold text-white sm:text-5xl lg:text-6xl leading-tight">
-                                        {{ $siteName }}
-                                    </h2>
-                                @endif
+                            @if ($hasTextContent)
+                                <div class="relative z-10 mx-auto max-w-7xl px-4 py-14 text-center sm:px-6 sm:py-20 lg:px-8">
+                                    @if ($hasTitle)
+                                        <h2 class="mb-4 text-3xl font-bold text-white sm:text-5xl lg:text-6xl leading-tight">
+                                            {{ $banner['title'] }}
+                                        </h2>
+                                    @endif
 
-                                @if ($banner['subtitle'] ?? false)
-                                    <p class="mx-auto mb-8 max-w-3xl text-lg leading-relaxed text-white/90 sm:text-xl">
-                                        {{ $banner['subtitle'] }}
-                                    </p>
-                                @endif
+                                    @if ($hasSubtitle)
+                                        <p class="mx-auto mb-8 max-w-3xl text-lg leading-relaxed text-white/90 sm:text-xl">
+                                            {{ $banner['subtitle'] }}
+                                        </p>
+                                    @endif
 
-                                @if (($banner['cta_text'] ?? false) && ($banner['cta_url'] ?? false))
-                                    <a href="{{ safe_url($banner['cta_url']) ?? route('catalog.products.index') }}"
-                                       class="inline-flex items-center gap-2 rounded-xl bg-[#ffde5b] px-7 py-3 text-base sm:text-lg font-extrabold text-[#010619] shadow-lg shadow-[#ffde5b]/30 hover:bg-[#f5d347] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-                                        <span>{{ $banner['cta_text'] }}</span>
-                                        <x-icons.arrow-left class="h-5 w-5" />
-                                    </a>
-                                @endif
-                            </div>
+                                    @if ($hasCta)
+                                        <a href="{{ safe_url($banner['cta_url']) ?? route('catalog.products.index') }}"
+                                           class="inline-flex items-center gap-2 rounded-xl bg-[#ffde5b] px-7 py-3 text-base sm:text-lg font-extrabold text-[#010619] shadow-lg shadow-[#ffde5b]/30 hover:bg-[#f5d347] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                                            <span>{{ $banner['cta_text'] }}</span>
+                                            <x-icons.arrow-left class="h-5 w-5" />
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endforeach

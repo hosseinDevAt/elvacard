@@ -208,4 +208,98 @@ class BannerManagementAndFaqTest extends TestCase
         // Ensure inner container wraps answer for clean zero-padding collapse
         $view->assertSee('border-t border-slate-100/80', false);
     }
+
+    public function test_image_only_banner_renders_without_site_name_or_text_content(): void
+    {
+        Storage::fake('public');
+        $imagePath = 'banners/image-only.jpg';
+        Storage::disk('public')->put($imagePath, 'dummy-image-data');
+
+        // Intentionally empty text content
+        SiteSetting::create([
+            'key' => 'homepage_banner_1',
+            'value' => json_encode([
+                'image_path' => $imagePath,
+                'title' => null,
+                'subtitle' => null,
+                'cta_text' => null,
+                'cta_url' => null,
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'json',
+            'group' => 'homepage',
+            'is_public' => true,
+        ]);
+
+        $view = $this->blade('<x-homepage.banner-slider />');
+
+        // Image must be rendered
+        $view->assertSee(asset('storage/' . $imagePath), false);
+
+        // Site name must NOT be rendered on the banner
+        $siteName = site_setting('site_name', config('app.name'));
+        $view->assertDontSee($siteName, false);
+    }
+
+    public function test_banner_with_custom_text_renders_title_and_subtitle(): void
+    {
+        Storage::fake('public');
+        $imagePath = 'banners/promo.jpg';
+        Storage::disk('public')->put($imagePath, 'promo-image');
+
+        SiteSetting::create([
+            'key' => 'homepage_banner_1',
+            'value' => json_encode([
+                'image_path' => $imagePath,
+                'title' => 'جشنواره تخفیف بهاره',
+                'subtitle' => 'تا پنجاه درصد تخفیف ویژه',
+                'cta_text' => 'مشاهده جشنواره',
+                'cta_url' => '/catalog/promo',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'json',
+            'group' => 'homepage',
+            'is_public' => true,
+        ]);
+
+        $view = $this->blade('<x-homepage.banner-slider />');
+
+        $view->assertSee('جشنواره تخفیف بهاره');
+        $view->assertSee('تا پنجاه درصد تخفیف ویژه');
+        $view->assertSee('مشاهده جشنواره');
+        $view->assertSee(asset('storage/' . $imagePath), false);
+    }
+
+    public function test_all_image_only_banners_render_zero_headings_or_overlays(): void
+    {
+        Storage::fake('public');
+
+        for ($i = 1; $i <= 3; $i++) {
+            $path = "banners/banner{$i}.jpg";
+            Storage::disk('public')->put($path, "content-{$i}");
+
+            SiteSetting::create([
+                'key' => "homepage_banner_{$i}",
+                'value' => json_encode([
+                    'image_path' => $path,
+                    'title' => null,
+                    'subtitle' => null,
+                    'cta_text' => null,
+                    'cta_url' => null,
+                ], JSON_UNESCAPED_UNICODE),
+                'type' => 'json',
+                'group' => 'homepage',
+                'is_public' => true,
+            ]);
+        }
+
+        $view = $this->blade('<x-homepage.banner-slider />');
+
+        for ($i = 1; $i <= 3; $i++) {
+            $view->assertSee(asset("storage/banners/banner{$i}.jpg"), false);
+        }
+
+        // Absolutely no headings or overlays rendered
+        $view->assertDontSee('<h2', false);
+        $view->assertDontSee('bg-gradient-to-b from-black/40', false);
+        $view->assertDontSee(site_setting('site_name', config('app.name')), false);
+    }
 }
