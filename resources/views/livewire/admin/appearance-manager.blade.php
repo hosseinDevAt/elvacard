@@ -81,9 +81,15 @@
                                 <input type="file" wire:model="bannerImage{{ $i }}" accept="image/*" class="w-full text-xs text-slate-600 file:me-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer">
                                 @error("bannerImage{$i}") <p class="admin-error">{{ $message }}</p> @enderror
                                 @if (${"bannerImage{$i}"})
-                                    <img src="{{ ${"bannerImage{$i}"}->temporaryUrl() }}" alt="پیش‌نمایش بنر {{ $i }}" class="mt-3 h-28 w-full object-cover rounded-xl border border-slate-200">
+                                    <div class="mt-3 flex items-center gap-3">
+                                        <img src="{{ ${"bannerImage{$i}"}->temporaryUrl() }}" alt="پیش‌نمایش بنر {{ $i }}" class="h-28 w-44 object-cover rounded-xl border border-slate-200">
+                                        <button type="button" wire:click="$set('bannerImage{{ $i }}', null)" class="text-xs text-rose-600 hover:text-rose-700 font-medium transition cursor-pointer">انصراف از آپلود</button>
+                                    </div>
                                 @elseif (${"bannerImagePath{$i}"})
-                                    <img src="{{ asset('storage/' . ${"bannerImagePath{$i}"}) }}" alt="بنر فعلی {{ $i }}" class="mt-3 h-28 w-full object-cover rounded-xl border border-slate-200">
+                                    <div class="mt-3 flex items-center gap-3">
+                                        <img src="{{ asset('storage/' . ${"bannerImagePath{$i}"}) }}" alt="بنر فعلی {{ $i }}" class="h-28 w-44 object-cover rounded-xl border border-slate-200">
+                                        <button type="button" wire:click="removeBannerImage({{ $i }})" wire:confirm="آیا از حذف تصویر این بنر مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 font-medium transition cursor-pointer">حذف تصویر بنر</button>
+                                    </div>
                                 @endif
                             </div>
                             <div>

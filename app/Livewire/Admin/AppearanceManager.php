@@ -195,16 +195,82 @@ class AppearanceManager extends Component
             ->toArray();
     }
 
+    public static function defaultBanner(int $index): array
+    {
+        return match ($index) {
+            1 => [
+                'image_path' => null,
+                'title' => 'کارت شخصی فلزی',
+                'subtitle' => 'طراحی و تولید کارت‌های فلزی منحصربه‌فرد',
+                'cta_text' => 'مشاهده محصولات',
+                'cta_url' => '/catalog/products',
+            ],
+            2 => [
+                'image_path' => null,
+                'title' => 'طراحی کارت اختصاصی',
+                'subtitle' => 'طرح دلخواه خود را روی کارت حکاکی کنید',
+                'cta_text' => 'شروع طراحی',
+                'cta_url' => '/design',
+            ],
+            3 => [
+                'image_path' => null,
+                'title' => 'کیفیت تضمینی',
+                'subtitle' => 'با بهترین مواد اولیه و تکنولوژی روز',
+                'cta_text' => 'بیشتر بدانید',
+                'cta_url' => '/pages/about-us',
+            ],
+            default => [],
+        };
+    }
+
     private function loadBanner(int $index): void
     {
-        $banner = site_setting("homepage_banner_{$index}", []);
-        $banner = is_array($banner) ? $banner : [];
+        $default = self::defaultBanner($index);
+        $banner = site_setting("homepage_banner_{$index}", $default);
+        $banner = is_array($banner) && ! empty($banner) ? $banner : $default;
 
         $this->{"bannerTitle{$index}"} = $banner['title'] ?? null;
         $this->{"bannerSubtitle{$index}"} = $banner['subtitle'] ?? null;
         $this->{"bannerCtaText{$index}"} = $banner['cta_text'] ?? null;
         $this->{"bannerCtaUrl{$index}"} = $banner['cta_url'] ?? null;
         $this->{"bannerImagePath{$index}"} = $banner['image_path'] ?? null;
+    }
+
+    public function removeBannerImage(int $index): void
+    {
+        if (! in_array($index, [1, 2, 3], true)) {
+            return;
+        }
+
+        $pathProperty = "bannerImagePath{$index}";
+        $uploadProperty = "bannerImage{$index}";
+        $path = $this->{$pathProperty};
+
+        if ($path) {
+            $otherBannersUseFile = false;
+            for ($i = 1; $i <= 3; $i++) {
+                if ($i !== $index && $this->{"bannerImagePath{$i}"} === $path) {
+                    $otherBannersUseFile = true;
+                    break;
+                }
+            }
+
+            if (! $otherBannersUseFile && Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+
+        $this->{$pathProperty} = null;
+        $this->reset($uploadProperty);
+
+        $default = self::defaultBanner($index);
+        $banner = site_setting("homepage_banner_{$index}", $default);
+        $banner = is_array($banner) ? $banner : $default;
+        $banner['image_path'] = null;
+
+        $this->putSetting("homepage_banner_{$index}", json_encode($banner, JSON_UNESCAPED_UNICODE), 'json');
+
+        session()->flash('success', "تصویر بنر شماره {$index} حذف شد");
     }
 
     private function loadIconSettings(): void

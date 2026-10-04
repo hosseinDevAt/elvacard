@@ -1,9 +1,9 @@
 @php
     $banners = collect([
-        site_setting('homepage_banner_1', []),
-        site_setting('homepage_banner_2', []),
-        site_setting('homepage_banner_3', []),
-    ])->filter(fn ($banner) => is_array($banner) && (! empty($banner['title']) || ! empty($banner['image_path'])));
+        site_setting('homepage_banner_1', \App\Livewire\Admin\AppearanceManager::defaultBanner(1)),
+        site_setting('homepage_banner_2', \App\Livewire\Admin\AppearanceManager::defaultBanner(2)),
+        site_setting('homepage_banner_3', \App\Livewire\Admin\AppearanceManager::defaultBanner(3)),
+    ])->filter(fn ($banner) => is_array($banner) && (! empty($banner['title']) || ! empty($banner['image_path'])))->values();
 
     $siteName = site_setting('site_name', config('app.name'));
     $gradients = [
@@ -16,13 +16,13 @@
 @if ($banners->isNotEmpty())
     <section class="relative" x-data="bannerSlider(@js($banners->count()))" x-init="init()" aria-label="بنرهای تبلیغاتی">
         <div class="relative overflow-hidden bg-gray-900">
-            <div class="flex transition-transform duration-500 ease-out" :style="'transform: translateX(-' + (slide * 100) + '%)'">
+            <div class="flex transition-transform duration-500 ease-out" :style="{ transform: 'translateX(' + (slide * 100) + '%)' }">
                 @foreach ($banners as $index => $banner)
                     <div class="w-full shrink-0" @mouseenter="pause()" @mouseleave="play()">
                         <div class="relative flex min-h-[45vh] sm:min-h-[55vh] lg:min-h-[65vh] items-center justify-center overflow-hidden {{ $gradients[$index % count($gradients)] }}">
                             <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
 
-                            @if (($banner['image_path'] ?? null) && file_exists(public_path('storage/' . $banner['image_path'])))
+                            @if (($banner['image_path'] ?? null) && \Illuminate\Support\Facades\Storage::disk('public')->exists($banner['image_path']))
                                 <img src="{{ asset('storage/' . $banner['image_path']) }}"
                                      alt="{{ $banner['title'] ?? '' }}"
                                      class="absolute inset-0 h-full w-full object-cover">
@@ -61,11 +61,11 @@
             @if ($banners->count() > 1)
                 <button type="button" @click="prev()" :aria-label="'بنر قبلی'"
                         class="absolute start-4 top-1/2 z-20 -translate-y-1/2 rounded-2xl bg-black/30 p-2.5 text-white backdrop-blur-md border border-white/10 transition hover:bg-black/50 hover:scale-105 active:scale-95">
-                    <x-icons.chevron-left />
+                    <x-icons.chevron-right />
                 </button>
                 <button type="button" @click="next()" :aria-label="'بنر بعدی'"
                         class="absolute end-4 top-1/2 z-20 -translate-y-1/2 rounded-2xl bg-black/30 p-2.5 text-white backdrop-blur-md border border-white/10 transition hover:bg-black/50 hover:scale-105 active:scale-95">
-                    <x-icons.chevron-right />
+                    <x-icons.chevron-left />
                 </button>
                 <div class="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2">
                     <template x-for="i in count" :key="i">
