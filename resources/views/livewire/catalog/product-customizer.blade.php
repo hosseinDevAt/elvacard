@@ -197,6 +197,7 @@
                         default => 'from-gray-800 via-gray-900 to-black text-amber-200/90',
                     };
                     $selectedDesignImage = collect($designImages)->firstWhere('id', $design_image_id);
+                    $isFullCard = ($selectedDesignImage['layout_mode'] ?? 'centered') === 'full_card';
                 @endphp
 
                 <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}">
@@ -205,14 +206,20 @@
 
                     @if ($activeView === 'front')
                         {{-- FRONT CARD PREVIEW --}}
-                        <div class="relative h-full flex flex-col justify-between items-center">
-                            {{-- Design Overlay Image (if selected) --}}
-                            @if ($selectedDesignImage && $selectedDesignImage['image_path'])
-                                <div class="absolute inset-0 flex items-center justify-center p-4 opacity-40 pointer-events-none">
+                        {{-- Design Overlay Image (if selected) --}}
+                        @if ($selectedDesignImage && $selectedDesignImage['image_path'])
+                            @if ($isFullCard)
+                                <div class="pointer-events-none absolute inset-0 z-0 opacity-80 overflow-hidden">
+                                    <img src="{{ asset('storage/' . $selectedDesignImage['image_path']) }}" alt="Laser Overlay" class="h-full w-full object-cover object-center">
+                                </div>
+                            @else
+                                <div class="pointer-events-none absolute inset-0 flex items-center justify-center p-8 z-0 opacity-40">
                                     <img src="{{ asset('storage/' . $selectedDesignImage['image_path']) }}" alt="Laser Overlay" class="max-h-full max-w-full object-contain">
                                 </div>
                             @endif
+                        @endif
 
+                        <div class="relative h-full flex flex-col justify-between items-center z-10">
                             {{-- Decorative Sample Chip Element for Fuel Card FRONT --}}
                             @if ($workflow === $fuelCardWorkflow)
                                 <div class="absolute top-1/2 -translate-y-1/2 start-6 h-9 w-12 rounded-md bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 border border-yellow-100/70 shadow-md flex items-center justify-center pointer-events-none opacity-95">

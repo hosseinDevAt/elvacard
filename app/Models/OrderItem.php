@@ -25,6 +25,7 @@ class OrderItem extends Model
         'design_name_snapshot',
         'design_image_id',
         'design_image_path_snapshot',
+        'layout_mode_snapshot',
         'unit_price_snapshot',
         'quantity',
         'final_price',
@@ -38,6 +39,11 @@ class OrderItem extends Model
         'design_id' => 'integer',
         'design_image_id' => 'integer',
     ];
+
+    public function getLayoutModeSnapshot(): string
+    {
+        return ! empty($this->layout_mode_snapshot) ? (string) $this->layout_mode_snapshot : 'centered';
+    }
 
     protected static function booted(): void
     {

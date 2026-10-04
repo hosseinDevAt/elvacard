@@ -212,6 +212,36 @@
                         </div>
                     </div>
                     <div class="mt-4">
+                        <label class="admin-label">نوع چینش طرح روی کارت</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
+                            <label class="relative flex items-start p-3.5 rounded-xl border cursor-pointer transition {{ $layoutMode === 'centered' ? 'border-[#010619] bg-slate-50 ring-1 ring-[#010619]' : 'border-slate-200 hover:border-slate-300 bg-white' }}">
+                                <input type="radio" wire:model.live="layoutMode" value="centered" class="sr-only">
+                                <div class="flex flex-col text-xs">
+                                    <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                                        <span>طرح معمولی / متمرکز (Centered)</span>
+                                        @if($layoutMode === 'centered')
+                                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        @endif
+                                    </span>
+                                    <span class="text-slate-500 mt-1 leading-relaxed">حفظ نسبت تصویر در کادر استاندارد وسط کارت همراه با حاشیه‌های پس‌زمینه کارت</span>
+                                </div>
+                            </label>
+                            <label class="relative flex items-start p-3.5 rounded-xl border cursor-pointer transition {{ $layoutMode === 'full_card' ? 'border-[#010619] bg-slate-50 ring-1 ring-[#010619]' : 'border-slate-200 hover:border-slate-300 bg-white' }}">
+                                <input type="radio" wire:model.live="layoutMode" value="full_card" class="sr-only">
+                                <div class="flex flex-col text-xs">
+                                    <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                                        <span>تمام‌کارت / سرتاسری (Full Card / Cover)</span>
+                                        @if($layoutMode === 'full_card')
+                                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        @endif
+                                    </span>
+                                    <span class="text-slate-500 mt-1 leading-relaxed">پوشش ۱۰۰٪ سطح کارت لبه‌به‌لبه با برش هوشمند اضافه طرح و رعایت گوشه‌های گرد کارت</span>
+                                </div>
+                            </label>
+                        </div>
+                        @error('layoutMode') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="mt-4">
                         <label class="admin-label">کپشن سئو</label>
                         <textarea wire:model="seoCaption" rows="2" class="admin-input"></textarea>
                         @error('seoCaption') <p class="admin-error">{{ $message }}</p> @enderror
@@ -248,6 +278,7 @@
                                         <th class="admin-th w-16">#</th>
                                         <th class="admin-th">رنگ</th>
                                         <th class="admin-th">مسیر</th>
+                                        <th class="admin-th">چینش</th>
                                         <th class="admin-th">ترتیب</th>
                                         <th class="admin-th">وضعیت</th>
                                         <th class="admin-th text-center">عملیات</th>
@@ -264,6 +295,11 @@
                                                 </div>
                                             </td>
                                             <td class="admin-td text-slate-500 font-mono text-xs break-all" dir="ltr">{{ $image->image_path }}</td>
+                                            <td class="admin-td">
+                                                <span class="admin-badge {{ $image->getLayoutMode()->value === 'full_card' ? 'admin-badge-amber' : 'admin-badge-blue' }}">
+                                                    {{ $image->getLayoutMode()->label() }}
+                                                </span>
+                                            </td>
                                             <td class="admin-td text-slate-500 font-mono text-xs">{{ $image->sort_order }}</td>
                                             <td class="admin-td">
                                                 <span class="admin-badge {{ $image->is_active ? 'admin-badge-emerald' : 'admin-badge-gray' }}">

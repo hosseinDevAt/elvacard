@@ -13,6 +13,7 @@ class DesignImage extends Model
         'design_id',
         'color_id',
         'image_path',
+        'layout_mode',
         'alt_text',
         'image_title',
         'optimized_filename',
@@ -23,7 +24,18 @@ class DesignImage extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'layout_mode' => \App\Enums\DesignImageLayoutModeEnum::class,
     ];
+
+    public function getLayoutMode(): \App\Enums\DesignImageLayoutModeEnum
+    {
+        return $this->layout_mode ?? \App\Enums\DesignImageLayoutModeEnum::CENTERED;
+    }
+
+    public function isFullCard(): bool
+    {
+        return $this->getLayoutMode() === \App\Enums\DesignImageLayoutModeEnum::FULL_CARD;
+    }
 
     public function design(): BelongsTo
     {

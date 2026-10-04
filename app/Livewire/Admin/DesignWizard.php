@@ -83,6 +83,8 @@ class DesignWizard extends Component
 
     public int $imageSortOrder = 0;
 
+    public string $layoutMode = 'centered';
+
     public ?int $editingImageId = null;
 
     public bool $showImageForm = false;
@@ -199,6 +201,7 @@ class DesignWizard extends Component
             'seoCaption' => 'nullable|string',
             'imageIsActive' => 'boolean',
             'imageSortOrder' => 'integer|min:0',
+            'layoutMode' => 'required|in:centered,full_card',
         ]);
 
         if (! $this->designId) {
@@ -256,6 +259,7 @@ class DesignWizard extends Component
         $data = [
             'color_id' => $this->colorId,
             'image_path' => $path,
+            'layout_mode' => $this->layoutMode,
             'alt_text' => $this->altText ?: null,
             'image_title' => $this->imageTitle ?: null,
             'optimized_filename' => $this->optimizedFilename ?: null,
@@ -310,6 +314,7 @@ class DesignWizard extends Component
         $this->imageTitle = $image->image_title;
         $this->optimizedFilename = $image->optimized_filename;
         $this->seoCaption = $image->seo_caption;
+        $this->layoutMode = $image->getLayoutMode()->value;
         $this->imageIsActive = (bool) $image->is_active;
         $this->imageSortOrder = (int) $image->sort_order;
         $this->imageUpload = null;
@@ -398,6 +403,7 @@ class DesignWizard extends Component
         $this->imageTitle = null;
         $this->optimizedFilename = null;
         $this->seoCaption = null;
+        $this->layoutMode = 'centered';
         $this->imageIsActive = true;
         $this->imageSortOrder = 0;
         $this->editingImageId = null;

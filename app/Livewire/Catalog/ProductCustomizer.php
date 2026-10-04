@@ -303,7 +303,7 @@ class ProductCustomizer extends Component
                 'color' => fn ($colorQuery) => $colorQuery->active(),
             ])
             ->orderBy('sort_order')
-            ->get(['id', 'design_id', 'color_id', 'image_path']);
+            ->get(['id', 'design_id', 'color_id', 'image_path', 'layout_mode']);
 
         $this->designImages = $images
             ->map(fn (DesignImage $image) => [
@@ -313,6 +313,9 @@ class ProductCustomizer extends Component
                 'color_name' => $image->color?->name,
                 'color_hex' => $image->color?->code_hex,
                 'image_path' => $image->image_path,
+                'layout_mode' => $image->layout_mode instanceof \App\Enums\DesignImageLayoutModeEnum
+                    ? $image->layout_mode->value
+                    : ($image->layout_mode ?: 'centered'),
             ])
             ->values()
             ->all();

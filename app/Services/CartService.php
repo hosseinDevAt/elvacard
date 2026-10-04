@@ -60,6 +60,7 @@ class CartService
             $cart['items'][$existingIndex]['color_name_snapshot'] = $validated['color_name_snapshot'];
             $cart['items'][$existingIndex]['design_name_snapshot'] = $validated['design_name_snapshot'];
             $cart['items'][$existingIndex]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
+            $cart['items'][$existingIndex]['layout_mode_snapshot'] = $validated['layout_mode_snapshot'] ?? 'centered';
         } else {
             $cart['items'][] = [
                 'id' => (string) Str::uuid(),
@@ -70,6 +71,7 @@ class CartService
                 'design_name_snapshot' => $validated['design_name_snapshot'],
                 'design_image_id' => $validated['design_image_id'],
                 'design_image_path_snapshot' => $validated['design_image_path_snapshot'],
+                'layout_mode_snapshot' => $validated['layout_mode_snapshot'] ?? 'centered',
                 'quantity' => $validated['quantity'],
                 'product_name_snapshot' => $validated['product_name_snapshot'],
                 'unit_price_snapshot' => $validated['unit_price_snapshot'],
@@ -130,6 +132,7 @@ class CartService
             $cart['items'][$index]['color_name_snapshot'] = $validated['color_name_snapshot'];
             $cart['items'][$index]['design_name_snapshot'] = $validated['design_name_snapshot'];
             $cart['items'][$index]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
+            $cart['items'][$index]['layout_mode_snapshot'] = $validated['layout_mode_snapshot'] ?? 'centered';
 
             $this->store($cart['items']);
 
@@ -196,6 +199,7 @@ class CartService
             $items[$index]['color_name_snapshot'] = $validated['color_name_snapshot'];
             $items[$index]['design_name_snapshot'] = $validated['design_name_snapshot'];
             $items[$index]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
+            $items[$index]['layout_mode_snapshot'] = $validated['layout_mode_snapshot'] ?? 'centered';
 
             if ((int) ($item['unit_price_snapshot'] ?? 0) !== (int) $validated['unit_price_snapshot']) {
                 $priceChanged = true;
@@ -281,6 +285,7 @@ class CartService
                             'design_name_snapshot' => $item['design_name_snapshot'],
                             'design_image_id' => $item['design_image_id'],
                             'design_image_path_snapshot' => $item['design_image_path_snapshot'],
+                            'layout_mode_snapshot' => $item['layout_mode_snapshot'] ?? 'centered',
                             'unit_price_snapshot' => $item['unit_price_snapshot'],
                             'quantity' => $item['quantity'],
                             'final_price' => $item['final_price'],
@@ -392,6 +397,7 @@ class CartService
             'design_name_snapshot' => null,
             'design_image_id' => null,
             'design_image_path_snapshot' => null,
+            'layout_mode_snapshot' => null,
             'quantity' => $quantity,
             'product_name_snapshot' => $product->name,
             'unit_price_snapshot' => $unitPrice,
@@ -505,6 +511,7 @@ class CartService
             'design_name_snapshot' => $design->name,
             'design_image_id' => $designImageId,
             'design_image_path_snapshot' => $designImage?->image_path,
+            'layout_mode_snapshot' => $designImage?->getLayoutMode()->value ?? 'centered',
             'quantity' => $quantity,
             'product_name_snapshot' => $product->name,
             'unit_price_snapshot' => (int) $colorPrice->price,

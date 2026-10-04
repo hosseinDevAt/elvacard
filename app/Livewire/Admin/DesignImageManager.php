@@ -37,6 +37,8 @@ class DesignImageManager extends Component
 
     public int $sortOrder = 0;
 
+    public string $layoutMode = 'centered';
+
     public string $search = '';
 
     public $designFilter = null;
@@ -50,6 +52,7 @@ class DesignImageManager extends Component
         'designId' => 'required|integer|exists:designs,id',
         'colorId' => 'required|integer|exists:colors,id',
         'imagePath' => 'required|string|max:255',
+        'layoutMode' => 'required|in:centered,full_card',
         'altText' => 'nullable|string|max:255',
         'imageTitle' => 'nullable|string|max:255',
         'optimizedFilename' => 'nullable|string|max:255',
@@ -64,6 +67,8 @@ class DesignImageManager extends Component
         'designId.required' => 'طرح را انتخاب کنید.',
         'colorId.required' => 'رنگ تصویر را انتخاب کنید.',
         'imagePath.required' => 'مسیر تصویر الزامی است.',
+        'layoutMode.required' => 'نوع چینش طرح الزامی است.',
+        'layoutMode.in' => 'نوع چینش طرح نامعتبر است.',
     ];
 
     public function updatedDesignFilter($value): void
@@ -94,6 +99,7 @@ class DesignImageManager extends Component
             'design_id' => $this->designId,
             'color_id' => $this->colorId,
             'image_path' => $this->imagePath,
+            'layout_mode' => $this->layoutMode,
             'alt_text' => $this->altText ?: null,
             'image_title' => $this->imageTitle ?: null,
             'optimized_filename' => $this->optimizedFilename ?: null,
@@ -182,6 +188,7 @@ class DesignImageManager extends Component
         $this->imageTitle = $image->image_title;
         $this->optimizedFilename = $image->optimized_filename;
         $this->seoCaption = $image->seo_caption;
+        $this->layoutMode = $image->getLayoutMode()->value;
         $this->isActive = (bool) $image->is_active;
         $this->sortOrder = (int) $image->sort_order;
         $this->showForm = true;
@@ -265,6 +272,7 @@ class DesignImageManager extends Component
         $this->imageTitle = null;
         $this->optimizedFilename = null;
         $this->seoCaption = null;
+        $this->layoutMode = 'centered';
         $this->isActive = true;
         $this->sortOrder = 0;
         $this->editingId = null;
