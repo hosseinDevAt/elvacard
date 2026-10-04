@@ -16,6 +16,10 @@ class ProductGallery extends Component
 
     public int $selected_image_index = 0;
 
+    protected ?Product $resolvedProduct = null;
+
+    protected ?bool $isMountable = null;
+
     public function mount(int $productId, ?int $colorId = null): void
     {
         $product = $this->resolveProduct($productId);
@@ -76,22 +80,37 @@ class ProductGallery extends Component
      */
     private function notMountable(?Product $product, int $productId): bool
     {
+        if ($this->isMountable !== null && $this->resolvedProduct !== null && (int) $this->resolvedProduct->id === $productId) {
+            return ! $this->isMountable;
+        }
+
         if ($product === null) {
+            $this->isMountable = false;
+
             return true;
         }
 
         $workflowRaw = $product->getRawOriginal('customization_workflow');
 
         if ($workflowRaw !== null) {
+            $this->isMountable = false;
+
             return true;
         }
 
-        return ! ProductPurchaseabilityService::isPurchasable($productId);
+        $isPurchasable = ProductPurchaseabilityService::isPurchasable($product);
+        $this->isMountable = $isPurchasable;
+
+        return ! $isPurchasable;
     }
 
     private function resolveProduct(int $productId): ?Product
     {
-        return Product::query()
+        if ($this->resolvedProduct !== null && (int) $this->resolvedProduct->id === $productId) {
+            return $this->resolvedProduct;
+        }
+
+        return $this->resolvedProduct = Product::query()
             ->active()
             ->whereNull('customization_workflow')
             ->withCatalog()

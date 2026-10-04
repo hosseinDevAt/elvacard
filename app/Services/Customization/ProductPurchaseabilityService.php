@@ -23,9 +23,11 @@ class ProductPurchaseabilityService
      * rules at the query level for the catalog, homepage, menus and admin
      * dropdowns.
      */
-    public static function isPurchasable(int $productId): bool
+    public static function isPurchasable(Product|int $product): bool
     {
-        $product = Product::query()->find($productId);
+        if (! $product instanceof Product) {
+            $product = Product::query()->find($product);
+        }
 
         if ($product === null) {
             return false;
@@ -38,7 +40,18 @@ class ProductPurchaseabilityService
         $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
 
         if ($workflowRaw === null) {
-            return $product->base_price !== null || self::activeCardColors($product->id) !== [];
+            if ($product->base_price !== null) {
+                return true;
+            }
+
+            if ($product->relationLoaded('colorPrices')) {
+                return $product->colorPrices->contains(function ($colorPrice) {
+                    return (bool) $colorPrice->is_active
+                        && (! $colorPrice->relationLoaded('color') || $colorPrice->color?->is_active !== false);
+                });
+            }
+
+            return self::activeCardColors($product->id) !== [];
         }
 
         if ($workflow === null || ! CustomizationWorkflowRegistry::isActive($workflow)) {
@@ -47,7 +60,7 @@ class ProductPurchaseabilityService
 
         if ($product->type === ProductTypeEnum::FUEL) {
             $activePrices = ProductColorPrice::query()
-                ->where('product_id', $productId)
+                ->where('product_id', $product->id)
                 ->where('is_active', true)
                 ->whereHas('color', fn ($query) => $query->where('is_active', true))
                 ->count();
@@ -57,7 +70,7 @@ class ProductPurchaseabilityService
             }
         }
 
-        $colors = self::activeCardColors($productId);
+        $colors = self::activeCardColors($product->id);
 
         return $colors !== [] && self::hasPurchasableDesignForColors($colors);
     }

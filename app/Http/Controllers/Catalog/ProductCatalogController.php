@@ -51,7 +51,7 @@ class ProductCatalogController extends Controller
         // a non-actionable page kept deliberately visible.
         $purchasable = false;
         if (! $hasCustomization || $customizationAvailable) {
-            $purchasable = ProductPurchaseabilityService::isPurchasable($product->id);
+            $purchasable = ProductPurchaseabilityService::isPurchasable($product);
             abort_unless($purchasable, 404);
         }
 
