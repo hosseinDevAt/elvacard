@@ -457,21 +457,14 @@
                     $cardSignatureBoxClass = \App\Services\Customization\CardPresenter::signatureBoxClass($selectedColorHex);
                     $slots = \App\Services\Customization\CardPresenter::fixedSlots();
 
-                    $colorName = mb_strtolower($selectedColor['name'] ?? '');
-                    $bgGradient = match (true) {
-                        str_contains($colorName, 'طلایی') => 'from-amber-400 via-yellow-500 to-amber-600',
-                        str_contains($colorName, 'نقره') => 'from-slate-200 via-gray-300 to-slate-400',
-                        str_contains($colorName, 'مسی') => 'from-amber-700 via-orange-800 to-amber-900',
-                        str_contains($colorName, 'رزگلد') || str_contains($colorName, 'رز') => 'from-rose-300 via-pink-400 to-rose-500',
-                        default => 'from-gray-800 via-gray-900 to-black',
-                    };
                     $selectedDesignImage = collect($designImages)->firstWhere('id', $design_image_id);
                     $isFullCard = ($selectedDesignImage['layout_mode'] ?? 'centered') === 'full_card';
                 @endphp
 
-                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl {{ $activeView === 'back' && $workflow === $fuelCardWorkflow ? 'p-2.5 sm:p-3' : 'p-6' }} shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $selectedColorHex ?? '#111827' }};">
-                    {{-- Subtle Card Metallic Shine --}}
-                    <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
+                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl {{ $activeView === 'back' && $workflow === $fuelCardWorkflow ? 'p-2.5 sm:p-3' : 'p-6' }} shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10" style="background-color: {{ $selectedColorHex ?? '#111827' }};">
+                    {{-- Translucent Metallic Specular & Depth Overlays --}}
+                    <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/25 opacity-70"></div>
+                    <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0 opacity-60"></div>
 
                     {{-- Scratched Metallic Texture (Bank Card ONLY) --}}
                     @if ($workflow === $bankCardWorkflow && ($selectedColor['is_scratched'] ?? false))

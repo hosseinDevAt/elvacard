@@ -186,13 +186,6 @@
                                     $cardTextColor = \App\Services\Customization\CardPresenter::backTextColorClass($itemColorHex);
                                     $cardSubtextColor = \App\Services\Customization\CardPresenter::backSubtextColorClass($itemColorHex);
                                     $cardSignatureBoxClass = \App\Services\Customization\CardPresenter::signatureBoxClass($itemColorHex);
-                                    $bgGradient = match (true) {
-                                        str_contains($colorName, 'طلایی') => 'from-amber-400 via-yellow-500 to-amber-600',
-                                        str_contains($colorName, 'نقره') => 'from-slate-200 via-gray-300 to-slate-400',
-                                        str_contains($colorName, 'مسی') => 'from-amber-700 via-orange-800 to-amber-900',
-                                        str_contains($colorName, 'رزگلد') || str_contains($colorName, 'رز') => 'from-rose-300 via-pink-400 to-rose-500',
-                                        default => 'from-gray-800 via-gray-900 to-black',
-                                    };
                                 @endphp
 
                                 {{-- Bank Card Specifications Grid --}}
@@ -349,7 +342,8 @@
                                                     <span class="text-slate-400 font-mono text-[10px]">طرح: {{ $item->design_name_snapshot ?? '—' }} | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($item->isScratched()) (خش‌دار)@endif @if ($designColorName) | رنگ طرح: {{ $designColorName }}@endif</span>
                                                 </div>
                                             </div>
-                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
+                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
+                                                <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/25 opacity-70"></div>
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-60"></div>
                                                 @if ($item->isScratched())
                                                     <x-card-surface-texture :scratched="true" />
@@ -400,7 +394,8 @@
                                                 <span>نمای پشت (BACK)</span>
                                                 <span class="text-amber-700 font-mono text-[10px]">چاپ و حکاکی لیزری</span>
                                             </div>
-                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-4 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
+                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-4 shadow-lg relative overflow-hidden select-none border border-black/15" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
+                                                <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/25 opacity-70"></div>
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
                                                 @if ($item->isScratched())
                                                     <x-card-surface-texture :scratched="true" />
