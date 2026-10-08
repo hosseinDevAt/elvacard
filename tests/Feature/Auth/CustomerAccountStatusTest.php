@@ -89,7 +89,7 @@ class CustomerAccountStatusTest extends TestCase
                 'customer_phone' => '09123456789',
                 'shipping_address' => 'تهران، خیابان آزادی',
                 'shipping_postal_code' => '1234567890',
-                'shipping_plaque' => null,
+                'shipping_plaque' => '۱۲',
                 'shipping_description' => null,
                 'notes' => null,
                 'submission_token' => $token,

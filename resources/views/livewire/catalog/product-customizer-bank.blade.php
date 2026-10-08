@@ -13,8 +13,8 @@
             </label>
             <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">اختیاری</span>
         </div>
-        <div class="relative flex items-center rounded-xl border border-[#152244] bg-[#010619] focus-within:border-[#ffde5b] focus-within:ring-1 focus-within:ring-[#ffde5b] overflow-hidden dir-ltr">
-            <span class="inline-flex items-center justify-center px-3.5 py-2.5 bg-[#070e24] border-r border-[#152244] text-xs font-mono font-bold text-[#ffde5b] select-none shrink-0" aria-hidden="true">
+        <div class="relative flex items-center rounded-xl border border-[#152244] bg-[#010619] focus-within:border-[#ffde5b] focus-within:ring-1 focus-within:ring-[#ffde5b] overflow-hidden" dir="ltr" style="direction: ltr !important;">
+            <span class="inline-flex items-center justify-center px-3.5 py-2.5 bg-[#070e24] border-r border-[#152244] text-xs font-mono font-bold text-[#ffde5b] select-none shrink-0" aria-hidden="true" style="direction: ltr !important;">
                 IR
             </span>
             <input
@@ -25,7 +25,9 @@
                 maxlength="26"
                 wire:model.live.debounce.150ms="bankCard.iban"
                 placeholder="۲۴ رقم شماره شبا"
-                class="w-full bg-transparent px-3.5 py-2.5 text-sm text-white font-mono dir-ltr text-start placeholder-slate-600 focus:outline-none"
+                dir="ltr"
+                style="direction: ltr !important;"
+                class="w-full bg-transparent px-3.5 py-2.5 text-sm text-white font-mono text-left placeholder-slate-600 focus:outline-none"
             >
         </div>
         @error('bankCard.iban')

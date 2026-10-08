@@ -123,16 +123,16 @@
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div>
-                            <label for="shipping_postal_code" class="mb-1.5 block text-xs font-bold text-slate-700">کد پستی ۱۰ رقمی <span class="text-rose-500">*</span></label>
-                            <input id="shipping_postal_code" name="shipping_postal_code" type="text" inputmode="numeric" value="{{ old('shipping_postal_code') }}" required maxlength="10" dir="ltr"
+                            <label for="shipping_postal_code" class="mb-1.5 block text-xs font-bold text-slate-700">کد پستی ۱۰ رقمی <span class="text-slate-400 font-normal">(اختیاری)</span></label>
+                            <input id="shipping_postal_code" name="shipping_postal_code" type="text" inputmode="numeric" value="{{ old('shipping_postal_code') }}" maxlength="10" dir="ltr"
                                    class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 text-left focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 transition"
                                    placeholder="1234567890" />
                             @error('shipping_postal_code') <p class="mt-1 text-xs text-rose-600 font-medium">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label for="shipping_plaque" class="mb-1.5 block text-xs font-bold text-slate-700">پلاک</label>
-                            <input id="shipping_plaque" name="shipping_plaque" type="text" value="{{ old('shipping_plaque') }}" maxlength="50"
+                            <label for="shipping_plaque" class="mb-1.5 block text-xs font-bold text-slate-700">پلاک <span class="text-rose-500">*</span></label>
+                            <input id="shipping_plaque" name="shipping_plaque" type="text" value="{{ old('shipping_plaque') }}" required maxlength="50"
                                    class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 transition"
                                    placeholder="مثلاً: ۱۲" />
                             @error('shipping_plaque') <p class="mt-1 text-xs text-rose-600 font-medium">{{ $message }}</p> @enderror

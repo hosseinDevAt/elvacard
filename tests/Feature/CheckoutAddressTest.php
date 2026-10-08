@@ -150,6 +150,37 @@ class CheckoutAddressTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
+    public function test_checkout_allows_order_without_postal_code(): void
+    {
+        $this->addToCart($this->registerCartCatalog());
+
+        $token = 'SUBG'.Str::random(36);
+        $this->withSession(['checkout_submission_token' => $token]);
+
+        $response = $this->post(route('checkout.store'), $this->checkoutPayload([
+            'submission_token' => $token,
+            'shipping_postal_code' => '',
+        ]));
+
+        $order = Order::query()->latest('id')->first();
+        $this->assertNotNull($order);
+        $this->assertNull($order->shipping_postal_code);
+    }
+
+    public function test_checkout_requires_shipping_plaque(): void
+    {
+        $this->registerCartCatalog();
+
+        $response = $this->post(route('checkout.store'), $this->checkoutPayload([
+            'shipping_plaque' => '',
+        ]));
+
+        $response->assertSessionHasErrors([
+            'shipping_plaque' => 'وارد کردن پلاک الزامی است.',
+        ]);
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     public function test_guest_checkout_has_empty_inputs_by_default(): void
     {
         $this->addToCart($this->registerCartCatalog());

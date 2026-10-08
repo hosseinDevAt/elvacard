@@ -44,6 +44,15 @@ class CheckoutController extends Controller
     {
         $request->merge([
             'customer_phone' => normalize_phone((string) $request->input('customer_phone')),
+            'shipping_postal_code' => $request->filled('shipping_postal_code')
+                ? strtr((string) $request->input('shipping_postal_code'), [
+                    '۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
+                    '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9'
+                ])
+                : null,
+            'shipping_plaque' => $request->filled('shipping_plaque')
+                ? trim((string) $request->input('shipping_plaque'))
+                : null,
         ]);
 
         $payload = $request->validate([
@@ -54,11 +63,14 @@ class CheckoutController extends Controller
                 }
             }],
             'shipping_address' => ['required', 'string', 'max:1000'],
-            'shipping_postal_code' => ['required', 'string', 'regex:/^[0-9]{10}$/'],
-            'shipping_plaque' => ['nullable', 'string', 'max:50'],
+            'shipping_postal_code' => ['nullable', 'string', 'regex:/^[0-9]{10}$/'],
+            'shipping_plaque' => ['required', 'string', 'max:50'],
             'shipping_description' => ['nullable', 'string', 'max:1000'],
             'notes' => ['nullable', 'string'],
             'submission_token' => ['required', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'],
+        ], [
+            'shipping_plaque.required' => 'وارد کردن پلاک الزامی است.',
+            'shipping_postal_code.regex' => 'کد پستی باید ۱۰ رقم باشد.',
         ]);
 
         $submissionToken = $payload['submission_token'];

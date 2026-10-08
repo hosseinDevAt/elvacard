@@ -48,7 +48,7 @@ class BlockedGuestCheckoutTest extends TestCase
             'customer_phone' => $phone,
             'shipping_address' => 'تهران، خیابان آزادی',
             'shipping_postal_code' => '1234567890',
-            'shipping_plaque' => null,
+            'shipping_plaque' => '۱۲',
             'shipping_description' => null,
             'notes' => null,
             'submission_token' => $token,
