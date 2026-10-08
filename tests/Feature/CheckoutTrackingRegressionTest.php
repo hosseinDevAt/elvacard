@@ -128,7 +128,8 @@ class CheckoutTrackingRegressionTest extends TestCase
         $this->assertSame('09123456789', $order->customer_phone);
 
         $this->post(route('order-tracking.check'), [
-            'token' => $order->token,
+            'reference' => $order->reference,
+            'customer_phone_last4' => '6789',
         ])->assertSee($order->reference, false);
     }
 
@@ -148,7 +149,8 @@ class CheckoutTrackingRegressionTest extends TestCase
         $this->assertSame('09123456789', $order->customer_phone);
 
         $this->post(route('order-tracking.check'), [
-            'token' => $order->token,
+            'reference' => $order->reference,
+            'customer_phone_last4' => '6789',
         ])->assertSee($order->reference, false);
     }
 
@@ -170,10 +172,9 @@ class CheckoutTrackingRegressionTest extends TestCase
         $this->assertNotNull($order);
         $this->assertSame('09123456789', $order->customer_phone);
 
-        // The guest credential is the tracking code, so the phone format the
-        // customer typed no longer takes part in authorising the lookup.
         $this->post(route('order-tracking.check'), [
-            'token' => $order->token,
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr(normalize_phone($trackingPhone), -4),
         ])->assertSee($order->reference, false);
     }
 
@@ -224,25 +225,27 @@ class CheckoutTrackingRegressionTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
-    public function test_tracking_rejects_a_missing_code(): void
+    public function test_tracking_rejects_a_missing_reference(): void
     {
         $this->post(route('order-tracking.check'), [
-            'token' => '',
-        ])->assertSessionHasErrors('token');
+            'reference' => '',
+            'customer_phone_last4' => '6789',
+        ])->assertSessionHasErrors('reference');
     }
 
-    public function test_tracking_rejects_a_code_of_the_wrong_length(): void
+    public function test_tracking_rejects_a_phone_of_the_wrong_length(): void
     {
         $this->post(route('order-tracking.check'), [
-            'token' => 'too-short',
-        ])->assertSessionHasErrors('token');
+            'reference' => '10001',
+            'customer_phone_last4' => '12',
+        ])->assertSessionHasErrors('customer_phone_last4');
     }
 
-    public function test_tracking_rejects_the_sequential_reference_as_a_code(): void
+    public function test_tracking_rejects_when_phone_last_4_digits_missing(): void
     {
         $this->post(route('order-tracking.check'), [
-            'token' => 'ORD-2026-000001',
-        ])->assertSessionHasErrors('token');
+            'reference' => '10001',
+        ])->assertSessionHasErrors('customer_phone_last4');
     }
 
     // ───────── canonical stored (existing behavior guard) ─────────

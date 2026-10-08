@@ -145,7 +145,8 @@ class SecurityInfrastructureHardeningTest extends TestCase
         $order = $this->placeOrder('09120000000');
 
         $this->post(route('order-tracking.check'), [
-            'token' => $order->token,
+            'reference' => $order->reference,
+            'customer_phone_last4' => '0000',
         ])
             ->assertOk()
             ->assertSee($order->reference, false);
@@ -156,10 +157,11 @@ class SecurityInfrastructureHardeningTest extends TestCase
         $order = $this->placeOrder('09120000000');
 
         $response = $this->post(route('order-tracking.check'), [
-            'token' => Str::random(40),
+            'reference' => '99999',
+            'customer_phone_last4' => '1234',
         ]);
 
-        $response->assertSessionHasErrors('token');
+        $response->assertSessionHasErrors('reference');
 
         $content = $response->getContent() ?: '';
 
@@ -172,18 +174,15 @@ class SecurityInfrastructureHardeningTest extends TestCase
     {
         $order = $this->placeOrder('09120000000');
 
-        $forged = [];
-
-        for ($sequence = 1; $sequence <= 5; $sequence++) {
-            $forged[] = sprintf('ORD-%d-%06d', (int) now()->year, $sequence);
-        }
+        $forged = ['10001', '10002', '10003', '10004', '10005'];
 
         foreach ($forged as $guess) {
             $response = $this->post(route('order-tracking.check'), [
-                'token' => $guess,
+                'reference' => $guess,
+                'customer_phone_last4' => '9999', // wrong phone
             ]);
 
-            $response->assertSessionHasErrors('token');
+            $response->assertSessionHasErrors('reference');
             $this->assertStringNotContainsString(
                 $order->reference,
                 $response->getContent() ?: '',
@@ -196,7 +195,10 @@ class SecurityInfrastructureHardeningTest extends TestCase
     {
         $order = $this->placeOrder('09120000000');
 
-        $this->post(route('order-tracking.check'), ['token' => $order->token])->assertOk();
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => '0000',
+        ])->assertOk();
 
         $this->assertGuest();
     }
@@ -214,7 +216,10 @@ class SecurityInfrastructureHardeningTest extends TestCase
             'paid_at' => now(),
         ]);
 
-        $content = $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $content = $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => '0000',
+        ])
             ->assertOk()
             ->getContent() ?: '';
 
@@ -237,7 +242,8 @@ class SecurityInfrastructureHardeningTest extends TestCase
 
         for ($attempt = 0; $attempt < 8; $attempt++) {
             $response = $this->post(route('order-tracking.check'), [
-                'token' => Str::random(40),
+                'reference' => '10001',
+                'customer_phone_last4' => '1234',
             ]);
         }
 
@@ -604,9 +610,11 @@ class SecurityInfrastructureHardeningTest extends TestCase
         $this->get('/orders/'.$order->id)
             ->assertNotFound();
 
-        // Tracking without the secret 40-char token fails
-        $this->post(route('order-tracking.check'), ['token' => Str::random(40)])
-            ->assertSessionHasErrors(['token']);
+        // Tracking with wrong phone last 4 digits fails
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => '9999', // wrong last 4 digits
+        ])->assertSessionHasErrors(['reference']);
     }
 
     // =========================================================================

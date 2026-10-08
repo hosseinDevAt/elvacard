@@ -17,32 +17,7 @@ class OrderTrackingController extends Controller
 
     public function store(Request $request): RedirectResponse|View
     {
-        // 1. Direct secure token tracking (preserves backward compatibility and token links)
-        if ($request->has('token') && ! $request->has('reference')) {
-            $payload = $request->validate([
-                'token' => ['required', 'string', 'size:40'],
-            ], [
-                'token.required' => 'کد پیگیری الزامی است.',
-                'token.size' => 'کد پیگیری باید ۴۰ کاراکتر باشد.',
-            ]);
-
-            $order = Order::query()
-                ->with('items')
-                ->where('token', $payload['token'])
-                ->first();
-
-            if (! $order) {
-                return back()
-                    ->withInput()
-                    ->withErrors(['token' => 'سفارشی با این کد پیگیری یافت نشد.']);
-            }
-
-            return view('order-tracking.show', [
-                'order' => $order,
-            ]);
-        }
-
-        // 2. Order Number + Last 4 Digits of Customer Phone
+        // Public Tracking strictly by Order Reference + Last 4 Digits of Customer Phone
         // Clean and normalize Persian/Arabic digits
         $referenceInput = trim((string) $request->input('reference', ''));
         $phoneInput = trim((string) $request->input('customer_phone_last4', ''));

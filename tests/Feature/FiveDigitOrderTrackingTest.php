@@ -300,7 +300,7 @@ class FiveDigitOrderTrackingTest extends TestCase
             ->assertSee('تایید پرداخت', false);
     }
 
-    public function test_token_tracking_still_works_for_backward_compatibility(): void
+    public function test_token_alone_is_no_longer_valid_for_public_tracking(): void
     {
         $order = $this->placeOrder('09123456789');
 
@@ -308,8 +308,25 @@ class FiveDigitOrderTrackingTest extends TestCase
             'token' => $order->token,
         ]);
 
+        // Public tracking requires reference and customer_phone_last4
+        $response->assertSessionHasErrors(['reference', 'customer_phone_last4']);
+    }
+
+    public function test_checkout_success_page_displays_5_digit_reference_and_no_token(): void
+    {
+        $order = $this->placeOrder('09123456789');
+
+        // Customer accesses success page through secure token route
+        $response = $this->get(route('checkout.success', $order->token));
+
         $response->assertOk()
-            ->assertSee($order->reference, false);
+            ->assertSee('شماره سفارش: ' . $order->reference, false)
+            ->assertSee('۴ رقم آخر شماره موبایل خود', false)
+            ->assertDontSee('کد توکن امنیتی', false);
+
+        // Crucially, the 40-character token must not appear in the tracking guide
+        $this->assertStringNotContainsString('کد اختصاصی', $response->getContent() ?: '');
+        $this->assertStringNotContainsString('کد توکن امنیتی', $response->getContent() ?: '');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
