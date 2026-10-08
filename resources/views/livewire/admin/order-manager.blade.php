@@ -512,11 +512,43 @@
                                         </div>
                                         <div class="space-y-1.5">
                                             @foreach ($fuelFields as $fuelKey => $fuelField)
-                                                <div class="flex items-center justify-between bg-white/80 px-2.5 py-1 rounded border border-emerald-100">
-                                                    <span class="text-slate-500 text-[11px]">{{ $fuelField['label'] }}:</span>
-                                                    <span class="text-slate-900 font-bold font-mono text-xs select-all" @if (in_array($fuelKey, ['vin', 'plate_number', 'system_identifier', 'phone_number', 'oil_serial_number'], true)) dir="ltr" @endif>
-                                                        {{ $fuelField['value'] !== '' ? $fuelField['value'] : 'ثبت نشده' }}
-                                                    </span>
+                                                <div class="flex items-center justify-between bg-white/80 px-2.5 py-1.5 rounded border border-emerald-100">
+                                                    <span class="text-slate-600 font-medium text-[11px]">{{ $fuelField['label'] }}:</span>
+                                                    @if ($fuelKey === 'plate_number' && !empty($custom['plate_parts']))
+                                                        @php
+                                                            $adminPlateRow = \App\Services\FuelCard\FuelCardCustomization::formatIranPlateDisplay($fuelField['value'], $custom['plate_parts']);
+                                                        @endphp
+                                                        @if (!empty($adminPlateRow['is_structured']))
+                                                            <div class="inline-flex items-center rounded border border-slate-700 bg-white text-slate-950 font-bold shadow-sm overflow-hidden h-5" dir="ltr">
+                                                                <div class="bg-[#003399] text-white px-1 h-full flex flex-col justify-center items-center text-[5px] font-mono leading-none border-r border-slate-300">
+                                                                    <span class="text-[5px]">🇮🇷</span>
+                                                                    <span class="tracking-tighter font-extrabold mt-0.5">I.R.</span>
+                                                                    <span class="tracking-tighter text-[4px]">IRAN</span>
+                                                                </div>
+                                                                <div class="px-1 font-bold text-[10px] text-slate-950">{{ fa_digits($adminPlateRow['part1']) }}</div>
+                                                                <div class="px-0.5 font-black text-[10px] text-slate-900">{{ $adminPlateRow['letter'] }}</div>
+                                                                <div class="px-1 font-bold text-[10px] text-slate-950">{{ fa_digits($adminPlateRow['part2']) }}</div>
+                                                                <div class="border-l border-slate-300 px-1 h-full flex flex-col justify-center items-center bg-slate-50 text-[6px] leading-tight">
+                                                                    <span class="text-[5px] text-slate-500">ایران</span>
+                                                                    <span class="font-bold text-[9px] text-slate-900">{{ fa_digits($adminPlateRow['iran']) }}</span>
+                                                                </div>
+                                                            </div>
+                                                        @else
+                                                            <span class="text-slate-900 font-bold font-mono text-xs select-all" dir="ltr">{{ $fuelField['value'] }}</span>
+                                                        @endif
+                                                    @elseif ($fuelKey === 'chip_info')
+                                                        @if ($fuelField['value'] !== '')
+                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold {{ $fuelField['value'] === 'بزرگ' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300' }}">
+                                                                <span>چیپ {{ $fuelField['value'] }}</span>
+                                                            </span>
+                                                        @else
+                                                            <span class="text-slate-400 text-xs italic">ثبت نشده</span>
+                                                        @endif
+                                                    @else
+                                                        <span class="font-mono text-xs select-all {{ $fuelField['value'] !== '' ? 'text-slate-900 font-bold' : 'text-slate-400 font-normal italic' }}" @if (in_array($fuelKey, ['vin', 'system_identifier', 'phone_number', 'oil_serial_number', 'plate_number'], true)) dir="ltr" @endif>
+                                                            {{ $fuelField['value'] !== '' ? $fuelField['value'] : 'ثبت نشده' }}
+                                                        </span>
+                                                    @endif
                                                 </div>
                                             @endforeach
                                         </div>
@@ -582,10 +614,9 @@
                                                 <span>نمای پشت (BACK)</span>
                                                 <span class="text-emerald-700 font-mono text-[10px]">مشخصات فنی و هویتی</span>
                                             </div>
-                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-3.5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br from-slate-900 via-neutral-900 to-black text-white flex flex-col justify-between">
-                                                <div class="w-full h-4 bg-black shadow-inner rounded-sm mb-1 opacity-90"></div>
-                                                <div class="w-full my-auto overflow-hidden">
-                                                    <table class="w-full text-start border-collapse text-[10px] text-slate-100 border border-white/20 rounded overflow-hidden">
+                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-2.5 sm:p-3 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br from-slate-900 via-neutral-900 to-black text-white flex flex-col justify-between">
+                                                <div class="w-full flex-1 flex flex-col justify-between overflow-hidden">
+                                                    <table class="w-full h-full text-start border-collapse text-[10px] text-slate-100 border border-white/20 rounded overflow-hidden bg-black/20">
                                                         <tbody>
                                                             {{-- Plate --}}
                                                             <tr class="border-b border-white/20">
@@ -645,13 +676,25 @@
                                                                 </tr>
                                                             @endif
                                                             @if (!empty($custom['vin']))
-                                                                <tr>
+                                                                <tr class="{{ !empty($custom['chip_info']) ? 'border-b border-white/20' : '' }}">
                                                                     <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">شماره شاسی</th>
                                                                     <td class="py-1 px-2 font-mono font-bold text-white select-all" dir="ltr">{{ $custom['vin'] }}</td>
                                                                 </tr>
                                                             @endif
+                                                            @if (!empty($custom['chip_info']))
+                                                                <tr>
+                                                                    <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">سایز چیپ</th>
+                                                                    <td class="py-1 px-2 font-bold text-emerald-300">
+                                                                        {{ \App\Services\FuelCard\FuelCardCustomization::CHIP_SIZE_LABELS[$custom['chip_info']] ?? $custom['chip_info'] }}
+                                                                    </td>
+                                                                </tr>
+                                                            @endif
                                                         </tbody>
                                                     </table>
+                                                </div>
+                                                <div class="flex items-center justify-between pt-1 px-1 text-[8px] sm:text-[9px] text-slate-400 border-t border-white/15 shrink-0">
+                                                    <span>مشخصات کارت سوخت هوشمند</span>
+                                                    <span class="font-mono opacity-60">ELVA-FUEL</span>
                                                 </div>
                                             </div>
                                         </div>

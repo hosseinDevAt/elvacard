@@ -464,7 +464,7 @@
                     $isFullCard = ($selectedDesignImage['layout_mode'] ?? 'centered') === 'full_card';
                 @endphp
 
-                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $selectedColorHex ?? '#111827' }};">
+                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl {{ $activeView === 'back' && $workflow === $fuelCardWorkflow ? 'p-2.5 sm:p-3' : 'p-6' }} shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $selectedColorHex ?? '#111827' }};">
                     {{-- Subtle Card Metallic Shine --}}
                     <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
 
@@ -578,14 +578,11 @@
                             @endif
                         </div>
                     @else
-                        {{-- FUEL BACK CARD PREVIEW WITH STRUCTURED SPECIFICATION TABLE --}}
-                        <div class="relative h-full w-full select-none p-3.5 flex flex-col justify-between text-white">
-                            {{-- Top Header / Magnetic Band Placeholder --}}
-                            <div class="w-full h-4 bg-black/80 rounded-sm mb-1 opacity-90 shadow-inner"></div>
-
-                            {{-- Structured Specification Table --}}
-                            <div class="w-full my-auto overflow-hidden">
-                                <table class="w-full text-start border-collapse text-xs text-slate-100 border border-white/20 rounded-lg overflow-hidden">
+                        {{-- FUEL BACK CARD PREVIEW WITH FULL-CARD STRUCTURED SPECIFICATION TABLE --}}
+                        <div class="relative h-full w-full select-none flex flex-col justify-between text-white">
+                            {{-- Full-Card Structured Specification Table --}}
+                            <div class="w-full flex-1 flex flex-col justify-between overflow-hidden">
+                                <table class="w-full text-start border-collapse text-xs text-slate-100 border border-white/20 rounded-lg overflow-hidden bg-black/25 h-full">
                                     <tbody>
                                         {{-- Plate Number --}}
                                         <tr class="border-b border-white/15">
@@ -665,7 +662,7 @@
                             </div>
 
                             {{-- Bottom Footer --}}
-                            <div class="flex items-center justify-between pt-1 border-t border-white/15 text-[9px] sm:text-[10px] text-slate-300">
+                            <div class="flex items-center justify-between pt-1 px-1 border-t border-white/15 text-[9px] sm:text-[10px] text-slate-300 shrink-0">
                                 <span>مشخصات کارت سوخت اختصاصی</span>
                                 <span class="font-mono opacity-60">ELVA-FUEL</span>
                             </div>

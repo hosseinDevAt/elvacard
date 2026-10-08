@@ -355,4 +355,27 @@ class FuelCardDesignerEnhancementTest extends TestCase
         $this->assertSame('', FuelCardCustomization::formatOilSerialNumber(null));
         $this->assertSame('', FuelCardCustomization::formatOilSerialNumber('   '));
     }
+
+    public function test_oil_serial_number_placeholder_and_guide_in_designer(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD);
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->set('step', 2)
+            ->assertSeeHtml('placeholder="7744330•••••"')
+            ->assertSeeHtml('7744330•••••</span> (نقاط صرفاً نشان‌دهنده ادامه شماره سریال هستند');
+    }
+
+    public function test_fuel_card_back_preview_has_no_black_strip_and_has_full_table(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD);
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->call('setStep', 2)
+            ->assertSet('activeView', 'back')
+            ->assertDontSeeHtml('bg-black/80 rounded-sm mb-1 opacity-90 shadow-inner')
+            ->assertSeeHtml('h-full')
+            ->assertSeeHtml('مشخصات کارت سوخت اختصاصی');
+    }
 }
+
