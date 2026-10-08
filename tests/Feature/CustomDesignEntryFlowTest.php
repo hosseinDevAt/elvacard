@@ -65,8 +65,8 @@ class CustomDesignEntryFlowTest extends TestCase
         $response->assertOk();
         $response->assertSee('href="'.route('custom-card.bank').'"', false);
         $response->assertSee('href="'.route('custom-card.fuel').'"', false);
-        $response->assertSee('طراحی کارت بانکی');
-        $response->assertSee('طراحی کارت سوخت');
+        $response->assertSee('سفارش کارت بانکی فلزی');
+        $response->assertSee('سفارش کارت سوخت فلزی');
         $response->assertDontSee('انتخاب محصول');
         $response->assertDontSee('مشاهده طرح‌ها');
     }

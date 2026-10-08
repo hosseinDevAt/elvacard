@@ -318,12 +318,6 @@
                                             </div>
                                             <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" dir="ltr">
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-60"></div>
-                                                {{-- Chip Element --}}
-                                                <div class="absolute top-1/2 -translate-y-1/2 left-5 sm:left-7 h-9 w-12 rounded-lg bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 border border-yellow-100/80 shadow-md flex items-center justify-center pointer-events-none opacity-95 z-10">
-                                                    <div class="w-full h-[1px] bg-amber-900/40"></div>
-                                                    <div class="absolute inset-y-0 w-[1px] bg-amber-900/40"></div>
-                                                    <div class="h-4 w-6 rounded-[2px] border border-amber-900/30 bg-amber-400/20"></div>
-                                                </div>
                                                 {{-- Contactless waves indicator --}}
                                                 <div class="absolute top-4 left-5 opacity-70 pointer-events-none z-10">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

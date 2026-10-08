@@ -49,7 +49,7 @@
                         <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200/60">محبوب‌ترین</span>
                     </div>
 
-                    <h2 class="text-xl font-black text-[#010619] group-hover:text-slate-900 transition">طراحی کارت بانکی</h2>
+                    <h2 class="text-xl font-black text-[#010619] group-hover:text-slate-900 transition">سفارش کارت بانکی فلزی</h2>
                     <p class="mt-3 text-sm leading-relaxed text-slate-600">
                         برای کارت بانکی خود طرح اختصاصی بسازید؛ رنگ، طرح و متن دلخواه را انتخاب کنید و سفارش دهید.
                     </p>
@@ -73,7 +73,7 @@
                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 border border-slate-200">کارت سوخت هوشمند</span>
                     </div>
 
-                    <h2 class="text-xl font-black text-[#010619] group-hover:text-slate-900 transition">طراحی کارت سوخت</h2>
+                    <h2 class="text-xl font-black text-[#010619] group-hover:text-slate-900 transition">سفارش کارت سوخت فلزی</h2>
                     <p class="mt-3 text-sm leading-relaxed text-slate-600">
                         مشخصات خودرو، شماره شاسی و سامانه سوخت خود را وارد کنید و کارت سوخت اختصاصی سفارش دهید.
                     </p>

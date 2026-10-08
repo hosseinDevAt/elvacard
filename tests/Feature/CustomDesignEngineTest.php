@@ -536,7 +536,7 @@ class CustomDesignEngineTest extends TestCase
         [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::BANK_CARD, 450000);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
-            ->assertSee('طرح‌های کاتالوگ')
+            ->assertSee('طرح‌های آماده')
             ->assertSee('طرح اختصاصی شما')
             ->assertSeeHtml('role="tablist"')
             ->assertSeeHtml('id="tab-catalog"')

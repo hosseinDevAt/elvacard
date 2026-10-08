@@ -10,7 +10,7 @@
                 <span>مزایای الواکارت</span>
             </span>
             <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                چرا کارت شخصی الواکارت را انتخاب کنید؟
+                چرا کارت فلزی الواکارت را انتخاب کنیم؟
             </h2>
             <p class="mt-3.5 text-xs sm:text-sm text-slate-300 leading-relaxed">
                 ترکیب طراحی منحصربه‌فرد، دقت ساخت صنعتی و فرآیند سفارشی‌سازی شفاف برای داشتن کارتی لوکس و ماندگار

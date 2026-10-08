@@ -55,7 +55,7 @@
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                             </svg>
-                            <span>طرح‌های کاتالوگ</span>
+                            <span>طرح‌های آماده</span>
                         </button>
                         <button
                             type="button"
@@ -488,7 +488,7 @@
                         <div class="relative h-full flex flex-col justify-between items-center z-10">
                             {{-- Decorative Sample Chip Element for Fuel Card FRONT --}}
                             @if ($workflow === $fuelCardWorkflow)
-                                <div class="absolute top-1/2 -translate-y-1/2 start-6 h-9 w-12 rounded-md bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 border border-yellow-100/70 shadow-md flex items-center justify-center pointer-events-none opacity-95 z-10">
+                                <div class="absolute top-1/2 -translate-y-1/2 left-6 h-9 w-12 rounded-md bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 border border-yellow-100/70 shadow-md flex items-center justify-center pointer-events-none opacity-95 z-10">
                                     <div class="w-full h-[1px] bg-amber-800/40"></div>
                                     <div class="absolute inset-y-0 w-[1px] bg-amber-800/40"></div>
                                     <div class="h-4 w-6 rounded-[2px] border border-amber-800/30 bg-amber-400/20"></div>

@@ -194,7 +194,7 @@ class FuelCardFinalSecurityTest extends TestCase
         Livewire::test(ProductCustomizer::class, ['productId' => $this->fuelProduct->id])
             ->assertStatus(200)
             ->call('setActiveView', 'front')
-            ->assertSeeHtml('start-6 h-9 w-12 rounded-md bg-gradient-to-br from-amber-300')
+            ->assertSeeHtml('left-6 h-9 w-12 rounded-md bg-gradient-to-br from-amber-300')
             ->call('setActiveView', 'back')
             ->call('setStep', 2)
             ->set('fuelCard.owner_name', 'حسین رضایی')
