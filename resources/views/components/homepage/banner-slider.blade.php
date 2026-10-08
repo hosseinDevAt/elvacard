@@ -1,9 +1,7 @@
 @php
-    $banners = collect([
-        site_setting('homepage_banner_1', \App\Livewire\Admin\AppearanceManager::defaultBanner(1)),
-        site_setting('homepage_banner_2', \App\Livewire\Admin\AppearanceManager::defaultBanner(2)),
-        site_setting('homepage_banner_3', \App\Livewire\Admin\AppearanceManager::defaultBanner(3)),
-    ])->filter(fn ($banner) => is_array($banner) && (! empty($banner['title']) || ! empty($banner['image_path']) || ! empty($banner['mobile_image_path'])))->values();
+    $banners = collect(homepage_banners())
+        ->filter(fn ($banner) => is_array($banner) && (! empty($banner['title']) || ! empty($banner['image_path']) || ! empty($banner['mobile_image_path'])))
+        ->values();
 
     $gradients = [
         'from-primary-900 via-primary-800 to-primary-600',

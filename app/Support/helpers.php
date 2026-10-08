@@ -147,6 +147,39 @@ if (! function_exists('site_setting')) {
     }
 }
 
+if (! function_exists('homepage_banners')) {
+    /**
+     * Get the dynamic collection of homepage banners.
+     * Normalizes legacy fixed slots (homepage_banner_1..3) if homepage_banners is not explicitly configured.
+     */
+    function homepage_banners(): array
+    {
+        $banners = site_setting('homepage_banners');
+        if (is_array($banners)) {
+            return $banners;
+        }
+
+        $legacy = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $slot = site_setting("homepage_banner_{$i}");
+            if (is_array($slot) && (! empty($slot['title']) || ! empty($slot['image_path']) || ! empty($slot['mobile_image_path']))) {
+                $slot['id'] = $slot['id'] ?? "legacy_banner_{$i}";
+                $legacy[] = $slot;
+            }
+        }
+
+        if (! empty($legacy)) {
+            return $legacy;
+        }
+
+        return [
+            \App\Livewire\Admin\AppearanceManager::defaultBanner(1),
+            \App\Livewire\Admin\AppearanceManager::defaultBanner(2),
+            \App\Livewire\Admin\AppearanceManager::defaultBanner(3),
+        ];
+    }
+}
+
 if (! function_exists('safe_url')) {
     /**
      * Return the URL only if it uses a safe scheme (http/https or site-relative).

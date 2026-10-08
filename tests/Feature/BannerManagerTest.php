@@ -151,7 +151,7 @@ class BannerManagerTest extends TestCase
 
         // Remove desktop image
         $component->call('removeBannerImage', 1)
-            ->assertSee('تصویر دسکتاپ بنر شماره 1 حذف شد.');
+            ->assertSee('تصویر بنر شماره 1 حذف شد');
 
         Storage::disk('public')->assertMissing($desktopPath);
         Storage::disk('public')->assertExists($mobilePath);
