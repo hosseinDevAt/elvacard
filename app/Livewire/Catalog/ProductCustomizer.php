@@ -10,16 +10,19 @@ use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\CustomDesign\CustomDesignService;
 use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\DesignCatalogService;
 use Illuminate\Support\Collection;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class ProductCustomizer extends Component
 {
+    use WithFileUploads;
     use WithPagination;
 
     public int $product_id;
@@ -33,6 +36,19 @@ class ProductCustomizer extends Component
     public ?int $selected_category_id = null;
 
     public int $quantity = 1;
+
+    // Custom Design engine state
+    public string $designSource = 'catalog'; // 'catalog' | 'custom'
+
+    public $customImage = null;
+
+    public ?string $customDesignToken = null;
+
+    public ?string $customDesignOriginalName = null;
+
+    public string $customLayoutMode = 'centered'; // 'centered' | 'full_card'
+
+    public ?string $customDesignErrorMessage = null;
 
     // Step & View state
     public int $step = 1; // 1: Front design/color, 2: Back specifications
@@ -117,6 +133,12 @@ class ProductCustomizer extends Component
 
     public function setStep(int $step): void
     {
+        if ($step === 2 && $this->designSource === 'custom' && empty($this->customDesignToken)) {
+            $this->customDesignErrorMessage = 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.';
+            $this->addError('customImage', 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.');
+            return;
+        }
+
         $this->step = in_array($step, [1, 2], true) ? $step : 1;
         $this->activeView = $this->step === 2 ? 'back' : 'front';
     }
@@ -192,6 +214,79 @@ class ProductCustomizer extends Component
         $this->design_id = $image['design_id'];
     }
 
+    public function setDesignSource(string $source): void
+    {
+        if (! in_array($source, ['catalog', 'custom'], true)) {
+            return;
+        }
+
+        $this->designSource = $source;
+
+        if ($source === 'catalog' && $this->design_id === null) {
+            $allowedImageIds = $this->allowedImageIds();
+            $designs = app(DesignCatalogService::class)->paginate(
+                $this->currentCategoryId(),
+                $this->color_id,
+                $allowedImageIds,
+                $this->catalogWorkflow(),
+            );
+            if ($designs->isNotEmpty()) {
+                $this->design_id = $designs->items()[0]['id'];
+                $this->refreshSelectedDesignImages($allowedImageIds);
+            }
+        }
+    }
+
+    public function updatedCustomImage(): void
+    {
+        $this->customDesignErrorMessage = null;
+
+        if (! $this->customImage) {
+            return;
+        }
+
+        try {
+            $service = app(CustomDesignService::class);
+            $stored = $service->validateAndStoreTemp(
+                $this->customImage,
+                $this->authoritativeWorkflow() ?? 'BANK_CARD'
+            );
+
+            if ($this->customDesignToken && $this->customDesignToken !== $stored['token']) {
+                $service->removeTempDesign($this->customDesignToken);
+            }
+
+            $this->customDesignToken = $stored['token'];
+            $this->customDesignOriginalName = $stored['original_name'];
+            $this->customDesignErrorMessage = null;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->customDesignErrorMessage = $e->validator->errors()->first('customImage') ?: $e->getMessage();
+            $this->customImage = null;
+        } catch (\Throwable $e) {
+            $this->customDesignErrorMessage = 'خطایی در پردازش تصویر رخ داد. لطفاً دوباره تلاش کنید.';
+            $this->customImage = null;
+        }
+    }
+
+    public function removeCustomImage(): void
+    {
+        if ($this->customDesignToken) {
+            app(CustomDesignService::class)->removeTempDesign($this->customDesignToken);
+        }
+
+        $this->customDesignToken = null;
+        $this->customDesignOriginalName = null;
+        $this->customImage = null;
+        $this->customDesignErrorMessage = null;
+    }
+
+    public function setCustomLayoutMode(string $mode): void
+    {
+        if (in_array($mode, ['centered', 'full_card'], true)) {
+            $this->customLayoutMode = $mode;
+        }
+    }
+
     public function toggleCvv(): void
     {
         $this->bankCard->toggleCvv();
@@ -211,6 +306,14 @@ class ProductCustomizer extends Component
 
     protected function rules(): array
     {
+        if ($this->designSource === 'custom') {
+            return [
+                'product_id' => ['required', 'integer', 'min:1'],
+                'color_id' => ['required', 'integer', 'min:1'],
+                'quantity' => ['required', 'integer', 'min:1', 'max:20'],
+            ];
+        }
+
         return [
             'product_id' => ['required', 'integer', 'min:1'],
             'color_id' => ['required', 'integer', 'min:1'],
@@ -244,6 +347,37 @@ class ProductCustomizer extends Component
             default:
                 $customization = [];
                 break;
+        }
+
+        if ($this->designSource === 'custom') {
+            if (empty($this->customDesignToken)) {
+                $this->customDesignErrorMessage = 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.';
+                $this->addError('customImage', 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.');
+                return;
+            }
+
+            $this->validate([
+                'product_id' => ['required', 'integer', 'min:1'],
+                'color_id' => ['required', 'integer', 'min:1'],
+                'quantity' => ['required', 'integer', 'min:1', 'max:20'],
+            ]);
+
+            $cartService->addItem([
+                'product_id' => $this->product_id,
+                'color_id' => $this->color_id,
+                'design_id' => null,
+                'design_image_id' => null,
+                'is_custom_design' => true,
+                'custom_design_token' => $this->customDesignToken,
+                'layout_mode' => $this->customLayoutMode,
+                'quantity' => $this->quantity,
+                'customization_json' => $customization,
+            ]);
+
+            session()->flash('success', 'محصول با موفقیت به سبد خرید اضافه شد.');
+
+            $this->redirectRoute('cart.index', navigate: true);
+            return;
         }
 
         $this->validate([
@@ -379,9 +513,9 @@ class ProductCustomizer extends Component
         );
 
         // The catalog is not part of Livewire state, so a null selection is
-        // normalized server-side during render (auto-select the first design
+        // normalized server-side during render when browsing catalog (auto-select the first design
         // of the current page and load its image chips).
-        if ($this->design_id === null && $designs->isNotEmpty()) {
+        if ($this->designSource === 'catalog' && $this->design_id === null && $designs->isNotEmpty()) {
             $this->design_id = $designs->items()[0]['id'];
             $this->refreshSelectedDesignImages($allowedImageIds);
         }
@@ -395,6 +529,9 @@ class ProductCustomizer extends Component
             'totalPrice' => $totalPrice,
             'selectedColor' => $selectedPriceItem,
             'designs' => $designs,
+            'customDesignPreviewUrl' => $this->customDesignToken
+                ? route('custom-design.preview', ['token' => $this->customDesignToken])
+                : null,
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CustomizationWorkflowEnum;
+use App\Enums\DesignImageLayoutModeEnum;
 use App\Enums\OrderStatusEnum;
 use App\Enums\PaymentStatusEnum;
 use App\Exceptions\CartPriceChangedException;
@@ -15,6 +16,7 @@ use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Models\User;
 use App\Services\BankCard\BankCardCustomization;
+use App\Services\CustomDesign\CustomDesignService;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\FuelCard\FuelCardCustomization;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -61,6 +63,8 @@ class CartService
             $cart['items'][$existingIndex]['design_name_snapshot'] = $validated['design_name_snapshot'];
             $cart['items'][$existingIndex]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
             $cart['items'][$existingIndex]['layout_mode_snapshot'] = $validated['layout_mode_snapshot'] ?? 'centered';
+            $cart['items'][$existingIndex]['is_custom_design'] = (bool) ($validated['is_custom_design'] ?? false);
+            $cart['items'][$existingIndex]['custom_design_token'] = $validated['custom_design_token'] ?? null;
         } else {
             $cart['items'][] = [
                 'id' => (string) Str::uuid(),
@@ -72,6 +76,8 @@ class CartService
                 'design_image_id' => $validated['design_image_id'],
                 'design_image_path_snapshot' => $validated['design_image_path_snapshot'],
                 'layout_mode_snapshot' => $validated['layout_mode_snapshot'] ?? 'centered',
+                'is_custom_design' => (bool) ($validated['is_custom_design'] ?? false),
+                'custom_design_token' => $validated['custom_design_token'] ?? null,
                 'quantity' => $validated['quantity'],
                 'product_name_snapshot' => $validated['product_name_snapshot'],
                 'unit_price_snapshot' => $validated['unit_price_snapshot'],
@@ -118,6 +124,9 @@ class CartService
                 'design_image_id' => isset($item['design_image_id']) && $item['design_image_id'] !== ''
                     ? (int) $item['design_image_id']
                     : null,
+                'is_custom_design' => (bool) ($item['is_custom_design'] ?? false),
+                'custom_design_token' => $item['custom_design_token'] ?? null,
+                'layout_mode' => $item['layout_mode_snapshot'] ?? 'centered',
                 'quantity' => $quantity,
                 'customization_json' => is_array($item['customization_json'] ?? null) ? $item['customization_json'] : [],
             ];
@@ -133,6 +142,8 @@ class CartService
             $cart['items'][$index]['design_name_snapshot'] = $validated['design_name_snapshot'];
             $cart['items'][$index]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
             $cart['items'][$index]['layout_mode_snapshot'] = $validated['layout_mode_snapshot'] ?? 'centered';
+            $cart['items'][$index]['is_custom_design'] = (bool) ($validated['is_custom_design'] ?? false);
+            $cart['items'][$index]['custom_design_token'] = $validated['custom_design_token'] ?? null;
 
             $this->store($cart['items']);
 
@@ -168,6 +179,9 @@ class CartService
                 'design_image_id' => isset($item['design_image_id']) && $item['design_image_id'] !== ''
                     ? (int) $item['design_image_id']
                     : null,
+                'is_custom_design' => (bool) ($item['is_custom_design'] ?? false),
+                'custom_design_token' => $item['custom_design_token'] ?? null,
+                'layout_mode' => $item['layout_mode_snapshot'] ?? 'centered',
                 'quantity' => (int) ($item['quantity'] ?? 1),
                 'customization_json' => is_array($item['customization_json'] ?? null) ? $item['customization_json'] : [],
             ], $forUpdate) + [
@@ -200,6 +214,8 @@ class CartService
             $items[$index]['design_name_snapshot'] = $validated['design_name_snapshot'];
             $items[$index]['design_image_path_snapshot'] = $validated['design_image_path_snapshot'];
             $items[$index]['layout_mode_snapshot'] = $validated['layout_mode_snapshot'] ?? 'centered';
+            $items[$index]['is_custom_design'] = (bool) ($validated['is_custom_design'] ?? false);
+            $items[$index]['custom_design_token'] = $validated['custom_design_token'] ?? null;
 
             if ((int) ($item['unit_price_snapshot'] ?? 0) !== (int) $validated['unit_price_snapshot']) {
                 $priceChanged = true;
@@ -262,6 +278,26 @@ class CartService
                             ? $item['customization_json']
                             : [];
 
+                        $isCustomDesign = ! empty($item['is_custom_design']) || (! empty($item['custom_design_token']) && empty($item['design_id']));
+                        $itemUuid = (string) Str::uuid();
+                        $designImagePathSnapshot = $item['design_image_path_snapshot'];
+                        $layoutModeSnapshot = $item['layout_mode_snapshot'] ?? 'centered';
+
+                        if ($isCustomDesign && ! empty($item['custom_design_token'])) {
+                            $snapshotResult = app(CustomDesignService::class)->snapshotToOrder(
+                                (string) $item['custom_design_token'],
+                                $order,
+                                $itemUuid,
+                                $layoutModeSnapshot
+                            );
+                            $designImagePathSnapshot = $snapshotResult['design_image_path_snapshot'];
+                            $layoutModeSnapshot = $snapshotResult['layout_mode_snapshot'];
+                            $customization['custom_design'] = $snapshotResult['metadata'];
+
+                            // Clean up temporary design from session
+                            app(CustomDesignService::class)->removeTempDesign((string) $item['custom_design_token']);
+                        }
+
                         if (($item['customization_workflow'] ?? null) === CustomizationWorkflowEnum::BANK_CARD->value) {
                             if (! empty($item['design_image_id']) && empty($customization['design_color_name'])) {
                                 $designImage = DesignImage::query()->with('color')->find($item['design_image_id']);
@@ -284,8 +320,8 @@ class CartService
                             'design_id' => $item['design_id'],
                             'design_name_snapshot' => $item['design_name_snapshot'],
                             'design_image_id' => $item['design_image_id'],
-                            'design_image_path_snapshot' => $item['design_image_path_snapshot'],
-                            'layout_mode_snapshot' => $item['layout_mode_snapshot'] ?? 'centered',
+                            'design_image_path_snapshot' => $designImagePathSnapshot,
+                            'layout_mode_snapshot' => $layoutModeSnapshot,
                             'unit_price_snapshot' => $item['unit_price_snapshot'],
                             'quantity' => $item['quantity'],
                             'final_price' => $item['final_price'],
@@ -412,7 +448,13 @@ class CartService
             ? $this->resolveFuelColorPrice($product, $clientColorId, $forUpdate)
             : $this->resolveSelectedColorPrice($product, $clientColorId, $forUpdate);
 
-        $validated = $this->resolveCustomizationSnapshot($product, $colorPrice, $designId, $designImageId, $quantity, $forUpdate);
+        $isCustom = ! empty($payload['is_custom_design']) || ! empty($payload['custom_design_token']);
+
+        if ($isCustom) {
+            $validated = $this->resolveCustomDesignSnapshot($product, $colorPrice, $workflow, $quantity, $payload);
+        } else {
+            $validated = $this->resolveCustomizationSnapshot($product, $colorPrice, $designId, $designImageId, $quantity, $forUpdate);
+        }
 
         $validated['customization_json'] = $this->sanitizeCustomization($workflow, $payload);
 
@@ -462,6 +504,43 @@ class CartService
         }
 
         return $colorPrice;
+    }
+
+    private function resolveCustomDesignSnapshot($product, ProductColorPrice $colorPrice, CustomizationWorkflowEnum $workflow, int $quantity, array $payload): array
+    {
+        $token = (string) ($payload['custom_design_token'] ?? '');
+        $customDesign = app(CustomDesignService::class)->getTempDesign($token);
+
+        if (! $customDesign) {
+            throw new InvalidArgumentException('تصویر طرح اختصاصی یافت نشد یا منقضی شده است. لطفاً دوباره تصویر را بارگذاری کنید.');
+        }
+
+        if (($customDesign['workflow'] ?? null) !== $workflow->value) {
+            throw new InvalidArgumentException('طرح اختصاصی بارگذاری شده با نوع این کارت مطابقت ندارد.');
+        }
+
+        $rawLayout = (string) ($payload['layout_mode'] ?? $payload['layout_mode_snapshot'] ?? DesignImageLayoutModeEnum::CENTERED->value);
+        $layoutMode = in_array($rawLayout, [
+            DesignImageLayoutModeEnum::CENTERED->value,
+            DesignImageLayoutModeEnum::FULL_CARD->value,
+        ], true) ? $rawLayout : DesignImageLayoutModeEnum::CENTERED->value;
+
+        return [
+            'product_id' => $product->id,
+            'color_id' => $colorPrice->color_id,
+            'color_name_snapshot' => $colorPrice->color->name,
+            'design_id' => null,
+            'design_name_snapshot' => 'طرح اختصاصی مشتری',
+            'design_image_id' => null,
+            'design_image_path_snapshot' => $customDesign['path'],
+            'layout_mode_snapshot' => $layoutMode,
+            'is_custom_design' => true,
+            'custom_design_token' => $token,
+            'quantity' => $quantity,
+            'product_name_snapshot' => $product->name,
+            'unit_price_snapshot' => (int) $colorPrice->price,
+            'final_price' => (int) $colorPrice->price * $quantity,
+        ];
     }
 
     private function resolveCustomizationSnapshot($product, ProductColorPrice $colorPrice, ?int $designId, ?int $designImageId, int $quantity, bool $forUpdate = false): array
@@ -585,6 +664,9 @@ class CartService
             'color_id' => (int) ($line['color_id'] ?? 0),
             'design_id' => (int) ($line['design_id'] ?? 0),
             'design_image_id' => (int) ($line['design_image_id'] ?? 0),
+            'is_custom_design' => (bool) ($line['is_custom_design'] ?? false),
+            'custom_design_token' => (string) ($line['custom_design_token'] ?? ''),
+            'layout_mode' => (string) ($line['layout_mode_snapshot'] ?? 'centered'),
             'customization' => $this->canonicalizeForIdentity($line['customization_json'] ?? []),
         ], JSON_UNESCAPED_UNICODE);
     }

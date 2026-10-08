@@ -45,6 +45,23 @@ class OrderItem extends Model
         return ! empty($this->layout_mode_snapshot) ? (string) $this->layout_mode_snapshot : 'centered';
     }
 
+    public function isCustomDesign(): bool
+    {
+        return $this->design_id === null && ! empty($this->design_image_path_snapshot);
+    }
+
+    public function customDesignUrl(): ?string
+    {
+        if (! $this->isCustomDesign()) {
+            return null;
+        }
+
+        return route('admin.orders.items.custom-design', [
+            'order' => $this->order_id,
+            'item' => $this->id,
+        ]);
+    }
+
     protected static function booted(): void
     {
         static::saving(function (OrderItem $item) {

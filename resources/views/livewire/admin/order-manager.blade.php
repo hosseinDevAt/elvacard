@@ -305,7 +305,16 @@
                                         <div class="flex flex-col space-y-1.5">
                                             <div class="flex items-center justify-between text-[11px] font-bold text-slate-600 px-1">
                                                 <span>نمای رو (FRONT)</span>
-                                                <span class="text-slate-400 font-mono text-[10px]">طرح: {{ $item->design_name_snapshot ?? '—' }} | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($designColorName) | رنگ طرح: {{ $designColorName }}@endif</span>
+                                                <div class="flex items-center gap-2">
+                                                    @if ($item->isCustomDesign())
+                                                        <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-bold">طرح اختصاصی</span>
+                                                        <a href="{{ route('admin.orders.items.custom-design', ['order' => $selectedOrder->id, 'item' => $item->id, 'download' => 1]) }}" target="_blank" class="text-[10px] text-purple-700 hover:text-purple-900 underline flex items-center gap-1 font-sans">
+                                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                            دانلود طرح
+                                                        </a>
+                                                    @endif
+                                                    <span class="text-slate-400 font-mono text-[10px]">طرح: {{ $item->design_name_snapshot ?? '—' }} | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($designColorName) | رنگ طرح: {{ $designColorName }}@endif</span>
+                                                </div>
                                             </div>
                                             <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" dir="ltr">
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-60"></div>
@@ -325,14 +334,17 @@
                                                     @php
                                                         $itemLayoutMode = method_exists($item, 'getLayoutModeSnapshot') ? $item->getLayoutModeSnapshot() : ($item->layout_mode_snapshot ?? 'centered');
                                                         $itemIsFullCard = $itemLayoutMode === 'full_card';
+                                                        $imageSrc = $item->isCustomDesign()
+                                                            ? route('admin.orders.items.custom-design', ['order' => $selectedOrder->id, 'item' => $item->id])
+                                                            : asset('storage/' . $item->design_image_path_snapshot);
                                                     @endphp
                                                     @if ($itemIsFullCard)
                                                         <div class="pointer-events-none absolute inset-0 z-0 opacity-85 overflow-hidden">
-                                                            <img src="{{ asset('storage/' . $item->design_image_path_snapshot) }}" alt="{{ $item->design_name_snapshot }}" class="h-full w-full object-cover object-center">
+                                                            <img src="{{ $imageSrc }}" alt="{{ $item->design_name_snapshot }}" class="h-full w-full object-cover object-center">
                                                         </div>
                                                     @else
                                                         <div class="pointer-events-none absolute inset-0 flex items-center justify-center p-3 z-0 opacity-60">
-                                                            <img src="{{ asset('storage/' . $item->design_image_path_snapshot) }}" alt="{{ $item->design_name_snapshot }}" class="max-h-full max-w-full object-contain">
+                                                            <img src="{{ $imageSrc }}" alt="{{ $item->design_name_snapshot }}" class="max-h-full max-w-full object-contain">
                                                         </div>
                                                     @endif
                                                 @endif
@@ -480,7 +492,16 @@
                                         <div class="flex flex-col space-y-1.5">
                                             <div class="flex items-center justify-between text-[11px] font-bold text-slate-600 px-1">
                                                 <span>نمای رو (FRONT)</span>
-                                                <span class="text-slate-400 font-mono text-[10px]">کارت سوخت هوشمند | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($fuelDesignColorName) | رنگ طرح: {{ $fuelDesignColorName }}@endif</span>
+                                                <div class="flex items-center gap-2">
+                                                    @if ($item->isCustomDesign())
+                                                        <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-bold">طرح اختصاصی</span>
+                                                        <a href="{{ route('admin.orders.items.custom-design', ['order' => $selectedOrder->id, 'item' => $item->id, 'download' => 1]) }}" target="_blank" class="text-[10px] text-purple-700 hover:text-purple-900 underline flex items-center gap-1 font-sans">
+                                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                            دانلود طرح
+                                                        </a>
+                                                    @endif
+                                                    <span class="text-slate-400 font-mono text-[10px]">کارت سوخت هوشمند | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($fuelDesignColorName) | رنگ طرح: {{ $fuelDesignColorName }}@endif</span>
+                                                </div>
                                             </div>
                                             <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br from-emerald-900 via-slate-900 to-black text-amber-100" dir="ltr">
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
@@ -493,14 +514,17 @@
                                                     @php
                                                         $fuelItemLayoutMode = method_exists($item, 'getLayoutModeSnapshot') ? $item->getLayoutModeSnapshot() : ($item->layout_mode_snapshot ?? 'centered');
                                                         $fuelItemIsFullCard = $fuelItemLayoutMode === 'full_card';
+                                                        $fuelImageSrc = $item->isCustomDesign()
+                                                            ? route('admin.orders.items.custom-design', ['order' => $selectedOrder->id, 'item' => $item->id])
+                                                            : asset('storage/' . $item->design_image_path_snapshot);
                                                     @endphp
                                                     @if ($fuelItemIsFullCard)
                                                         <div class="pointer-events-none absolute inset-0 z-0 opacity-85 overflow-hidden">
-                                                            <img src="{{ asset('storage/' . $item->design_image_path_snapshot) }}" alt="Fuel Design" class="h-full w-full object-cover object-center">
+                                                            <img src="{{ $fuelImageSrc }}" alt="Fuel Design" class="h-full w-full object-cover object-center">
                                                         </div>
                                                     @else
                                                         <div class="pointer-events-none absolute inset-0 flex items-center justify-center p-3 z-0 opacity-60">
-                                                            <img src="{{ asset('storage/' . $item->design_image_path_snapshot) }}" alt="Fuel Design" class="max-h-full max-w-full object-contain">
+                                                            <img src="{{ $fuelImageSrc }}" alt="Fuel Design" class="max-h-full max-w-full object-contain">
                                                         </div>
                                                     @endif
                                                 @endif

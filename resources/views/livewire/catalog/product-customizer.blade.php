@@ -41,77 +41,186 @@
                         <p class="text-xs text-slate-400">طرح و دسته مورد نظر برای حکاکی روی کارت را انتخاب کنید.</p>
                     </div>
 
-                    {{-- Category Tabs --}}
-                    @if (count($categories) > 0)
-                        <div class="flex flex-wrap gap-2 border-b border-[#152244] pb-4">
-                            @foreach ($categories as $category)
-                                <button
-                                    type="button"
-                                    wire:click="selectCategory({{ $category['id'] }})"
-                                    class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 cursor-pointer {{ (int) $selected_category_id === (int) $category['id'] ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/60' }}"
-                                >
-                                    {{ $category['name'] }}
-                                </button>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    {{-- Designs Grid --}}
-                    <div class="grid grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pe-1">
-                        @forelse ($designs as $design)
-                            <button
-                                type="button"
-                                wire:click="selectDesign({{ $design['id'] }})"
-                                class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-[#010619]/90 overflow-hidden cursor-pointer {{ (int) $design_id === (int) $design['id'] ? 'border-[#ffde5b] ring-2 ring-[#ffde5b]/50 shadow-lg shadow-[#ffde5b]/10' : 'border-[#152244] hover:border-slate-700' }}"
-                            >
-                                <div class="relative aspect-[16/10] w-full rounded-xl bg-black/50 overflow-hidden flex items-center justify-center p-2 border border-[#152244]">
-                                    @if ($design['preview_image_path'])
-                                        <img src="{{ asset('storage/' . $design['preview_image_path']) }}" alt="{{ $design['name'] }}" class="h-full w-full object-contain transition duration-200 group-hover:scale-105">
-                                    @else
-                                        <div class="flex flex-col items-center text-slate-600">
-                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                    @endif
-                                </div>
-                                <span class="mt-2 text-xs font-bold text-slate-200 line-clamp-1 truncate">{{ $design['name'] }}</span>
-                            </button>
-                        @empty
-                            <div class="col-span-2 py-8 text-center text-xs text-slate-500">
-                                طرحی در این دسته‌بندی با رنگ انتخابی موجود نیست.
-                            </div>
-                        @endforelse
+                    {{-- Design Source Switcher (Catalog vs Custom) --}}
+                    <div class="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-[#010619] border border-[#152244]">
+                        <button
+                            type="button"
+                            wire:click="setDesignSource('catalog')"
+                            class="rounded-xl py-2 px-3 text-xs font-bold transition duration-200 cursor-pointer flex items-center justify-center gap-1.5 {{ $designSource === 'catalog' ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20' : 'text-slate-400 hover:text-white' }}"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                            <span>طرح‌های کاتالوگ</span>
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="setDesignSource('custom')"
+                            class="rounded-xl py-2 px-3 text-xs font-bold transition duration-200 cursor-pointer flex items-center justify-center gap-1.5 {{ $designSource === 'custom' ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20' : 'text-slate-400 hover:text-white' }}"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <span>طرح اختصاصی من</span>
+                        </button>
                     </div>
 
-                    @if ($designs->hasPages())
-                        <div class="pt-1">
-                            {{ $designs->links() }}
-                        </div>
-                    @endif
-
-                    {{-- Laser Engraving Color Selector --}}
-                    @if ($design_id)
-                        @php
-                            $availableImages = collect($designImages)->where('design_id', $design_id)->values();
-                        @endphp
-                        @if ($availableImages->isNotEmpty())
-                            <div class="pt-2 border-t border-[#152244]">
-                                <label class="block text-xs font-bold text-slate-300 mb-2">انتخاب رنگ حکاکی لیزری طرح</label>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach ($availableImages as $img)
-                                        <button
-                                            type="button"
-                                            wire:click="selectDesignImage({{ $img['id'] }})"
-                                            class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition cursor-pointer {{ (int) $design_image_id === (int) $img['id'] ? 'border-[#ffde5b] bg-[#ffde5b]/10 text-[#ffde5b]' : 'border-[#152244] bg-[#010619] text-slate-400 hover:border-slate-700' }}"
-                                        >
-                                            <span class="h-3 w-3 rounded-full border border-white/20" style="background-color: {{ $img['color_hex'] ?? '#cccccc' }};"></span>
-                                            <span>{{ $img['color_name'] ?? 'رنگ لیزر' }}</span>
-                                        </button>
-                                    @endforeach
-                                </div>
+                    @if ($designSource === 'catalog')
+                        {{-- Category Tabs --}}
+                        @if (count($categories) > 0)
+                            <div class="flex flex-wrap gap-2 border-b border-[#152244] pb-4">
+                                @foreach ($categories as $category)
+                                    <button
+                                        type="button"
+                                        wire:click="selectCategory({{ $category['id'] }})"
+                                        class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 cursor-pointer {{ (int) $selected_category_id === (int) $category['id'] ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/60' }}"
+                                    >
+                                        {{ $category['name'] }}
+                                    </button>
+                                @endforeach
                             </div>
                         @endif
+
+                        {{-- Designs Grid --}}
+                        <div class="grid grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pe-1">
+                            @forelse ($designs as $design)
+                                <button
+                                    type="button"
+                                    wire:click="selectDesign({{ $design['id'] }})"
+                                    class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-[#010619]/90 overflow-hidden cursor-pointer {{ (int) $design_id === (int) $design['id'] ? 'border-[#ffde5b] ring-2 ring-[#ffde5b]/50 shadow-lg shadow-[#ffde5b]/10' : 'border-[#152244] hover:border-slate-700' }}"
+                                >
+                                    <div class="relative aspect-[16/10] w-full rounded-xl bg-black/50 overflow-hidden flex items-center justify-center p-2 border border-[#152244]">
+                                        @if ($design['preview_image_path'])
+                                            <img src="{{ asset('storage/' . $design['preview_image_path']) }}" alt="{{ $design['name'] }}" class="h-full w-full object-contain transition duration-200 group-hover:scale-105">
+                                        @else
+                                            <div class="flex flex-col items-center text-slate-600">
+                                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <span class="mt-2 text-xs font-bold text-slate-200 line-clamp-1 truncate">{{ $design['name'] }}</span>
+                                </button>
+                            @empty
+                                <div class="col-span-2 py-8 text-center text-xs text-slate-500">
+                                    طرحی در این دسته‌بندی با رنگ انتخابی موجود نیست.
+                                </div>
+                            @endforelse
+                        </div>
+
+                        @if ($designs->hasPages())
+                            <div class="pt-1">
+                                {{ $designs->links() }}
+                            </div>
+                        @endif
+
+                        {{-- Laser Engraving Color Selector --}}
+                        @if ($design_id)
+                            @php
+                                $availableImages = collect($designImages)->where('design_id', $design_id)->values();
+                            @endphp
+                            @if ($availableImages->isNotEmpty())
+                                <div class="pt-2 border-t border-[#152244]">
+                                    <label class="block text-xs font-bold text-slate-300 mb-2">انتخاب رنگ حکاکی لیزری طرح</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach ($availableImages as $img)
+                                            <button
+                                                type="button"
+                                                wire:click="selectDesignImage({{ $img['id'] }})"
+                                                class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition cursor-pointer {{ (int) $design_image_id === (int) $img['id'] ? 'border-[#ffde5b] bg-[#ffde5b]/10 text-[#ffde5b]' : 'border-[#152244] bg-[#010619] text-slate-400 hover:border-slate-700' }}"
+                                            >
+                                                <span class="h-3 w-3 rounded-full border border-white/20" style="background-color: {{ $img['color_hex'] ?? '#cccccc' }};"></span>
+                                                <span>{{ $img['color_name'] ?? 'رنگ لیزر' }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
+                    @else
+                        {{-- Custom Design Upload Panel --}}
+                        <div class="space-y-4">
+                            <div class="rounded-2xl border-2 border-dashed {{ $customDesignToken ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-[#152244] hover:border-slate-600 bg-[#010619]/90' }} p-5 text-center transition">
+                                @if ($customDesignToken)
+                                    <div class="flex flex-col items-center space-y-3">
+                                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-white">{{ $customDesignOriginalName ?? 'طرح اختصاصی بارگذاری شده' }}</div>
+                                            <div class="text-[11px] text-emerald-400 mt-0.5">تصویر با موفقیت بارگذاری و تایید شد.</div>
+                                        </div>
+                                        <div class="flex items-center gap-2 pt-1">
+                                            <button
+                                                type="button"
+                                                wire:click="removeCustomImage"
+                                                class="px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 transition cursor-pointer"
+                                            >
+                                                حذف تصویر و انتخاب مجدد
+                                            </button>
+                                        </div>
+                                    </div>
+                                @else
+                                    <label class="flex flex-col items-center justify-center cursor-pointer space-y-3">
+                                        <div class="w-12 h-12 rounded-xl bg-[#152244] text-slate-300 flex items-center justify-center group-hover:scale-105 transition">
+                                            <svg class="w-6 h-6 text-[#ffde5b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs font-bold text-[#ffde5b] hover:underline">انتخاب یا رها کردن فایل تصویر</span>
+                                            <p class="text-[11px] text-slate-400 mt-1">PNG، JPG یا WEBP (حداکثر ۵ مگابایت، حداقل ۳۰۰×۳۰۰ پیکسل)</p>
+                                        </div>
+                                        <input type="file" wire:model="customImage" accept="image/png,image/jpeg,image/webp" class="hidden">
+                                    </label>
+                                @endif
+
+                                <div wire:loading wire:target="customImage" class="mt-3 text-xs text-[#ffde5b] flex items-center justify-center gap-2">
+                                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>در حال پردازش و اعتبارسنجی فایل...</span>
+                                </div>
+                            </div>
+
+                            @if ($customDesignErrorMessage)
+                                <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+                                    {{ $customDesignErrorMessage }}
+                                </div>
+                            @endif
+                            @error('customImage')
+                                <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                            {{-- Placement Mode Selection: Centered vs Full Card --}}
+                            @if ($customDesignToken)
+                                <div class="pt-3 border-t border-[#152244] space-y-2">
+                                    <label class="block text-xs font-bold text-slate-300">نحوه قرارگیری طرح روی کارت:</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            wire:click="setCustomLayoutMode('centered')"
+                                            class="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer {{ $customLayoutMode === 'centered' ? 'border-[#ffde5b] bg-[#ffde5b]/10 text-[#ffde5b]' : 'border-[#152244] bg-[#010619] text-slate-400 hover:border-slate-700' }}"
+                                        >
+                                            وسط‌چین (Centered)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            wire:click="setCustomLayoutMode('full_card')"
+                                            class="flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer {{ $customLayoutMode === 'full_card' ? 'border-[#ffde5b] bg-[#ffde5b]/10 text-[#ffde5b]' : 'border-[#152244] bg-[#010619] text-slate-400 hover:border-slate-700' }}"
+                                        >
+                                            تمام‌کارت (Full Card)
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
                     @endif
                 </div>
             @else
@@ -206,8 +315,18 @@
 
                     @if ($activeView === 'front')
                         {{-- FRONT CARD PREVIEW --}}
-                        {{-- Design Overlay Image (if selected) --}}
-                        @if ($selectedDesignImage && $selectedDesignImage['image_path'])
+                        {{-- Design Overlay Image (Custom Upload OR Catalog Selection) --}}
+                        @if ($designSource === 'custom' && $customDesignPreviewUrl)
+                            @if ($customLayoutMode === 'full_card')
+                                <div class="pointer-events-none absolute inset-0 z-0 opacity-85 overflow-hidden">
+                                    <img src="{{ $customDesignPreviewUrl }}" alt="Custom Design" class="h-full w-full object-cover object-center">
+                                </div>
+                            @else
+                                <div class="pointer-events-none absolute inset-0 flex items-center justify-center p-8 z-0 opacity-70">
+                                    <img src="{{ $customDesignPreviewUrl }}" alt="Custom Design" class="max-h-full max-w-full object-contain">
+                                </div>
+                            @endif
+                        @elseif ($selectedDesignImage && $selectedDesignImage['image_path'])
                             @if ($isFullCard)
                                 <div class="pointer-events-none absolute inset-0 z-0 opacity-80 overflow-hidden">
                                     <img src="{{ asset('storage/' . $selectedDesignImage['image_path']) }}" alt="Laser Overlay" class="h-full w-full object-cover object-center">

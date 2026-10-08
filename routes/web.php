@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\OrderCustomDesignController;
 use App\Http\Controllers\Admin\PaymentReceiptController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Catalog\ProductCatalogController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Cms\ArticleController;
 use App\Http\Controllers\Cms\FaqController;
 use App\Http\Controllers\Cms\HomepageController;
 use App\Http\Controllers\Cms\PageController;
+use App\Http\Controllers\CustomDesign\CustomerCustomDesignPreviewController;
 use App\Http\Controllers\CustomDesign\CustomDesignController;
 use App\Http\Controllers\Order\OrderTrackingController;
 use App\Livewire\Admin\AnnouncementManager;
@@ -69,6 +71,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard/manual-payment', ManualPaymentSettingManager::class)->name('admin.manual-payment');
     Route::get('/dashboard/orders/{order}/payments/{payment}/receipt', [PaymentReceiptController::class, 'show'])
         ->name('admin.payments.receipt');
+    Route::get('/dashboard/orders/{order}/items/{item}/custom-design', [OrderCustomDesignController::class, 'show'])
+        ->name('admin.orders.items.custom-design');
     Route::get('/dashboard/users', UserManager::class)->name('admin.users');
 });
 
@@ -78,6 +82,9 @@ Route::get('/catalog/designs', [ProductCatalogController::class, 'designCatalog'
 Route::get('/design', [CustomDesignController::class, 'landing'])->name('custom-card.design');
 Route::get('/design/bank', [CustomDesignController::class, 'bank'])->name('custom-card.bank');
 Route::get('/design/fuel', [CustomDesignController::class, 'fuel'])->name('custom-card.fuel');
+Route::get('/custom-design/preview/{token}', [CustomerCustomDesignPreviewController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{40,64}')
+    ->name('custom-design.preview');
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
