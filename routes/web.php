@@ -18,6 +18,7 @@ use App\Livewire\Admin\AnnouncementManager;
 use App\Livewire\Admin\AppearanceManager;
 use App\Livewire\Admin\ArticleCategoryManager;
 use App\Livewire\Admin\ArticleManager;
+use App\Livewire\Admin\BannerManager;
 use App\Livewire\Admin\CateDesignManager;
 use App\Livewire\Admin\ColorManager;
 use App\Livewire\Admin\Dashboard;
@@ -64,6 +65,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard/menu-items', MenuItemManager::class)->name('admin.menu-items');
     Route::get('/dashboard/site-settings', SiteSettingManager::class)->name('admin.site-settings');
     Route::get('/dashboard/appearance', AppearanceManager::class)->name('admin.appearance');
+    Route::get('/dashboard/banners', BannerManager::class)->name('admin.banners');
     Route::get('/dashboard/homepage-sections', HomepageSectionManager::class)->name('admin.homepage-sections');
     Route::get('/dashboard/reports', Reports::class)->name('admin.reports');
     Route::get('/dashboard/orders', OrderManager::class)->name('admin.orders');

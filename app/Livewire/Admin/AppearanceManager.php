@@ -200,24 +200,36 @@ class AppearanceManager extends Component
         return match ($index) {
             1 => [
                 'image_path' => null,
+                'mobile_image_path' => null,
                 'title' => 'کارت شخصی فلزی',
                 'subtitle' => 'طراحی و تولید کارت‌های فلزی منحصربه‌فرد',
                 'cta_text' => 'مشاهده محصولات',
                 'cta_url' => '/catalog/products',
+                'text_color' => '#ffffff',
+                'button_bg_color' => '#ffde5b',
+                'button_text_color' => '#010619',
             ],
             2 => [
                 'image_path' => null,
+                'mobile_image_path' => null,
                 'title' => 'طراحی کارت اختصاصی',
                 'subtitle' => 'طرح دلخواه خود را روی کارت حکاکی کنید',
                 'cta_text' => 'شروع طراحی',
                 'cta_url' => '/design',
+                'text_color' => '#ffffff',
+                'button_bg_color' => '#ffde5b',
+                'button_text_color' => '#010619',
             ],
             3 => [
                 'image_path' => null,
+                'mobile_image_path' => null,
                 'title' => 'کیفیت تضمینی',
                 'subtitle' => 'با بهترین مواد اولیه و تکنولوژی روز',
                 'cta_text' => 'بیشتر بدانید',
                 'cta_url' => '/pages/about-us',
+                'text_color' => '#ffffff',
+                'button_bg_color' => '#ffde5b',
+                'button_text_color' => '#010619',
             ],
             default => [],
         };
@@ -331,15 +343,16 @@ class AppearanceManager extends Component
         $this->putSetting('contact_address', $this->contactAddress, 'string');
 
         for ($index = 1; $index <= 3; $index++) {
-            $banner = [
-                'image_path' => $this->maybeUpload("bannerImage{$index}", null, "bannerImagePath{$index}", 'appearance'),
-                'title' => $this->{"bannerTitle{$index}"},
-                'subtitle' => $this->{"bannerSubtitle{$index}"},
-                'cta_text' => $this->{"bannerCtaText{$index}"},
-                'cta_url' => $this->{"bannerCtaUrl{$index}"},
-            ];
+            $existing = site_setting("homepage_banner_{$index}", self::defaultBanner($index));
+            $existing = is_array($existing) ? $existing : self::defaultBanner($index);
 
-            $this->putSetting("homepage_banner_{$index}", json_encode($banner, JSON_UNESCAPED_UNICODE), 'json');
+            $existing['image_path'] = $this->maybeUpload("bannerImage{$index}", null, "bannerImagePath{$index}", 'appearance');
+            $existing['title'] = $this->{"bannerTitle{$index}"};
+            $existing['subtitle'] = $this->{"bannerSubtitle{$index}"};
+            $existing['cta_text'] = $this->{"bannerCtaText{$index}"};
+            $existing['cta_url'] = $this->{"bannerCtaUrl{$index}"};
+
+            $this->putSetting("homepage_banner_{$index}", json_encode($existing, JSON_UNESCAPED_UNICODE), 'json');
         }
 
         $this->saveMenuItems();

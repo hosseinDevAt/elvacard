@@ -77,10 +77,11 @@
                     'id' => 'appearance',
                     'label' => 'تنظیمات و ظاهر',
                     'icon' => 'cog',
-                    'routes' => ['admin.site-settings', 'admin.appearance'],
+                    'routes' => ['admin.site-settings', 'admin.appearance', 'admin.banners'],
                     'items' => [
                         ['route' => 'admin.site-settings', 'label' => 'تنظیمات سایت', 'icon' => 'cog', 'routes' => ['admin.site-settings']],
                         ['route' => 'admin.appearance', 'label' => 'ظاهر و برند', 'icon' => 'sparkles', 'routes' => ['admin.appearance']],
+                        ['route' => 'admin.banners', 'label' => 'مدیریت بنرها', 'icon' => 'image', 'routes' => ['admin.banners']],
                     ],
                 ],
             ];

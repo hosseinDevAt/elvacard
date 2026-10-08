@@ -66,52 +66,16 @@
 
         {{-- Homepage banners --}}
         <section class="admin-card p-6">
-            <h3 class="text-base font-extrabold text-slate-900 mb-1">بنرهای صفحه اصلی</h3>
-            <p class="text-xs text-slate-500 mb-5">در صورت نبود تصویر، از پس‌زمینه رنگی استاندارد همراه با متن استفاده می‌شود.</p>
-
-            <div class="space-y-4">
-                @for ($i = 1; $i <= 3; $i++)
-                    <div class="border border-slate-200/80 rounded-xl p-5 bg-slate-50/40">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-xs font-bold text-slate-800">اسلاید / بنر شماره {{ $i }}</h4>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="sm:col-span-2">
-                                <label class="admin-label">تصویر بنر</label>
-                                <input type="file" wire:model="bannerImage{{ $i }}" accept="image/*" class="w-full text-xs text-slate-600 file:me-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer">
-                                @error("bannerImage{$i}") <p class="admin-error">{{ $message }}</p> @enderror
-                                @if (${"bannerImage{$i}"})
-                                    <div class="mt-3 flex items-center gap-3">
-                                        <img src="{{ ${"bannerImage{$i}"}->temporaryUrl() }}" alt="پیش‌نمایش بنر {{ $i }}" class="h-28 w-44 object-cover rounded-xl border border-slate-200">
-                                        <button type="button" wire:click="$set('bannerImage{{ $i }}', null)" class="text-xs text-rose-600 hover:text-rose-700 font-medium transition cursor-pointer">انصراف از آپلود</button>
-                                    </div>
-                                @elseif (${"bannerImagePath{$i}"})
-                                    <div class="mt-3 flex items-center gap-3">
-                                        <img src="{{ asset('storage/' . ${"bannerImagePath{$i}"}) }}" alt="بنر فعلی {{ $i }}" class="h-28 w-44 object-cover rounded-xl border border-slate-200">
-                                        <button type="button" wire:click="removeBannerImage({{ $i }})" wire:confirm="آیا از حذف تصویر این بنر مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 font-medium transition cursor-pointer">حذف تصویر بنر</button>
-                                    </div>
-                                @endif
-                            </div>
-                            <div>
-                                <label class="admin-label">عنوان</label>
-                                <input type="text" wire:model.debounce.300ms="bannerTitle{{ $i }}" class="admin-input">
-                            </div>
-                            <div>
-                                <label class="admin-label">زیرعنوان</label>
-                                <input type="text" wire:model.debounce.300ms="bannerSubtitle{{ $i }}" class="admin-input">
-                            </div>
-                            <div>
-                                <label class="admin-label">متن دکمه (CTA)</label>
-                                <input type="text" wire:model.debounce.300ms="bannerCtaText{{ $i }}" class="admin-input">
-                            </div>
-                            <div>
-                                <label class="admin-label">لینک دکمه</label>
-                                <input type="text" wire:model.debounce.300ms="bannerCtaUrl{{ $i }}" placeholder="https://example.com یا /pages/x" dir="ltr" class="admin-input">
-                                @error("bannerCtaUrl{$i}") <p class="admin-error">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-                    </div>
-                @endfor
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 mb-1">بنرهای صفحه اصلی</h3>
+                    <p class="text-xs text-slate-500">مدیریت تفکیک‌شده تصاویر دسکتاپ و موبایل، متون تبلیغاتی، دکمه‌های CTA و پالت رنگی اسلایدر صفحه اصلی در بخش اختصاصی مدیریت بنرها قرار دارد.</p>
+                </div>
+                <a href="{{ route('admin.banners') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-primary-700 transition shrink-0">
+                    <x-icons.image class="h-4 w-4" />
+                    <span>مدیریت بنرها</span>
+                    <x-icons.arrow-left class="h-3.5 w-3.5" />
+                </a>
             </div>
         </section>
 
