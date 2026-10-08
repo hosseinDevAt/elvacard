@@ -173,7 +173,7 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
     public function test_rules_and_messages_define_the_fuel_fields(): void
     {
         $this->assertSame(
-            ['owner_name', 'car_info', 'vin', 'system_name', 'system_identifier', 'plate_number', 'chip_info'],
+            ['owner_name', 'phone_number', 'vehicle_type', 'vehicle_model', 'oil_serial_number', 'plate_number', 'vin', 'chip_info', 'car_info', 'system_name', 'system_identifier'],
             array_keys(FuelCardCustomization::rulesFor())
         );
         $this->assertNotEmpty(FuelCardCustomization::messages());
@@ -213,9 +213,16 @@ class FuelCardWorkspaceBoundaryTest extends TestCase
             ->values()
             ->all();
 
-        $this->assertCount(7, $publicProperties);
-
-        foreach (['owner_name', 'car_info', 'vin', 'system_name', 'system_identifier', 'plate_number', 'chip_info'] as $fuelField) {
+        foreach ([
+            'owner_name',
+            'phone_number',
+            'vehicle_type',
+            'vehicle_model',
+            'oil_serial_number',
+            'plate_number',
+            'vin',
+            'chip_info',
+        ] as $fuelField) {
             $this->assertContains($fuelField, $publicProperties);
         }
 

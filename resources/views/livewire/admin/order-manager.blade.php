@@ -514,7 +514,7 @@
                                             @foreach ($fuelFields as $fuelKey => $fuelField)
                                                 <div class="flex items-center justify-between bg-white/80 px-2.5 py-1 rounded border border-emerald-100">
                                                     <span class="text-slate-500 text-[11px]">{{ $fuelField['label'] }}:</span>
-                                                    <span class="text-slate-900 font-bold font-mono text-xs select-all" @if (in_array($fuelKey, ['vin', 'plate_number', 'system_identifier'], true)) dir="ltr" @endif>
+                                                    <span class="text-slate-900 font-bold font-mono text-xs select-all" @if (in_array($fuelKey, ['vin', 'plate_number', 'system_identifier', 'phone_number', 'oil_serial_number'], true)) dir="ltr" @endif>
                                                         {{ $fuelField['value'] !== '' ? $fuelField['value'] : 'ثبت نشده' }}
                                                     </span>
                                                 </div>
@@ -582,31 +582,74 @@
                                                 <span>نمای پشت (BACK)</span>
                                                 <span class="text-emerald-700 font-mono text-[10px]">مشخصات فنی و هویتی</span>
                                             </div>
-                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-4 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br from-slate-900 via-neutral-900 to-black text-white flex flex-col justify-between">
-                                                <div class="w-full h-6 bg-black shadow-inner rounded-sm mb-1"></div>
+                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-3.5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br from-slate-900 via-neutral-900 to-black text-white flex flex-col justify-between">
+                                                <div class="w-full h-4 bg-black shadow-inner rounded-sm mb-1 opacity-90"></div>
                                                 <div class="w-full my-auto overflow-hidden">
                                                     <table class="w-full text-start border-collapse text-[10px] text-slate-100 border border-white/20 rounded overflow-hidden">
                                                         <tbody>
+                                                            {{-- Plate --}}
                                                             <tr class="border-b border-white/20">
-                                                                <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 w-2/5 bg-white/10">نام مالک</th>
+                                                                <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 w-[36%] bg-white/10">پلاک ایران</th>
+                                                                <td class="py-1 px-2">
+                                                                    @php
+                                                                        $adminPlate = \App\Services\FuelCard\FuelCardCustomization::formatIranPlateDisplay($custom['plate_number'] ?? null, $custom['plate_parts'] ?? null);
+                                                                    @endphp
+                                                                    @if (!empty($adminPlate['is_structured']))
+                                                                        <div class="inline-flex items-center rounded border border-slate-700 bg-white text-slate-950 font-bold shadow-sm overflow-hidden h-5" dir="ltr">
+                                                                            <div class="bg-[#003399] text-white px-1 h-full flex flex-col justify-center items-center text-[5px] font-mono leading-none border-r border-slate-300">
+                                                                                <span class="text-[5px]">🇮🇷</span>
+                                                                                <span class="tracking-tighter font-extrabold mt-0.5">I.R.</span>
+                                                                                <span class="tracking-tighter text-[4px]">IRAN</span>
+                                                                            </div>
+                                                                            <div class="px-1 font-bold text-[10px] text-slate-950">{{ fa_digits($adminPlate['part1']) }}</div>
+                                                                            <div class="px-0.5 font-black text-[10px] text-slate-900">{{ $adminPlate['letter'] }}</div>
+                                                                            <div class="px-1 font-bold text-[10px] text-slate-950">{{ fa_digits($adminPlate['part2']) }}</div>
+                                                                            <div class="border-l border-slate-300 px-1 h-full flex flex-col justify-center items-center bg-slate-50 text-[6px] leading-tight">
+                                                                                <span class="text-[5px] text-slate-500">ایران</span>
+                                                                                <span class="font-bold text-[9px] text-slate-900">{{ fa_digits($adminPlate['iran']) }}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    @else
+                                                                        <span class="font-bold text-white">{{ $custom['plate_number'] ?? '---' }}</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                            <tr class="border-b border-white/20">
+                                                                <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">نام مالک</th>
                                                                 <td class="py-1 px-2 font-bold text-white">{{ $custom['owner_name'] ?? '---' }}</td>
                                                             </tr>
-                                                            <tr class="border-b border-white/20">
-                                                                <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">اطلاعات خودرو</th>
-                                                                <td class="py-1 px-2 text-white">{{ $custom['car_info'] ?? '---' }}</td>
-                                                            </tr>
-                                                            <tr class="border-b border-white/20">
-                                                                <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">شماره شاسی (VIN)</th>
-                                                                <td class="py-1 px-2 font-mono font-bold text-white select-all" dir="ltr">{{ $custom['vin'] ?? '---' }}</td>
-                                                            </tr>
-                                                            <tr class="border-b border-white/20">
-                                                                <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">شماره پلاک</th>
-                                                                <td class="py-1 px-2 text-white">{{ $custom['plate_number'] ?? '---' }}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">شناسه سیستم / سریال</th>
-                                                                <td class="py-1 px-2 font-mono text-white select-all" dir="ltr">{{ $custom['system_identifier'] ?? '---' }}</td>
-                                                            </tr>
+                                                            @if (!empty($custom['phone_number']))
+                                                                <tr class="border-b border-white/20">
+                                                                    <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">شماره تلفن</th>
+                                                                    <td class="py-1 px-2 font-mono text-white select-all" dir="ltr">{{ $custom['phone_number'] }}</td>
+                                                                </tr>
+                                                            @endif
+                                                            @if (!empty($custom['vehicle_type']))
+                                                                <tr class="border-b border-white/20">
+                                                                    <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">نوع خودرو</th>
+                                                                    <td class="py-1 px-2 text-white">{{ $custom['vehicle_type'] }}</td>
+                                                                </tr>
+                                                            @endif
+                                                            @if (!empty($custom['vehicle_model']) || !empty($custom['car_info']))
+                                                                <tr class="border-b border-white/20">
+                                                                    <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">مدل خودرو</th>
+                                                                    <td class="py-1 px-2 text-white">{{ $custom['vehicle_model'] ?? $custom['car_info'] }}</td>
+                                                                </tr>
+                                                            @endif
+                                                            @if (!empty($custom['oil_serial_number']) || !empty($custom['system_identifier']))
+                                                                <tr class="border-b border-white/20">
+                                                                    <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">سریال نفت</th>
+                                                                    <td class="py-1 px-2 font-mono text-white select-all" dir="ltr">
+                                                                        {{ !empty($custom['oil_serial_number']) ? \App\Services\FuelCard\FuelCardCustomization::formatOilSerialNumber($custom['oil_serial_number']) : $custom['system_identifier'] }}
+                                                                    </td>
+                                                                </tr>
+                                                            @endif
+                                                            @if (!empty($custom['vin']))
+                                                                <tr>
+                                                                    <th scope="row" class="py-1 px-2 text-start font-bold text-slate-300 bg-white/10">شماره شاسی</th>
+                                                                    <td class="py-1 px-2 font-mono font-bold text-white select-all" dir="ltr">{{ $custom['vin'] }}</td>
+                                                                </tr>
+                                                            @endif
                                                         </tbody>
                                                     </table>
                                                 </div>

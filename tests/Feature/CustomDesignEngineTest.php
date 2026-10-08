@@ -248,7 +248,7 @@ class CustomDesignEngineTest extends TestCase
         $this->assertEquals(800000, $item['final_price']);
     }
 
-    public function test_cart_service_adds_custom_design_item_for_fuel_card(): void
+    public function test_cart_service_rejects_custom_design_item_for_fuel_card(): void
     {
         [$product, $color, $pcp] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD, 500000);
 
@@ -258,7 +258,10 @@ class CustomDesignEngineTest extends TestCase
 
         $cartService = app(CartService::class);
 
-        $cart = $cartService->addItem([
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('امکان آپلود طرح اختصاصی برای کارت سوخت وجود ندارد.');
+
+        $cartService->addItem([
             'product_id' => $product->id,
             'color_id' => $color->id,
             'is_custom_design' => true,
@@ -266,19 +269,14 @@ class CustomDesignEngineTest extends TestCase
             'layout_mode' => DesignImageLayoutModeEnum::CENTERED->value,
             'quantity' => 1,
             'customization_json' => [
+                'owner_name' => 'علی رضایی',
+                'phone_number' => '09123456789',
+                'vehicle_type' => 'سواری شخصی',
                 'vin' => '12345678901234567',
                 'plate_number' => '12A345-67',
                 'chip_info' => 'small',
             ],
         ]);
-
-        $this->assertCount(1, $cart['items']);
-        $item = $cart['items'][0];
-
-        $this->assertEquals($product->id, $item['product_id']);
-        $this->assertNull($item['design_id']);
-        $this->assertEquals('centered', $item['layout_mode_snapshot']);
-        $this->assertEquals(500000, $item['final_price']);
     }
 
     public function test_cart_service_rejects_mismatched_workflow_custom_design(): void
@@ -600,18 +598,19 @@ class CustomDesignEngineTest extends TestCase
             ->assertSee('my-logo.png');
     }
 
-    public function test_ui_fuel_card_custom_design_workspace_preserves_chip_and_specifications(): void
+    public function test_ui_fuel_card_disallows_custom_design_and_preserves_chip_and_specifications(): void
     {
         [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD, 500000);
         $fakeFile = $this->createValidImageFile(800, 600, 'fuel-logo.png');
 
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->assertDontSee('طرح اختصاصی شما')
             ->call('setDesignSource', 'custom')
+            ->assertSet('designSource', 'catalog')
             ->set('customImage', $fakeFile)
-            ->assertSee('پیش‌نمایش طرح اختصاصی')
+            ->assertHasErrors(['customImage'])
             ->call('setStep', 2)
-            ->assertSee('مشخصات کارت سوخت اختصاصی')
-            ->assertSee('نام سامانه')
-            ->assertSee('شناسه سامانه');
+            ->assertSee('مشخصات کارت سوخت')
+            ->assertSee('سایز چیپ کارت سوخت');
     }
 }

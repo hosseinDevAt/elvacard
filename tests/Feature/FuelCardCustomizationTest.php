@@ -32,6 +32,33 @@ class FuelCardCustomizationTest extends TestCase
         ], $result);
     }
 
+    public function test_sanitize_accepts_canonical_fuel_card_fields(): void
+    {
+        $result = FuelCardCustomization::sanitize([
+            'customization_json' => [
+                'owner_name' => ' رضا محمدی ',
+                'phone_number' => ' ۰۹۱۲۳۴۵۶۷۸۹ ',
+                'vehicle_type' => 'کامیونت کشنده عمومی',
+                'vehicle_model' => 'ولوو اف اچ 12',
+                'oil_serial_number' => '7744330',
+                'plate_number' => '۱۲ ب ۳۴۵ ایران ۱۱',
+                'vin' => 'IRABCDEFGH1234567',
+                'chip_info' => 'large',
+            ],
+        ]);
+
+        $this->assertSame([
+            'owner_name' => 'رضا محمدی',
+            'phone_number' => '09123456789',
+            'vehicle_type' => 'کامیونت کشنده عمومی',
+            'vehicle_model' => 'ولوو اف اچ 12',
+            'oil_serial_number' => '7744330',
+            'vin' => 'IRABCDEFGH1234567',
+            'plate_number' => '12 ب 345 ایران 11',
+            'chip_info' => 'large',
+        ], $result);
+    }
+
     public function test_chip_info_only_accepts_small_or_large(): void
     {
         $smallResult = FuelCardCustomization::sanitize([

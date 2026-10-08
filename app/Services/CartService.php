@@ -451,6 +451,10 @@ class CartService
         $isCustom = ! empty($payload['is_custom_design']) || ! empty($payload['custom_design_token']);
 
         if ($isCustom) {
+            if ($workflow === CustomizationWorkflowEnum::FUEL_CARD) {
+                throw new InvalidArgumentException('امکان آپلود طرح اختصاصی برای کارت سوخت وجود ندارد.');
+            }
+
             $validated = $this->resolveCustomDesignSnapshot($product, $colorPrice, $workflow, $quantity, $payload);
         } else {
             $validated = $this->resolveCustomizationSnapshot($product, $colorPrice, $designId, $designImageId, $quantity, $forUpdate);

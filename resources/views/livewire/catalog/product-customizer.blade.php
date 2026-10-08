@@ -41,7 +41,8 @@
                         <p class="text-xs text-slate-400">طرح و دسته مورد نظر برای حکاکی روی کارت را انتخاب کنید.</p>
                     </div>
 
-                    {{-- Design Source Segmented Control --}}
+                    {{-- Design Source Segmented Control (Bank Card Only) --}}
+                    @if ($workflow === $bankCardWorkflow)
                     <div class="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#010619] border border-[#152244]" role="tablist" aria-label="منبع انتخاب طرح کارت">
                         <button
                             type="button"
@@ -72,6 +73,7 @@
                             <span>طرح اختصاصی شما</span>
                         </button>
                     </div>
+                    @endif
 
                     @if ($designSource === 'catalog')
                         <div id="panel-catalog" role="tabpanel" aria-labelledby="tab-catalog" class="space-y-6">
@@ -577,41 +579,93 @@
                         </div>
                     @else
                         {{-- FUEL BACK CARD PREVIEW WITH STRUCTURED SPECIFICATION TABLE --}}
-                        <div class="relative h-full w-full select-none p-4 flex flex-col justify-between text-white">
+                        <div class="relative h-full w-full select-none p-3.5 flex flex-col justify-between text-white">
+                            {{-- Top Header / Magnetic Band Placeholder --}}
+                            <div class="w-full h-4 bg-black/80 rounded-sm mb-1 opacity-90 shadow-inner"></div>
+
                             {{-- Structured Specification Table --}}
                             <div class="w-full my-auto overflow-hidden">
                                 <table class="w-full text-start border-collapse text-xs text-slate-100 border border-white/20 rounded-lg overflow-hidden">
                                     <tbody>
-                                        <tr class="border-b border-white/20">
-                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 w-2/5 bg-white/10">نام مالک</th>
-                                            <td class="py-1.5 px-3 font-bold text-white">{{ $fuelCard->owner_name ?: '---' }}</td>
+                                        {{-- Plate Number --}}
+                                        <tr class="border-b border-white/15">
+                                            <th scope="row" class="py-1 px-2.5 text-start font-bold text-slate-300 w-[38%] bg-white/10">پلاک ایران</th>
+                                            <td class="py-1 px-2.5">
+                                                @php $plateDisplay = $this->displayIranPlate; @endphp
+                                                @if (!empty($plateDisplay['is_structured']))
+                                                    <div class="inline-flex items-center rounded border border-slate-700 bg-white text-slate-950 font-bold shadow-sm overflow-hidden h-5 sm:h-6" dir="ltr">
+                                                        <div class="bg-[#003399] text-white px-1 h-full flex flex-col justify-center items-center text-[5px] sm:text-[6px] font-mono leading-none border-r border-slate-300">
+                                                            <span class="text-[5px]">🇮🇷</span>
+                                                            <span class="tracking-tighter font-extrabold mt-0.5">I.R.</span>
+                                                            <span class="tracking-tighter text-[4px]">IRAN</span>
+                                                        </div>
+                                                        <div class="px-1.5 font-bold text-[10px] sm:text-xs text-slate-950">{{ fa_digits($plateDisplay['part1']) }}</div>
+                                                        <div class="px-1 font-black text-[10px] sm:text-xs text-slate-900">{{ $plateDisplay['letter'] }}</div>
+                                                        <div class="px-1.5 font-bold text-[10px] sm:text-xs text-slate-950">{{ fa_digits($plateDisplay['part2']) }}</div>
+                                                        <div class="border-l border-slate-300 px-1.5 h-full flex flex-col justify-center items-center bg-slate-50 text-[6px] leading-tight">
+                                                            <span class="text-[5px] text-slate-500">ایران</span>
+                                                            <span class="font-bold text-[9px] sm:text-[10px] text-slate-900">{{ fa_digits($plateDisplay['iran']) }}</span>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="font-bold text-white">{{ $fuelCard->plate_number ?: '---' }}</span>
+                                                @endif
+                                            </td>
                                         </tr>
-                                        <tr class="border-b border-white/20">
-                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">اطلاعات خودرو</th>
-                                            <td class="py-1.5 px-3 text-white">{{ $fuelCard->car_info ?: '---' }}</td>
+
+                                        {{-- Owner Name --}}
+                                        <tr class="border-b border-white/15">
+                                            <th scope="row" class="py-1 px-2.5 text-start font-bold text-slate-300 bg-white/10">نام مالک</th>
+                                            <td class="py-1 px-2.5 font-bold text-white truncate max-w-[200px]">{{ $fuelCard->owner_name ?: '---' }}</td>
                                         </tr>
-                                        <tr class="border-b border-white/20">
-                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">شماره شاسی (VIN)</th>
-                                            <td class="py-1.5 px-3 font-mono font-bold text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->vin ?: '---' }}</td>
+
+                                        {{-- Phone Number --}}
+                                        <tr class="border-b border-white/15">
+                                            <th scope="row" class="py-1 px-2.5 text-start font-bold text-slate-300 bg-white/10">شماره تلفن</th>
+                                            <td class="py-1 px-2.5 font-mono text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                                {{ $fuelCard->phone_number ?: '---' }}
+                                            </td>
                                         </tr>
-                                        <tr class="border-b border-white/20">
-                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">نام سامانه</th>
-                                            <td class="py-1.5 px-3 text-white">{{ $fuelCard->system_name ?: '---' }}</td>
+
+                                        {{-- Vehicle Type --}}
+                                        <tr class="border-b border-white/15">
+                                            <th scope="row" class="py-1 px-2.5 text-start font-bold text-slate-300 bg-white/10">نوع خودرو</th>
+                                            <td class="py-1 px-2.5 text-white truncate max-w-[200px]">{{ $fuelCard->vehicle_type ?: '---' }}</td>
                                         </tr>
-                                        <tr class="border-b border-white/20">
-                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">شناسه سامانه</th>
-                                            <td class="py-1.5 px-3 font-mono text-slate-200 dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->system_identifier ?: '---' }}</td>
-                                        </tr>
-                                        <tr class="border-b border-white/20">
-                                            <th scope="row" class="py-1.5 px-3 text-start font-bold text-slate-300 bg-white/10">شماره پلاک</th>
-                                            <td class="py-1.5 px-3 font-bold text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">{{ $fuelCard->plate_number ?: '---' }}</td>
-                                        </tr>
+
+                                        {{-- Vehicle Model --}}
+                                        @if ($fuelCard->vehicle_model !== '')
+                                            <tr class="border-b border-white/15">
+                                                <th scope="row" class="py-1 px-2.5 text-start font-bold text-slate-300 bg-white/10">مدل خودرو</th>
+                                                <td class="py-1 px-2.5 text-white truncate max-w-[200px]">{{ $fuelCard->vehicle_model }}</td>
+                                            </tr>
+                                        @endif
+
+                                        {{-- Oil Serial Number (masked dots) --}}
+                                        @if ($fuelCard->oil_serial_number !== '')
+                                            <tr class="border-b border-white/15">
+                                                <th scope="row" class="py-1 px-2.5 text-start font-bold text-slate-300 bg-white/10">سریال نفت</th>
+                                                <td class="py-1 px-2.5 font-mono text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                                    {{ \App\Services\FuelCard\FuelCardCustomization::formatOilSerialNumber($fuelCard->oil_serial_number) }}
+                                                </td>
+                                            </tr>
+                                        @endif
+
+                                        {{-- VIN --}}
+                                        @if ($fuelCard->vin !== '')
+                                            <tr class="border-b border-white/15">
+                                                <th scope="row" class="py-1 px-2.5 text-start font-bold text-slate-300 bg-white/10">شماره شاسی</th>
+                                                <td class="py-1 px-2.5 font-mono text-white dir-ltr text-start" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                                    {{ $fuelCard->vin }}
+                                                </td>
+                                            </tr>
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>
 
                             {{-- Bottom Footer --}}
-                            <div class="flex items-center justify-between pt-1 border-t border-white/20 text-[10px] text-slate-300">
+                            <div class="flex items-center justify-between pt-1 border-t border-white/15 text-[9px] sm:text-[10px] text-slate-300">
                                 <span>مشخصات کارت سوخت اختصاصی</span>
                                 <span class="font-mono opacity-60">ELVA-FUEL</span>
                             </div>

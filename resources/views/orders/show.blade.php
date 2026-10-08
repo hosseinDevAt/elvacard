@@ -77,7 +77,7 @@
                                                 @if ($fuelField['value'] !== '')
                                                     <p class="break-words">
                                                         <span class="font-semibold">{{ $fuelField['label'] }}:</span>
-                                                        <span @if (in_array($fuelKey, ['vin', 'system_identifier', 'plate_number'], true)) dir="ltr" @endif>{{ $fuelField['value'] }}</span>
+                                                        <span @if (in_array($fuelKey, ['vin', 'system_identifier', 'plate_number', 'phone_number', 'oil_serial_number'], true)) dir="ltr" @endif>{{ $fuelField['value'] }}</span>
                                                     </p>
                                                 @endif
                                             @endforeach

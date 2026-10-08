@@ -127,6 +127,10 @@ class ProductCustomizer extends Component
 
         $this->refreshCategories();
 
+        if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::FUEL_CARD->value) {
+            $this->designSource = 'catalog';
+        }
+
         // The design catalog is never loaded into state: the first page is
         // resolved server-side during render, which also auto-selects the first
         // design and its images.
@@ -218,6 +222,10 @@ class ProductCustomizer extends Component
 
     public function setDesignSource(string $source): void
     {
+        if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::FUEL_CARD->value && $source === 'custom') {
+            return;
+        }
+
         if (! in_array($source, ['catalog', 'custom'], true)) {
             return;
         }
@@ -242,6 +250,13 @@ class ProductCustomizer extends Component
     public function updatedCustomImage(): void
     {
         $this->customDesignErrorMessage = null;
+
+        if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::FUEL_CARD->value) {
+            $this->customImage = null;
+            $this->customDesignErrorMessage = 'امکان آپلود طرح اختصاصی برای کارت سوخت وجود ندارد.';
+            $this->addError('customImage', $this->customDesignErrorMessage);
+            return;
+        }
 
         if (! $this->customImage) {
             return;
@@ -334,6 +349,19 @@ class ProductCustomizer extends Component
         return CardPresenter::presentIban($this->bankCard->iban);
     }
 
+    public function getDisplayIranPlateProperty(): array
+    {
+        return \App\Services\FuelCard\FuelCardCustomization::formatIranPlateDisplay(
+            $this->fuelCard->plate_number,
+            [
+                'part1' => $this->fuelCard->plate_part1,
+                'letter' => $this->fuelCard->plate_letter,
+                'part2' => $this->fuelCard->plate_part2,
+                'iran' => $this->fuelCard->plate_iran,
+            ]
+        );
+    }
+
     protected function rules(): array
     {
         if ($this->designSource === 'custom') {
@@ -380,6 +408,12 @@ class ProductCustomizer extends Component
         }
 
         if ($this->designSource === 'custom') {
+            if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::FUEL_CARD->value) {
+                $this->designSource = 'catalog';
+                $this->addError('customImage', 'امکان آپلود طرح اختصاصی برای کارت سوخت وجود ندارد.');
+                return;
+            }
+
             if (empty($this->customDesignToken)) {
                 $this->customDesignErrorMessage = 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.';
                 $this->addError('customImage', 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.');
