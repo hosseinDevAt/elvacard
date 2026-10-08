@@ -11,8 +11,34 @@
         </x-slot:actions>
     </x-admin.page-header>
 
+    @if (! $showForm && session('success'))
+        <div class="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 shadow-sm">
+            <svg class="h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/>
+            </svg>
+            <div class="min-w-0">{{ session('success') }}</div>
+        </div>
+    @endif
+
     @if($showForm)
         <div class="admin-card p-6 mb-6">
+            @if (session('success'))
+                <div class="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 shadow-sm">
+                    <svg class="h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="min-w-0">{{ session('success') }}</div>
+                </div>
+            @endif
+            @if (session('info'))
+                <div class="mb-4 flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-800 shadow-sm">
+                    <svg class="h-4 w-4 shrink-0 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="min-w-0">{{ session('info') }}</div>
+                </div>
+            @endif
+
             <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش محصول' : 'محصول جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
                 @if(! $customizationWorkflow)
@@ -50,7 +76,7 @@
                                 @if($editingId)
                                     <p class="text-sm text-violet-800 mt-1">رنگ‌ها و قیمت‌ها از بخش «متغیرهای محصول» همین صفحه مدیریت می‌شوند.</p>
                                 @else
-                                    <p class="text-sm text-violet-800 mt-1">برای شروع، محصول را ذخیره کنید؛ بلافاصله وارد بخش تنظیم رنگ‌ها و قیمت‌ها می‌شوید.</p>
+                                    <p class="text-sm text-violet-800 mt-1">محصول متغیر در ابتدا به‌صورت غیرفعال ثبت می‌شود. برای شروع، محصول را ذخیره کنید؛ بلافاصله وارد بخش تنظیم رنگ‌ها و قیمت‌ها می‌شوید و بعد از افزودن متغیرها می‌توانید آن را فعال کنید.</p>
                                 @endif
                             </div>
                         @endif
@@ -290,8 +316,11 @@
 
                 <div class="flex flex-wrap items-center gap-6">
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
+                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]" @if(! $editingId && $pricingType === 'variable') disabled @endif>
                         <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (نمایش در فروشگاه)</label>
+                        @if(! $editingId && $pricingType === 'variable')
+                            <span class="text-[11px] text-amber-700 font-normal">(پس از ثبت اولیه و تعریف متغیرها فعال می‌شود)</span>
+                        @endif
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">

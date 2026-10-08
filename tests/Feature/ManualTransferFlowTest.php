@@ -104,6 +104,7 @@ class ManualTransferFlowTest extends TestCase
         ]);
 
         $response->assertRedirect(route('checkout.success', $order->token));
+        $response->assertSessionHas('success', 'فیش پرداخت شما با موفقیت ثبت شد و در انتظار بررسی است.');
 
         $this->assertDatabaseHas('payments', [
             'order_id' => $order->id,
@@ -181,5 +182,20 @@ class ManualTransferFlowTest extends TestCase
 
         $response->assertSessionHasErrors('payment');
         $this->assertDatabaseCount('payments', 0);
+    }
+
+    public function test_receipt_validation_uses_persian_attribute_names(): void
+    {
+        Storage::fake('local');
+        $order = $this->createOrder();
+        $this->createActiveSetting();
+
+        $response = $this->post(route('checkout.payment.store', $order), [
+            'receipt_image' => 'not-a-file',
+        ]);
+
+        $response->assertSessionHasErrors(['receipt_image']);
+        $message = session('errors')->first('receipt_image');
+        $this->assertStringContainsString('تصویر فیش واریز', $message);
     }
 }

@@ -58,6 +58,18 @@ class ManualTransferPaymentController extends Controller
             'receipt_image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'tracking_number' => ['nullable', 'string', 'max:100'],
             'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'receipt_image.required' => 'لطفاً تصویر فیش واریز را انتخاب کنید.',
+            'receipt_image.file' => 'تصویر فیش واریز باید یک فایل معتبر باشد.',
+            'receipt_image.image' => 'تصویر فیش واریز باید یک تصویر معتبر باشد.',
+            'receipt_image.mimes' => 'تصویر فیش واریز باید یکی از فرمت‌های jpg، jpeg، png یا webp باشد.',
+            'receipt_image.max' => 'حجم تصویر فیش واریز نباید بیشتر از ۵ مگابایت باشد.',
+            'tracking_number.max' => 'شماره پیگیری پرداخت نباید بیشتر از ۱۰۰ کاراکتر باشد.',
+            'note.max' => 'توضیحات تکمیلی نباید بیشتر از ۱۰۰۰ کاراکتر باشد.',
+        ], [
+            'receipt_image' => 'تصویر فیش واریز',
+            'tracking_number' => 'شماره پیگیری پرداخت',
+            'note' => 'توضیحات تکمیلی',
         ]);
 
         $receiptPath = $request->file('receipt_image')->store('payment_receipts', 'local');
@@ -91,7 +103,8 @@ class ManualTransferPaymentController extends Controller
             return back()->withErrors(['payment' => $e->getMessage()]);
         }
 
-        return redirect()->route('checkout.success', $order->token);
+        return redirect()->route('checkout.success', $order->token)
+            ->with('success', 'فیش پرداخت شما با موفقیت ثبت شد و در انتظار بررسی است.');
     }
 
     private function hasActivePayment(Order $order): bool

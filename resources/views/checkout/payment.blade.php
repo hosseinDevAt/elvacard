@@ -163,33 +163,97 @@
                 {{-- Right/Second Column: Receipt Upload Form (7 cols) --}}
                 <div class="lg:col-span-7">
                     @if ($setting)
-                        <form method="POST" action="{{ route('checkout.payment.store', $order->token) }}" enctype="multipart/form-data" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-6">
+                        <form method="POST"
+                              action="{{ route('checkout.payment.store', $order->token) }}"
+                              enctype="multipart/form-data"
+                              x-data="receiptUploadHandler()"
+                              @submit="onSubmit($event)"
+                              class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-6">
                             @csrf
                             <div class="border-b border-slate-100 pb-4">
                                 <h2 class="text-lg font-bold text-[#010619]">ثبت فیش واریزی</h2>
                                 <p class="mt-1 text-xs text-slate-500">پس از واریز مبلغ، تصویر یا اسکرین‌شات رسید را جهت تأیید بارگذاری کنید.</p>
                             </div>
 
-                            {{-- Receipt Image Upload --}}
+                            {{-- Receipt Image Upload Zone --}}
                             <div>
-                                <label for="receipt_image" class="block text-sm font-semibold text-slate-800">
+                                <label id="receipt_image_label" class="block text-sm font-semibold text-slate-800 mb-2">
                                     تصویر رسید واریز <span class="text-rose-500">*</span>
                                 </label>
-                                <div class="mt-2 flex justify-center rounded-2xl border-2 border-dashed border-slate-300 px-6 pt-5 pb-6 hover:border-[#ffde5b] transition bg-slate-50/50">
-                                    <div class="space-y-2 text-center">
+
+                                {{-- Native file input, accessible for keyboard and form submission --}}
+                                <input id="receipt_image"
+                                       name="receipt_image"
+                                       type="file"
+                                       accept="image/jpeg,image/png,image/webp"
+                                       required
+                                       class="sr-only"
+                                       x-ref="fileInput"
+                                       @change="onFileChange($event)"
+                                       aria-labelledby="receipt_image_label" />
+
+                                {{-- Full Clickable & Drag-and-Drop Dropzone --}}
+                                <div class="relative rounded-2xl border-2 border-dashed p-5 text-center transition-all cursor-pointer select-none"
+                                     :class="{
+                                         'border-[#010619] bg-[#ffde5b]/15 ring-2 ring-[#ffde5b]': isDragging,
+                                         'border-emerald-500 bg-emerald-50/50': fileSelected,
+                                         'border-slate-300 bg-slate-50/50 hover:border-[#010619]/40 hover:bg-slate-50': !fileSelected && !isDragging
+                                     }"
+                                     role="button"
+                                     tabindex="0"
+                                     aria-controls="receipt_image"
+                                     @click="$refs.fileInput.click()"
+                                     @keydown.enter.prevent="$refs.fileInput.click()"
+                                     @keydown.space.prevent="$refs.fileInput.click()"
+                                     @dragover.prevent="isDragging = true"
+                                     @dragleave.prevent="isDragging = false"
+                                     @drop.prevent="onDrop($event)">
+
+                                    {{-- Unselected State --}}
+                                    <div x-show="!fileSelected" class="space-y-2 pointer-events-none">
                                         <svg class="mx-auto h-10 w-10 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                         <div class="text-sm text-slate-600">
-                                            <label for="receipt_image" class="relative cursor-pointer rounded-md font-bold text-[#010619] hover:underline focus-within:outline-hidden">
-                                                <span>انتخاب فایل تصویر</span>
-                                                <input id="receipt_image" name="receipt_image" type="file" accept="image/jpeg,image/png,image/webp" required class="sr-only" />
-                                            </label>
-                                            <span class="pr-1 text-xs text-slate-500">یا کشیدن و رها کردن</span>
+                                            <span class="font-bold text-[#010619]">انتخاب فایل تصویر</span>
+                                            <span class="pr-1 text-xs text-slate-500">یا کشیدن و رها کردن در این بخش</span>
                                         </div>
                                         <p class="text-xs text-slate-400">فقط فرمت‌های JPG، PNG، WEBP (حداکثر ۵ مگابایت)</p>
                                     </div>
+
+                                    {{-- Selected State: Clear Feedback --}}
+                                    <div x-show="fileSelected" x-cloak class="space-y-3" @click.stop>
+                                        <div class="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs">
+                                            <div class="flex items-center gap-2.5 min-w-0">
+                                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                                <div class="text-right min-w-0">
+                                                    <p class="text-xs font-bold text-slate-900 truncate" x-text="fileName" dir="ltr"></p>
+                                                    <span class="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 mt-0.5" x-text="fileSize"></span>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 shrink-0">
+                                                <button type="button"
+                                                        @click="$refs.fileInput.click()"
+                                                        class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                                    تغییر
+                                                </button>
+                                                <button type="button"
+                                                        @click="clearFile()"
+                                                        class="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer">
+                                                    حذف
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p class="text-[11px] font-medium text-emerald-800 bg-emerald-50/80 rounded-lg p-2 text-center border border-emerald-100">
+                                            ✓ فایل تصویر انتخاب شد و آماده ارسال است (هنوز ثبت نهایی نشده است؛ جهت تکمیل، دکمه «ثبت رسید پرداخت» را بزنید).
+                                        </p>
+                                    </div>
                                 </div>
+                                @error('receipt_image') <p class="admin-error mt-2">{{ $message }}</p> @enderror
                             </div>
 
                             {{-- Tracking Number --}}
@@ -209,14 +273,101 @@
                                 <textarea id="note" name="note" rows="3" maxlength="1000" class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-[#ffde5b] focus:ring-2 focus:ring-[#ffde5b]/30 focus:outline-hidden transition" placeholder="در صورت نیاز توضیحی برای تیم پشتیبانی بنویسید...">{{ old('note') }}</textarea>
                             </div>
 
-                            {{-- Submit Button --}}
-                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#ffde5b] py-3.5 px-6 text-sm font-bold text-[#010619] shadow-md shadow-[#ffde5b]/20 hover:bg-[#f5d347] active:scale-[0.99] transition cursor-pointer">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>ثبت رسید پرداخت</span>
+                            {{-- Submit Button with Submitting/Loading State --}}
+                            <button type="submit"
+                                    :disabled="isSubmitting"
+                                    :class="isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#f5d347] active:scale-[0.99] cursor-pointer'"
+                                    class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#ffde5b] py-3.5 px-6 text-sm font-bold text-[#010619] shadow-md shadow-[#ffde5b]/20 transition">
+                                <span x-show="!isSubmitting" class="inline-flex items-center gap-2">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>ثبت رسید پرداخت</span>
+                                </span>
+                                <span x-show="isSubmitting" x-cloak class="inline-flex items-center gap-2">
+                                    <svg class="animate-spin h-5 w-5 text-[#010619]" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>در حال ارسال و ثبت رسید پرداخت...</span>
+                                </span>
                             </button>
                         </form>
+
+                        <script>
+                            function receiptUploadHandler() {
+                                return {
+                                    isDragging: false,
+                                    fileSelected: false,
+                                    fileName: '',
+                                    fileSize: '',
+                                    isSubmitting: false,
+
+                                    init() {
+                                        window.addEventListener('pageshow', () => {
+                                            this.isSubmitting = false;
+                                        });
+                                    },
+
+                                    formatBytes(bytes) {
+                                        if (!bytes || bytes === 0) return '0 بایت';
+                                        const k = 1024;
+                                        const units = ['بایت', 'کیلوبایت', 'مگابایت'];
+                                        const i = Math.floor(Math.log(bytes) / Math.log(k));
+                                        const val = (bytes / Math.pow(k, i)).toFixed(1);
+                                        return val + ' ' + (units[i] || 'مگابایت');
+                                    },
+
+                                    onFileChange(e) {
+                                        const files = e.target.files;
+                                        if (files && files.length > 0) {
+                                            this.setFile(files[0]);
+                                        } else {
+                                            this.clearFile();
+                                        }
+                                    },
+
+                                    onDrop(e) {
+                                        this.isDragging = false;
+                                        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                            const file = e.dataTransfer.files[0];
+                                            const input = this.$refs.fileInput;
+                                            try {
+                                                const dt = new DataTransfer();
+                                                dt.items.add(file);
+                                                input.files = dt.files;
+                                            } catch (err) {
+                                                // Fallback if DataTransfer not supported
+                                            }
+                                            this.setFile(file);
+                                        }
+                                    },
+
+                                    setFile(file) {
+                                        this.fileName = file.name;
+                                        this.fileSize = this.formatBytes(file.size);
+                                        this.fileSelected = true;
+                                    },
+
+                                    clearFile() {
+                                        this.fileSelected = false;
+                                        this.fileName = '';
+                                        this.fileSize = '';
+                                        if (this.$refs.fileInput) {
+                                            this.$refs.fileInput.value = '';
+                                        }
+                                    },
+
+                                    onSubmit(e) {
+                                        if (this.isSubmitting) {
+                                            e.preventDefault();
+                                            return;
+                                        }
+                                        this.isSubmitting = true;
+                                    }
+                                };
+                            }
+                        </script>
                     @else
                         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs text-center space-y-4">
                             <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-600">

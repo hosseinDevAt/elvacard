@@ -151,5 +151,8 @@ return [
         'price' => 'قیمت',
         'total_price' => 'قیمت کل',
         'amount' => 'مبلغ',
+        'receipt_image' => 'تصویر فیش واریز',
+        'tracking_number' => 'شماره پیگیری پرداخت',
+        'note' => 'توضیحات تکمیلی',
     ],
 ];

@@ -223,9 +223,17 @@ class ProductManager extends Component
             return;
         }
 
+        if (
+            $this->type === ProductTypeEnum::STANDARD->value
+            && $this->pricingType === 'variable'
+            && $this->editingId === null
+        ) {
+            $this->isActive = false;
+        }
+
         if ($this->type === ProductTypeEnum::STANDARD->value && $this->isActive) {
             if ($this->pricingType === 'variable') {
-                $hasActiveVariant = ProductColorPrice::query()
+                $hasActiveVariant = $this->editingId !== null && ProductColorPrice::query()
                     ->where('product_id', $this->editingId)
                     ->where('is_active', true)
                     ->exists();
@@ -462,6 +470,7 @@ class ProductManager extends Component
         ) {
             $this->edit($createdProductId);
             $this->pricingType = 'variable';
+            session()->flash('info', 'محصول متغیر با موفقیت در وضعیت غیرفعال ایجاد شد. اکنون حداقل یک رنگ و قیمت فعال در بخش «متغیرهای محصول» اضافه کنید و سپس محصول را فعال نمایید.');
 
             return;
         }
@@ -490,6 +499,10 @@ class ProductManager extends Component
      */
     public function updatedPricingType(string $value): void
     {
+        if ($value === 'variable' && $this->editingId === null) {
+            $this->isActive = false;
+        }
+
         if ($value !== 'simple' || $this->editingId === null || $this->customizationWorkflow !== null) {
             return;
         }

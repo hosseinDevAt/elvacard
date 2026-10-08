@@ -10,6 +10,16 @@
                 </div>
             @endif
 
+            {{-- Success confirmation message --}}
+            @if (session('success'))
+                <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 shadow-xs flex items-center gap-3">
+                    <svg class="h-5 w-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span class="font-bold">{{ session('success') }}</span>
+                </div>
+            @endif
+
             {{-- Main Success Card --}}
             <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                 {{-- Hero Banner --}}
@@ -32,7 +42,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <div class="text-sm">
-                                    <p class="font-bold">{{ $activeSetting?->success_message ?? 'پرداخت شما دریافت شد.' }}</p>
+                                    <p class="font-bold">{{ session('success') ?? ($activeSetting?->success_message ?? 'پرداخت شما دریافت شد.') }}</p>
                                     <p class="mt-1 text-xs text-emerald-800">شماره سفارش: <span class="font-bold font-mono">{{ $order->reference }}</span> — وضعیت پرداخت: <span class="font-bold">{{ $payment->status?->faLabel() }}</span></p>
                                 </div>
                             </div>

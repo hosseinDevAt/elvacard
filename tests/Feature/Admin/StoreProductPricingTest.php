@@ -405,7 +405,7 @@ class StoreProductPricingTest extends TestCase
         ]);
     }
 
-    public function test_activation_of_variable_product_without_active_variant_is_rejected(): void
+    public function test_creating_variable_product_with_active_flag_saves_as_inactive_and_opens_editor(): void
     {
         Livewire::actingAs($this->admin())
             ->test(ProductManager::class)
@@ -413,12 +413,30 @@ class StoreProductPricingTest extends TestCase
             ->set('type', ProductTypeEnum::STANDARD->value)
             ->set('customizationWorkflow', null)
             ->set('pricingType', 'variable')
-            ->set('name', 'کالای متغیر فعال بدون رنگ')
+            ->set('name', 'کالای متغیر جدید با پرچم فعال')
+            ->set('isActive', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $product = Product::where('name', 'کالای متغیر جدید با پرچم فعال')->first();
+        $this->assertNotNull($product);
+        $this->assertFalse($product->is_active, 'Variable product must be saved inactive on initial creation.');
+        $this->assertNull($product->base_price);
+    }
+
+    public function test_activation_of_variable_product_without_variants_is_rejected_in_edit_mode(): void
+    {
+        $product = $this->storeProduct(['is_active' => false, 'base_price' => null]);
+
+        Livewire::actingAs($this->admin())
+            ->test(ProductManager::class)
+            ->call('edit', $product->id)
+            ->set('pricingType', 'variable')
             ->set('isActive', true)
             ->call('save')
             ->assertHasErrors('pricingType');
 
-        $this->assertSame(0, Product::count(), 'A rejected activation must not persist the product.');
+        $this->assertFalse($product->fresh()->is_active);
     }
 
     public function test_activation_of_variable_product_with_only_inactive_variants_is_rejected(): void
