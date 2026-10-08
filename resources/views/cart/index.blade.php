@@ -64,6 +64,9 @@
                                             <span class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
                                                 <span>رنگ:</span>
                                                 <span class="font-bold">{{ $item['color_name_snapshot'] }}</span>
+                                                @if (! empty($item['customization_json']['is_scratched']))
+                                                    <span class="text-amber-800 font-semibold">(خش‌دار)</span>
+                                                @endif
                                             </span>
                                         @endif
                                         @if (! empty($item['design_name_snapshot']))

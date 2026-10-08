@@ -266,6 +266,20 @@ class OrderItem extends Model
         return null;
     }
 
+    /**
+     * Determine if this order item was ordered with a scratched surface texture.
+     * Historical orders with no snapshot key must remain smooth (false).
+     * Must NEVER fallback to $this->color->is_scratched.
+     */
+    public function isScratched(): bool
+    {
+        if (is_array($this->customization_json) && array_key_exists('is_scratched', $this->customization_json)) {
+            return (bool) $this->customization_json['is_scratched'];
+        }
+
+        return false;
+    }
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

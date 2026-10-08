@@ -438,7 +438,12 @@
                                 <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-[#ffde5b] ring-offset-2 ring-offset-[#010619] scale-110' : 'hover:scale-105' }}"
                                       style="background-color: {{ $cp['color_hex'] ?? '#111' }};"
                                 ></span>
-                                <span class="text-[10px] font-medium {{ $isSelected ? 'text-[#ffde5b] font-bold' : 'text-slate-400' }}">{{ $cp['name'] }}</span>
+                                <span class="text-[10px] font-medium flex items-center gap-0.5 {{ $isSelected ? 'text-[#ffde5b] font-bold' : 'text-slate-400' }}">
+                                    <span>{{ $cp['name'] }}</span>
+                                    @if ($cp['is_scratched'] ?? false)
+                                        <span class="text-[9px] opacity-75">(خش‌دار)</span>
+                                    @endif
+                                </span>
                             </button>
                         @endforeach
                     </div>
@@ -467,6 +472,11 @@
                 <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl {{ $activeView === 'back' && $workflow === $fuelCardWorkflow ? 'p-2.5 sm:p-3' : 'p-6' }} shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $selectedColorHex ?? '#111827' }};">
                     {{-- Subtle Card Metallic Shine --}}
                     <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
+
+                    {{-- Scratched Metallic Texture (Bank Card ONLY) --}}
+                    @if ($workflow === $bankCardWorkflow && ($selectedColor['is_scratched'] ?? false))
+                        <x-card-surface-texture :scratched="true" />
+                    @endif
 
                     @if ($activeView === 'front')
                         {{-- FRONT CARD PREVIEW --}}

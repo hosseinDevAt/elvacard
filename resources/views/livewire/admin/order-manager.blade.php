@@ -211,7 +211,14 @@
                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                                         <div class="bg-white p-2.5 rounded-lg border border-slate-200/60">
                                             <span class="text-slate-400 block text-[11px]">رنگ متریال کارت:</span>
-                                            <span class="text-slate-900 font-bold text-xs">{{ $item->color_name_snapshot ?? 'ثبت نشده' }}</span>
+                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                                <span class="text-slate-900 font-bold text-xs">{{ $item->color_name_snapshot ?? 'ثبت نشده' }}</span>
+                                                @if ($item->isScratched())
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">خش‌دار</span>
+                                                @else
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">معمولی</span>
+                                                @endif
+                                            </div>
                                         </div>
                                         <div class="bg-white p-2.5 rounded-lg border border-slate-200/60">
                                             <span class="text-slate-400 block text-[11px]">طرح انتخابی:</span>
@@ -339,11 +346,14 @@
                                                             دانلود طرح
                                                         </a>
                                                     @endif
-                                                    <span class="text-slate-400 font-mono text-[10px]">طرح: {{ $item->design_name_snapshot ?? '—' }} | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($designColorName) | رنگ طرح: {{ $designColorName }}@endif</span>
+                                                    <span class="text-slate-400 font-mono text-[10px]">طرح: {{ $item->design_name_snapshot ?? '—' }} | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($item->isScratched()) (خش‌دار)@endif @if ($designColorName) | رنگ طرح: {{ $designColorName }}@endif</span>
                                                 </div>
                                             </div>
                                             <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-60"></div>
+                                                @if ($item->isScratched())
+                                                    <x-card-surface-texture :scratched="true" />
+                                                @endif
                                                 {{-- Contactless waves indicator --}}
                                                 <div class="absolute top-4 left-5 opacity-70 pointer-events-none z-10">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -392,6 +402,9 @@
                                             </div>
                                             <div class="w-full aspect-[1.586/1] rounded-2xl p-4 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
+                                                @if ($item->isScratched())
+                                                    <x-card-surface-texture :scratched="true" />
+                                                @endif
                                                 {{-- Magnetic Stripe --}}
                                                 <div class="absolute top-2.5 inset-x-0 h-7 sm:h-8 bg-neutral-950 shadow-inner pointer-events-none"></div>
 

@@ -299,6 +299,11 @@ class CartService
                         }
 
                         if (($item['customization_workflow'] ?? null) === CustomizationWorkflowEnum::BANK_CARD->value) {
+                            if (! array_key_exists('is_scratched', $customization)) {
+                                $color = Color::query()->find($item['color_id']);
+                                $customization['is_scratched'] = (bool) ($color?->is_scratched ?? false);
+                            }
+
                             if (! empty($item['design_image_id']) && empty($customization['design_color_name'])) {
                                 $designImage = DesignImage::query()->with('color')->find($item['design_image_id']);
                                 if ($designImage?->color) {
@@ -460,7 +465,12 @@ class CartService
             $validated = $this->resolveCustomizationSnapshot($product, $colorPrice, $designId, $designImageId, $quantity, $forUpdate);
         }
 
-        $validated['customization_json'] = $this->sanitizeCustomization($workflow, $payload);
+        $sanitizedCustomization = $this->sanitizeCustomization($workflow, $payload);
+        if ($workflow === CustomizationWorkflowEnum::BANK_CARD) {
+            $sanitizedCustomization['is_scratched'] = (bool) ($colorPrice->color?->is_scratched ?? false);
+        }
+
+        $validated['customization_json'] = $sanitizedCustomization;
 
         return $validated;
     }

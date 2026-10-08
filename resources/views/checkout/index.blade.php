@@ -51,7 +51,12 @@
                                 </div>
                                 <div class="flex flex-wrap items-center gap-1.5 text-slate-600">
                                     @if (! empty($item['color_name_snapshot']))
-                                        <span class="rounded bg-white px-2 py-0.5 border border-slate-200">رنگ: {{ $item['color_name_snapshot'] }}</span>
+                                        <span class="rounded bg-white px-2 py-0.5 border border-slate-200">
+                                            رنگ: {{ $item['color_name_snapshot'] }}
+                                            @if (! empty($item['customization_json']['is_scratched']))
+                                                (خش‌دار)
+                                            @endif
+                                        </span>
                                     @endif
                                     @if (! empty($item['design_name_snapshot']))
                                         <span class="rounded bg-[#ffde5b]/20 text-[#664d00] px-2 py-0.5 border border-[#ffde5b]/50 font-bold">طرح: {{ $item['design_name_snapshot'] }}</span>

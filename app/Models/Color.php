@@ -11,11 +11,13 @@ class Color extends Model
         'name',
         'code_hex',
         'preview_image',
+        'is_scratched',
         'is_active',
         'sort_order',
     ];
 
     protected $casts = [
+        'is_scratched' => 'boolean',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];

@@ -22,6 +22,8 @@ class ColorManager extends Component
 
     public bool $isActive = true;
 
+    public bool $isScratched = false;
+
     public int $sortOrder = 0;
 
     public ?int $editingId = null;
@@ -33,6 +35,7 @@ class ColorManager extends Component
         'colorCode' => ['required', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         'previewImage' => 'nullable|string|max:255',
         'isActive' => 'boolean',
+        'isScratched' => 'boolean',
         'sortOrder' => 'integer|min:0',
     ];
 
@@ -59,6 +62,7 @@ class ColorManager extends Component
             'name' => $this->name,
             'code_hex' => strtoupper($this->colorCode),
             'preview_image' => $this->previewImage ?: null,
+            'is_scratched' => $this->isScratched,
             'is_active' => $this->isActive,
             'sort_order' => $this->sortOrder,
         ];
@@ -108,6 +112,7 @@ class ColorManager extends Component
         $this->name = $color->name;
         $this->colorCode = $color->code_hex ?: '#000000';
         $this->previewImage = $color->preview_image;
+        $this->isScratched = (bool) $color->is_scratched;
         $this->isActive = (bool) $color->is_active;
         $this->sortOrder = (int) $color->sort_order;
         $this->showForm = true;
@@ -157,6 +162,7 @@ class ColorManager extends Component
         $this->name = '';
         $this->colorCode = '#000000';
         $this->previewImage = null;
+        $this->isScratched = false;
         $this->isActive = true;
         $this->sortOrder = 0;
         $this->editingId = null;

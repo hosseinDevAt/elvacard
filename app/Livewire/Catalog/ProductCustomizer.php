@@ -114,6 +114,7 @@ class ProductCustomizer extends Component
                 'name' => $price->color?->name,
                 'color_hex' => $price->color?->code_hex,
                 'price' => (int) $price->price,
+                'is_scratched' => (bool) ($price->color?->is_scratched ?? false),
             ])
             ->values()
             ->all();

@@ -49,7 +49,7 @@
                             <p><span class="font-semibold">تعداد:</span> {{ $item->quantity }}</p>
                             <p><span class="font-semibold">قیمت واحد:</span> {{ number_format($item->unit_price_snapshot) }} تومان</p>
                             <p><span class="font-semibold">مبلغ نهایی:</span> {{ number_format($item->final_price) }} تومان</p>
-                            <p><span class="font-semibold">رنگ کارت:</span> {{ $item->color_name_snapshot ?? 'ثبت نشده' }}</p>
+                            <p><span class="font-semibold">رنگ کارت:</span> {{ $item->color_name_snapshot ?? 'ثبت نشده' }}@if ($item->isScratched()) (خش‌دار)@endif</p>
                             <p><span class="font-semibold">طرح کارت:</span> {{ $item->design_name_snapshot ?? 'ثبت نشده' }}</p>
 
                             @if ($isFuel && $item->design_image_path_snapshot)

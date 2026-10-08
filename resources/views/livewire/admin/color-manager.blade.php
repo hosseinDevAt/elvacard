@@ -27,9 +27,14 @@
                         @error('colorCode') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     @if($colorCode)
-                        <div class="w-20">
-                            <label class="admin-label">نمونه</label>
-                            <div class="w-11 h-11 rounded-xl border border-slate-200 shadow-xs" style="background-color: {{ $colorCode }}"></div>
+                        <div class="w-24">
+                            <label class="admin-label">پیش‌نمایش سطح</label>
+                            <div class="relative w-20 h-11 rounded-xl border border-slate-200 shadow-xs overflow-hidden flex items-center justify-center" style="background-color: {{ $colorCode }}">
+                                <x-card-surface-texture :scratched="$isScratched" />
+                                <span class="relative z-10 text-[10px] font-bold {{ in_array(strtolower($colorCode), ['#ffffff', '#fff']) ? 'text-slate-800' : 'text-white' }}">
+                                    {{ $isScratched ? 'خش‌دار' : 'ساده' }}
+                                </span>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -45,9 +50,15 @@
                         @error('sortOrder') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
-                    <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (قابل انتخاب در سبد و سفارش)</label>
+                <div class="flex flex-wrap items-center gap-6 pt-1">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
+                        <label for="is_active" class="text-xs font-semibold text-slate-700">فعال (قابل انتخاب در سبد و سفارش)</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" wire:model.live="isScratched" id="is_scratched" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
+                        <label for="is_scratched" class="text-xs font-semibold text-slate-700">بافت سطح کارت: خش‌دار (متالیک براش‌خورده)</label>
+                    </div>
                 </div>
                 <div class="flex items-center gap-3 pt-2">
                     <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">{{ $editingId ? 'ذخیره تغییرات' : 'ایجاد رنگ' }}</button>
@@ -70,6 +81,7 @@
                         <th class="admin-th w-16">#</th>
                         <th class="admin-th">نام رنگ</th>
                         <th class="admin-th">نمونه و کد رنگ</th>
+                        <th class="admin-th">بافت سطح</th>
                         <th class="admin-th">وضعیت</th>
                         <th class="admin-th">ترتیب نمایش</th>
                         <th class="admin-th text-center">عملیات</th>
@@ -87,6 +99,18 @@
                                 </div>
                             </td>
                             <td class="admin-td">
+                                @if($color->is_scratched)
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                        <svg class="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                                        خش‌دار
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                        معمولی
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="admin-td">
                                 <span class="admin-badge {{ $color->is_active ? 'admin-badge-success' : 'admin-badge-danger' }}">
                                     {{ $color->is_active ? 'فعال' : 'غیرفعال' }}
                                 </span>
@@ -101,7 +125,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-8">
+                            <td colspan="7" class="py-8">
                                 <x-admin.empty-state title="رنگی ثبت نشده است" description="هنوز هیچ رنگی به سیستم اضافه نشده است." />
                             </td>
                         </tr>
