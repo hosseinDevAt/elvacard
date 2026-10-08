@@ -20,6 +20,7 @@ use App\Services\CartService;
 use App\Services\CustomDesign\CustomDesignService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -34,6 +35,16 @@ class CustomDesignEngineTest extends TestCase
     {
         parent::setUp();
         Storage::fake('local');
+    }
+
+    protected function tearDown(): void
+    {
+        $livewireTmp = storage_path('app/public/livewire-tmp');
+        if (File::exists($livewireTmp)) {
+            File::cleanDirectory($livewireTmp);
+        }
+
+        parent::tearDown();
     }
 
     private function createAdminUser(): User
@@ -518,5 +529,89 @@ class CustomDesignEngineTest extends TestCase
         ]));
 
         $response->assertNotFound();
+    }
+
+    public function test_ui_renders_segmented_control_and_tabs_accessible_labels(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::BANK_CARD, 450000);
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->assertSee('طرح‌های کاتالوگ')
+            ->assertSee('طرح اختصاصی شما')
+            ->assertSeeHtml('role="tablist"')
+            ->assertSeeHtml('id="tab-catalog"')
+            ->assertSeeHtml('id="tab-custom"')
+            ->assertSeeHtml('id="panel-catalog"');
+    }
+
+    public function test_ui_custom_empty_state_shows_dropzone_and_help_text(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::BANK_CARD, 450000);
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->call('setDesignSource', 'custom')
+            ->assertSee('تصویر طرح خود را بارگذاری کنید')
+            ->assertSee('کلیک کنید یا فایل را اینجا بکشید')
+            ->assertSee('برای ظرافت بیشتر حکاکی، تصویر تک‌رنگ یا PNG با پس‌زمینه شفاف پیشنهاد می‌شود')
+            ->assertDontSee('طرح استاندارد (مرکزی)')
+            ->assertDontSee('پیش‌نمایش طرح اختصاصی');
+    }
+
+    public function test_ui_custom_upload_success_renders_file_card_and_layout_selector(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::BANK_CARD, 450000);
+        $fakeFile = $this->createValidImageFile(800, 600, 'my-logo.png');
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->call('setDesignSource', 'custom')
+            ->set('customImage', $fakeFile)
+            ->assertSee('my-logo.png')
+            ->assertSee('تصویر تایید شده')
+            ->assertSee('تغییر تصویر')
+            ->assertSee('حذف تصویر')
+            ->assertSee('طرح استاندارد (مرکزی)')
+            ->assertSee('طرح سرتاسری (پوشش کامل)')
+            ->assertSee('پیش‌نمایش طرح اختصاصی')
+            ->assertDontSeeText('Centered')
+            ->assertDontSeeText('Full Card')
+            ->assertDontSeeText('centered')
+            ->assertDontSeeText('full_card');
+    }
+
+    public function test_ui_step_navigation_preserves_state_between_steps(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::BANK_CARD, 450000);
+        $fakeFile = $this->createValidImageFile(800, 600, 'my-logo.png');
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->call('setDesignSource', 'custom')
+            ->set('customImage', $fakeFile)
+            ->call('setCustomLayoutMode', 'full_card')
+            ->call('setStep', 2)
+            ->assertSet('step', 2)
+            ->assertSet('activeView', 'back')
+            ->assertSet('designSource', 'custom')
+            ->assertSet('customLayoutMode', 'full_card')
+            ->call('setStep', 1)
+            ->assertSet('step', 1)
+            ->assertSet('activeView', 'front')
+            ->assertSet('designSource', 'custom')
+            ->assertSet('customLayoutMode', 'full_card')
+            ->assertSee('my-logo.png');
+    }
+
+    public function test_ui_fuel_card_custom_design_workspace_preserves_chip_and_specifications(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD, 500000);
+        $fakeFile = $this->createValidImageFile(800, 600, 'fuel-logo.png');
+
+        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->call('setDesignSource', 'custom')
+            ->set('customImage', $fakeFile)
+            ->assertSee('پیش‌نمایش طرح اختصاصی')
+            ->call('setStep', 2)
+            ->assertSee('مشخصات کارت سوخت اختصاصی')
+            ->assertSee('نام سامانه')
+            ->assertSee('شناسه سامانه');
     }
 }

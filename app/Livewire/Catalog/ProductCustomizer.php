@@ -46,6 +46,8 @@ class ProductCustomizer extends Component
 
     public ?string $customDesignOriginalName = null;
 
+    public ?int $customDesignFileSize = null;
+
     public string $customLayoutMode = 'centered'; // 'centered' | 'full_card'
 
     public ?string $customDesignErrorMessage = null;
@@ -258,6 +260,7 @@ class ProductCustomizer extends Component
 
             $this->customDesignToken = $stored['token'];
             $this->customDesignOriginalName = $stored['original_name'];
+            $this->customDesignFileSize = $stored['size'] ?? null;
             $this->customDesignErrorMessage = null;
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->customDesignErrorMessage = $e->validator->errors()->first('customImage') ?: $e->getMessage();
@@ -276,8 +279,29 @@ class ProductCustomizer extends Component
 
         $this->customDesignToken = null;
         $this->customDesignOriginalName = null;
+        $this->customDesignFileSize = null;
         $this->customImage = null;
         $this->customDesignErrorMessage = null;
+    }
+
+    public function getFormattedCustomDesignFileSizeProperty(): string
+    {
+        $size = $this->customDesignFileSize;
+
+        if ($size === null && $this->customDesignToken) {
+            $meta = session("custom_designs.{$this->customDesignToken}");
+            $size = $meta['size'] ?? null;
+        }
+
+        if (! $size) {
+            return '';
+        }
+
+        if ($size >= 1048576) {
+            return fa_digits(number_format($size / 1048576, 1)) . ' مگابایت';
+        }
+
+        return fa_digits(number_format(round($size / 1024))) . ' کیلوبایت';
     }
 
     public function setCustomLayoutMode(string $mode): void
