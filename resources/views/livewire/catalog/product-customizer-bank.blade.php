@@ -1,8 +1,30 @@
 {{-- BANK CARD WORKSPACE: Step 2 back-of-card specifications. --}}
 <div class="space-y-6">
     <div>
-        <h2 class="text-base font-bold text-white mb-1">۲. مشخصات اطلاعات پشت کارت</h2>
-        <p class="text-xs text-slate-400">اطلاعات واقعی که می‌خواهید پشت کارت حک شود را وارد کنید.</p>
+        <h2 class="text-base font-bold text-white mb-1">۲. مشخصات اطلاعات پشت و روی کارت</h2>
+        <p class="text-xs text-slate-400">اطلاعات واقعی که می‌خواهید روی کارت فلزی حک شود را وارد کنید.</p>
+    </div>
+
+    {{-- IBAN Input (Optional) --}}
+    <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+            <label for="iban" class="block text-xs font-bold text-slate-300">
+                شماره شبا (IBAN)
+            </label>
+            <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">اختیاری</span>
+        </div>
+        <input
+            id="iban"
+            type="text"
+            autocomplete="off"
+            maxlength="34"
+            wire:model.live.debounce.150ms="bankCard.iban"
+            placeholder="IR12 0120 0000 0000 0012 3456 78"
+            class="w-full rounded-xl border border-[#152244] bg-[#010619] px-4 py-2.5 text-sm text-white font-mono dir-ltr text-start placeholder-slate-600 focus:border-[#ffde5b] focus:outline-none focus:ring-1 focus:ring-[#ffde5b]"
+        >
+        @error('bankCard.iban')
+            <p class="text-xs text-rose-400">{{ $message }}</p>
+        @enderror
     </div>
 
     {{-- Card Number Input --}}
@@ -45,23 +67,55 @@
         @enderror
     </div>
 
-    {{-- Back Custom Text Input --}}
-    <div class="space-y-1.5">
-        <label for="back_text" class="block text-xs font-bold text-slate-300">
-            متن دلخواه یا جمله اختصاصی (حکاکی پشت)
-        </label>
-        <input
-            id="back_text"
-            type="text"
-            autocomplete="off"
-            maxlength="255"
-            wire:model.live.debounce.150ms="bankCard.back_text"
-            placeholder="مثال: Born to Lead"
-            class="w-full rounded-xl border border-[#152244] bg-[#010619] px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-[#ffde5b] focus:outline-none focus:ring-1 focus:ring-[#ffde5b]"
-        >
-        @error('bankCard.back_text')
-            <p class="text-xs text-rose-400">{{ $message }}</p>
-        @enderror
+    {{-- Custom Text Input & Placement Selector --}}
+    <div class="space-y-2 rounded-2xl border border-[#152244] bg-[#010619]/60 p-4">
+        <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+                <label for="back_text" class="block text-xs font-bold text-slate-300">
+                    متن دلخواه یا جمله اختصاصی (حکاکی پشت)
+                </label>
+                <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">اختیاری</span>
+            </div>
+            <input
+                id="back_text"
+                type="text"
+                autocomplete="off"
+                maxlength="255"
+                wire:model.live.debounce.150ms="bankCard.back_text"
+                placeholder="مثال: Born to Lead"
+                class="w-full rounded-xl border border-[#152244] bg-[#010619] px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-[#ffde5b] focus:outline-none focus:ring-1 focus:ring-[#ffde5b]"
+            >
+            @error('bankCard.back_text')
+                <p class="text-xs text-rose-400">{{ $message }}</p>
+            @enderror
+        </div>
+
+        {{-- Placement Toggle: Back vs Front --}}
+        <div class="pt-2 border-t border-[#152244]">
+            <span class="block text-[11px] font-medium text-slate-400 mb-1.5">محل حکاکی متن دلخواه:</span>
+            <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#070e24] border border-[#152244]" role="radiogroup" aria-label="محل حکاکی متن دلخواه">
+                <button
+                    type="button"
+                    wire:click="$set('bankCard.custom_text_placement', 'back')"
+                    role="radio"
+                    aria-checked="{{ ($bankCard->custom_text_placement ?? 'back') === 'back' ? 'true' : 'false' }}"
+                    class="h-9 rounded-lg px-3 text-xs font-bold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ ($bankCard->custom_text_placement ?? 'back') === 'back' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5' }}"
+                >
+                    <span>پشت کارت</span>
+                    <span class="text-[10px] opacity-75">(پیش‌فرض)</span>
+                </button>
+                <button
+                    type="button"
+                    wire:click="$set('bankCard.custom_text_placement', 'front')"
+                    role="radio"
+                    aria-checked="{{ ($bankCard->custom_text_placement ?? 'back') === 'front' ? 'true' : 'false' }}"
+                    class="h-9 rounded-lg px-3 text-xs font-bold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ ($bankCard->custom_text_placement ?? 'back') === 'front' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5' }}"
+                >
+                    <span>روی کارت</span>
+                    <span class="text-[10px] opacity-75">(جلو)</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- Independent Security Toggles --}}

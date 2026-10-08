@@ -2,6 +2,7 @@
 
 namespace App\Services\BankCard;
 
+use App\Rules\IbanRule;
 use App\Rules\LuhnRule;
 use App\Services\Customization\CardPresenter;
 use App\Support\Dates\DateService;
@@ -27,9 +28,19 @@ class BankCardCustomization
         return preg_replace('/[\s\-]+/', '', $value) ?? '';
     }
 
+    public static function canonicalizeIban(?string $value): string
+    {
+        return IbanRule::canonicalize($value);
+    }
+
     public static function validateLuhn(string $number): bool
     {
         return LuhnRule::passesLuhn($number);
+    }
+
+    public static function validateIban(string $iban): bool
+    {
+        return IbanRule::passesMod97($iban);
     }
 
     public static function rulesFor(bool $cvvEnabled, bool $expiryEnabled): array
@@ -38,6 +49,8 @@ class BankCardCustomization
             'card_number' => ['nullable', 'string', 'digits:16', new LuhnRule],
             'card_holder_name' => ['nullable', 'string', 'max:100'],
             'back_text' => ['nullable', 'string', 'max:255'],
+            'iban' => ['nullable', 'string', new IbanRule],
+            'custom_text_placement' => ['nullable', 'string', 'in:front,back'],
             'security_cvv_enabled' => ['boolean'],
             'security_expiry_enabled' => ['boolean'],
         ];
@@ -60,6 +73,8 @@ class BankCardCustomization
     {
         return [
             'card_number.digits' => 'شماره کارت باید دقیقاً ۱۶ رقمی باشد.',
+            'iban.string' => 'شماره شبا وارد شده نامعتبر است.',
+            'custom_text_placement.in' => 'محل متن انتخابی باید روی کارت یا پشت کارت باشد.',
             'cvv2.digits_between' => 'CVV2 باید ۳ تا ۴ رقم باشد.',
             'expiry_month.required' => 'انتخاب ماه انقضا الزامی است.',
             'expiry_month.regex' => 'ماه انقضا باید بین ۰۱ تا ۱۲ باشد.',
@@ -115,6 +130,22 @@ class BankCardCustomization
             $text = mb_substr(trim($rawCustomization['back_text']), 0, 255);
             if ($text !== '') {
                 $sanitizedCustomization['back_text'] = $text;
+            }
+        }
+
+        // Handle optional Iranian IBAN
+        if (! empty($rawCustomization['iban']) && is_string($rawCustomization['iban'])) {
+            $canonicalIban = self::canonicalizeIban($rawCustomization['iban']);
+            if (IbanRule::passesMod97($canonicalIban)) {
+                $sanitizedCustomization['iban'] = $canonicalIban;
+            }
+        }
+
+        // Handle custom text placement (front | back)
+        if (! empty($rawCustomization['custom_text_placement']) && is_string($rawCustomization['custom_text_placement'])) {
+            $placement = strtolower(trim($rawCustomization['custom_text_placement']));
+            if (in_array($placement, ['front', 'back'], true)) {
+                $sanitizedCustomization['custom_text_placement'] = $placement;
             }
         }
 

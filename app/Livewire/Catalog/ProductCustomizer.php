@@ -328,6 +328,12 @@ class ProductCustomizer extends Component
         return CardPresenter::presentCardNumber($this->bankCard->card_number);
     }
 
+    // Presentation-only grouped display for IBAN (e.g. "IR12 0120 0000 0000 0012 3456 78").
+    public function getDisplayIbanProperty(): string
+    {
+        return CardPresenter::presentIban($this->bankCard->iban);
+    }
+
     protected function rules(): array
     {
         if ($this->designSource === 'custom') {

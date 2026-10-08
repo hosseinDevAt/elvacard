@@ -14,6 +14,10 @@ class BankCardWorkspace extends Form
 
     public string $back_text = '';
 
+    public string $custom_text_placement = 'back'; // 'back' | 'front'
+
+    public string $iban = '';
+
     public string $cvv2 = '';
 
     public string $expiry_month = '';
@@ -51,6 +55,7 @@ class BankCardWorkspace extends Form
     public function canonicalize(): void
     {
         $this->card_number = BankCardCustomization::canonicalizeCardNumber($this->card_number);
+        $this->iban = BankCardCustomization::canonicalizeIban($this->iban);
     }
 
     public function toggleCvv(): void
@@ -72,6 +77,13 @@ class BankCardWorkspace extends Form
         }
     }
 
+    public function setCustomTextPlacement(string $placement): void
+    {
+        if (in_array($placement, ['front', 'back'], true)) {
+            $this->custom_text_placement = $placement;
+        }
+    }
+
     public function customizationJson(): array
     {
         $customizationJson = [
@@ -89,6 +101,11 @@ class BankCardWorkspace extends Form
 
         if (trim($this->back_text) !== '') {
             $customizationJson['back_text'] = trim($this->back_text);
+            $customizationJson['custom_text_placement'] = $this->custom_text_placement === 'front' ? 'front' : 'back';
+        }
+
+        if (trim($this->iban) !== '') {
+            $customizationJson['iban'] = trim($this->iban);
         }
 
         if ($this->security_expiry_enabled) {

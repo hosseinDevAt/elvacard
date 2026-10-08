@@ -182,12 +182,16 @@
                                         ? (str_pad((string)$custom['expiry_month'], 2, '0', STR_PAD_LEFT) . '/' . substr((string)$custom['expiry_year'], -2)) 
                                         : (!empty($custom['expiry']) ? $custom['expiry'] : null);
                                     $colorName = mb_strtolower($item->color_name_snapshot ?? '');
+                                    $itemColorHex = $item->color?->code_hex ?? null;
+                                    $cardTextColor = \App\Services\Customization\CardPresenter::backTextColorClass($itemColorHex);
+                                    $cardSubtextColor = \App\Services\Customization\CardPresenter::backSubtextColorClass($itemColorHex);
+                                    $cardSignatureBoxClass = \App\Services\Customization\CardPresenter::signatureBoxClass($itemColorHex);
                                     $bgGradient = match (true) {
-                                        str_contains($colorName, 'طلایی') => 'from-amber-400 via-yellow-500 to-amber-600 text-gray-950',
-                                        str_contains($colorName, 'نقره') => 'from-slate-200 via-gray-300 to-slate-400 text-gray-900',
-                                        str_contains($colorName, 'مسی') => 'from-amber-700 via-orange-800 to-amber-900 text-amber-100',
-                                        str_contains($colorName, 'رزگلد') || str_contains($colorName, 'رز') => 'from-rose-300 via-pink-400 to-rose-500 text-gray-900',
-                                        default => 'from-gray-800 via-gray-900 to-black text-amber-200/90',
+                                        str_contains($colorName, 'طلایی') => 'from-amber-400 via-yellow-500 to-amber-600',
+                                        str_contains($colorName, 'نقره') => 'from-slate-200 via-gray-300 to-slate-400',
+                                        str_contains($colorName, 'مسی') => 'from-amber-700 via-orange-800 to-amber-900',
+                                        str_contains($colorName, 'رزگلد') || str_contains($colorName, 'رز') => 'from-rose-300 via-pink-400 to-rose-500',
+                                        default => 'from-gray-800 via-gray-900 to-black',
                                     };
                                 @endphp
 
@@ -316,7 +320,7 @@
                                                     <span class="text-slate-400 font-mono text-[10px]">طرح: {{ $item->design_name_snapshot ?? '—' }} | متریال: {{ $item->color_name_snapshot ?? '—' }}@if ($designColorName) | رنگ طرح: {{ $designColorName }}@endif</span>
                                                 </div>
                                             </div>
-                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" dir="ltr">
+                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-5 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-60"></div>
                                                 {{-- Contactless waves indicator --}}
                                                 <div class="absolute top-4 left-5 opacity-70 pointer-events-none z-10">
@@ -342,6 +346,16 @@
                                                         </div>
                                                     @endif
                                                 @endif
+
+                                                {{-- Front Custom Text (when placement = 'front') --}}
+                                                @if (!empty($custom['back_text']) && ($custom['custom_text_placement'] ?? 'back') === 'front')
+                                                    <div class="absolute rounded px-2 max-w-[260px] z-10" style="left: {{ $slots['front_custom_text']['x'] * 100 }}%; top: {{ $slots['front_custom_text']['y'] * 100 }}%;">
+                                                        <div class="text-[11px] font-bold italic truncate {{ $cardTextColor }}">
+                                                            {{ $custom['back_text'] }}
+                                                        </div>
+                                                    </div>
+                                                @endif
+
                                                 <div class="absolute bottom-3 right-4 text-end opacity-80 z-10">
                                                     <span class="text-[11px] font-bold font-sans tracking-wide uppercase">{{ $item->design_name_snapshot ?? 'ELVA CARD' }}</span>
                                                 </div>
@@ -354,54 +368,67 @@
                                                 <span>نمای پشت (BACK)</span>
                                                 <span class="text-amber-700 font-mono text-[10px]">چاپ و حکاکی لیزری</span>
                                             </div>
-                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-4 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" dir="ltr">
+                                            <div class="w-full aspect-[1.586/1] rounded-2xl p-4 shadow-lg relative overflow-hidden select-none border border-black/15 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $itemColorHex ?? '#111827' }};" dir="ltr">
                                                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
                                                 {{-- Magnetic Stripe --}}
                                                 <div class="absolute top-2.5 inset-x-0 h-7 sm:h-8 bg-neutral-950 shadow-inner pointer-events-none"></div>
 
-                                                {{-- Slot 1: Card Number --}}
+                                                {{-- Slot 1: IBAN / شبا --}}
+                                                @if (!empty($custom['iban']))
+                                                    <div class="absolute rounded px-1 max-w-[90%]" style="left: {{ $slots['iban']['x'] * 100 }}%; top: {{ $slots['iban']['y'] * 100 }}%;">
+                                                        <div class="text-[8px] font-bold tracking-wider {{ $cardSubtextColor }}">IBAN / شبا</div>
+                                                        <div class="font-mono text-[10px] sm:text-[11px] font-bold tracking-wider select-all {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                                            {{ \App\Services\Customization\CardPresenter::presentIban($custom['iban']) }}
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                {{-- Slot 2: Card Number --}}
                                                 @if (!empty($fullPan) || !empty($formattedPan))
                                                     <div class="absolute rounded px-1" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;">
-                                                        <div class="font-mono text-xs sm:text-sm font-bold tracking-widest opacity-95 text-shadow select-all" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                                        <div class="font-mono text-xs sm:text-sm font-bold tracking-widest opacity-95 text-shadow select-all {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                                             {{ $formattedPan }}
                                                         </div>
                                                     </div>
                                                 @endif
 
-                                                {{-- Slot 2: Card Holder Name / Signature Box --}}
-                                                @if (!empty($custom['card_holder_name']))
-                                                    <div class="absolute rounded px-1" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
-                                                        <div class="h-6 bg-white/95 rounded px-2 flex items-center text-gray-900 font-serif italic text-[11px] font-bold tracking-wider shadow-inner select-all">
-                                                            {{ $custom['card_holder_name'] }}
-                                                        </div>
-                                                    </div>
-                                                @endif
-
-                                                {{-- Slot 3: Back Text --}}
-                                                @if (!empty($custom['back_text']))
-                                                    <div class="absolute rounded px-1 max-w-[180px]" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
-                                                        <div class="text-[10px] font-medium italic opacity-90 truncate select-all">
-                                                            {{ $custom['back_text'] }}
-                                                        </div>
-                                                    </div>
-                                                @endif
-
-                                                {{-- Slot 4: CVV2 --}}
+                                                {{-- Slot 3: Security Row --}}
+                                                {{-- CVV2 on LEFT --}}
                                                 @if (!empty($displayCvv))
                                                     <div class="absolute rounded px-1" style="left: {{ $slots['cvv2']['x'] * 100 }}%; top: {{ $slots['cvv2']['y'] * 100 }}%;">
-                                                        <div class="text-[8px] font-bold tracking-widest opacity-75">CVV2</div>
-                                                        <div class="font-mono font-bold text-[11px] tracking-widest select-all" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                                        <div class="text-[8px] font-bold tracking-widest {{ $cardSubtextColor }}">CVV2</div>
+                                                        <div class="font-mono font-bold text-[11px] tracking-widest select-all {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                                             {{ $displayCvv }}
                                                         </div>
                                                     </div>
                                                 @endif
 
-                                                {{-- Slot 5: Expiry Date --}}
+                                                {{-- Expiry Date on RIGHT (Strict LTR Month/Year) --}}
                                                 @if (!empty($formattedExpiry))
                                                     <div class="absolute rounded px-1" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;">
-                                                        <div class="text-[8px] font-bold tracking-widest opacity-75">EXPIRES</div>
-                                                        <div class="font-mono font-bold text-[11px] tracking-wider select-all" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
-                                                            {{ $formattedExpiry }}
+                                                        <div class="text-[8px] font-bold tracking-widest {{ $cardSubtextColor }}">EXPIRES</div>
+                                                        <div class="font-mono font-bold text-[11px] tracking-wider select-all inline-flex items-center gap-0.5 {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                                            <span>{{ str_pad((string)($custom['expiry_month'] ?? ''), 2, '0', STR_PAD_LEFT) ?: '--' }}</span>
+                                                            <span class="opacity-70">/</span>
+                                                            <span>{{ substr((string)($custom['expiry_year'] ?? ''), -2) ?: '--' }}</span>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                {{-- Slot 4: Back Custom Text (ONLY when placement = 'back') --}}
+                                                @if (!empty($custom['back_text']) && ($custom['custom_text_placement'] ?? 'back') === 'back')
+                                                    <div class="absolute rounded px-1 max-w-[180px]" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
+                                                        <div class="text-[10px] font-medium italic opacity-90 truncate select-all {{ $cardTextColor }}">
+                                                            {{ $custom['back_text'] }}
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                {{-- Slot 5: Card Holder Name / Signature Box --}}
+                                                @if (!empty($custom['card_holder_name']))
+                                                    <div class="absolute rounded px-1 max-w-[70%]" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
+                                                        <div class="h-6 rounded px-2 flex items-center font-serif italic text-[11px] font-bold tracking-wider select-all {{ $cardSignatureBoxClass }}">
+                                                            <span class="truncate">{{ $custom['card_holder_name'] }}</span>
                                                         </div>
                                                     </div>
                                                 @endif

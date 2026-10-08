@@ -322,6 +322,7 @@ class BankCardWorkspaceTest extends TestCase
             'card_number' => '6274051234567890',
             'card_holder_name' => 'HOSSEIN REZAIE',
             'back_text' => 'BORN TO LEAD',
+            'custom_text_placement' => 'back',
             'expiry_month' => '05',
             'expiry_year' => (string) ((int) date('y') + 3),
         ], $form->customizationJson());

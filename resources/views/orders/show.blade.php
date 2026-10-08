@@ -94,11 +94,14 @@
                                             @if (! empty($maskedPan))
                                                 <p class="sm:col-span-2"><span class="font-semibold">شماره کارت:</span> <span dir="ltr" class="font-mono"><span style="direction: ltr; unicode-bidi: isolate;">{{ $maskedPan }}</span></span></p>
                                             @endif
+                                            @if (! empty($customization['iban']))
+                                                <p class="sm:col-span-2"><span class="font-semibold">شماره شبا:</span> <span dir="ltr" class="font-mono"><span style="direction: ltr; unicode-bidi: isolate;">{{ \App\Services\Customization\CardPresenter::maskIban($customization['iban']) }}</span></span></p>
+                                            @endif
                                             @if (! empty($customization['card_holder_name']))
                                                 <p><span class="font-semibold">نام دارنده کارت:</span> {{ $customization['card_holder_name'] }}</p>
                                             @endif
                                             @if (! empty($customization['back_text']))
-                                                <p><span class="font-semibold">متن پشت کارت:</span> {{ $customization['back_text'] }}</p>
+                                                <p><span class="font-semibold">متن دلخواه ({{ ($customization['custom_text_placement'] ?? 'back') === 'front' ? 'روی کارت' : 'پشت کارت' }}):</span> {{ $customization['back_text'] }}</p>
                                             @endif
                                             @if (! empty($customization['security_cvv_enabled']))
                                                 <p><span class="font-semibold">حکاکی CVV2:</span> <span>فعال</span></p>

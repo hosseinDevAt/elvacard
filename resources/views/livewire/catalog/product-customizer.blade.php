@@ -444,19 +444,25 @@
 
                 {{-- 2D Metallic Card Visualizer Box --}}
                 @php
+                    $selectedColorHex = $selectedColor['color_hex'] ?? null;
+                    $cardTextColor = \App\Services\Customization\CardPresenter::backTextColorClass($selectedColorHex);
+                    $cardSubtextColor = \App\Services\Customization\CardPresenter::backSubtextColorClass($selectedColorHex);
+                    $cardSignatureBoxClass = \App\Services\Customization\CardPresenter::signatureBoxClass($selectedColorHex);
+                    $slots = \App\Services\Customization\CardPresenter::fixedSlots();
+
                     $colorName = mb_strtolower($selectedColor['name'] ?? '');
                     $bgGradient = match (true) {
-                        str_contains($colorName, 'طلایی') => 'from-amber-400 via-yellow-500 to-amber-600 text-gray-950',
-                        str_contains($colorName, 'نقره') => 'from-slate-200 via-gray-300 to-slate-400 text-gray-900',
-                        str_contains($colorName, 'مسی') => 'from-amber-700 via-orange-800 to-amber-900 text-amber-100',
-                        str_contains($colorName, 'رزگلد') || str_contains($colorName, 'رز') => 'from-rose-300 via-pink-400 to-rose-500 text-gray-900',
-                        default => 'from-gray-800 via-gray-900 to-black text-amber-200/90',
+                        str_contains($colorName, 'طلایی') => 'from-amber-400 via-yellow-500 to-amber-600',
+                        str_contains($colorName, 'نقره') => 'from-slate-200 via-gray-300 to-slate-400',
+                        str_contains($colorName, 'مسی') => 'from-amber-700 via-orange-800 to-amber-900',
+                        str_contains($colorName, 'رزگلد') || str_contains($colorName, 'رز') => 'from-rose-300 via-pink-400 to-rose-500',
+                        default => 'from-gray-800 via-gray-900 to-black',
                     };
                     $selectedDesignImage = collect($designImages)->firstWhere('id', $design_image_id);
                     $isFullCard = ($selectedDesignImage['layout_mode'] ?? 'centered') === 'full_card';
                 @endphp
 
-                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}">
+                <div class="w-full max-w-md aspect-[1.586/1] rounded-2xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 border border-white/10 bg-gradient-to-br {{ $bgGradient }}" style="background-color: {{ $selectedColorHex ?? '#111827' }};">
                     {{-- Subtle Card Metallic Shine --}}
                     <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-60"></div>
 
@@ -493,58 +499,79 @@
                                     <div class="absolute inset-y-0 w-[1px] bg-amber-800/40"></div>
                                     <div class="h-4 w-6 rounded-[2px] border border-amber-800/30 bg-amber-400/20"></div>
                                 </div>
+                            @elseif ($workflow === $bankCardWorkflow)
+                                {{-- Front Custom Text (when placement = 'front') --}}
+                                @if ($bankCard->back_text !== '' && $bankCard->custom_text_placement === 'front')
+                                    <div class="absolute rounded px-2 max-w-[280px] z-10" style="left: {{ $slots['front_custom_text']['x'] * 100 }}%; top: {{ $slots['front_custom_text']['y'] * 100 }}%;">
+                                        <div class="text-xs font-bold italic tracking-wide truncate {{ $cardTextColor }}">
+                                            {{ $bankCard->back_text }}
+                                        </div>
+                                    </div>
+                                @endif
                             @endif
                         </div>
                     @elseif ($workflow === $bankCardWorkflow)
-                        @php $slots = \App\Services\Customization\CardPresenter::fixedSlots(); @endphp
-                        {{-- BACK CARD PREVIEW WITH FIXED LAYOUT SLOTS --}}
+                        {{-- BACK CARD PREVIEW WITH REVISED FIXED LAYOUT SLOTS --}}
                         <div class="relative h-full w-full select-none">
                             {{-- Top Magnetic Stripe --}}
-                            <div class="absolute top-2 inset-x-0 h-10 bg-gray-950 shadow-inner pointer-events-none"></div>
+                            <div class="absolute top-2 inset-x-0 h-9 sm:h-10 bg-gray-950 shadow-inner pointer-events-none"></div>
 
-                            {{-- Fixed Slot 1: Card Number --}}
+                            {{-- Slot 1: IBAN / شبا (Top near stripe) --}}
+                            @if ($bankCard->iban !== '')
+                                <div class="absolute rounded px-1 max-w-[90%]" style="left: {{ $slots['iban']['x'] * 100 }}%; top: {{ $slots['iban']['y'] * 100 }}%;">
+                                    <div class="text-[9px] font-bold tracking-wider {{ $cardSubtextColor }}">IBAN / شبا</div>
+                                    <div class="font-mono text-xs font-bold tracking-wider {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                        {{ $this->displayIban }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Slot 2: Card Number (Center) --}}
                             @if ($bankCard->card_number !== '')
                                 <div class="absolute rounded px-1" style="left: {{ $slots['card_number']['x'] * 100 }}%; top: {{ $slots['card_number']['y'] * 100 }}%;">
-                                    <div class="font-mono text-sm font-bold tracking-widest opacity-95" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                    <div class="font-mono text-sm sm:text-base font-bold tracking-widest opacity-95 {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $this->displayCardNumber }}
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Fixed Slot 2: Card Holder Name --}}
-                            @if ($bankCard->card_holder_name !== '')
-                                <div class="absolute rounded px-1" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
-                                    <div class="h-7 bg-white/90 rounded px-2.5 flex items-center text-gray-900 font-serif italic text-xs font-bold tracking-wider shadow-inner">
-                                        {{ $bankCard->card_holder_name }}
-                                    </div>
-                                </div>
-                            @endif
-
-                            {{-- Fixed Slot 3: Back Text --}}
-                            @if ($bankCard->back_text !== '')
-                                <div class="absolute rounded px-1 max-w-[200px]" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
-                                    <div class="text-xs font-medium italic opacity-90 truncate">
-                                        {{ $bankCard->back_text }}
-                                    </div>
-                                </div>
-                            @endif
-
-                            {{-- Fixed Slot 4: CVV2 --}}
+                            {{-- Slot 3: Security Row --}}
+                            {{-- CVV2 on LEFT --}}
                             @if ($bankCard->security_cvv_enabled && $bankCard->cvv2 !== '')
                                 <div class="absolute rounded px-1" style="left: {{ $slots['cvv2']['x'] * 100 }}%; top: {{ $slots['cvv2']['y'] * 100 }}%;">
-                                    <div class="text-[9px] font-bold tracking-widest opacity-75">CVV2</div>
-                                    <div class="font-mono font-bold text-xs tracking-widest" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                    <div class="text-[9px] font-bold tracking-widest {{ $cardSubtextColor }}">CVV2</div>
+                                    <div class="font-mono font-bold text-xs tracking-widest {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $bankCard->cvv2 }}
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Fixed Slot 5: Expiry Date --}}
+                            {{-- Expiry Date on RIGHT (Strict LTR Month/Year order) --}}
                             @if ($bankCard->security_expiry_enabled && ($bankCard->expiry_month !== '' || $bankCard->expiry_year !== ''))
                                 <div class="absolute rounded px-1" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;">
-                                    <div class="text-[9px] font-bold tracking-widest opacity-75">EXPIRES</div>
-                                    <div class="font-mono font-bold text-xs tracking-wider" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
-                                        {{ $bankCard->expiry_month ? fa_digits($bankCard->expiry_month) : '--' }}/{{ $bankCard->expiry_year ? fa_digits($bankCard->expiry_year) : '--' }}
+                                    <div class="text-[9px] font-bold tracking-widest {{ $cardSubtextColor }}">EXPIRES</div>
+                                    <div class="font-mono font-bold text-xs tracking-wider inline-flex items-center gap-0.5 {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                        <span>{{ $bankCard->expiry_month ? fa_digits($bankCard->expiry_month) : '--' }}</span>
+                                        <span class="opacity-70">/</span>
+                                        <span>{{ $bankCard->expiry_year ? fa_digits(substr($bankCard->expiry_year, -2)) : '--' }}</span>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Slot 4: Back Custom Text (ONLY when placement = 'back') --}}
+                            @if ($bankCard->back_text !== '' && $bankCard->custom_text_placement === 'back')
+                                <div class="absolute rounded px-1 max-w-[240px]" style="left: {{ $slots['back_text']['x'] * 100 }}%; top: {{ $slots['back_text']['y'] * 100 }}%;">
+                                    <div class="text-xs font-medium italic opacity-90 truncate {{ $cardTextColor }}">
+                                        {{ $bankCard->back_text }}
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Slot 5: Card Holder Name (Bottom) --}}
+                            @if ($bankCard->card_holder_name !== '')
+                                <div class="absolute rounded px-1 max-w-[70%]" style="left: {{ $slots['card_holder_name']['x'] * 100 }}%; top: {{ $slots['card_holder_name']['y'] * 100 }}%;">
+                                    <div class="h-6 sm:h-7 rounded px-2.5 flex items-center font-serif italic text-xs font-bold tracking-wider {{ $cardSignatureBoxClass }}">
+                                        <span class="truncate">{{ $bankCard->card_holder_name }}</span>
                                     </div>
                                 </div>
                             @endif
