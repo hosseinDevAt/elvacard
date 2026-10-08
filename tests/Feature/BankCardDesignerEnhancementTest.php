@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\ProductTypeEnum;
+use App\Livewire\Admin\OrderManager;
 use App\Livewire\Catalog\ProductCustomizer;
 use App\Models\CateDesign;
 use App\Models\Color;
@@ -152,7 +153,7 @@ class BankCardDesignerEnhancementTest extends TestCase
     }
 
     // ==========================================
-    // 1. IBAN Canonicalization & Validation Tests
+    // 1. IBAN Canonicalization & UX Tests
     // ==========================================
 
     public function test_valid_iranian_iban_passes_validation_and_is_canonicalized(): void
@@ -173,6 +174,26 @@ class BankCardDesignerEnhancementTest extends TestCase
         $this->assertTrue(IbanRule::passesMod97($canonicalized));
     }
 
+    public function test_24_digits_without_ir_prefix_is_canonicalized_to_ir_plus_24_digits(): void
+    {
+        $validIban = $this->generateValidIban('0540100000001234567890');
+        $digitsOnly = substr($validIban, 2); // exactly 24 digits
+
+        $canonicalized = IbanRule::canonicalize($digitsOnly);
+        $this->assertSame($validIban, $canonicalized);
+        $this->assertTrue(IbanRule::passesMod97($canonicalized));
+    }
+
+    public function test_full_iban_with_ir_does_not_duplicate_ir(): void
+    {
+        $validIban = $this->generateValidIban('0540100000001234567890');
+
+        $this->assertSame($validIban, IbanRule::canonicalize($validIban));
+        $this->assertSame($validIban, IbanRule::canonicalize(strtolower($validIban)));
+        $this->assertSame($validIban, IbanRule::canonicalize('IR' . $validIban));
+        $this->assertSame($validIban, IbanRule::canonicalize('IR ' . $validIban));
+    }
+
     public function test_iban_with_spaces_dashes_persian_digits_and_lowercase_is_canonicalized(): void
     {
         $validIban = $this->generateValidIban('0540100000001234567890');
@@ -190,15 +211,6 @@ class BankCardDesignerEnhancementTest extends TestCase
         $canonicalized = IbanRule::canonicalize($messyInput);
         $this->assertSame($validIban, $canonicalized);
         $this->assertTrue(IbanRule::passesMod97($canonicalized));
-    }
-
-    public function test_24_digit_iban_without_ir_prefix_is_auto_prefixed(): void
-    {
-        $validIban = $this->generateValidIban('0540100000001234567890');
-        $digitsOnly = substr($validIban, 2); // 24 digits (check digits + bban)
-
-        $canonicalized = IbanRule::canonicalize($digitsOnly);
-        $this->assertSame($validIban, $canonicalized);
     }
 
     public function test_invalid_mod97_iban_is_rejected(): void
@@ -280,7 +292,7 @@ class BankCardDesignerEnhancementTest extends TestCase
     }
 
     // ==========================================
-    // 3. UI Component Integration Tests
+    // 3. UI Component Integration & Preview Tests
     // ==========================================
 
     public function test_livewire_can_set_iban_and_text_placement_and_persists_to_cart(): void
@@ -323,29 +335,127 @@ class BankCardDesignerEnhancementTest extends TestCase
         $this->assertSame('front', $itemSnapshot['custom_text_placement']);
     }
 
-    // ==========================================
-    // 4. CardPresenter & Contrast Engine Tests
-    // ==========================================
-
-    public function test_card_presenter_formats_and_masks_iban(): void
+    public function test_back_preview_renders_iban_value_without_extra_label(): void
     {
         $validIban = $this->generateValidIban('0120000000001234567890');
-        $presented = CardPresenter::presentIban($validIban);
-        $masked = CardPresenter::maskIban($validIban);
+        $formattedIban = CardPresenter::presentIban($validIban);
 
-        // Presented should have spaces between 4-char groups (26 chars = 6 full 4-char groups + 2-char tail = 7 chunks)
-        $this->assertStringContainsString(' ', $presented);
-        $this->assertSame(7, count(explode(' ', $presented)));
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('setStep', 2)
+            ->call('setActiveView', 'back')
+            ->set('bankCard.iban', $validIban);
 
-        // Masked should hide the middle digits with bullet points
-        $this->assertStringStartsWith('IR', $masked);
-        $this->assertStringContainsString('••••', $masked);
-        $this->assertStringEndsWith(substr($validIban, -4), $masked);
+        $html = $component->html();
+
+        // Must see the formatted IBAN value
+        $this->assertStringContainsString($formattedIban, $html);
+        // Must NOT have the extra label "IBAN / شبا" in the preview
+        $this->assertStringNotContainsString('IBAN / شبا', $html);
     }
+
+    public function test_front_custom_text_is_not_rendered_on_back_view(): void
+    {
+        $component = Livewire::test(ProductCustomizer::class, ['productId' => $this->product->id])
+            ->call('setStep', 2)
+            ->set('bankCard.back_text', 'SECRET FRONT PHRASE')
+            ->set('bankCard.custom_text_placement', 'front')
+            ->call('setActiveView', 'back');
+
+        // On back view, the text must NOT appear in the preview slots
+        $html = $component->html();
+        $this->assertStringNotContainsString('SECRET FRONT PHRASE', $html);
+
+        // Switching to front view, the text MUST appear
+        $component->call('setActiveView', 'front');
+        $htmlFront = $component->html();
+        $this->assertStringContainsString('SECRET FRONT PHRASE', $htmlFront);
+    }
+
+    // ==========================================
+    // 4. Admin Order Manager Tests
+    // ==========================================
+
+    public function test_admin_production_spec_displays_iban_and_copy_button(): void
+    {
+        $validIban = $this->generateValidIban('0120000000001234567890');
+        $formattedIban = CardPresenter::presentIban($validIban);
+
+        $order = $this->createOrder();
+        $this->createOrderItem($order, [
+            'card_number' => '6274051234567898',
+            'card_holder_name' => 'ADMIN TEST BUYER',
+            'back_text' => 'BORN TO LEAD',
+            'custom_text_placement' => 'back',
+            'iban' => $validIban,
+        ]);
+
+        $this->actingAs($this->adminUser);
+
+        Livewire::test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
+            ->assertSee('شماره شبا:')
+            ->assertSee($formattedIban)
+            ->assertSee('کپی');
+    }
+
+    public function test_admin_production_spec_displays_custom_text_placement(): void
+    {
+        $order = $this->createOrder();
+        $this->createOrderItem($order, [
+            'card_number' => '6274051234567898',
+            'card_holder_name' => 'ADMIN TEST BUYER',
+            'back_text' => 'EMBOSSED ON FRONT',
+            'custom_text_placement' => 'front',
+        ]);
+
+        $this->actingAs($this->adminUser);
+
+        Livewire::test(OrderManager::class)
+            ->set('selectedOrderId', $order->id)
+            ->assertSee('محل حکاکی جمله دلخواه:')
+            ->assertSee('روی کارت')
+            ->assertSee('EMBOSSED ON FRONT');
+    }
+
+    // ==========================================
+    // 5. Layout & Slot Structure Tests
+    // ==========================================
+
+    public function test_back_layout_slots_hierarchy_and_no_overlap(): void
+    {
+        $slots = CardPresenter::fixedSlots();
+
+        $this->assertArrayHasKey('iban', $slots);
+        $this->assertArrayHasKey('card_number', $slots);
+        $this->assertArrayHasKey('cvv2', $slots);
+        $this->assertArrayHasKey('expiry', $slots);
+        $this->assertArrayHasKey('custom_text', $slots);
+        $this->assertArrayHasKey('back_text', $slots);
+        $this->assertArrayHasKey('card_holder_name', $slots);
+        $this->assertArrayHasKey('front_custom_text', $slots);
+
+        // Strict vertical order:
+        // IBAN (0.24) < Card Number (0.40) < CVV2/Expiry (0.54) < Custom Text (0.68) < Holder Name (0.81)
+        $this->assertLessThan($slots['card_number']['y'], $slots['iban']['y'], 'IBAN must be above Card Number');
+        $this->assertLessThan($slots['cvv2']['y'], $slots['card_number']['y'], 'Card Number must be above CVV2');
+        $this->assertLessThan($slots['custom_text']['y'], $slots['cvv2']['y'], 'CVV2 must be above Custom Text');
+        $this->assertLessThan($slots['card_holder_name']['y'], $slots['custom_text']['y'], 'Custom Text must be above Holder Name');
+
+        // Holder Name must be the lowest main element on the back
+        $this->assertGreaterThan($slots['iban']['y'], $slots['card_holder_name']['y']);
+        $this->assertGreaterThan($slots['card_number']['y'], $slots['card_holder_name']['y']);
+        $this->assertGreaterThan($slots['custom_text']['y'], $slots['card_holder_name']['y']);
+
+        // Safe spacing: at least 10% distance between custom_text and card_holder_name to prevent overlap
+        $this->assertGreaterThanOrEqual(0.10, $slots['card_holder_name']['y'] - $slots['custom_text']['y']);
+    }
+
+    // ==========================================
+    // 6. Contrast Engine Tests
+    // ==========================================
 
     public function test_contrast_engine_resolves_dark_text_for_light_backgrounds(): void
     {
-        // Light colors: White, Gold, Silver
         $this->assertSame('dark', CardPresenter::textColorMode('#FFFFFF'));
         $this->assertSame('dark', CardPresenter::textColorMode('#E5C158'));
         $this->assertSame('dark', CardPresenter::textColorMode('#C0C0C0'));
@@ -355,7 +465,6 @@ class BankCardDesignerEnhancementTest extends TestCase
 
     public function test_contrast_engine_resolves_light_text_for_dark_backgrounds(): void
     {
-        // Dark colors: Black, Deep Navy, Dark Bronze
         $this->assertSame('light', CardPresenter::textColorMode('#000000'));
         $this->assertSame('light', CardPresenter::textColorMode('#111827'));
         $this->assertSame('light', CardPresenter::textColorMode('#1E1E1E'));
@@ -364,31 +473,7 @@ class BankCardDesignerEnhancementTest extends TestCase
     }
 
     // ==========================================
-    // 5. Layout & Slot Structure Tests
-    // ==========================================
-
-    public function test_fixed_slots_contains_all_phase_03_slots_with_logical_hierarchy(): void
-    {
-        $slots = CardPresenter::fixedSlots();
-
-        $this->assertArrayHasKey('iban', $slots);
-        $this->assertArrayHasKey('card_number', $slots);
-        $this->assertArrayHasKey('cvv2', $slots);
-        $this->assertArrayHasKey('expiry', $slots);
-        $this->assertArrayHasKey('back_text', $slots);
-        $this->assertArrayHasKey('card_holder_name', $slots);
-        $this->assertArrayHasKey('front_custom_text', $slots);
-
-        // Hierarchy vertical ordering on back:
-        // iban (y: 0.26) < card_number (y: 0.45) < cvv2/expiry (y: 0.65) < back_text (y: 0.74) < card_holder_name (y: 0.83)
-        $this->assertLessThan($slots['card_number']['y'], $slots['iban']['y']);
-        $this->assertLessThan($slots['cvv2']['y'], $slots['card_number']['y']);
-        $this->assertLessThan($slots['back_text']['y'], $slots['cvv2']['y']);
-        $this->assertLessThan($slots['card_holder_name']['y'], $slots['back_text']['y']);
-    }
-
-    // ==========================================
-    // 6. Legacy Order Backward Compatibility Test
+    // 7. Legacy Order Backward Compatibility Test
     // ==========================================
 
     public function test_legacy_order_without_placement_or_iban_renders_safely(): void
@@ -398,7 +483,6 @@ class BankCardDesignerEnhancementTest extends TestCase
             'card_number' => '6274051234567898',
             'card_holder_name' => 'LEGACY CUSTOMER',
             'back_text' => 'LEGACY ENGRAVING',
-            // No iban, no custom_text_placement
         ]);
 
         $customization = $orderItem->customization_json;

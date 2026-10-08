@@ -60,7 +60,14 @@ class IbanRule implements ValidationRule
         $value = preg_replace('/[\s\-_]+/', '', $value) ?? '';
         $value = strtoupper($value);
 
-        if (preg_match('/^[0-9]{24}$/', $value)) {
+        // Strip duplicate or accidental repeated IR prefixes
+        while (str_starts_with($value, 'IRIR')) {
+            $value = substr($value, 2);
+        }
+
+        if (str_starts_with($value, 'IR')) {
+            $value = 'IR' . preg_replace('/^IR+/', '', substr($value, 2));
+        } elseif (preg_match('/^[0-9]{24}$/', $value)) {
             $value = 'IR' . $value;
         }
 

@@ -239,14 +239,19 @@
                                             <span class="text-slate-900 font-bold text-xs select-all">{{ $custom['card_holder_name'] ?? 'ثبت نشده' }}</span>
                                         </div>
                                         <div class="bg-white p-2.5 rounded-lg border border-slate-200/60">
-                                            <span class="text-slate-400 block text-[11px]">متن دلخواه پشت کارت:</span>
-                                            <span class="text-slate-900 font-bold text-xs select-all">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span>
+                                            <span class="text-slate-400 block text-[11px]">
+                                                محل حکاکی جمله دلخواه:
+                                                <span class="font-bold {{ ($custom['custom_text_placement'] ?? 'back') === 'front' ? 'text-purple-700' : 'text-slate-700' }}">
+                                                    {{ ($custom['custom_text_placement'] ?? 'back') === 'front' ? 'روی کارت' : 'پشت کارت' }}
+                                                </span>
+                                            </span>
+                                            <span class="text-slate-900 font-bold text-xs select-all block mt-0.5">{{ $custom['back_text'] ?? 'ثبت نشده' }}</span>
                                         </div>
                                     </div>
 
-                                    {{-- Full Card Production Parameters (PAN, Expiry, CVV2) --}}
+                                    {{-- Full Card Production Parameters (PAN, IBAN, Expiry, CVV2) --}}
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
-                                        <div class="md:col-span-6 bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-xl border border-amber-200 flex items-center justify-between">
+                                        <div class="{{ !empty($custom['iban']) ? 'md:col-span-6' : 'md:col-span-6' }} bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-xl border border-amber-200 flex items-center justify-between">
                                             <div>
                                                 <span class="text-amber-800 font-bold block text-[11px] mb-0.5">شماره کامل کارت (PAN):</span>
                                                 <span class="font-mono text-slate-950 font-black text-sm sm:text-base tracking-widest select-all" dir="ltr">{{ $formattedPan }}</span>
@@ -259,7 +264,24 @@
                                             @endif
                                         </div>
 
-                                        <div class="md:col-span-3 bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                                        @if (!empty($custom['iban']))
+                                            @php
+                                                $formattedIban = \App\Services\Customization\CardPresenter::presentIban($custom['iban']);
+                                                $canonicalIban = \App\Rules\IbanRule::canonicalize($custom['iban']);
+                                            @endphp
+                                            <div class="md:col-span-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-xl border border-blue-200 flex items-center justify-between">
+                                                <div class="min-w-0">
+                                                    <span class="text-blue-900 font-bold block text-[11px] mb-0.5">شماره شبا:</span>
+                                                    <span class="font-mono text-slate-950 font-black text-xs sm:text-sm tracking-wide select-all truncate block" dir="ltr">{{ $formattedIban }}</span>
+                                                </div>
+                                                <button type="button" x-data="{ copied: false }" @click="navigator.clipboard.writeText('{{ $canonicalIban }}'); copied = true; setTimeout(() => copied = false, 2000)" class="ms-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-200/80 hover:bg-blue-300 text-blue-900 transition shrink-0">
+                                                    <span x-show="!copied">کپی</span>
+                                                    <span x-show="copied" class="text-green-700">کپی شد!</span>
+                                                </button>
+                                            </div>
+                                        @endif
+
+                                        <div class="{{ !empty($custom['iban']) ? 'md:col-span-6' : 'md:col-span-3' }} bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
                                             <div>
                                                 <span class="text-slate-400 block text-[11px]">تاریخ انقضا:</span>
                                                 <span class="font-mono text-slate-900 font-extrabold text-sm select-all" dir="ltr">
@@ -274,7 +296,7 @@
                                             @endif
                                         </div>
 
-                                        <div class="md:col-span-3 bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                                        <div class="{{ !empty($custom['iban']) ? 'md:col-span-6' : 'md:col-span-3' }} bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
                                             <div>
                                                 <span class="text-slate-400 block text-[11px]">کد امنیتی CVV2:</span>
                                                 <span class="font-mono text-slate-900 font-extrabold text-sm select-all" dir="ltr">
@@ -373,10 +395,9 @@
                                                 {{-- Magnetic Stripe --}}
                                                 <div class="absolute top-2.5 inset-x-0 h-7 sm:h-8 bg-neutral-950 shadow-inner pointer-events-none"></div>
 
-                                                {{-- Slot 1: IBAN / شبا --}}
+                                                {{-- Slot 1: IBAN (no extra label) --}}
                                                 @if (!empty($custom['iban']))
                                                     <div class="absolute rounded px-1 max-w-[90%]" style="left: {{ $slots['iban']['x'] * 100 }}%; top: {{ $slots['iban']['y'] * 100 }}%;">
-                                                        <div class="text-[8px] font-bold tracking-wider {{ $cardSubtextColor }}">IBAN / شبا</div>
                                                         <div class="font-mono text-[10px] sm:text-[11px] font-bold tracking-wider select-all {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                                             {{ \App\Services\Customization\CardPresenter::presentIban($custom['iban']) }}
                                                         </div>

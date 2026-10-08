@@ -516,11 +516,10 @@
                             {{-- Top Magnetic Stripe --}}
                             <div class="absolute top-2 inset-x-0 h-9 sm:h-10 bg-gray-950 shadow-inner pointer-events-none"></div>
 
-                            {{-- Slot 1: IBAN / شبا (Top near stripe) --}}
+                            {{-- Slot 1: IBAN (Top near stripe, no extra label) --}}
                             @if ($bankCard->iban !== '')
                                 <div class="absolute rounded px-1 max-w-[90%]" style="left: {{ $slots['iban']['x'] * 100 }}%; top: {{ $slots['iban']['y'] * 100 }}%;">
-                                    <div class="text-[9px] font-bold tracking-wider {{ $cardSubtextColor }}">IBAN / شبا</div>
-                                    <div class="font-mono text-xs font-bold tracking-wider {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                                    <div class="font-mono text-xs sm:text-[13px] font-bold tracking-wider {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                                         {{ $this->displayIban }}
                                     </div>
                                 </div>

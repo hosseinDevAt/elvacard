@@ -128,12 +128,13 @@ class CardPresenter
     public static function fixedSlots(): array
     {
         return [
-            'iban' => ['x' => 0.08, 'y' => 0.26],
-            'card_number' => ['x' => 0.08, 'y' => 0.45],
-            'cvv2' => ['x' => 0.08, 'y' => 0.65],
-            'expiry' => ['x' => 0.70, 'y' => 0.65],
-            'back_text' => ['x' => 0.08, 'y' => 0.74],
-            'card_holder_name' => ['x' => 0.08, 'y' => 0.83],
+            'iban' => ['x' => 0.08, 'y' => 0.24],
+            'card_number' => ['x' => 0.08, 'y' => 0.40],
+            'cvv2' => ['x' => 0.08, 'y' => 0.54],
+            'expiry' => ['x' => 0.70, 'y' => 0.54],
+            'custom_text' => ['x' => 0.08, 'y' => 0.68],
+            'back_text' => ['x' => 0.08, 'y' => 0.68],
+            'card_holder_name' => ['x' => 0.08, 'y' => 0.81],
             'front_custom_text' => ['x' => 0.08, 'y' => 0.84],
         ];
     }

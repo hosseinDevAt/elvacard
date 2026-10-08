@@ -9,19 +9,25 @@
     <div class="space-y-1.5">
         <div class="flex items-center justify-between">
             <label for="iban" class="block text-xs font-bold text-slate-300">
-                شماره شبا (IBAN)
+                شماره شبا
             </label>
             <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">اختیاری</span>
         </div>
-        <input
-            id="iban"
-            type="text"
-            autocomplete="off"
-            maxlength="34"
-            wire:model.live.debounce.150ms="bankCard.iban"
-            placeholder="IR12 0120 0000 0000 0012 3456 78"
-            class="w-full rounded-xl border border-[#152244] bg-[#010619] px-4 py-2.5 text-sm text-white font-mono dir-ltr text-start placeholder-slate-600 focus:border-[#ffde5b] focus:outline-none focus:ring-1 focus:ring-[#ffde5b]"
-        >
+        <div class="relative flex items-center rounded-xl border border-[#152244] bg-[#010619] focus-within:border-[#ffde5b] focus-within:ring-1 focus-within:ring-[#ffde5b] overflow-hidden dir-ltr">
+            <span class="inline-flex items-center justify-center px-3.5 py-2.5 bg-[#070e24] border-r border-[#152244] text-xs font-mono font-bold text-[#ffde5b] select-none shrink-0" aria-hidden="true">
+                IR
+            </span>
+            <input
+                id="iban"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="26"
+                wire:model.live.debounce.150ms="bankCard.iban"
+                placeholder="۲۴ رقم شماره شبا"
+                class="w-full bg-transparent px-3.5 py-2.5 text-sm text-white font-mono dir-ltr text-start placeholder-slate-600 focus:outline-none"
+            >
+        </div>
         @error('bankCard.iban')
             <p class="text-xs text-rose-400">{{ $message }}</p>
         @enderror

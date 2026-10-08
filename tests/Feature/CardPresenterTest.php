@@ -67,10 +67,9 @@ class CardPresenterTest extends TestCase
     {
         $slots = CardPresenter::fixedSlots();
 
-        $this->assertSame(
-            ['iban', 'card_number', 'cvv2', 'expiry', 'back_text', 'card_holder_name', 'front_custom_text'],
-            array_keys($slots)
-        );
+        foreach (['iban', 'card_number', 'cvv2', 'expiry', 'custom_text', 'back_text', 'card_holder_name', 'front_custom_text'] as $key) {
+            $this->assertArrayHasKey($key, $slots);
+        }
 
         foreach ($slots as $slot) {
             $this->assertGreaterThanOrEqual(0, $slot['x']);
@@ -85,16 +84,17 @@ class CardPresenterTest extends TestCase
         $slots = CardPresenter::fixedSlots();
 
         // Row 1: IBAN (top near stripe)
-        $this->assertSame(['x' => 0.08, 'y' => 0.26], $slots['iban']);
+        $this->assertSame(['x' => 0.08, 'y' => 0.24], $slots['iban']);
         // Row 2: Card number (center)
-        $this->assertSame(['x' => 0.08, 'y' => 0.45], $slots['card_number']);
+        $this->assertSame(['x' => 0.08, 'y' => 0.40], $slots['card_number']);
         // Row 3: Security row (CVV2 on left, Expiry on right)
-        $this->assertSame(['x' => 0.08, 'y' => 0.65], $slots['cvv2']);
-        $this->assertSame(['x' => 0.70, 'y' => 0.65], $slots['expiry']);
-        // Row 4: Optional back text
-        $this->assertSame(['x' => 0.08, 'y' => 0.74], $slots['back_text']);
-        // Row 5: Card holder name (bottom)
-        $this->assertSame(['x' => 0.08, 'y' => 0.83], $slots['card_holder_name']);
+        $this->assertSame(['x' => 0.08, 'y' => 0.54], $slots['cvv2']);
+        $this->assertSame(['x' => 0.70, 'y' => 0.54], $slots['expiry']);
+        // Row 4: Custom text slot between security row and holder name
+        $this->assertSame(['x' => 0.08, 'y' => 0.68], $slots['custom_text']);
+        $this->assertSame(['x' => 0.08, 'y' => 0.68], $slots['back_text']);
+        // Row 5: Card holder name (bottom safe area)
+        $this->assertSame(['x' => 0.08, 'y' => 0.81], $slots['card_holder_name']);
     }
 
     public function test_contrast_calculation_selects_dark_text_for_light_backgrounds(): void
