@@ -194,9 +194,6 @@
                 class="w-full rounded-xl border border-[#152244] bg-[#010619] px-4 py-2.5 text-sm text-white font-mono placeholder-slate-600 focus:border-[#ffde5b] focus:outline-none focus:ring-1 focus:ring-[#ffde5b] text-start"
                 style="direction: ltr; text-align: start;"
             >
-            <p class="text-[11px] text-slate-400">
-                راهنما: <span dir="ltr" class="font-mono text-slate-300">7744330•••••</span> (نقاط صرفاً نشان‌دهنده ادامه شماره سریال هستند؛ فقط ارقام شماره سریال کارت را وارد کنید)
-            </p>
             @error('fuelCard.oil_serial_number')
                 <p class="text-xs text-rose-400">{{ $message }}</p>
             @enderror

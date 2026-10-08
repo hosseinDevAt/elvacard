@@ -351,31 +351,50 @@ class FuelCardDesignerEnhancementTest extends TestCase
 
     public function test_oil_serial_number_formatting(): void
     {
-        $this->assertSame('7744330 •••••', FuelCardCustomization::formatOilSerialNumber('7744330'));
+        $this->assertSame('7744330', FuelCardCustomization::formatOilSerialNumber('7744330'));
         $this->assertSame('', FuelCardCustomization::formatOilSerialNumber(null));
         $this->assertSame('', FuelCardCustomization::formatOilSerialNumber('   '));
     }
 
-    public function test_oil_serial_number_placeholder_and_guide_in_designer(): void
-    {
-        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD);
-
-        Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
-            ->set('step', 2)
-            ->assertSeeHtml('placeholder="7744330•••••"')
-            ->assertSeeHtml('7744330•••••</span> (نقاط صرفاً نشان‌دهنده ادامه شماره سریال هستند');
-    }
-
-    public function test_fuel_card_back_preview_has_no_black_strip_and_has_full_table(): void
+    public function test_oil_serial_number_placeholder_has_dots_but_no_extra_guide_text(): void
     {
         [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD);
 
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
             ->call('setStep', 2)
+            ->assertSeeHtml('placeholder="7744330•••••"')
+            ->assertDontSee('نقاط صرفاً نشان‌دهنده');
+    }
+
+    public function test_fuel_card_back_preview_has_no_black_strip_and_has_all_7_fixed_rows_always(): void
+    {
+        [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD);
+
+        $test = Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
+            ->call('setStep', 2)
             ->assertSet('activeView', 'back')
             ->assertDontSeeHtml('bg-black/80 rounded-sm mb-1 opacity-90 shadow-inner')
             ->assertSeeHtml('h-full')
-            ->assertSeeHtml('مشخصات کارت سوخت اختصاصی');
+            ->assertSeeHtml('مشخصات کارت سوخت اختصاصی')
+            // All 7 rows are present initially even when empty
+            ->assertSee('پلاک ایران')
+            ->assertSee('نام مالک')
+            ->assertSee('نوع خودرو')
+            ->assertSee('مدل خودرو')
+            ->assertSee('سریال نفت')
+            ->assertSee('شماره تلفن')
+            ->assertSee('شماره شاسی')
+            ->assertSee('—');
+
+        // When oil_serial_number is entered, preview displays ONLY actual entered value (no trailing dots)
+        $test->set('fuelCard.oil_serial_number', '7744330')
+            ->assertSee('7744330')
+            ->assertDontSee('7744330 •••••');
+
+        // When field is cleared, row remains and placeholder dash returns
+        $test->set('fuelCard.oil_serial_number', '')
+            ->assertSee('سریال نفت')
+            ->assertSee('—');
     }
 }
 

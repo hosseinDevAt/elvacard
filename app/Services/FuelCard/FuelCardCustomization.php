@@ -280,18 +280,11 @@ class FuelCardCustomization
     }
 
     /**
-     * Formats oil company serial number with trailing masked stars/dots for preview.
-     * E.g. "7744330" -> "7744330 •••••"
+     * Formats oil company serial number for display.
      */
     public static function formatOilSerialNumber(?string $serial): string
     {
-        $serial = trim((string) $serial);
-
-        if ($serial === '') {
-            return '';
-        }
-
-        return $serial . ' •••••';
+        return trim((string) $serial);
     }
 
     /**
