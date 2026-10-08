@@ -121,17 +121,21 @@ class SecurityInfrastructureHardeningTest extends TestCase
         $order = $this->placeOrder('09120000000');
 
         $this->assertMatchesRegularExpression(
-            '/^ORD-\d{4}-\d{6}$/',
+            '/^[0-9]{5}$/',
             $order->reference,
-            'Sanity: the reference is sequential, so it can never be a secret.',
+            'Sanity: the reference is sequential 5 digits, so it can never be a secret alone.',
         );
 
-        // The predictable reference, even paired with the order's real phone
-        // number, must not authorise anything.
+        // The predictable reference alone without the correct phone last 4 digits
+        // must not authorise anything.
         $this->post(route('order-tracking.check'), [
             'reference' => $order->reference,
-            'customer_phone' => '09120000000',
-        ])->assertSessionHasErrors('token');
+        ])->assertSessionHasErrors('customer_phone_last4');
+
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => '9999', // wrong last 4 digits
+        ])->assertSessionHasErrors('reference');
 
         $this->assertGuest();
     }

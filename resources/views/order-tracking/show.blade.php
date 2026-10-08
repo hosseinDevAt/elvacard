@@ -27,6 +27,93 @@
                 </div>
 
                 <div class="p-6 sm:p-8 space-y-6">
+                    {{-- 4-Stage Visual Status Stepper --}}
+                    @php
+                        $currentStep = $order->customerStatusStep();
+                        $customerStatusLabel = $order->customerStatusLabel();
+                        $steps = [
+                            1 => ['title' => 'در حال بررسی', 'desc' => 'بررسی سفارش و ثبت اولیه'],
+                            2 => ['title' => 'تایید پرداخت', 'desc' => 'تأیید مالی و آماده به تولید'],
+                            3 => ['title' => 'درحال آماده سازی', 'desc' => 'چاپ و آماده‌سازی محصول'],
+                            4 => ['title' => 'تکمیل شد', 'desc' => 'تکمیل و ارسال مرسوله'],
+                        ];
+                    @endphp
+
+                    @if ($order->status === \App\Enums\OrderStatusEnum::CANCELLED)
+                        {{-- Emergency state when cancelled --}}
+                        <div class="rounded-2xl border border-rose-200 bg-rose-50/90 p-5 text-rose-900 shadow-xs">
+                            <div class="flex items-center gap-3">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600 font-bold">✕</span>
+                                <div>
+                                    <h3 class="text-sm font-extrabold text-rose-950">وضعیت سفارش: لغو شده</h3>
+                                    <p class="mt-0.5 text-xs text-rose-700">این سفارش لغو گردیده است. در صورت نیاز به راهنمایی بیشتر با پشتیبانی تماس بگیرید.</p>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        {{-- Standard 4-Step Stepper --}}
+                        <div class="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs">
+                            <div class="mb-5 flex items-center justify-between border-b border-slate-100 pb-3">
+                                <span class="text-xs font-bold text-slate-500">مراحل پیشرفت سفارش</span>
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#010619] text-[#ffde5b] px-3 py-1 text-xs font-black shadow-xs">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-[#ffde5b] animate-pulse"></span>
+                                    <span>وضعیت کنونی: {{ $customerStatusLabel }}</span>
+                                </span>
+                            </div>
+
+                            {{-- Steps Row --}}
+                            <div class="relative">
+                                {{-- Background connecting line (Desktop) --}}
+                                <div class="hidden sm:block absolute top-5 right-8 left-8 h-1 bg-slate-100 z-0">
+                                    <div
+                                        class="h-full bg-[#010619] transition-all duration-500"
+                                        style="width: {{ $currentStep <= 1 ? '0%' : ($currentStep === 2 ? '33.33%' : ($currentStep === 3 ? '66.66%' : '100%')) }};"
+                                    ></div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 relative z-10">
+                                    @foreach ($steps as $stepNum => $stepData)
+                                        @php
+                                            $isPassed = $currentStep > $stepNum;
+                                            $isCurrent = $currentStep === $stepNum;
+                                            $isUpcoming = $currentStep < $stepNum;
+                                        @endphp
+                                        <div class="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-2 p-2.5 sm:p-0 rounded-xl sm:rounded-none {{ $isCurrent ? 'bg-amber-50/50 sm:bg-transparent' : '' }}">
+                                            {{-- Circle indicator --}}
+                                            <div class="relative flex items-center justify-center">
+                                                @if ($isPassed)
+                                                    <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#010619] text-[#ffde5b] shadow-sm">
+                                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </div>
+                                                @elseif ($isCurrent)
+                                                    <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#010619] text-[#ffde5b] ring-4 ring-[#ffde5b]/40 shadow-md">
+                                                        <span class="font-mono text-sm font-black">{{ $stepNum }}</span>
+                                                    </div>
+                                                @else
+                                                    <div class="flex h-10 w-10 items-center justify-center rounded-2xl border-2 border-slate-200 bg-white text-slate-400">
+                                                        <span class="font-mono text-sm font-bold">{{ $stepNum }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            {{-- Label & Description --}}
+                                            <div class="min-w-0 flex-1 sm:flex-initial">
+                                                <h4 class="text-xs sm:text-sm font-extrabold {{ $isCurrent ? 'text-[#010619]' : ($isPassed ? 'text-slate-900' : 'text-slate-400') }}">
+                                                    {{ $stepData['title'] }}
+                                                </h4>
+                                                <p class="text-[11px] leading-tight {{ $isCurrent ? 'text-amber-800 font-semibold' : 'text-slate-400' }} mt-0.5">
+                                                    {{ $stepData['desc'] }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Order Stats Grid --}}
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         <div class="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
@@ -46,17 +133,10 @@
                             </span>
                         </div>
 
-                        <div class="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                            <span class="block text-xs font-medium text-slate-500">وضعیت سفارش</span>
-                            <span class="mt-1.5 inline-block rounded-lg bg-slate-200/80 px-2.5 py-1 text-xs font-bold text-slate-800">
-                                {{ $order->status?->faLabel() ?? $order->status }}
-                            </span>
-                        </div>
-
-                        <div class="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 col-span-2 sm:col-span-2">
-                            <span class="block text-xs font-medium text-slate-500">وضعیت پرداخت</span>
-                            <span class="mt-1.5 inline-block rounded-lg bg-slate-200/80 px-2.5 py-1 text-xs font-bold text-slate-800">
-                                {{ $order->payment_status?->faLabel() ?? $order->payment_status }}
+                        <div class="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 col-span-2 sm:col-span-3">
+                            <span class="block text-xs font-medium text-slate-500">وضعیت فعلی سفارش</span>
+                            <span class="mt-1.5 inline-block rounded-lg bg-[#010619] text-[#ffde5b] px-3 py-1.5 text-xs font-extrabold shadow-xs">
+                                {{ $customerStatusLabel }}
                             </span>
                         </div>
                     </div>

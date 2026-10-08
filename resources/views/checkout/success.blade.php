@@ -112,20 +112,21 @@
                                 <svg class="h-4 w-4 text-[#ffde5b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                                 </svg>
-                                <h2 class="text-sm font-bold text-white">پیگیری سفارش</h2>
+                                <h2 class="text-sm font-bold text-white">پیگیری آسان سفارش</h2>
                             </div>
-                            <span class="rounded-full bg-[#ffde5b]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#ffde5b]">کد اختصاصی</span>
+                            <span class="rounded-full bg-[#ffde5b]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#ffde5b]">سفارش {{ $order->reference }}</span>
                         </div>
-                        <div class="mt-3 text-xs text-slate-300">
-                            <p>این کد پیگیری را نگه دارید. با آن می‌توانید بدون ورود به حساب، وضعیت سفارش را ببینید.</p>
-                            <div class="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-center sm:text-left">
-                                <span class="font-mono text-sm sm:text-base font-bold tracking-wider text-[#ffde5b] select-all break-all" dir="ltr">
+                        <div class="mt-3 text-xs text-slate-300 space-y-2">
+                            <p>با <strong class="text-white">شماره سفارش ({{ $order->reference }})</strong> و <strong class="text-white">۴ رقم آخر شماره موبایل خود</strong> می‌توانید در هر زمان وضعیت سفارش را در بخش پیگیری سفارش مشاهده نمایید.</p>
+                            <div class="rounded-xl border border-white/10 bg-white/5 p-3 text-center sm:text-left">
+                                <span class="font-mono text-xs sm:text-sm text-slate-400 block mb-1">کد توکن امنیتی سفارش:</span>
+                                <span class="font-mono text-xs sm:text-sm font-bold tracking-wider text-[#ffde5b] select-all break-all" dir="ltr">
                                     {{ $order->token }}
                                 </span>
                             </div>
-                            <div class="mt-3 text-left">
+                            <div class="pt-1 text-left">
                                 <a href="{{ route('order-tracking.index') }}" wire:navigate class="inline-flex items-center gap-1.5 text-xs font-bold text-[#ffde5b] hover:text-[#f5d347] transition">
-                                    <span>مشاهده وضعیت سفارش</span>
+                                    <span>ورود به بخش پیگیری سفارش</span>
                                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                     </svg>

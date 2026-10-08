@@ -104,6 +104,7 @@ class CheckoutTrackingRegressionTest extends TestCase
             'customer_name' => 'مشتری تست',
             'customer_phone' => $phone,
             'shipping_address' => 'تهران، خیابان آزادی',
+            'shipping_plaque' => '12',
             'shipping_postal_code' => '1234567890',
             'submission_token' => 'SUB'.Str::random(37),
         ], $overrides);

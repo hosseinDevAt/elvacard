@@ -19,7 +19,7 @@
                     </div>
                     <h1 class="mt-4 text-2xl font-black text-[#010619] sm:text-3xl">پیگیری سفارش</h1>
                     <p class="mt-2 text-sm leading-relaxed text-slate-600">
-                        برای پیگیری سفارش، کد پیگیری که پس از ثبت سفارش به شما نمایش داده شد را وارد کنید.
+                        برای پیگیری سفارش، شماره سفارش و ۴ رقم آخر شماره موبایل ثبت‌شده در هنگام خرید را وارد کنید.
                     </p>
                 </div>
 
@@ -43,22 +43,44 @@
                     @csrf
 
                     <div>
-                        <label for="token" class="mb-1.5 block text-xs font-bold text-slate-700">کد پیگیری سفارش <span class="text-rose-500">*</span></label>
+                        <label for="reference" class="mb-1.5 block text-xs font-bold text-slate-700">شماره سفارش <span class="text-rose-500">*</span></label>
                         <div class="relative">
                             <input
-                                id="token"
-                                name="token"
+                                id="reference"
+                                name="reference"
                                 type="text"
-                                value="{{ old('token') }}"
+                                value="{{ old('reference') }}"
                                 required
                                 autocomplete="off"
                                 spellcheck="false"
-                                placeholder="0M1Msl8znVAVii3BWmhh..."
+                                placeholder="مثلاً: 10001"
                                 dir="ltr"
                                 class="w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm font-semibold text-slate-800 placeholder-slate-400 text-left focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 transition"
                             />
                         </div>
-                        <p class="mt-1.5 text-xs text-slate-400">کد توکن ۳۲ الی ۴۰ کاراکتری دریافت شده در صفحه تسویه حساب</p>
+                        <p class="mt-1.5 text-xs text-slate-400">شماره ۵ رقمی سفارش (یا کد سفارش قبلی شما)</p>
+                    </div>
+
+                    <div>
+                        <label for="customer_phone_last4" class="mb-1.5 block text-xs font-bold text-slate-700">۴ رقم آخر شماره موبایل <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <input
+                                id="customer_phone_last4"
+                                name="customer_phone_last4"
+                                type="text"
+                                inputmode="numeric"
+                                maxlength="4"
+                                pattern="[0-9]{4}"
+                                value="{{ old('customer_phone_last4') }}"
+                                required
+                                autocomplete="off"
+                                spellcheck="false"
+                                placeholder="مثلاً: 5678"
+                                dir="ltr"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm font-semibold text-slate-800 placeholder-slate-400 text-left focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 transition tracking-widest"
+                            />
+                        </div>
+                        <p class="mt-1.5 text-xs text-slate-400">۴ رقم پایانی شماره موبایلی که با آن سفارش را ثبت کرده‌اید</p>
                     </div>
 
                     <button type="submit" class="w-full btn-brand-primary py-3.5 text-sm font-bold shadow-lg shadow-[#ffde5b]/25 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
