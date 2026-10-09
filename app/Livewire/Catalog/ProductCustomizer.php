@@ -74,8 +74,12 @@ class ProductCustomizer extends Component
 
     public array $designImages = [];
 
-    public function mount(int $productId): void
-    {
+    public function mount(
+        int $productId,
+        ?string $initialDesignSlug = null,
+        ?int $initialColorId = null,
+        ?int $initialVariantId = null,
+    ): void {
         $product = Product::query()
             ->active()
             ->with([
@@ -119,23 +123,205 @@ class ProductCustomizer extends Component
             ->values()
             ->all();
 
-        $this->color_id = $this->colorPrices[0]['color_id'] ?? null;
+        $initialDesignSlug = $initialDesignSlug ?? request()->query('design');
+        $initialColorParam = $initialColorId ?? request()->query('color');
+        $initialColorId = is_numeric($initialColorParam) ? (int) $initialColorParam : null;
 
-        // colorPrices only ever contain active rows; for the FUEL workflow the
-        // product-configuration invariant (M.2-f-2) guarantees exactly one, so
-        // color_id is locked to that single configured color at mount time and
-        // the browser is never offered a color selector.
+        $requestedVariantParam = $initialVariantId ?? request()->query('variant') ?? request()->query('variant_id');
+        $requestedVariantId = is_numeric($requestedVariantParam) ? (int) $requestedVariantParam : null;
+        $requestedDesignColorId = request()->query('design_color');
+        $requestedDesignColorId = is_numeric($requestedDesignColorId) ? (int) $requestedDesignColorId : null;
 
         $this->refreshCategories();
 
         if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::FUEL_CARD->value) {
+            $this->color_id = $this->colorPrices[0]['color_id'] ?? null;
             $this->designSource = 'catalog';
+            $this->selected_category_id = $this->categories[0]['id'] ?? null;
+            return;
         }
 
-        // The design catalog is never loaded into state: the first page is
-        // resolved server-side during render, which also auto-selects the first
-        // design and its images.
         $this->selected_category_id = $this->categories[0]['id'] ?? null;
+
+        if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::BANK_CARD->value) {
+            $this->initializeBankCardCustomization(
+                $initialDesignSlug,
+                $initialColorId,
+                $requestedVariantId,
+                $requestedDesignColorId
+            );
+        } else {
+            $this->color_id = $this->colorPrices[0]['color_id'] ?? null;
+        }
+    }
+
+    private function initializeBankCardCustomization(
+        ?string $initialDesignSlug,
+        ?int $initialColorId,
+        ?int $requestedVariantId,
+        ?int $requestedDesignColorId
+    ): void {
+        $defaultColorId = $this->colorPrices[0]['color_id'] ?? null;
+        $hasExplicitColor = $initialColorId !== null
+            && collect($this->colorPrices)->pluck('color_id')->contains($initialColorId);
+
+        // If no design slug is provided, initialize standard color selection
+        if (! is_string($initialDesignSlug) || trim($initialDesignSlug) === '') {
+            $this->color_id = $hasExplicitColor ? $initialColorId : $defaultColorId;
+            return;
+        }
+
+        $designService = app(DesignCatalogService::class);
+        $design = $designService->findVisibleBySlug(trim($initialDesignSlug));
+
+        if ($design === null) {
+            // Invalid or unavailable design: fallback safely, do not substitute unrelated design
+            $this->color_id = $hasExplicitColor ? $initialColorId : $defaultColorId;
+            return;
+        }
+
+        if ($requestedVariantId !== null) {
+            // 1. Resolve requested variant and verify it belongs to this exact design and is active
+            $requestedVariant = DesignImage::query()
+                ->where('id', $requestedVariantId)
+                ->where('design_id', $design->id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($requestedVariant === null) {
+                // Invalid, inactive, or belongs to another design:
+                // Fall back safely without silently picking an unrelated design or variant
+                $this->color_id = $hasExplicitColor ? $initialColorId : $defaultColorId;
+                return;
+            }
+
+            // 2. Query active card colors explicitly compatible with this exact variant
+            $compatibleCardColorIds = DesignColorCompatibility::query()
+                ->where('design_image_id', $requestedVariant->id)
+                ->where('is_allowed', true)
+                ->whereHas('cardColor', fn ($cq) => $cq->where('is_active', true))
+                ->pluck('card_color_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $selectedCardColorId = null;
+            $allowedImageIds = null;
+
+            if ($hasExplicitColor) {
+                // Explicit card color requested via query param
+                if (in_array($initialColorId, $compatibleCardColorIds, true)) {
+                    $candAllowed = $this->allowedImageIds($initialColorId);
+                    if ($candAllowed !== null && in_array($requestedVariant->id, $candAllowed->all(), true)) {
+                        $selectedCardColorId = $initialColorId;
+                        $allowedImageIds = $candAllowed;
+                    }
+                } else {
+                    // Explicit color is incompatible with requested variant: safe fallback
+                    $this->color_id = $initialColorId;
+                    return;
+                }
+            } else {
+                // Select the first compatible active physical card color according to product's colorPrices order
+                foreach ($this->colorPrices as $cp) {
+                    $candColorId = (int) $cp['color_id'];
+                    if (in_array($candColorId, $compatibleCardColorIds, true)) {
+                        $candAllowed = $this->allowedImageIds($candColorId);
+                        if ($candAllowed !== null && in_array($requestedVariant->id, $candAllowed->all(), true)) {
+                            $selectedCardColorId = $candColorId;
+                            $allowedImageIds = $candAllowed;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($selectedCardColorId === null) {
+                // Requested variant is not compatible with ANY card color on this product
+                $this->color_id = $hasExplicitColor ? $initialColorId : $defaultColorId;
+                $this->addError('design_image_id', 'نسخه تصویری انتخابی در حال حاضر با هیچ‌یک از رنگ‌های کارت موجود سازگار نیست.');
+                return;
+            }
+
+            // Both card color and requested design variant are validated and compatible:
+            $this->color_id = $selectedCardColorId;
+            $this->design_id = (int) $design->id;
+            $this->refreshSelectedDesignImages($allowedImageIds);
+            $this->design_image_id = (int) $requestedVariant->id;
+            $this->selected_category_id = (int) $design->cate_design_id;
+            $this->designSource = 'catalog';
+            return;
+        }
+
+        // Determine compatible physical card color when no specific variant ID was requested:
+        $selectedCardColorId = null;
+        $allowedImageIds = null;
+
+        if ($hasExplicitColor) {
+            // Explicit card color requested via query param (backwards-compatibility)
+            $candidateAllowed = $this->allowedImageIds($initialColorId);
+            if ($designService->isDesignInCatalog($design->id, $design->cate_design_id, $candidateAllowed, $this->catalogWorkflow())) {
+                $selectedCardColorId = $initialColorId;
+                $allowedImageIds = $candidateAllowed;
+            } else {
+                // Incompatible with explicitly requested color: safe fallback
+                $this->color_id = $initialColorId;
+                return;
+            }
+        } else {
+            // No explicit card color requested (New Quick Design UX)
+            // 1. Try default physical card color according to product/pricing rules
+            if ($defaultColorId !== null) {
+                $candidateAllowed = $this->allowedImageIds($defaultColorId);
+                if ($designService->isDesignInCatalog($design->id, $design->cate_design_id, $candidateAllowed, $this->catalogWorkflow())) {
+                    $selectedCardColorId = $defaultColorId;
+                    $allowedImageIds = $candidateAllowed;
+                }
+            }
+
+            // 2. If default color is incompatible with every variant of the requested design,
+            // choose the first compatible physical card color deterministically from active color prices
+            if ($selectedCardColorId === null) {
+                foreach ($this->colorPrices as $cp) {
+                    $candColorId = (int) $cp['color_id'];
+                    if ($candColorId === $defaultColorId) {
+                        continue;
+                    }
+                    $candidateAllowed = $this->allowedImageIds($candColorId);
+                    if ($designService->isDesignInCatalog($design->id, $design->cate_design_id, $candidateAllowed, $this->catalogWorkflow())) {
+                        $selectedCardColorId = $candColorId;
+                        $allowedImageIds = $candidateAllowed;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($selectedCardColorId === null) {
+            // Design is not compatible with ANY card color on this product
+            $this->color_id = $defaultColorId;
+            return;
+        }
+
+        $this->color_id = $selectedCardColorId;
+        $this->design_id = (int) $design->id;
+        $this->refreshSelectedDesignImages($allowedImageIds);
+
+        if ($requestedDesignColorId !== null) {
+            $matchingImage = collect($this->designImages)->firstWhere('color_id', $requestedDesignColorId);
+            if ($matchingImage) {
+                $this->design_image_id = (int) $matchingImage['id'];
+                $this->selected_category_id = (int) $design->cate_design_id;
+                $this->designSource = 'catalog';
+            } else {
+                $this->design_id = null;
+                $this->design_image_id = null;
+                $this->designImages = [];
+            }
+        } else {
+            // Standard Quick Design: refreshSelectedDesignImages auto-selected first compatible variant
+            $this->selected_category_id = (int) $design->cate_design_id;
+            $this->designSource = 'catalog';
+        }
     }
 
     public function setStep(int $step): void
@@ -180,11 +366,38 @@ class ProductCustomizer extends Component
             if ($configuredColorId === null || (int) $colorId !== (int) $configuredColorId) {
                 return;
             }
+
+            $this->color_id = $colorId;
+            $this->design_id = null;
+            $this->design_image_id = null;
+            $this->resetPage();
+
+            return;
         }
 
         $this->color_id = $colorId;
-        $this->design_id = null;
-        $this->design_image_id = null;
+
+        if ($this->design_id !== null && $this->designSource === 'catalog') {
+            $allowedImageIds = $this->allowedImageIds();
+            $isCompatible = app(DesignCatalogService::class)->isDesignInCatalog(
+                $this->design_id,
+                $this->currentCategoryId(),
+                $allowedImageIds,
+                $this->catalogWorkflow()
+            );
+
+            if ($isCompatible) {
+                $this->refreshSelectedDesignImages($allowedImageIds);
+            } else {
+                $this->design_id = null;
+                $this->design_image_id = null;
+                $this->designImages = [];
+            }
+        } else {
+            $this->design_id = null;
+            $this->design_image_id = null;
+            $this->designImages = [];
+        }
 
         // Resets pagination: the render resolves the (already cate-scoped)
         // first page for the new color and re-selects the first design.
@@ -453,6 +666,24 @@ class ProductCustomizer extends Component
             'quantity' => ['required', 'integer', 'min:1', 'max:20'],
         ]);
 
+        if ($this->designSource === 'catalog') {
+            if ($this->design_id === null || $this->design_image_id === null) {
+                $this->addError('design_id', 'لطفاً یک طرح معتبر انتخاب کنید.');
+                return;
+            }
+
+            $isCompatible = DesignColorCompatibility::query()
+                ->where('design_image_id', $this->design_image_id)
+                ->where('card_color_id', $this->color_id)
+                ->where('is_allowed', true)
+                ->exists();
+
+            if (! $isCompatible) {
+                $this->addError('design_image_id', 'طرح انتخابی با این رنگ کارت سازگار نیست.');
+                return;
+            }
+        }
+
         $cartService->addItem([
             'product_id' => $this->product_id,
             'color_id' => $this->color_id,
@@ -526,14 +757,16 @@ class ProductCustomizer extends Component
             : ($imageIds[0] ?? null);
     }
 
-    private function allowedImageIds(): ?Collection
+    private function allowedImageIds(?int $colorId = null): ?Collection
     {
-        if ($this->color_id === null) {
+        $targetColorId = $colorId ?? $this->color_id;
+
+        if ($targetColorId === null) {
             return null;
         }
 
         return DesignColorCompatibility::query()
-            ->where('card_color_id', $this->color_id)
+            ->where('card_color_id', $targetColorId)
             ->where('is_allowed', true)
             ->pluck('design_image_id');
     }

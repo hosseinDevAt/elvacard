@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\CustomizationWorkflowEnum;
 use App\Models\CateDesign;
 use App\Models\Design;
+use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -48,6 +49,20 @@ class DesignCatalogService
         int $perPage = 12,
     ): LengthAwarePaginator {
         return $this->page($categoryId, $colorId, $allowedImageIds, $perPage);
+    }
+
+    /**
+     * Returns one bounded page of the public popular design gallery.
+     * Restricts results strictly to designs marked is_popular = true,
+     * maintaining identical visibility and compatibility rules.
+     */
+    public function paginatePopularPublic(
+        ?int $categoryId = null,
+        ?int $colorId = null,
+        ?Collection $allowedImageIds = null,
+        int $perPage = 12,
+    ): LengthAwarePaginator {
+        return $this->page($categoryId, $colorId, $allowedImageIds, $perPage, true);
     }
 
     /**
@@ -108,6 +123,30 @@ class DesignCatalogService
     }
 
     /**
+     * Returns every popular design currently visible in the public catalog
+     * (is_popular = true, active, in an active category, with at least one active image),
+     * optionally restricted to the given ids.
+     */
+    public function visiblePopularDesigns(array $ids = []): Collection
+    {
+        return $this->baseQuery(null, null, true)
+            ->when(
+                $ids !== [],
+                fn ($query) => $query->whereIn(
+                    'id',
+                    collect($ids)
+                        ->map(fn ($id) => (int) $id)
+                        ->unique()
+                        ->values()
+                        ->all()
+                )
+            )
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
      * Whether a single design is currently visible in the public catalog.
      */
     public function isDesignVisible(int $designId): bool
@@ -115,6 +154,75 @@ class DesignCatalogService
         return $this->baseQuery(null, null)
             ->whereKey($designId)
             ->exists();
+    }
+
+    /**
+     * Finds an individual design by slug using the authoritative public visibility rules:
+     * active design, active category, and at least one active image.
+     */
+    public function findVisibleBySlug(string $slug): ?Design
+    {
+        return $this->baseQuery(null, null)
+            ->where('slug', $slug)
+            ->first();
+    }
+
+    /**
+     * Returns the valid active visual/color variants for an individual design.
+     * Enforces active image, active color, and valid card-color compatibility rules.
+     */
+    public function validVariantsForDesign(Design $design): Collection
+    {
+        $images = DesignImage::query()
+            ->where('design_id', $design->id)
+            ->where('is_active', true)
+            ->with([
+                'color' => fn ($query) => $query->where('is_active', true),
+                'compatibilities' => fn ($query) => $query
+                    ->where('is_allowed', true)
+                    ->whereHas('cardColor', fn ($cq) => $cq->where('is_active', true))
+                    ->with('cardColor'),
+            ])
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return $images
+            ->filter(function (DesignImage $image) {
+                // Must have active color if color_id is assigned
+                if ($image->color_id !== null && $image->color === null) {
+                    return false;
+                }
+
+                // If explicit compatibility records exist for this image, at least one active card color must be allowed
+                $hasCompatRecords = DesignColorCompatibility::query()
+                    ->where('design_image_id', $image->id)
+                    ->exists();
+
+                if ($hasCompatRecords && $image->compatibilities->isEmpty()) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->map(function (DesignImage $image) use ($design) {
+                return [
+                    'id' => (int) $image->id,
+                    'design_id' => (int) $image->design_id,
+                    'image_path' => $image->image_path,
+                    'color_id' => $image->color_id ? (int) $image->color_id : null,
+                    'color_name' => $image->color?->name ?? 'پیش‌فرض',
+                    'color_hex' => $image->color?->code_hex ?? '#1e293b',
+                    'alt_text' => $image->alt_text ?: ($design->name . ' - ' . ($image->color?->name ?? '')),
+                    'layout_mode' => $image->getLayoutMode()->value,
+                    'compatible_card_colors' => $image->compatibilities->map(fn ($c) => [
+                        'id' => (int) $c->cardColor->id,
+                        'name' => $c->cardColor->name,
+                        'code_hex' => $c->cardColor->code_hex,
+                    ])->values()->all(),
+                ];
+            })
+            ->values();
     }
 
     /**
@@ -192,13 +300,14 @@ class DesignCatalogService
      * The single source of design visibility: active design, active category,
      * and at least one active image within the allowed set.
      */
-    private function baseQuery(?int $categoryId, ?Collection $allowedImageIds)
+    private function baseQuery(?int $categoryId, ?Collection $allowedImageIds, bool $onlyPopular = false)
     {
         return Design::query()
             ->when(
                 $categoryId !== null,
                 fn ($query) => $query->where('cate_design_id', $categoryId)
             )
+            ->when($onlyPopular, fn ($query) => $query->where('is_popular', true))
             ->where('is_active', true)
             // Authoritative active-category enforcement: Livewire public
             // properties are client-hydrated, so visibility must be guaranteed
@@ -212,6 +321,7 @@ class DesignCatalogService
         ?int $colorId,
         ?Collection $allowedImageIds,
         int $perPage,
+        bool $onlyPopular = false,
     ): LengthAwarePaginator {
         $preview = DesignImage::query()
             ->select('image_path')
@@ -228,8 +338,8 @@ class DesignCatalogService
             )
             ->limit(1);
 
-        return $this->baseQuery($categoryId, $allowedImageIds)
-            ->select(['id', 'cate_design_id', 'name'])
+        return $this->baseQuery($categoryId, $allowedImageIds, $onlyPopular)
+            ->select(['id', 'cate_design_id', 'name', 'slug'])
             ->addSelect(['preview_image_path' => $preview])
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -238,6 +348,7 @@ class DesignCatalogService
                 'id' => $design->id,
                 'category_id' => (int) $design->cate_design_id,
                 'name' => $design->name,
+                'slug' => $design->slug,
                 'preview_image_path' => $design->preview_image_path,
             ]);
     }

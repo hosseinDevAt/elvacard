@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
 
+use Illuminate\Http\Request;
+
 class CustomDesignController extends Controller
 {
     public function landing(): View
@@ -14,7 +16,7 @@ class CustomDesignController extends Controller
         return view('custom-design.landing');
     }
 
-    public function bank(): View
+    public function bank(Request $request): View
     {
         $product = Product::query()
             ->active()
@@ -25,7 +27,16 @@ class CustomDesignController extends Controller
 
         abort_if($product === null, 404, 'سرویس طراحی کارت بانکی در حال حاضر در دسترس نیست.');
 
-        return view('custom-design.bank', ['product' => $product]);
+        $designSlug = $request->query('design');
+        $colorId = $request->query('color');
+        $variantId = $request->query('variant') ?? $request->query('variant_id');
+
+        return view('custom-design.bank', [
+            'product' => $product,
+            'initialDesignSlug' => is_string($designSlug) && trim($designSlug) !== '' ? trim($designSlug) : null,
+            'initialColorId' => is_numeric($colorId) ? (int) $colorId : null,
+            'initialVariantId' => is_numeric($variantId) ? (int) $variantId : null,
+        ]);
     }
 
     public function fuel(): View

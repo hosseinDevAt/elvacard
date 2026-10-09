@@ -67,8 +67,10 @@ class HomepageController extends Controller
 
         $newestProducts = $this->newestProducts($newestLimit);
 
-        $designs = app(DesignCatalogService::class)
-            ->visibleDesigns($designIds)
+        $designCatalogService = app(DesignCatalogService::class);
+        $designs = ($designIds !== []
+            ? $designCatalogService->visibleDesigns($designIds)
+            : $designCatalogService->visiblePopularDesigns())
             ->load([
                 'images' => fn ($q) => $q
                     ->active()
@@ -78,10 +80,7 @@ class HomepageController extends Controller
             ]);
 
         if ($designIds === []) {
-            $designs = $designs
-                ->sortBy(fn ($design) => [$design->sort_order, -$design->id])
-                ->take($featuredDesignsLimit)
-                ->values();
+            $designs = $designs->take($featuredDesignsLimit);
         }
 
         $designs = $designs->keyBy('id');

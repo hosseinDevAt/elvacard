@@ -5,7 +5,7 @@
                 id="design-{{ $design['id'] }}"
                 class="group store-card p-5 scroll-mt-24 flex flex-col justify-between"
             >
-                <div class="overflow-hidden rounded-xl border border-slate-100 bg-slate-50/70 p-4 transition group-hover:border-slate-200">
+                <a href="{{ route('catalog.designs.show', $design['slug']) }}" wire:navigate class="overflow-hidden rounded-xl border border-slate-100 bg-[#F3F1EB] p-4 transition group-hover:border-slate-200 block">
                     @if ($design['preview_image_path'])
                         <img
                             src="{{ asset('storage/' . $design['preview_image_path']) }}"
@@ -19,15 +19,19 @@
                             <p class="text-xs">تصویر فعالی وجود ندارد</p>
                         </div>
                     @endif
-                </div>
+                </a>
 
                 <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-bold text-[#010619] group-hover:text-slate-800 transition">{{ $design['name'] }}</h3>
+                        <h3 class="text-sm font-bold text-[#010619] group-hover:text-slate-800 transition">
+                            <a href="{{ route('catalog.designs.show', $design['slug']) }}" wire:navigate>
+                                {{ $design['name'] }}
+                            </a>
+                        </h3>
                         <p class="mt-0.5 text-[11px] font-mono text-slate-400 truncate max-w-[200px]" dir="ltr">{{ basename($design['preview_image_path'] ?? '') }}</p>
                     </div>
 
-                    <a href="{{ route('custom-card.design') }}" wire:navigate class="rounded-lg bg-slate-100 p-2 text-slate-600 hover:bg-[#ffde5b] hover:text-[#010619] transition" title="طراحی کارت با این طرح">
+                    <a href="{{ route('catalog.designs.show', $design['slug']) }}" wire:navigate class="rounded-lg bg-slate-100 p-2 text-slate-600 hover:bg-[#ffde5b] hover:text-[#010619] transition" title="مشاهده جزئیات طرح">
                         <x-icons.arrow-left class="h-4 w-4" />
                     </a>
                 </div>

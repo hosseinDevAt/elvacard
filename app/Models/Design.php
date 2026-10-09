@@ -24,11 +24,15 @@ class Design extends Model
         'seo_content',
         'is_active',
         'sort_order',
+        'is_popular',
+        'popular_sort_order',
     ];
 
     protected $casts = [
         'robots_index' => 'boolean',
         'is_active' => 'boolean',
+        'is_popular' => 'boolean',
+        'popular_sort_order' => 'integer',
     ];
 
     public function category(): BelongsTo
@@ -44,5 +48,10 @@ class Design extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopePopular(Builder $query): Builder
+    {
+        return $query->where('is_popular', true);
     }
 }

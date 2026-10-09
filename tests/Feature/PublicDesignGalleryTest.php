@@ -148,7 +148,7 @@ class PublicDesignGalleryTest extends TestCase
         $this->assertCount(10, $catalog->items());
 
         foreach ($catalog->items() as $item) {
-            $this->assertSame(['id', 'category_id', 'name', 'preview_image_path'], array_keys($item));
+            $this->assertSame(['id', 'category_id', 'name', 'slug', 'preview_image_path'], array_keys($item));
         }
     }
 

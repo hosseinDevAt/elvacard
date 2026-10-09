@@ -77,6 +77,7 @@ class HomepageSectionBoundsTest extends TestCase
             'cate_design_id' => $category->id,
             'name' => $name,
             'slug' => 'design-'.Str::slug($name).'-'.uniqid(),
+            'is_popular' => true,
             'is_active' => true,
             'sort_order' => 1,
         ]);

@@ -257,6 +257,10 @@ class ProductCatalogController extends Controller
         $selectedColorId = $request->integer('color_id');
         $categorySlug = $request->query('category');
 
+        if ($categorySlug === 'popular-designs') {
+            return $this->popularDesigns($request);
+        }
+
         $categoryId = null;
         $selectedCategoryName = null;
 
@@ -291,6 +295,104 @@ class ProductCatalogController extends Controller
             'selectedColorId' => $selectedColorId > 0 ? $selectedColorId : null,
             'selectedCategory' => $categorySlug,
             'selectedCategoryName' => $selectedCategoryName,
+        ]);
+    }
+
+    public function popularDesigns(Request $request): View
+    {
+        $selectedColorId = $request->integer('color_id');
+        $categorySlug = $request->query('category');
+
+        $categoryId = null;
+        $selectedCategoryName = null;
+
+        if (is_string($categorySlug) && $categorySlug !== '' && $categorySlug !== 'popular-designs') {
+            $category = CateDesign::query()
+                ->active()
+                ->where('slug', $categorySlug)
+                ->first(['id', 'name']);
+
+            if ($category) {
+                $categoryId = (int) $category->id;
+                $selectedCategoryName = $category->name;
+            }
+        }
+
+        $allowedImageIds = null;
+        if ($selectedColorId > 0) {
+            $allowedImageIds = DesignColorCompatibility::query()
+                ->where('card_color_id', $selectedColorId)
+                ->where('is_allowed', true)
+                ->pluck('design_image_id');
+        }
+
+        $catalog = app(DesignCatalogService::class)->paginatePopularPublic(
+            $categoryId,
+            $selectedColorId > 0 ? $selectedColorId : null,
+            $allowedImageIds,
+        )->withQueryString();
+
+        return view('catalog.designs.popular', [
+            'catalog' => $catalog,
+            'selectedColorId' => $selectedColorId > 0 ? $selectedColorId : null,
+            'selectedCategory' => $categorySlug !== 'popular-designs' ? $categorySlug : null,
+            'selectedCategoryName' => $selectedCategoryName,
+        ]);
+    }
+
+    public function showDesign(Request $request, string $slug): View
+    {
+        if ($slug === 'popular') {
+            return $this->popularDesigns($request);
+        }
+
+        $service = app(DesignCatalogService::class);
+        $design = $service->findVisibleBySlug($slug);
+
+        if ($design === null) {
+            abort(404);
+        }
+
+        $design->load('category');
+
+        $variants = $service->validVariantsForDesign($design);
+
+        $selectedColorId = $request->integer('color_id');
+        $selectedVariant = null;
+
+        if ($selectedColorId > 0) {
+            $selectedVariant = $variants->first(fn ($v) => (int) ($v['color_id'] ?? 0) === $selectedColorId);
+        }
+
+        if ($selectedVariant === null && $variants->isNotEmpty()) {
+            $selectedVariant = $variants->first();
+        }
+
+        $canonicalUrl = $design->canonical_url && filter_var($design->canonical_url, FILTER_VALIDATE_URL)
+            ? $design->canonical_url
+            : route('catalog.designs.show', $design->slug);
+
+        $ogImageUrl = $selectedVariant && ! empty($selectedVariant['image_path'])
+            ? asset('storage/' . ltrim($selectedVariant['image_path'], '/'))
+            : null;
+
+        $schemaJson = json_encode(array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'CreativeWork',
+            'name' => $design->name,
+            'description' => $design->meta_description ?: $design->description,
+            'url' => $canonicalUrl,
+            'image' => $ogImageUrl,
+        ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return view('catalog.designs.show', [
+            'design' => $design,
+            'variants' => $variants,
+            'selectedVariant' => $selectedVariant,
+            'selectedColorId' => $selectedVariant ? $selectedVariant['color_id'] : null,
+            'canonicalUrl' => $canonicalUrl,
+            'ogImageUrl' => $ogImageUrl,
+            'schemaJson' => $schemaJson,
         ]);
     }
 }

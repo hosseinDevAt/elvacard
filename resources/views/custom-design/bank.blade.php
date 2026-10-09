@@ -27,7 +27,12 @@
                 </div>
             </div>
 
-            <livewire:catalog.product-customizer :productId="$product->id" />
+            <livewire:catalog.product-customizer
+                :productId="$product->id"
+                :initialDesignSlug="$initialDesignSlug ?? null"
+                :initialColorId="$initialColorId ?? null"
+                :initialVariantId="$initialVariantId ?? null"
+            />
         </div>
     </div>
 @endsection

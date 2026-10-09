@@ -36,6 +36,7 @@
                         <th class="admin-th">اسلاگ</th>
                         <th class="admin-th">دسته‌بندی</th>
                         <th class="admin-th">تصاویر</th>
+                        <th class="admin-th text-center">پرطرفدار</th>
                         <th class="admin-th">وضعیت</th>
                         <th class="admin-th text-center">عملیات</th>
                     </tr>
@@ -53,6 +54,16 @@
                             </td>
                             <td class="admin-td">
                                 <span class="admin-badge admin-badge-neutral text-xs">{{ $design->images_count }} تصویر</span>
+                            </td>
+                            <td class="admin-td text-center">
+                                <button type="button"
+                                        wire:click="togglePopular({{ $design->id }})"
+                                        class="cursor-pointer inline-flex items-center gap-1.5 focus:outline-none transition hover:opacity-80"
+                                        title="{{ $design->is_popular ? 'حذف از طرح‌های پرطرفدار' : 'افزودن به طرح‌های پرطرفدار' }}">
+                                    <span class="admin-badge {{ $design->is_popular ? 'admin-badge-warning' : 'admin-badge-neutral' }} text-xs">
+                                        {{ $design->is_popular ? '★ پرطرفدار' : 'عادی' }}
+                                    </span>
+                                </button>
                             </td>
                             <td class="admin-td">
                                 <span class="admin-badge {{ $design->is_active ? 'admin-badge-emerald' : 'admin-badge-gray' }}">
@@ -79,7 +90,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="p-8">
+                            <td colspan="8" class="p-8">
                                 <x-admin.empty-state
                                     title="طرحی یافت نشد"
                                     description="هنوز هیچ طرحی ثبت نشده یا نتیجه‌ای با عبارت جستجو مطابقت ندارد."

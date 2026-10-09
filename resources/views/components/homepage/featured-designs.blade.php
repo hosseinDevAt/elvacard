@@ -28,8 +28,8 @@
                 </header>
 
                 <div class="shrink-0">
-                    <a href="{{ route('catalog.designs.index') }}" wire:navigate
-                       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-[#010619] bg-[#ffde5b] hover:bg-[#f5d347] shadow-sm shadow-[#ffde5b]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                    <a href="{{ route('catalog.designs.popular') }}" wire:navigate
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-[#010619] bg-[#ffde5b] hover:bg-[#f5d347] shadow-sm shadow-[#ffde5b]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
                         <span>مشاهده همه طرح‌ها</span>
                         <x-icons.arrow-left class="w-4 h-4" />
                     </a>
@@ -41,14 +41,14 @@
                     @php
                         $firstImage = $design->images->first();
                         $imagePath = $firstImage?->image_path;
-                        $designUrl = route('catalog.designs.index', ['category' => $design->category?->slug]) . '#design-' . $design->id;
+                        $designUrl = route('catalog.designs.show', $design->slug);
                     @endphp
 
                     <article class="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-sm hover:shadow-2xl hover:shadow-slate-200/80 hover:border-slate-300 transition-all duration-300 group flex flex-col justify-between hover:-translate-y-1.5">
                         <div>
                             @if ($imagePath)
                                 <a href="{{ $designUrl }}" wire:navigate
-                                   class="block aspect-[16/10] overflow-hidden rounded-xl bg-slate-950 p-2 sm:p-3 relative group-hover:bg-slate-900 transition-colors">
+                                   class="block aspect-[16/10] overflow-hidden rounded-xl bg-[#F3F1EB] p-2 sm:p-3 relative transition-colors">
                                     @if ($design->category)
                                         <span class="absolute top-2.5 start-2.5 z-10 px-2.5 py-0.5 text-[11px] font-bold text-slate-800 bg-white/95 backdrop-blur-sm rounded-md shadow-sm">
                                             {{ $design->category->name }}
@@ -60,13 +60,13 @@
                                          class="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500 ease-out">
                                 </a>
                             @else
-                                <div class="aspect-[16/10] rounded-xl bg-slate-900 flex items-center justify-center p-3 relative">
+                                <div class="aspect-[16/10] rounded-xl bg-[#F3F1EB] flex items-center justify-center p-3 relative">
                                     @if ($design->category)
                                         <span class="absolute top-2.5 start-2.5 z-10 px-2.5 py-0.5 text-[11px] font-bold text-slate-800 bg-white/95 backdrop-blur-sm rounded-md shadow-sm">
                                             {{ $design->category->name }}
                                         </span>
                                     @endif
-                                    <x-icons.image-placeholder class="text-slate-600" />
+                                    <x-icons.image-placeholder class="text-slate-400" />
                                 </div>
                             @endif
 

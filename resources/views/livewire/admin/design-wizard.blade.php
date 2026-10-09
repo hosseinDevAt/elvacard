@@ -121,6 +121,10 @@
                     <label for="is_active" class="text-sm font-medium text-slate-700">فعال (نمایش در سفارشی‌ساز)</label>
                 </div>
                 <div class="flex items-center gap-2">
+                    <input type="checkbox" wire:model="isPopular" id="is_popular" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
+                    <label for="is_popular" class="text-sm font-medium text-slate-700">طرح پرطرفدار (نمایش در بخش پرطرفدارها)</label>
+                </div>
+                <div class="flex items-center gap-2">
                     <input type="checkbox" wire:model="robotsIndex" id="robots_index" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                     <label for="robots_index" class="text-sm font-medium text-slate-700">قابل ایندکس در موتورهای جستجو</label>
                 </div>

@@ -19,6 +19,7 @@ class HomepageRegressionTest extends TestCase
     public function test_seeded_homepage_never_exposes_card_workflows_as_store_products(): void
     {
         $this->seed();
+        \App\Models\Design::query()->limit(6)->update(['is_popular' => true]);
 
         $response = $this->get('/')->assertOk();
 

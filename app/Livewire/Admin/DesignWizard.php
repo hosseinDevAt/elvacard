@@ -57,6 +57,8 @@ class DesignWizard extends Component
 
     public bool $isActive = true;
 
+    public bool $isPopular = false;
+
     public int $sortOrder = 0;
 
     // Step 1 — quick category creation
@@ -107,6 +109,7 @@ class DesignWizard extends Component
         $this->robotsIndex = (bool) $design->robots_index;
         $this->seoContent = $design->seo_content;
         $this->isActive = (bool) $design->is_active;
+        $this->isPopular = (bool) $design->is_popular;
         $this->sortOrder = (int) $design->sort_order;
         $this->showImageForm = true;
     }
@@ -423,6 +426,7 @@ class DesignWizard extends Component
             'seoContent' => 'nullable|string',
             'robotsIndex' => 'boolean',
             'isActive' => 'boolean',
+            'isPopular' => 'boolean',
             'sortOrder' => 'integer|min:0',
         ];
     }
@@ -448,6 +452,7 @@ class DesignWizard extends Component
             'seo_content' => $this->seoContent ?: null,
             'robots_index' => $this->robotsIndex,
             'is_active' => $this->isActive,
+            'is_popular' => $this->isPopular,
             'sort_order' => $this->sortOrder,
         ];
 

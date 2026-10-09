@@ -81,6 +81,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
 Route::get('/catalog/products', [ProductCatalogController::class, 'index'])->name('catalog.products.index');
 Route::get('/catalog/products/{slug}', [ProductCatalogController::class, 'show'])->name('catalog.products.show');
 Route::get('/catalog/designs', [ProductCatalogController::class, 'designCatalog'])->name('catalog.designs.index');
+Route::get('/catalog/designs/popular', [ProductCatalogController::class, 'popularDesigns'])->name('catalog.designs.popular');
+Route::get('/catalog/designs/{slug}', [ProductCatalogController::class, 'showDesign'])
+    ->where('slug', '^(?!popular$).+')
+    ->name('catalog.designs.show');
 Route::get('/design', [CustomDesignController::class, 'landing'])->name('custom-card.design');
 Route::get('/design/bank', [CustomDesignController::class, 'bank'])->name('custom-card.bank');
 Route::get('/design/fuel', [CustomDesignController::class, 'fuel'])->name('custom-card.fuel');

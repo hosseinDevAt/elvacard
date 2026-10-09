@@ -43,6 +43,8 @@ class DesignManager extends Component
 
     public bool $isActive = true;
 
+    public bool $isPopular = false;
+
     public int $sortOrder = 0;
 
     public string $search = '';
@@ -61,6 +63,7 @@ class DesignManager extends Component
         'seoContent' => 'nullable|string',
         'robotsIndex' => 'boolean',
         'isActive' => 'boolean',
+        'isPopular' => 'boolean',
         'sortOrder' => 'integer|min:0',
     ];
 
@@ -114,6 +117,7 @@ class DesignManager extends Component
             'seo_content' => $this->seoContent ?: null,
             'robots_index' => $this->robotsIndex,
             'is_active' => $this->isActive,
+            'is_popular' => $this->isPopular,
             'sort_order' => $this->sortOrder,
         ];
 
@@ -173,8 +177,27 @@ class DesignManager extends Component
         $this->robotsIndex = (bool) $design->robots_index;
         $this->seoContent = $design->seo_content;
         $this->isActive = (bool) $design->is_active;
+        $this->isPopular = (bool) $design->is_popular;
         $this->sortOrder = (int) $design->sort_order;
         $this->showForm = true;
+    }
+
+    public function togglePopular(int $id): void
+    {
+        $design = Design::find($id);
+
+        if (! $design) {
+            session()->flash('error', 'طرح موردنظر یافت نشد');
+
+            return;
+        }
+
+        $design->update([
+            'is_popular' => ! $design->is_popular,
+        ]);
+
+        $status = $design->is_popular ? 'به طرح‌های پرطرفدار اضافه شد' : 'از طرح‌های پرطرفدار حذف شد';
+        session()->flash('success', "«{$design->name}» با موفقیت {$status}");
     }
 
     public function delete(int $id): void
@@ -209,6 +232,7 @@ class DesignManager extends Component
         $this->robotsIndex = true;
         $this->seoContent = null;
         $this->isActive = true;
+        $this->isPopular = false;
         $this->sortOrder = 0;
         $this->editingId = null;
     }
