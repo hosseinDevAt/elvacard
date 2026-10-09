@@ -75,7 +75,12 @@
         ])
     @endif
 
-    {{-- 7. Other CMS sections (e.g. text_block) --}}
+    {{-- 7. Order Process Preview section (rendered only if tables are present) --}}
+    @if (\App\Models\OrderProcessGuide::tablesExist())
+        @include('components.homepage.order-process-preview')
+    @endif
+
+    {{-- 8. Other CMS sections (e.g. text_block) --}}
     @foreach ($otherSections as $section)
         @if ($section->section_type?->value === 'text_block')
             @include('components.homepage.text-block', ['section' => $section])

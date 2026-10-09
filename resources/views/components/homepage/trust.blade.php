@@ -1,10 +1,10 @@
-<section class="py-16 sm:py-20 bg-[#010619] relative overflow-hidden border-y border-[#152244]" aria-label="مزایای الواکارت">
+<section class="py-14 sm:py-18 bg-[#010619] relative overflow-hidden border-t border-[#152244]" aria-label="مزایای الواکارت">
     {{-- Ambient radial background glow --}}
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,222,91,0.08),rgba(255,255,255,0))]"></div>
 
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {{-- Section Header --}}
-        <header class="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+        <header class="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#ffde5b]/10 text-[#ffde5b] border border-[#ffde5b]/20 mb-3.5">
                 <x-icons.sparkles class="w-3.5 h-3.5 text-[#ffde5b]" />
                 <span>مزایای الواکارت</span>
@@ -18,7 +18,7 @@
         </header>
 
         {{-- 4 Pillars Grid --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {{-- Benefit 1: Custom Design --}}
             <div class="rounded-2xl border border-[#152244] bg-gradient-to-b from-[#152244]/50 to-[#010619] p-6 transition-all duration-300 hover:border-[#ffde5b]/40 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/50 group flex flex-col justify-between">
                 <div>

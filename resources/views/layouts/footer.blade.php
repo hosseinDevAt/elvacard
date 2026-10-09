@@ -90,6 +90,13 @@ $contactAddress = site_setting('contact_address');
                                 سوالات متداول
                             </a>
                         </li>
+                        @if (\App\Models\OrderProcessGuide::tablesExist())
+                        <li>
+                            <a href="{{ route('order-process.index') }}" wire:navigate class="text-sm text-slate-400 hover:text-[#ffde5b] transition-colors duration-150 inline-block">
+                                مراحل سفارش
+                            </a>
+                        </li>
+                        @endif
                     @endforelse
                 </ul>
             </div>

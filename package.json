@@ -19,5 +19,8 @@
     },
     "dependencies": {
         "jalaali-js": "^2.0.1"
+    },
+    "overrides": {
+        "postcss-selector-parser": "^7.1.6"
     }
 }

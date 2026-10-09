@@ -14,6 +14,7 @@ use App\Http\Controllers\Cms\PageController;
 use App\Http\Controllers\CustomDesign\CustomerCustomDesignPreviewController;
 use App\Http\Controllers\CustomDesign\CustomDesignController;
 use App\Http\Controllers\Order\OrderTrackingController;
+use App\Http\Controllers\OrderProcessGuideController;
 use App\Livewire\Admin\AnnouncementManager;
 use App\Livewire\Admin\AppearanceManager;
 use App\Livewire\Admin\ArticleCategoryManager;
@@ -32,6 +33,7 @@ use App\Livewire\Admin\ManualPaymentSettingManager;
 use App\Livewire\Admin\MenuItemManager;
 use App\Livewire\Admin\MenuManager;
 use App\Livewire\Admin\OrderManager;
+use App\Livewire\Admin\OrderProcessGuideManager;
 use App\Livewire\Admin\PageManager;
 use App\Livewire\Admin\PaymentManager;
 use App\Livewire\Admin\ProductCategoryManager;
@@ -57,6 +59,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard/design-color-compatibilities', DesignColorCompatibilityManager::class)->name('admin.design-color-compatibilities');
     Route::get('/dashboard/cate-designs', CateDesignManager::class)->name('admin.cate-designs');
     Route::get('/dashboard/faq', FaqItemManager::class)->name('admin.faq');
+    Route::get('/dashboard/order-process', OrderProcessGuideManager::class)->name('admin.order-process');
     Route::get('/dashboard/announcements', AnnouncementManager::class)->name('admin.announcements');
     Route::get('/dashboard/article-categories', ArticleCategoryManager::class)->name('admin.article-categories');
     Route::get('/dashboard/articles', ArticleManager::class)->name('admin.articles');
@@ -134,6 +137,7 @@ Route::get('/articles', [ArticleController::class, 'index'])->name('articles.ind
 Route::get('/articles/category/{slug}', [ArticleController::class, 'category'])->name('articles.category');
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
 
+Route::get('/order-process', [OrderProcessGuideController::class, 'index'])->name('order-process.index');
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
 
 require __DIR__.'/auth.php';

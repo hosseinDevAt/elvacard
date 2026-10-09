@@ -26,6 +26,7 @@ use App\Services\ReportingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -446,7 +447,7 @@ class GuestOnlyStorefrontTest extends TestCase
             ->assertOk();
     }
 
-    /** 14. Rate limits and secure order tokens remain effective */
+    /** 14. Rate limits and order tracking verification remain effective */
     public function test_14_order_tracking_token_security_and_throttling(): void
     {
         $product = $this->createStoreCatalog();
@@ -457,15 +458,51 @@ class GuestOnlyStorefrontTest extends TestCase
             ->post(route('checkout.store'), $this->validCheckoutPayload($token));
 
         $order = Order::query()->latest('id')->first();
+        $this->assertNotNull($order);
 
-        // Tracking with correct 40-char token succeeds
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $phoneLast4 = substr($order->customer_phone, -4);
+
+        // Tracking with correct reference and phone last 4 digits succeeds
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => $phoneLast4,
+        ])
             ->assertOk()
             ->assertSee($order->reference);
 
-        // Tracking with wrong token fails
-        $this->post(route('order-tracking.check'), ['token' => Str::random(40)])
-            ->assertSessionHasErrors(['token']);
+        // Tracking with wrong phone last 4 digits fails
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => '0000',
+        ])
+            ->assertSessionHasErrors(['reference']);
+
+        // Tracking with nonexistent reference fails
+        $this->post(route('order-tracking.check'), [
+            'reference' => 'INVALID-REF',
+            'customer_phone_last4' => $phoneLast4,
+        ])
+            ->assertSessionHasErrors(['reference']);
+
+        // Isolate rate-limiter state for guest order-tracking route (|127.0.0.1)
+        $throttleKey = sha1('|'.request()->ip());
+        RateLimiter::clear($throttleKey);
+
+        // Exactly 5 valid requests are permitted under throttle:5,1
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $response = $this->post(route('order-tracking.check'), [
+                'reference' => $order->reference,
+                'customer_phone_last4' => $phoneLast4,
+            ]);
+            $this->assertNotSame(429, $response->getStatusCode(), "Request {$attempt} was unexpectedly throttled.");
+            $response->assertOk();
+        }
+
+        // The 6th request exceeds throttle:5,1 and is rejected with HTTP 429
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => $phoneLast4,
+        ])->assertStatus(429);
     }
 
     /** 18. Reporting remains correct when orders have user_id = null */

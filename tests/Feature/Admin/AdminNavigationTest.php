@@ -54,7 +54,7 @@ class AdminNavigationTest extends TestCase
 
     public function test_admin_can_access_all_content_pages(): void
     {
-        foreach (['admin.pages', 'admin.homepage-sections', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements', 'admin.menus', 'admin.menu-items'] as $route) {
+        foreach (['admin.pages', 'admin.homepage-sections', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.order-process', 'admin.announcements', 'admin.menus', 'admin.menu-items'] as $route) {
             $this->actingAs($this->admin())
                 ->get(route($route))
                 ->assertStatus(200);
@@ -106,7 +106,7 @@ class AdminNavigationTest extends TestCase
         foreach ([
             'admin.dashboard', 'admin.products', 'admin.product-categories', 'admin.colors', 'admin.designs',
             'admin.product-colors', 'admin.design-images', 'admin.design-color-compatibilities',
-            'admin.pages', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements',
+            'admin.pages', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.order-process', 'admin.announcements',
             'admin.appearance', 'admin.menus', 'admin.menu-items', 'admin.homepage-sections',
             'admin.orders', 'admin.payments', 'admin.users', 'admin.site-settings', 'admin.manual-payment',
         ] as $route) {
@@ -276,7 +276,7 @@ class AdminNavigationTest extends TestCase
     {
         $content = $this->groupBlock('content');
 
-        foreach (['admin.pages', 'admin.homepage-sections', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.announcements', 'admin.menus', 'admin.menu-items'] as $route) {
+        foreach (['admin.pages', 'admin.homepage-sections', 'admin.articles', 'admin.article-categories', 'admin.faq', 'admin.order-process', 'admin.announcements', 'admin.menus', 'admin.menu-items'] as $route) {
             $this->assertStringContainsString(
                 route($route),
                 $content,

@@ -161,7 +161,17 @@ class ProductCustomizer extends Component
         ?int $requestedVariantId,
         ?int $requestedDesignColorId
     ): void {
-        $defaultColorId = $this->colorPrices[0]['color_id'] ?? null;
+        $defaultColorId = collect($this->colorPrices)->first(function ($cp) {
+            return DesignColorCompatibility::query()
+                ->where('card_color_id', $cp['color_id'])
+                ->where('is_allowed', true)
+                ->whereHas('designImage', function ($q) {
+                    $q->where('is_active', true)
+                        ->whereHas('design', fn ($dq) => $dq->where('is_active', true));
+                })
+                ->exists();
+        })['color_id'] ?? ($this->colorPrices[0]['color_id'] ?? null);
+
         $hasExplicitColor = $initialColorId !== null
             && collect($this->colorPrices)->pluck('color_id')->contains($initialColorId);
 
@@ -326,10 +336,17 @@ class ProductCustomizer extends Component
 
     public function setStep(int $step): void
     {
-        if ($step === 2 && $this->designSource === 'custom' && empty($this->customDesignToken)) {
-            $this->customDesignErrorMessage = 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.';
-            $this->addError('customImage', 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.');
-            return;
+        if ($step === 2) {
+            if ($this->designSource === 'custom' && empty($this->customDesignToken)) {
+                $this->customDesignErrorMessage = 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.';
+                $this->addError('customImage', 'لطفاً ابتدا تصویر طرح اختصاصی خود را بارگذاری کنید.');
+                return;
+            }
+
+            if ($this->designSource === 'catalog' && $this->design_id === null) {
+                $this->addError('design_id', 'لطفاً ابتدا یک طرح از میان طرح‌های آماده انتخاب کنید.');
+                return;
+            }
         }
 
         $this->step = in_array($step, [1, 2], true) ? $step : 1;
