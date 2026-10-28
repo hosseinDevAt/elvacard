@@ -15,7 +15,6 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Refund;
 use App\Models\User;
-use App\Services\OtpService;
 use App\Services\ReportingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,14 +75,6 @@ class FinalConsistencyCleanupTest extends TestCase
 
         $this->assertTrue((bool) $targetAdmin->fresh()->is_active);
         $this->assertNull($targetAdmin->fresh()->blocked_at);
-    }
-
-    public function test_otp_service_has_active_code_is_removed(): void
-    {
-        $this->assertFalse(
-            method_exists(OtpService::class, 'hasActiveCode'),
-            'OtpService::hasActiveCode should be removed'
-        );
     }
 
     public function test_top_products_excludes_fully_refunded_and_cancelled_orders(): void

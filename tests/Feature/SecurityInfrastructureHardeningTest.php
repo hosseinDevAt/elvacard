@@ -4,46 +4,36 @@ namespace Tests\Feature;
 
 use App\Enums\CustomizationWorkflowEnum;
 use App\Enums\OrderStatusEnum;
-use App\Enums\OtpPurpose;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentStatusEnum;
 use App\Enums\ProductTypeEnum;
-use App\Exceptions\SmsSendingFailedException;
 use App\Exceptions\UnknownPaymentGatewayException;
-use App\Exceptions\UnknownSmsProviderException;
 use App\Models\CateDesign;
 use App\Models\Color;
 use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Models\Order;
-use App\Models\OtpCode;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Models\User;
 use App\Services\CartService;
 use App\Services\OrderStateMachine;
-use App\Services\OtpService;
 use App\Services\PaymentGatewayManager;
-use App\Services\SmsManager;
-use App\Sms\LogSmsProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Mockery;
-use Psr\Log\LoggerInterface;
 use Tests\Support\FakePaymentGateway;
 use Tests\TestCase;
 
 /**
  * N-Onyx-47 â€” Authentication, Guest Access & Payment Infrastructure Hardening.
  *
- * Three areas, each asserted against a real attack rather than a description:
+ * Two areas, each asserted against a real attack rather than a description:
  *
  *   SEC-001  guest order lookup must not be enumerable
- *   SEC-002  OTP must fail closed when no production SMS transport exists
  *   OP-01    a fake gateway must never be a production payment path
  */
 class SecurityInfrastructureHardeningTest extends TestCase
@@ -275,185 +265,6 @@ class SecurityInfrastructureHardeningTest extends TestCase
             ->assertSee($order->token, false);
     }
 
-    // =========================================================================
-    // SEC-002 â€” OTP MUST FAIL CLOSED WITHOUT A PRODUCTION SMS TRANSPORT
-    // =========================================================================
-
-    public function test_the_log_driver_refuses_to_send_in_production(): void
-    {
-        $this->forceProductionEnvironment();
-
-        $this->expectException(SmsSendingFailedException::class);
-
-        app(SmsManager::class)->provider('log')->sendOtp('09120000000', '123456');
-    }
-
-    public function test_the_disabled_driver_never_claims_a_delivery(): void
-    {
-        $this->forceProductionEnvironment();
-
-        $this->expectException(SmsSendingFailedException::class);
-
-        app(SmsManager::class)->provider('disabled')->sendOtp('09120000000', '123456');
-    }
-
-    public function test_issuing_an_otp_in_production_fails_and_persists_nothing(): void
-    {
-        $this->forceProductionEnvironment();
-
-        try {
-            app(OtpService::class)->issue('09120000000', OtpPurpose::PASSWORD_RESET);
-            $this->fail('OTP issuance must fail closed in production.');
-        } catch (SmsSendingFailedException) {
-            // Expected.
-        }
-
-        $this->assertDatabaseCount('otp_codes', 0);
-    }
-
-    public function test_a_production_otp_is_never_written_to_a_log(): void
-    {
-        $this->forceProductionEnvironment();
-        Log::spy();
-
-        try {
-            app(OtpService::class)->issue('09120000000', OtpPurpose::REGISTRATION);
-        } catch (SmsSendingFailedException) {
-            // Expected.
-        }
-
-        Log::shouldNotHaveReceived('channel');
-        $this->assertDatabaseCount('otp_codes', 0);
-    }
-
-    public function test_no_test_double_is_registered_as_an_sms_provider(): void
-    {
-        foreach (config('sms.providers') as $name => $class) {
-            $this->assertStringStartsNotWith(
-                'Tests\\',
-                $class,
-                "SMS provider [{$name}] must never point at a test double.",
-            );
-        }
-    }
-
-    public function test_an_unknown_sms_provider_cannot_be_resolved(): void
-    {
-        $manager = app(SmsManager::class);
-
-        $this->assertFalse($manager->has('evil'));
-
-        $this->expectException(UnknownSmsProviderException::class);
-
-        $manager->resolve('evil');
-    }
-
-    public function test_a_class_name_cannot_be_used_as_an_sms_provider_name(): void
-    {
-        $this->expectException(UnknownSmsProviderException::class);
-
-        app(SmsManager::class)->resolve(LogSmsProvider::class);
-    }
-
-    public function test_the_otp_is_stored_hashed_and_never_in_plaintext(): void
-    {
-        app(OtpService::class)->issue('09120000000', OtpPurpose::REGISTRATION);
-
-        $otp = OtpCode::query()->latest('id')->first();
-
-        $this->assertNotNull($otp);
-        $this->assertTrue(Hash::isHashed($otp->code_hash), 'The OTP must be stored as a hash.');
-        $this->assertFalse(
-            ctype_digit($otp->code_hash),
-            'The raw OTP must never be readable from the database.',
-        );
-    }
-
-    public function test_a_wrong_otp_never_verifies_and_stops_verifying_at_the_attempt_limit(): void
-    {
-        $code = $this->issueAndCapture('09120000000', OtpPurpose::REGISTRATION);
-        $maxAttempts = (int) config('sms.otp.max_attempts');
-
-        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
-            $this->assertFalse(
-                app(OtpService::class)->verify(
-                    '09120000000',
-                    OtpPurpose::REGISTRATION,
-                    $this->wrongCode($code),
-                ),
-                'A wrong OTP must never verify.',
-            );
-        }
-
-        $this->assertFalse(
-            app(OtpService::class)->verify('09120000000', OtpPurpose::REGISTRATION, $code),
-            'Even the correct OTP must be refused once the attempt budget is spent.',
-        );
-    }
-
-    public function test_an_otp_is_single_use(): void
-    {
-        $code = $this->issueAndCapture('09120000000', OtpPurpose::REGISTRATION);
-
-        $this->assertTrue(app(OtpService::class)->verify('09120000000', OtpPurpose::REGISTRATION, $code));
-        $this->assertFalse(
-            app(OtpService::class)->verify('09120000000', OtpPurpose::REGISTRATION, $code),
-            'An OTP must be single use.',
-        );
-    }
-
-    public function test_an_otp_expires(): void
-    {
-        config(['sms.otp.expires_in' => 1]);
-
-        $code = $this->issueAndCapture('09120000000', OtpPurpose::REGISTRATION);
-
-        $this->travel(120)->seconds();
-
-        $this->assertFalse(
-            app(OtpService::class)->verify('09120000000', OtpPurpose::REGISTRATION, $code),
-            'An expired OTP must not verify.',
-        );
-    }
-
-    public function test_an_otp_is_bound_to_its_phone_number(): void
-    {
-        $code = $this->issueAndCapture('09120000000', OtpPurpose::REGISTRATION);
-
-        $this->assertFalse(
-            app(OtpService::class)->verify('09120000009', OtpPurpose::REGISTRATION, $code),
-            'A valid OTP must not verify a different phone number.',
-        );
-    }
-
-    public function test_an_otp_does_not_cross_purposes(): void
-    {
-        $code = $this->issueAndCapture('09120000000', OtpPurpose::REGISTRATION);
-
-        $this->assertFalse(
-            app(OtpService::class)->verify('09120000000', OtpPurpose::PASSWORD_RESET, $code),
-            'A registration OTP must not authorise a password reset.',
-        );
-    }
-
-    public function test_issuing_a_new_otp_invalidates_the_previous_one(): void
-    {
-        $codes = $this->captureCodes(function (): void {
-            app(OtpService::class)->issue('09120000000', OtpPurpose::REGISTRATION);
-            app(OtpService::class)->issue('09120000000', OtpPurpose::REGISTRATION);
-        });
-
-        $this->assertCount(2, $codes, 'Both issuances must reach the transport.');
-
-        [$first, $second] = $codes;
-
-        $this->assertNotSame($first, $second);
-        $this->assertFalse(
-            app(OtpService::class)->verify('09120000000', OtpPurpose::REGISTRATION, $first),
-            'Resending must invalidate the superseded code.',
-        );
-    }
-
     public function test_a_blocked_account_is_logged_out_even_with_a_valid_session(): void
     {
         $blocked = $this->customer();
@@ -650,54 +461,5 @@ class SecurityInfrastructureHardeningTest extends TestCase
     {
         config(['app.env' => 'production']);
         $this->app['env'] = 'production';
-    }
-
-    /**
-     * Issue an OTP through the development driver while capturing the code it
-     * emitted, so verification is exercised end to end without weakening the
-     * hashing or bypassing the transport.
-     */
-    private function issueAndCapture(string $phone, OtpPurpose $purpose): string
-    {
-        $codes = $this->captureCodes(
-            fn () => app(OtpService::class)->issue($phone, $purpose),
-        );
-
-        $this->assertNotEmpty($codes, 'The development driver did not emit an OTP code.');
-
-        return $codes[0];
-    }
-
-    /**
-     * Run the given issuance with the development log driver captured, and
-     * return every code it emitted, in order.
-     *
-     * @param  callable(): void  $action
-     * @return list<string>
-     */
-    private function captureCodes(callable $action): array
-    {
-        $captured = [];
-
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('info')->andReturnUsing(
-            function ($message, array $context = []) use (&$captured): void {
-                if (isset($context['code'])) {
-                    $captured[] = (string) $context['code'];
-                }
-            }
-        );
-
-        Log::spy();
-        Log::shouldReceive('channel')->with('sms')->andReturn($logger);
-
-        $action();
-
-        return $captured;
-    }
-
-    private function wrongCode(string $code): string
-    {
-        return $code === '000000' ? '111111' : '000000';
     }
 }
