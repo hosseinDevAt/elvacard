@@ -9,6 +9,7 @@ use App\Models\CateDesign;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
 use App\Models\Product;
+use App\Models\ProductColorPrice;
 use App\Services\CartService;
 use App\Services\CustomDesign\CustomDesignService;
 use App\Services\Customization\CardPresenter;
@@ -25,7 +26,7 @@ class ProductCustomizer extends Component
     use WithFileUploads;
     use WithPagination;
 
-    public int $product_id;
+    public ?int $product_id = null;
 
     public ?int $color_id = null;
 
@@ -75,53 +76,120 @@ class ProductCustomizer extends Component
     public array $designImages = [];
 
     public function mount(
-        int $productId,
+        ?int $productId = null,
+        ?string $workflow = null,
         ?string $initialDesignSlug = null,
         ?int $initialColorId = null,
         ?int $initialVariantId = null,
     ): void {
-        $product = Product::query()
-            ->active()
-            ->with([
-                'colorPrices' => fn ($query) => $query
+        $resolvedWorkflow = null;
+        $product = null;
+
+        if ($workflow !== null && trim($workflow) !== '') {
+            $resolvedWorkflow = CustomizationWorkflowEnum::tryFrom(trim($workflow));
+        }
+
+        if ($productId !== null && $productId > 0) {
+            $product = Product::query()->active()->find($productId);
+            if ($product !== null) {
+                $rawWorkflow = $product->getRawOriginal('customization_workflow');
+                if ($resolvedWorkflow === null && $rawWorkflow !== null) {
+                    $resolvedWorkflow = CustomizationWorkflowEnum::tryFrom((string) $rawWorkflow);
+                }
+            }
+        }
+
+        if ($resolvedWorkflow !== null) {
+            if (! CustomizationWorkflowRegistry::isActive($resolvedWorkflow)) {
+                abort(404);
+            }
+
+            $this->product_id = $product?->id ?? $productId;
+            $this->workflow = $resolvedWorkflow->value;
+            $this->basePrice = (int) ($product?->base_price ?? 0);
+
+            $colorPricesQuery = ProductColorPrice::query()
+                ->where('customization_workflow', $resolvedWorkflow->value)
+                ->where('is_active', true)
+                ->whereHas('color', fn ($query) => $query->where('is_active', true))
+                ->with([
+                    'color' => fn ($colorQuery) => $colorQuery
+                        ->active()
+                        ->orderBy('sort_order'),
+                ])
+                ->orderBy('price');
+
+            if ($colorPricesQuery->clone()->doesntExist() && $this->product_id !== null) {
+                $colorPricesQuery = ProductColorPrice::query()
+                    ->where('product_id', $this->product_id)
                     ->where('is_active', true)
+                    ->whereHas('color', fn ($query) => $query->where('is_active', true))
                     ->with([
                         'color' => fn ($colorQuery) => $colorQuery
                             ->active()
                             ->orderBy('sort_order'),
                     ])
-                    ->orderBy('price'),
-            ])
-            ->findOrFail($productId);
+                    ->orderBy('price');
+            }
 
-        $workflowRaw = $product->getRawOriginal('customization_workflow');
-        $workflow = $workflowRaw !== null ? CustomizationWorkflowEnum::tryFrom((string) $workflowRaw) : null;
+            $rawPrices = $colorPricesQuery->get();
 
-        if (! CustomizationWorkflowRegistry::isActive($workflow)) {
-            abort(404);
+            if ($rawPrices->isEmpty()) {
+                abort(404);
+            }
+
+            if ($resolvedWorkflow === CustomizationWorkflowEnum::FUEL_CARD && $rawPrices->count() !== 1) {
+                abort(404);
+            }
+
+            $this->colorPrices = $rawPrices
+                ->map(fn ($price) => [
+                    'color_id' => $price->color_id,
+                    'name' => $price->color?->name,
+                    'color_hex' => $price->color?->code_hex,
+                    'price' => (int) $price->price,
+                    'is_scratched' => (bool) ($price->color?->is_scratched ?? false),
+                ])
+                ->values()
+                ->all();
+        } else {
+            if ($productId === null) {
+                abort(404);
+            }
+
+            $product = Product::query()
+                ->active()
+                ->with([
+                    'colorPrices' => fn ($query) => $query
+                        ->where('is_active', true)
+                        ->with([
+                            'color' => fn ($colorQuery) => $colorQuery
+                                ->active()
+                                ->orderBy('sort_order'),
+                        ])
+                        ->orderBy('price'),
+                ])
+                ->findOrFail($productId);
+
+            if (! ProductPurchaseabilityService::isPurchasable($productId)) {
+                abort(404);
+            }
+
+            $this->product_id = $productId;
+            $this->workflow = null;
+            $this->basePrice = (int) $product->base_price;
+
+            $this->colorPrices = collect($product->colorPrices)
+                ->map(fn ($price) => [
+                    'color_id' => $price->color_id,
+                    'name' => $price->color?->name,
+                    'color_hex' => $price->color?->code_hex,
+                    'price' => (int) $price->price,
+                    'is_scratched' => (bool) ($price->color?->is_scratched ?? false),
+                ])
+                ->values()
+                ->all();
         }
-
-        // Re-check purchaseability server-side: a launched-workflow product that
-        // lost its price path, design path, or fuel readiness must never mount a
-        // working customization surface (or a misleading "0 تومان" price).
-        if (! ProductPurchaseabilityService::isPurchasable($productId)) {
-            abort(404);
-        }
-
-        $this->product_id = $productId;
-        $this->workflow = $workflow?->value;
-        $this->basePrice = (int) $product->base_price;
-
-        $this->colorPrices = collect($product->colorPrices)
-            ->map(fn ($price) => [
-                'color_id' => $price->color_id,
-                'name' => $price->color?->name,
-                'color_hex' => $price->color?->code_hex,
-                'price' => (int) $price->price,
-                'is_scratched' => (bool) ($price->color?->is_scratched ?? false),
-            ])
-            ->values()
-            ->all();
 
         $initialDesignSlug = $initialDesignSlug ?? request()->query('design');
         $initialColorParam = $initialColorId ?? request()->query('color');
@@ -597,14 +665,14 @@ class ProductCustomizer extends Component
     {
         if ($this->designSource === 'custom') {
             return [
-                'product_id' => ['required', 'integer', 'min:1'],
+                'product_id' => ['nullable', 'integer'],
                 'color_id' => ['required', 'integer', 'min:1'],
                 'quantity' => ['required', 'integer', 'min:1', 'max:20'],
             ];
         }
 
         return [
-            'product_id' => ['required', 'integer', 'min:1'],
+            'product_id' => ['nullable', 'integer'],
             'color_id' => ['required', 'integer', 'min:1'],
             'design_id' => ['required', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
@@ -652,13 +720,15 @@ class ProductCustomizer extends Component
             }
 
             $this->validate([
-                'product_id' => ['required', 'integer', 'min:1'],
+                'product_id' => ['nullable', 'integer'],
                 'color_id' => ['required', 'integer', 'min:1'],
                 'quantity' => ['required', 'integer', 'min:1', 'max:20'],
             ]);
 
             $cartService->addItem([
-                'product_id' => $this->product_id,
+                'workflow' => $this->authoritativeWorkflow(),
+                'customization_workflow' => $this->authoritativeWorkflow(),
+                'product_id' => $this->product_id > 0 ? $this->product_id : null,
                 'color_id' => $this->color_id,
                 'design_id' => null,
                 'design_image_id' => null,
@@ -676,7 +746,7 @@ class ProductCustomizer extends Component
         }
 
         $this->validate([
-            'product_id' => ['required', 'integer', 'min:1'],
+            'product_id' => ['nullable', 'integer'],
             'color_id' => ['required', 'integer', 'min:1'],
             'design_id' => ['required', 'integer', 'min:1'],
             'design_image_id' => ['nullable', 'integer', 'min:1'],
@@ -702,7 +772,9 @@ class ProductCustomizer extends Component
         }
 
         $cartService->addItem([
-            'product_id' => $this->product_id,
+            'workflow' => $this->authoritativeWorkflow(),
+            'customization_workflow' => $this->authoritativeWorkflow(),
+            'product_id' => $this->product_id > 0 ? $this->product_id : null,
             'color_id' => $this->color_id,
             'design_id' => $this->design_id,
             'design_image_id' => $this->design_image_id,
@@ -800,15 +872,24 @@ class ProductCustomizer extends Component
      */
     private function authoritativeWorkflow(): ?string
     {
-        $product = Product::query()->find($this->product_id);
-
-        if ($product === null) {
-            return null;
+        if ($this->product_id !== null && $this->product_id > 0) {
+            $product = Product::query()->find($this->product_id);
+            if ($product !== null) {
+                $raw = $product->getRawOriginal('customization_workflow');
+                if ($raw !== null) {
+                    return (string) $raw;
+                }
+            }
         }
 
-        $raw = $product->getRawOriginal('customization_workflow');
+        if ($this->workflow !== null) {
+            $enum = CustomizationWorkflowEnum::tryFrom($this->workflow);
+            if ($enum !== null) {
+                return $enum->value;
+            }
+        }
 
-        return $raw !== null ? (string) $raw : null;
+        return null;
     }
 
     private function catalogWorkflow(): ?CustomizationWorkflowEnum

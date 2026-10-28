@@ -23,11 +23,14 @@
                         <span>بازگشت به صفحه طراحی کارت اختصاصی</span>
                     </a>
                     <h1 class="mt-2 text-2xl font-black text-[#010619] sm:text-3xl">طراحی کارت سوخت</h1>
-                    <p class="mt-1 text-xs font-medium text-slate-500">{{ $product->name }}</p>
+                    <p class="mt-1 text-xs font-medium text-slate-500">{{ $product?->name ?? 'کارت سوخت هوشمند با طرح اختصاصی' }}</p>
                 </div>
             </div>
 
-            <livewire:catalog.product-customizer :productId="$product->id" />
+            <livewire:catalog.product-customizer
+                :workflow="\App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value"
+                :productId="$product?->id"
+            />
         </div>
     </div>
 @endsection

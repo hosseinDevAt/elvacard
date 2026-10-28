@@ -23,12 +23,13 @@
                         <span>بازگشت به طراحی کارت اختصاصی</span>
                     </a>
                     <h1 class="mt-2 text-2xl font-black text-[#010619] sm:text-3xl">طراحی کارت بانکی</h1>
-                    <p class="mt-1 text-xs font-medium text-slate-500">{{ $product->name }}</p>
+                    <p class="mt-1 text-xs font-medium text-slate-500">{{ $product?->name ?? 'کارت بانکی با طرح اختصاصی' }}</p>
                 </div>
             </div>
 
             <livewire:catalog.product-customizer
-                :productId="$product->id"
+                :workflow="\App\Enums\CustomizationWorkflowEnum::BANK_CARD->value"
+                :productId="$product?->id"
                 :initialDesignSlug="$initialDesignSlug ?? null"
                 :initialColorId="$initialColorId ?? null"
                 :initialVariantId="$initialVariantId ?? null"

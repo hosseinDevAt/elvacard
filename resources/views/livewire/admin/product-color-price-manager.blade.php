@@ -1,7 +1,7 @@
 <div>
-    <x-admin.page-header title="طرح‌های کار و پایه قیمت‌ها" subtitle="تعیین قیمت پایه بر اساس رنگ کارت‌های بانکی و سوخت">
+    <x-admin.page-header title="طرح‌های کارت و پایه قیمت‌ها" subtitle="تعیین قیمت پایه بر اساس نوع کارت و رنگ کارت‌های بانکی و سوخت">
         <x-slot:actions>
-            <button type="button" wire:click="create" @disabled(empty($productOptions)) class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25 shrink-0 {{ empty($productOptions) ? 'opacity-50 cursor-not-allowed' : '' }}">
+            <button type="button" wire:click="create" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25 shrink-0">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -23,61 +23,30 @@
         </div>
     @endif
 
-    @if(empty($productOptions))
-        <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-5 text-amber-900 shadow-xs">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-amber-100 text-amber-800 shrink-0">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-sm text-amber-900">محصول کارت بانکی یا کارت سوخت یافت نشد</h4>
-                        <p class="text-xs text-amber-700 mt-1">برای تعیین قیمت رنگ‌ها، ابتدا باید محصول پایه کارت بانکی یا کارت سوخت را از بخش مدیریت محصولات ایجاد کنید.</p>
-                    </div>
-                </div>
-                <a href="{{ route('admin.products') }}" class="admin-btn admin-btn-primary admin-btn-sm text-xs font-semibold shrink-0">
-                    مدیریت محصولات
-                </a>
-            </div>
-        </div>
-    @elseif(! $cardProducts['bank_card'] || ! $cardProducts['fuel_card'])
-        <div class="mb-6 rounded-2xl border border-sky-200 bg-sky-50/90 p-4 text-sky-900 shadow-xs">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5 text-xs">
-                    <svg class="h-5 w-5 text-sky-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>
-                        محصول
-                        <strong>{{ ! $cardProducts['bank_card'] ? 'کارت بانکی' : 'کارت سوخت' }}</strong>
-                        هنوز ایجاد نشده است. برای تعریف قیمت آن، می‌توانید از بخش
-                        <a href="{{ route('admin.products') }}" class="font-bold underline text-sky-800 hover:text-sky-950">مدیریت محصولات</a>
-                        اقدام کنید.
-                    </span>
-                </div>
-            </div>
-        </div>
-    @endif
+    {{-- Workflow Filter Tabs --}}
+    <div class="mb-6 flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-slate-500 ms-1">فیلتر نمایش:</span>
+        <button type="button" wire:click="selectWorkflow(null)"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition {{ $workflowFilter === null ? 'bg-[#010619] text-[#ffde5b] shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+            همه کارت‌ها
+        </button>
+        <button type="button" wire:click="selectWorkflow('bank_card')"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition {{ $workflowFilter === 'bank_card' ? 'bg-[#010619] text-[#ffde5b] shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+            کارت بانکی
+        </button>
+        <button type="button" wire:click="selectWorkflow('fuel_card')"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition {{ $workflowFilter === 'fuel_card' ? 'bg-[#010619] text-[#ffde5b] shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+            کارت سوخت
+        </button>
+    </div>
 
-    @if($selectedProduct && ! $showForm)
-        <div class="mb-4 -mt-2 flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[#ffde5b]/20 text-[#010619] border border-[#ffde5b]/60">
-                <span>در حال فیلتر بر اساس:</span>
-                <span class="font-bold">{{ $selectedProduct->name }}</span>
-                <button type="button" wire:click="$set('productId', null)" class="text-slate-500 hover:text-slate-900 ms-1 text-sm font-bold" title="نمایش همه کارت‌ها">×</button>
-            </span>
-        </div>
-    @endif
-
-    @if($selectedProductIsFuel)
+    @if($selectedWorkflowIsFuel)
         <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-800">
             کارت سوخت فقط یک رنگ و قیمت فعال می‌پذیرد؛ ردیف‌های غیرفعال اضافی مجاز هستند.
         </div>
     @endif
 
-    <!-- Base Price Cards by Color (Matching Figma Reference 2) -->
+    <!-- Base Price Cards by Color -->
     <div class="admin-card p-6 mb-6">
         <h3 class="text-sm font-bold text-slate-700 mb-5">لیست قیمت پایه بر اساس رنگ کارت</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -85,7 +54,10 @@
                 <div class="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-white hover:shadow-sm hover:border-slate-300 transition group text-center">
                     <div class="w-12 h-12 rounded-full border-2 border-white shadow-md mb-3 transition-transform group-hover:scale-105"
                          style="background-color: {{ $cardPrice->color?->code_hex ?? '#ccc' }};"></div>
-                    <span class="text-xs font-bold text-slate-800 block mb-1">{{ $cardPrice->color?->name ?? 'رنگ' }}</span>
+                    <span class="text-xs font-bold text-slate-800 block mb-0.5">{{ $cardPrice->color?->name ?? 'رنگ' }}</span>
+                    <span class="text-[10px] font-semibold text-slate-500 block mb-1">
+                        {{ $cardPrice->customization_workflow?->value === 'fuel_card' ? 'کارت سوخت' : 'کارت بانکی' }}
+                    </span>
                     <span class="text-xs font-extrabold text-slate-900 block">{{ number_format((int)$cardPrice->price) }} تومان</span>
                 </div>
             @empty
@@ -102,36 +74,30 @@
             <form wire:submit="save" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="admin-label">نوع کارت</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
-                            @if($cardProducts['bank_card'])
-                                @php $bankId = $cardProducts['bank_card']->id; @endphp
-                                <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$bankId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
-                                    <input type="radio" wire:model.live="productId" value="{{ $bankId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
-                                    <div class="flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
-                                            <line x1="2" y1="10" x2="22" y2="10" stroke-width="2"/>
-                                        </svg>
-                                        <span class="text-xs font-bold text-slate-800">{{ $cardProducts['bank_card']->name ?: 'کارت بانکی' }}</span>
-                                    </div>
-                                </label>
-                            @endif
+                        <label class="admin-label">نوع کارت (گردش کار)</label>
+                        <div class="grid grid-cols-2 gap-3 mt-1.5">
+                            <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ $workflow === 'bank_card' ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
+                                <input type="radio" wire:model.live="workflow" value="bank_card" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
+                                        <line x1="2" y1="10" x2="22" y2="10" stroke-width="2"/>
+                                    </svg>
+                                    <span class="text-xs font-bold text-slate-800">کارت بانکی</span>
+                                </div>
+                            </label>
 
-                            @if($cardProducts['fuel_card'])
-                                @php $fuelId = $cardProducts['fuel_card']->id; @endphp
-                                <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$fuelId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
-                                    <input type="radio" wire:model.live="productId" value="{{ $fuelId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
-                                    <div class="flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                        </svg>
-                                        <span class="text-xs font-bold text-slate-800">{{ $cardProducts['fuel_card']->name ?: 'کارت سوخت' }}</span>
-                                    </div>
-                                </label>
-                            @endif
+                            <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ $workflow === 'fuel_card' ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
+                                <input type="radio" wire:model.live="workflow" value="fuel_card" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    <span class="text-xs font-bold text-slate-800">کارت سوخت</span>
+                                </div>
+                            </label>
                         </div>
-                        @error('productId') <p class="admin-error">{{ $message }}</p> @enderror
+                        @error('workflow') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="admin-label">رنگ</label>
@@ -142,7 +108,7 @@
                             @endforeach
                         </select>
                         @error('colorId') <p class="admin-error">{{ $message }}</p> @enderror
-                        @if($selectedProductIsFuel)
+                        @if($selectedWorkflowIsFuel)
                             <p class="text-xs text-amber-600 mt-1">کارت سوخت فقط یک رنگ فعال می‌پذیرد؛ برای تعویض رنگ فعال، ابتدا رنگ فعال فعلی را غیرفعال کنید.</p>
                         @endif
                     </div>
@@ -174,7 +140,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 border-b border-slate-100">
             <h3 class="text-base font-bold text-slate-900">جدول کلی قیمت‌ها و موجودی رنگ</h3>
             <div class="w-full sm:w-72">
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در نام محصول..." class="admin-input py-2 text-xs">
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در رنگ..." class="admin-input py-2 text-xs">
             </div>
         </div>
 
@@ -183,7 +149,7 @@
                 <thead class="bg-slate-50/70 border-b border-slate-100">
                     <tr>
                         <th class="admin-th w-16">#</th>
-                        <th class="admin-th">محصول</th>
+                        <th class="admin-th">نوع کارت</th>
                         <th class="admin-th">رنگ</th>
                         <th class="admin-th">قیمت</th>
                         <th class="admin-th">وضعیت</th>
@@ -195,7 +161,28 @@
                     @forelse($prices as $priceItem)
                         <tr class="hover:bg-slate-50/60 transition">
                             <td class="admin-td text-xs text-slate-400 font-mono">{{ $priceItem->id }}</td>
-                            <td class="admin-td font-bold text-slate-900">{{ $priceItem->product?->name }}</td>
+                            <td class="admin-td">
+                                @php
+                                    $isFuel = ($priceItem->customization_workflow?->value ?? $priceItem->product?->customization_workflow?->value) === 'fuel_card';
+                                    $cardName = $priceItem->product?->name ?? ($isFuel ? 'کارت سوخت' : 'کارت بانکی');
+                                @endphp
+                                @if($isFuel)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/80">
+                                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        <span>{{ $cardName }}</span>
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-[#010619] border border-slate-200">
+                                        <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
+                                            <line x1="2" y1="10" x2="22" y2="10" stroke-width="2"/>
+                                        </svg>
+                                        <span>{{ $cardName }}</span>
+                                    </span>
+                                @endif
+                            </td>
                             <td class="admin-td">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-5 h-5 rounded-full border border-white shadow-xs" style="background-color: {{ $priceItem->color?->code_hex }}"></div>
@@ -221,12 +208,12 @@
                                                         <span class="absolute -top-1 -start-1 rounded-full bg-emerald-500 px-1 text-[8px] font-medium text-white">اصلی</span>
                                                     @endif
                                                 </div>
-                                                @if($productId)
+                                                <div class="flex items-center gap-1">
                                                     @if(! $image->is_primary)
-                                                        <button type="button" wire:click="setPrimaryImage({{ $image->id }})" class="text-[10px] text-[#010619] hover:underline font-bold">تعیین اصلی</button>
+                                                        <button type="button" wire:click="setPrimaryImage({{ $image->id }})" class="text-[10px] text-[#010619] hover:underline font-bold">اصلی</button>
                                                     @endif
                                                     <button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="آیا از حذف این تصویر مطمئن هستید؟" class="text-[10px] text-rose-600 hover:text-rose-700">حذف</button>
-                                                @endif
+                                                </div>
                                             </div>
                                         @endforeach
                                     </div>
@@ -234,12 +221,8 @@
                             </td>
                             <td class="admin-td text-center">
                                 <div class="inline-flex items-center gap-1.5">
-                                    @if($productId)
-                                        <button type="button" wire:click="edit({{ $priceItem->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
-                                        <button type="button" wire:click="delete({{ $priceItem->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
-                                    @else
-                                        <button type="button" wire:click="selectProduct({{ $priceItem->product_id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">انتخاب کارت</button>
-                                    @endif
+                                    <button type="button" wire:click="edit({{ $priceItem->id }})" class="admin-btn admin-btn-secondary admin-btn-sm font-semibold">ویرایش</button>
+                                    <button type="button" wire:click="delete({{ $priceItem->id }})" wire:confirm="آیا از حذف این قیمت مطمئن هستید؟" class="text-xs text-rose-600 hover:text-rose-700 px-2 py-1.5 font-medium transition">حذف</button>
                                 </div>
                             </td>
                         </tr>

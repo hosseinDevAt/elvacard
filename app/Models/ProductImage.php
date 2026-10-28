@@ -9,6 +9,7 @@ class ProductImage extends Model
 {
     protected $fillable = [
         'product_id',
+        'customization_workflow',
         'color_id',
         'image_path',
         'sort_order',
@@ -16,6 +17,7 @@ class ProductImage extends Model
     ];
 
     protected $casts = [
+        'customization_workflow' => \App\Enums\CustomizationWorkflowEnum::class,
         'is_primary' => 'boolean',
         'sort_order' => 'integer',
     ];
