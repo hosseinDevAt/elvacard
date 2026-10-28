@@ -3,10 +3,12 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\CustomizationWorkflowEnum;
+use App\Enums\ProductTypeEnum;
 use App\Models\Color;
 use App\Models\Product;
 use App\Models\ProductColorPrice;
 use App\Models\ProductImage;
+use App\Services\Customization\CustomizationWorkflowRegistry;
 use App\Services\Customization\ProductPurchaseabilityService;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Livewire\Component;
@@ -44,7 +46,7 @@ class ProductColorPriceManager extends Component
     ];
 
     protected $messages = [
-        'productId.required' => 'محصول را انتخاب کنید.',
+        'productId.required' => 'نوع کارت را انتخاب کنید.',
         'colorId.required' => 'رنگ را انتخاب کنید.',
         'price.required' => 'قیمت را وارد کنید.',
         'price.integer' => 'قیمت باید عدد صحیح باشد.',
@@ -180,7 +182,13 @@ class ProductColorPriceManager extends Component
      */
     public function create(): void
     {
+        $currentProductId = $this->productId;
         $this->resetForm();
+        if ($currentProductId && ($currentProductId === $this->cardProducts['fuel_card']->id || $currentProductId === $this->cardProducts['bank_card']->id)) {
+            $this->productId = $currentProductId;
+        } else {
+            $this->productId = $this->cardProducts['bank_card']->id;
+        }
         $this->showForm = true;
     }
 
@@ -434,27 +442,88 @@ class ProductColorPriceManager extends Component
         }
     }
 
+    public static function ensureCardProduct(CustomizationWorkflowEnum $workflow): Product
+    {
+        $product = Product::query()
+            ->where('customization_workflow', $workflow->value)
+            ->first();
+
+        if ($product !== null) {
+            return $product;
+        }
+
+        $slug = match ($workflow) {
+            CustomizationWorkflowEnum::BANK_CARD => 'bank-card',
+            CustomizationWorkflowEnum::FUEL_CARD => 'fuel-card',
+        };
+
+        $expectedType = CustomizationWorkflowRegistry::expectedType($workflow);
+
+        $slugProduct = Product::query()->where('slug', $slug)->first();
+
+        if ($slugProduct !== null) {
+            // Adopt only if it is genuinely a card product of the expected type
+            // (e.g. legacy/pre-migration row), never mutating an unrelated store product.
+            if ($slugProduct->type === $expectedType) {
+                if ($slugProduct->customization_workflow !== $workflow) {
+                    $slugProduct->update(['customization_workflow' => $workflow]);
+                }
+
+                return $slugProduct;
+            }
+
+            // Slug is occupied by an unrelated non-card product. Find an available slug.
+            $baseSlug = $slug;
+            $counter = 1;
+            while (Product::query()->where('slug', $slug)->exists()) {
+                $slug = $baseSlug.'-'.$counter++;
+            }
+        }
+
+        $name = match ($workflow) {
+            CustomizationWorkflowEnum::BANK_CARD => 'کارت بانکی',
+            CustomizationWorkflowEnum::FUEL_CARD => 'کارت سوخت',
+        };
+
+        $basePrice = match ($workflow) {
+            CustomizationWorkflowEnum::BANK_CARD => 850000,
+            CustomizationWorkflowEnum::FUEL_CARD => 450000,
+        };
+
+        try {
+            return Product::create([
+                'type' => CustomizationWorkflowRegistry::expectedType($workflow),
+                'customization_workflow' => $workflow,
+                'name' => $name,
+                'slug' => $slug,
+                'description' => $name.' با طرح سفارشی',
+                'base_price' => $basePrice,
+                'is_active' => true,
+            ]);
+        } catch (\Illuminate\Database\QueryException) {
+            return Product::query()
+                ->where('customization_workflow', $workflow->value)
+                ->orWhere('slug', $slug)
+                ->firstOrFail();
+        }
+    }
+
+    public function getCardProductsProperty(): array
+    {
+        return [
+            'bank_card' => self::ensureCardProduct(CustomizationWorkflowEnum::BANK_CARD),
+            'fuel_card' => self::ensureCardProduct(CustomizationWorkflowEnum::FUEL_CARD),
+        ];
+    }
+
     public function getProductOptionsProperty(): array
     {
-        // Only Bank/Fuel card products may be priced here. Ordinary Store
-        // products keep their pricing inside the Store → Products surface.
-        $items = Product::query()
-            ->whereNotNull('customization_workflow')
-            ->orderBy('name')
-            ->get(['id', 'name', 'is_active']);
+        $cards = $this->cardProducts;
 
-        return array_merge(
-            $items->filter(fn ($product) => (bool) $product->is_active)
-                ->map(fn ($product) => ['id' => $product->id, 'name' => $product->name])
-                ->values()
-                ->all(),
-            $this->editingId
-                ? $items->filter(fn ($product) => ! $product->is_active && (int) $product->id === (int) $this->productId)
-                    ->map(fn ($product) => ['id' => $product->id, 'name' => $product->name.' (غیرفعال)'])
-                    ->values()
-                    ->all()
-                : []
-        );
+        return [
+            ['id' => $cards['bank_card']->id, 'name' => 'کارت بانکی', 'workflow' => 'bank_card'],
+            ['id' => $cards['fuel_card']->id, 'name' => 'کارت سوخت', 'workflow' => 'fuel_card'],
+        ];
     }
 
     public function getColorOptionsProperty(): array
@@ -499,6 +568,7 @@ class ProductColorPriceManager extends Component
 
         return view('livewire.admin.product-color-price-manager', [
             'prices' => $prices,
+            'cardProducts' => $this->cardProducts,
             'productOptions' => $this->productOptions,
             'colorOptions' => $this->colorOptions,
             'selectedProduct' => $selectedProduct,

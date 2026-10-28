@@ -11,11 +11,12 @@
         </x-slot:actions>
     </x-admin.page-header>
 
-    @if($selectedProduct)
-        <div class="mb-4 -mt-2">
+    @if($selectedProduct && ! $showForm)
+        <div class="mb-4 -mt-2 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[#ffde5b]/20 text-[#010619] border border-[#ffde5b]/60">
-                <span>در حال مدیریت رنگ و قیمت:</span>
+                <span>در حال فیلتر بر اساس:</span>
                 <span class="font-bold">{{ $selectedProduct->name }}</span>
+                <button type="button" wire:click="$set('productId', null)" class="text-slate-500 hover:text-slate-900 ms-1 text-sm font-bold" title="نمایش همه کارت‌ها">×</button>
             </span>
         </div>
     @endif
@@ -51,13 +52,33 @@
             <form wire:submit="save" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="admin-label">کارت بانکی / سوخت</label>
-                        <select wire:model="productId" class="admin-select">
-                            <option value="">— انتخاب محصول —</option>
-                            @foreach($productOptions as $option)
-                                <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
-                            @endforeach
-                        </select>
+                        <label class="admin-label">نوع کارت</label>
+                        <div class="grid grid-cols-2 gap-3 mt-1.5">
+                            @php
+                                $bankId = $cardProducts['bank_card']->id;
+                                $fuelId = $cardProducts['fuel_card']->id;
+                            @endphp
+                            <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$bankId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
+                                <input type="radio" wire:model.live="productId" value="{{ $bankId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
+                                        <line x1="2" y1="10" x2="22" y2="10" stroke-width="2"/>
+                                    </svg>
+                                    <span class="text-xs font-bold text-slate-800">کارت بانکی</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$fuelId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
+                                <input type="radio" wire:model.live="productId" value="{{ $fuelId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    <span class="text-xs font-bold text-slate-800">کارت سوخت</span>
+                                </div>
+                            </label>
+                        </div>
                         @error('productId') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
