@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\SiteSetting;
+use App\Services\MaintenanceModeManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -27,7 +28,55 @@ class SiteSettingManager extends Component
 
     public bool $showForm = false;
 
+    public bool $isMaintenanceActive = false;
+
+    public ?string $maintenanceInfo = null;
+
     private const SUPPORTED_TYPES = ['string', 'integer', 'boolean', 'json'];
+
+    public function mount(): void
+    {
+        $this->refreshMaintenanceState();
+    }
+
+    public function refreshMaintenanceState(): void
+    {
+        $manager = app(MaintenanceModeManager::class);
+        $this->isMaintenanceActive = $manager->isActive();
+        $this->maintenanceInfo = $manager->getInfo();
+    }
+
+    public function enableMaintenance(): void
+    {
+        $user = auth()->user();
+        if (! $user || $user->role !== 'admin' || ! (bool) $user->is_active) {
+            abort(403);
+        }
+
+        try {
+            app(MaintenanceModeManager::class)->enable($user->phone ?? $user->name);
+            $this->refreshMaintenanceState();
+            session()->flash('success', 'حالت تعمیر و نگهداری با موفقیت فعال شد. صفحات عمومی برای کاربران مسدود شد.');
+        } catch (\Throwable $e) {
+            session()->flash('error', 'خطا در فعال‌سازی حالت تعمیر: '.$e->getMessage());
+        }
+    }
+
+    public function disableMaintenance(): void
+    {
+        $user = auth()->user();
+        if (! $user || $user->role !== 'admin' || ! (bool) $user->is_active) {
+            abort(403);
+        }
+
+        try {
+            app(MaintenanceModeManager::class)->disable();
+            $this->refreshMaintenanceState();
+            session()->flash('success', 'حالت تعمیر و نگهداری غیرفعال شد. دسترسی عمومی به سایت بازگردانده شد.');
+        } catch (\Throwable $e) {
+            session()->flash('error', 'خطا در غیرفعال‌سازی حالت تعمیر: '.$e->getMessage());
+        }
+    }
 
     protected function rules(): array
     {
@@ -133,6 +182,7 @@ class SiteSettingManager extends Component
         }
 
         $this->resetForm();
+        $this->refreshMaintenanceState();
         $this->showForm = false;
     }
 
@@ -180,6 +230,7 @@ class SiteSettingManager extends Component
         }
 
         $siteSetting->delete();
+        $this->refreshMaintenanceState();
         session()->flash('success', 'تنظیمات با موفقیت حذف شد');
     }
 

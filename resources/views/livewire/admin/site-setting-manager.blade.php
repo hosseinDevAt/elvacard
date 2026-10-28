@@ -11,6 +11,71 @@
         </x-slot:actions>
     </x-admin.page-header>
 
+    <!-- Maintenance Mode Control Card -->
+    <div class="admin-card p-5 sm:p-6 mb-6 border-s-4 {{ $isMaintenanceActive ? 'border-s-amber-500 bg-amber-50/20' : 'border-s-emerald-500' }}">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="space-y-1.5">
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <span class="inline-flex h-3 w-3 rounded-full {{ $isMaintenanceActive ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500' }}"></span>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900">حالت تعمیر و نگهداری سایت (Maintenance Mode)</h3>
+                    <span class="admin-badge {{ $isMaintenanceActive ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200' }}">
+                        {{ $isMaintenanceActive ? 'فعال (در دست تعمیر)' : 'غیرفعال (سایت عادی)' }}
+                    </span>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                    {{ $isMaintenanceActive
+                        ? 'در حال حاضر دسترسی بازدیدکنندگان عادی به فروشگاه و صفحات عمومی مسدود است و صفحهٔ ۵۰۳ (در دست به‌روزرسانی) نمایش داده می‌شود. پنل مدیریت و صفحهٔ ورود همچنان برای مدیران در دسترس است.'
+                        : 'سایت به‌صورت عادی برای تمامی کاربران فعال است. در صورت نیاز به ارتقا یا نگهداری، می‌توانید حالت تعمیر را فعال کنید.' }}
+                </p>
+                @if($maintenanceInfo)
+                    <div class="text-[11px] text-slate-500 font-mono pt-0.5">
+                        آخرین تغییر: {{ $maintenanceInfo }}
+                    </div>
+                @endif
+            </div>
+
+            <div class="flex items-center gap-3 shrink-0">
+                @if($isMaintenanceActive)
+                    <button
+                        type="button"
+                        wire:click="disableMaintenance"
+                        wire:confirm="آیا از غیرفعال‌سازی حالت تعمیر و بازگشایی عمومی سایت مطمئن هستید؟"
+                        wire:loading.attr="disabled"
+                        class="admin-btn bg-emerald-600 hover:bg-emerald-700 text-white gap-2 text-xs font-bold shadow-md shadow-emerald-600/20"
+                    >
+                        <span wire:loading.remove wire:target="disableMaintenance" class="flex items-center gap-1.5">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>غیرفعال‌سازی حالت تعمیر (بازگشایی سایت)</span>
+                        </span>
+                        <span wire:loading wire:target="disableMaintenance">
+                            در حال اعمال...
+                        </span>
+                    </button>
+                @else
+                    <button
+                        type="button"
+                        wire:click="enableMaintenance"
+                        wire:confirm="آیا از فعال‌سازی حالت تعمیر و نگهداری سایت مطمئن هستید؟ در این حالت کاربران عادی امکان مشاهده فروشگاه را نخواهند داشت."
+                        wire:loading.attr="disabled"
+                        class="admin-btn bg-rose-600 hover:bg-rose-700 text-white gap-2 text-xs font-bold shadow-md shadow-rose-600/20"
+                    >
+                        <span wire:loading.remove wire:target="enableMaintenance" class="flex items-center gap-1.5">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>فعال‌سازی حالت تعمیر</span>
+                        </span>
+                        <span wire:loading wire:target="enableMaintenance">
+                            در حال اعمال...
+                        </span>
+                    </button>
+                @endif
+            </div>
+        </div>
+    </div>
+
     @if($showForm)
         <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش تنظیمات' : 'تنظیمات جدید' }}</h3>

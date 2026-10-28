@@ -11,8 +11,8 @@ use App\Http\Controllers\Cms\ArticleController;
 use App\Http\Controllers\Cms\FaqController;
 use App\Http\Controllers\Cms\HomepageController;
 use App\Http\Controllers\Cms\PageController;
-use App\Http\Controllers\CustomDesign\CustomerCustomDesignPreviewController;
 use App\Http\Controllers\CustomDesign\CustomDesignController;
+use App\Http\Controllers\CustomDesign\CustomerCustomDesignPreviewController;
 use App\Http\Controllers\Order\OrderTrackingController;
 use App\Http\Controllers\OrderProcessGuideController;
 use App\Livewire\Admin\AnnouncementManager;
@@ -141,3 +141,7 @@ Route::get('/order-process', [OrderProcessGuideController::class, 'index'])->nam
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
 
 require __DIR__.'/auth.php';
+
+Route::any('{fallbackPlaceholder}', fn () => abort(404))
+    ->where('fallbackPlaceholder', '.*')
+    ->fallback();

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\Admin;
+use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\EnsurePasswordSession;
 use App\Http\Middleware\EnsureUserStatus;
 use App\Http\Middleware\SetSecurityHeaders;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsurePasswordSession::class,
             EnsureUserStatus::class,
             SetSecurityHeaders::class,
+            CheckMaintenanceMode::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

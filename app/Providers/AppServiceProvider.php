@@ -2,11 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\Menu;
+use App\Models\SiteSetting;
 use App\Services\IconManager;
+use App\Services\MaintenanceModeManager;
 use App\Services\PaymentGatewayManager;
 use App\Support\Dates\DateService;
+use Illuminate\Cache\Events\KeyForgotten;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View as ViewFacade;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,21 +30,28 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DateService::class, function (Application $app) {
             return new DateService(config('dates.business_timezone', 'Asia/Tehran'));
         });
+
+        $this->app->singleton(MaintenanceModeManager::class, function () {
+            return new MaintenanceModeManager;
+        });
     }
 
     public function boot(): void
     {
         $this->app->terminating(function (): void {
-            \App\Models\SiteSetting::clearRuntimeCache();
-            \App\Models\Menu::clearRuntimeCache();
+            SiteSetting::clearRuntimeCache();
+            Menu::clearRuntimeCache();
+            if ($this->app->resolved(MaintenanceModeManager::class)) {
+                $this->app->make(MaintenanceModeManager::class)->resetMemoizedStatus();
+            }
         });
 
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Cache\Events\KeyForgotten::class, function ($event): void {
+        Event::listen(KeyForgotten::class, function ($event): void {
             if ($event->key === 'settings.public' || $event->key === 'laravel-cache-settings.public') {
-                \App\Models\SiteSetting::clearRuntimeCache();
+                SiteSetting::clearRuntimeCache();
             }
             if (str_contains($event->key, 'menus.location.')) {
-                \App\Models\Menu::clearRuntimeCache();
+                Menu::clearRuntimeCache();
             }
         });
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MaintenanceModeManager;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -53,14 +54,22 @@ class SiteSetting extends Model
      */
     protected static function booted(): void
     {
-        static::saved(function () {
+        static::saved(function (SiteSetting $setting) {
             static::clearRuntimeCache();
             Cache::forget('settings.public');
+
+            if ($setting->key === 'maintenance_mode') {
+                app(MaintenanceModeManager::class)->syncFromSetting($setting);
+            }
         });
 
-        static::deleted(function () {
+        static::deleted(function (SiteSetting $setting) {
             static::clearRuntimeCache();
             Cache::forget('settings.public');
+
+            if ($setting->key === 'maintenance_mode') {
+                app(MaintenanceModeManager::class)->disable();
+            }
         });
     }
 }

@@ -122,6 +122,20 @@
         <div class="flex min-w-0 flex-1 flex-col">
             @include('layouts.partials.admin-header', ['sectionLabel' => $sectionLabel])
 
+            @if(app(\App\Services\MaintenanceModeManager::class)->isActive())
+                <aside aria-label="هشدار حالت تعمیر" class="bg-amber-400 text-slate-950 px-4 py-2 text-xs font-bold flex flex-wrap items-center justify-between gap-2 shadow-sm border-b border-amber-500/30">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 shrink-0 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>حالت تعمیر و نگهداری فعال است: دسترسی کاربران عادی به صفحات عمومی سایت مسدود است.</span>
+                    </div>
+                    <a href="{{ route('admin.site-settings') }}" class="underline hover:text-black font-extrabold text-[11px]">
+                        مدیریت وضعیت سایت &larr;
+                    </a>
+                </aside>
+            @endif
+
             <main class="flex-1 p-4 sm:p-8">
                 {{ $slot }}
             </main>
