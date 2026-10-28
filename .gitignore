@@ -26,3 +26,14 @@ Homestead.yaml
 Thumbs.db
 npm-debug.log*
 yarn-error.log*
+
+# Development & QA Artifacts
+/qa_screenshots/
+/release_artifacts/
+/security_audit/backups/
+
+# Local database dumps & SQLite
+*.sql
+*.sql.gz
+*.sqlite
+*.sqlite-journal
