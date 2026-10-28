@@ -9,6 +9,7 @@ use App\Services\SvgSanitizer;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -26,6 +27,10 @@ class PageManager extends Component
     public string $pageType = '';
 
     public string $title = '';
+
+    public string $slug = '';
+
+    public bool $slugManuallyChanged = false;
 
     public string $content = '';
 
@@ -52,6 +57,28 @@ class PageManager extends Component
         return [
             'pageType' => 'required|string|max:255',
             'title' => 'required|string|min:1|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_-]+$/',
+                function ($attribute, $value, $fail) {
+                    $slug = (string) $value;
+                    $pageExists = Page::query()
+                        ->where('slug', $slug)
+                        ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
+                        ->exists();
+
+                    $historyExists = PageSlugHistory::query()
+                        ->where('slug', $slug)
+                        ->when($this->editingId, fn ($q) => $q->where('page_id', '!=', $this->editingId))
+                        ->exists();
+
+                    if ($pageExists || $historyExists) {
+                        $fail('این نامک قبلاً ثبت شده و تکراری است.');
+                    }
+                },
+            ],
             'content' => 'required|string|min:1',
             'imageUpload' => 'nullable|image:allow_svg|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'metaTitle' => 'nullable|string|max:255',
@@ -83,9 +110,45 @@ class PageManager extends Component
         ];
     }
 
+    protected function messages(): array
+    {
+        return [
+            'title.required' => 'عنوان صفحه الزامی است.',
+            'slug.required' => 'نامک صفحه الزامی است.',
+            'slug.regex' => 'نامک فقط می‌تواند شامل حروف کوچک انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد.',
+            'content.required' => 'محتوای صفحه الزامی است.',
+            'pageType.required' => 'نوع صفحه الزامی است.',
+        ];
+    }
+
+    protected function validationAttributes(): array
+    {
+        return [
+            'slug' => 'نامک',
+            'title' => 'عنوان',
+            'content' => 'محتوا',
+            'pageType' => 'نوع صفحه',
+        ];
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
+    }
+
+    public function updatedTitle(string $value): void
+    {
+        if (! $this->editingId && (! $this->slugManuallyChanged || trim($this->slug) === '')) {
+            $suggested = Str::slug($value);
+            if ($suggested !== '') {
+                $this->slug = $suggested;
+            }
+        }
+    }
+
+    public function updatedSlug(string $value): void
+    {
+        $this->slugManuallyChanged = true;
     }
 
     private function generateUniqueSlug(string $value, ?int $ignoreId = null): string
@@ -95,12 +158,26 @@ class PageManager extends Component
             Page::class,
             $ignoreId,
             'page',
-            fn (string $candidate): bool => PageSlugHistory::query()->where('slug', $candidate)->exists(),
+            fn (string $candidate): bool => PageSlugHistory::query()
+                ->where('slug', $candidate)
+                ->when($ignoreId, fn ($q) => $q->where('page_id', '!=', $ignoreId))
+                ->exists(),
         );
     }
 
     public function save(): void
     {
+        $normalizedSlug = strtolower(trim($this->slug ?? ''));
+
+        if ($normalizedSlug === '') {
+            $fallback = Str::slug($this->title);
+            if ($fallback !== '') {
+                $normalizedSlug = $this->generateUniqueSlug($fallback, $this->editingId);
+            }
+        }
+
+        $this->slug = $normalizedSlug;
+
         $this->validate();
 
         if ($this->imageUpload) {
@@ -123,7 +200,7 @@ class PageManager extends Component
         $this->metaDescription = $this->metaDescription !== null && trim($this->metaDescription) !== '' ? trim($this->metaDescription) : null;
         $this->canonicalUrl = $this->canonicalUrl !== null && trim($this->canonicalUrl) !== '' ? trim($this->canonicalUrl) : null;
 
-        $slug = $this->generateUniqueSlug($this->title, $this->editingId);
+        $slug = $this->slug;
 
         $data = [
             'page_type' => $this->pageType,
@@ -154,6 +231,10 @@ class PageManager extends Component
                     ['slug' => $previousSlug],
                     ['page_id' => $this->editingId],
                 );
+                PageSlugHistory::query()
+                    ->where('slug', $slug)
+                    ->where('page_id', $this->editingId)
+                    ->delete();
             }
 
             session()->flash('success', 'صفحه با موفقیت ویرایش شد');
@@ -190,6 +271,12 @@ class PageManager extends Component
         $disk->put($path, $clean);
     }
 
+    public function create(): void
+    {
+        $this->resetForm();
+        $this->showForm = true;
+    }
+
     public function edit(int $id): void
     {
         $page = Page::find($id);
@@ -203,6 +290,8 @@ class PageManager extends Component
         $this->editingId = $id;
         $this->pageType = $page->page_type;
         $this->title = $page->title;
+        $this->slug = (string) $page->slug;
+        $this->slugManuallyChanged = false;
         $this->content = $page->content;
         $this->imagePath = $page->image_path;
         $this->metaTitle = $page->meta_title;
@@ -211,6 +300,7 @@ class PageManager extends Component
         $this->robotsIndex = $page->robots_index;
         $this->isActive = $page->is_active;
         $this->showForm = true;
+        $this->resetValidation();
     }
 
     public function delete(int $id): void
@@ -239,6 +329,8 @@ class PageManager extends Component
     {
         $this->pageType = '';
         $this->title = '';
+        $this->slug = '';
+        $this->slugManuallyChanged = false;
         $this->content = '';
         $this->imageUpload = null;
         $this->imagePath = null;
@@ -248,6 +340,7 @@ class PageManager extends Component
         $this->robotsIndex = true;
         $this->isActive = true;
         $this->editingId = null;
+        $this->resetValidation();
     }
 
     public function render()

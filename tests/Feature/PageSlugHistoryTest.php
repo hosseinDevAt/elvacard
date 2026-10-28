@@ -90,11 +90,47 @@ class PageSlugHistoryTest extends TestCase
         $this->renameViaManager($a, 'Bar Page');
         $a->refresh();
 
-        $b = $this->createViaManager('Foo Page');
+        // Historical slug must be reserved in page_slug_histories
+        $this->assertDatabaseHas('page_slug_histories', [
+            'slug' => $oldSlug,
+            'page_id' => $a->id,
+        ]);
 
+        $initialPageCount = Page::count();
+
+        // Attempting to create another page with the historical slug is rejected with a validation error
+        Livewire::actingAs($this->admin())
+            ->test(PageManager::class)
+            ->set('pageType', 'general')
+            ->set('title', 'Another Page')
+            ->set('slug', $oldSlug)
+            ->set('content', 'محتوا')
+            ->set('isActive', true)
+            ->call('save')
+            ->assertHasErrors(['slug']);
+
+        // Confirm that no new page claimed the old slug and page count did not increase
+        $this->assertSame($initialPageCount, Page::count());
+        $this->assertDatabaseMissing('pages', ['slug' => $oldSlug]);
+        $this->assertDatabaseHas('page_slug_histories', [
+            'slug' => $oldSlug,
+            'page_id' => $a->id,
+        ]);
+
+        // Creating a page with a unique alternative slug succeeds
+        Livewire::actingAs($this->admin())
+            ->test(PageManager::class)
+            ->set('pageType', 'general')
+            ->set('title', 'Foo Page Two')
+            ->set('slug', 'foo-page-unique')
+            ->set('content', 'محتوا')
+            ->set('isActive', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $b = Page::query()->where('slug', 'foo-page-unique')->firstOrFail();
         $this->assertNotSame($a->id, $b->id);
-        $this->assertStringStartsWith($oldSlug, $b->slug);
-        $this->assertNotSame($oldSlug, $b->slug, 'The historical slug must stay reserved.');
+        $this->assertSame('foo-page-unique', $b->slug);
     }
 
     public function test_deleted_page_slug_returns_404_and_stays_reserved(): void
@@ -117,7 +153,34 @@ class PageSlugHistoryTest extends TestCase
         $this->assertDatabaseHas('page_slug_histories', ['slug' => $oldSlug, 'page_id' => null]);
         $this->assertDatabaseHas('page_slug_histories', ['slug' => $a->slug, 'page_id' => null]);
 
-        $b = $this->createViaManager('Foo Page');
+        // Attempting to create a new page with the deleted page's reserved slug is rejected
+        Livewire::actingAs($this->admin())
+            ->test(PageManager::class)
+            ->set('pageType', 'general')
+            ->set('title', 'New Foo Page')
+            ->set('slug', $oldSlug)
+            ->set('content', 'محتوا')
+            ->set('isActive', true)
+            ->call('save')
+            ->assertHasErrors(['slug']);
+
+        // Confirm that no page with the deleted reserved slug exists
+        $this->assertDatabaseMissing('pages', ['slug' => $oldSlug]);
+        $this->assertDatabaseHas('page_slug_histories', ['slug' => $oldSlug, 'page_id' => null]);
+
+        // Creating a new page with a fresh unique slug succeeds
+        Livewire::actingAs($this->admin())
+            ->test(PageManager::class)
+            ->set('pageType', 'general')
+            ->set('title', 'Foo Page Replacement')
+            ->set('slug', 'foo-page-replacement')
+            ->set('content', 'محتوا')
+            ->set('isActive', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $b = Page::query()->where('slug', 'foo-page-replacement')->firstOrFail();
+        $this->assertSame('foo-page-replacement', $b->slug);
         $this->assertNotSame($oldSlug, $b->slug, 'A deleted page\'s slug is never released for reuse.');
     }
 

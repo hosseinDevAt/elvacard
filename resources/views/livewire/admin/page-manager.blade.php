@@ -4,7 +4,7 @@
         description="ایجاد، ویرایش و مدیریت صفحات ایستا، متنی، راهنماها و قوانین سایت"
     >
         <x-slot:actions>
-            <button type="button" wire:click="$set('showForm', true)" class="admin-btn admin-btn-primary">
+            <button type="button" wire:click="create" class="admin-btn admin-btn-primary">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -17,11 +17,16 @@
         <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش صفحه' : 'صفحه جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="admin-label">عنوان</label>
-                        <input type="text" wire:model="title" class="admin-input" placeholder="مثال: شرایط و قوانین">
+                        <input type="text" wire:model.live.debounce.300ms="title" class="admin-input" placeholder="مثال: شرایط و قوانین">
                         @error('title') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="admin-label">نامک (Slug)</label>
+                        <input type="text" wire:model.live.debounce.300ms="slug" dir="ltr" placeholder="مثال: contact_us" class="admin-input font-mono text-xs">
+                        @error('slug') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="admin-label">نوع صفحه</label>
