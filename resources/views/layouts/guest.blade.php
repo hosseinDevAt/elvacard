@@ -25,8 +25,8 @@
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-8 sm:pt-0 bg-[#f8fafc] px-4">
             <div>
                 <a href="/" wire:navigate class="flex flex-col items-center gap-3 group">
-                    <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffde5b] text-[#010619] shadow-lg shadow-[#ffde5b]/20 transition-transform group-hover:scale-105">
-                        <x-application-logo class="w-9 h-9 fill-current text-[#010619]" />
+                    <span class="inline-flex h-16 w-16 items-center justify-center rounded-full shadow-xl shadow-slate-300/60 transition-transform group-hover:scale-105">
+                        <x-application-logo variant="dark" class="h-16 w-16" />
                     </span>
                     <span class="text-xl font-extrabold text-[#010619] tracking-tight">{{ site_setting('site_name', config('app.name')) }}</span>
                 </a>

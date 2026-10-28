@@ -35,8 +35,8 @@ $contactAddress = site_setting('contact_address');
                     @if ($siteLogo)
                         <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
                     @else
-                        <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/25 group-hover:scale-105 transition-transform duration-200">
-                            <x-application-logo class="h-7 w-7 text-[#010619]" />
+                        <span class="flex items-center justify-center h-10 w-10 rounded-full shadow-md shadow-[#ffde5b]/20 group-hover:scale-105 transition-transform duration-200">
+                            <x-application-logo variant="gold" class="h-10 w-10" />
                         </span>
                     @endif
                     <span class="text-xl font-extrabold text-white tracking-tight">{{ $siteName }}</span>

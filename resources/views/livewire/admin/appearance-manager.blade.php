@@ -39,6 +39,16 @@
                         <div class="mt-3 inline-block rounded-xl border border-slate-200 bg-slate-50/50 p-2">
                             <img src="{{ asset('storage/' . $siteLogoPath) }}" alt="لوگوی فعلی" class="h-12 w-auto object-contain">
                         </div>
+                    @else
+                        <div class="mt-3 flex items-center gap-3">
+                            <div class="inline-block rounded-full border border-slate-700 bg-[#010619] p-1.5 shadow-sm" title="لوگوی طلایی (زمینه تیره)">
+                                <img src="{{ asset('images/logo/logo-gold-64.png') }}" alt="لوگوی طلایی" class="h-8 w-8 object-contain">
+                            </div>
+                            <div class="inline-block rounded-full border border-slate-200 bg-white p-1.5 shadow-sm" title="لوگوی تیره (زمینه روشن)">
+                                <img src="{{ asset('images/logo/logo-dark-64.png') }}" alt="لوگوی تیره" class="h-8 w-8 object-contain">
+                            </div>
+                            <span class="text-xs text-slate-400">لوگوهای پیش‌فرض رسمی</span>
+                        </div>
                     @endif
                 </div>
 

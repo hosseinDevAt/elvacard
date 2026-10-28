@@ -3,8 +3,8 @@
 
     <div class="flex items-center justify-between border-b border-[#152244] px-6 py-5">
         <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex items-center gap-3.5 group">
-            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ffde5b] text-[#010619] shadow-lg shadow-[#ffde5b]/20 transition-transform group-hover:scale-105">
-                <x-application-logo class="h-7 w-7 text-[#010619]" />
+            <span class="inline-flex h-11 w-11 items-center justify-center rounded-full shadow-lg shadow-[#ffde5b]/20 transition-transform group-hover:scale-105">
+                <x-application-logo variant="gold" class="h-11 w-11" />
             </span>
             <span class="flex flex-col leading-tight">
                 <span class="text-base font-bold text-white tracking-tight">ElvaCard</span>

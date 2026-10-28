@@ -14,10 +14,8 @@
         {{-- Brand Logo Header --}}
         <div class="text-center mb-6">
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 group">
-                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#010619] text-[#ffde5b] shadow-md shadow-[#010619]/15 group-hover:scale-105 transition">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
+                <span class="flex h-12 w-12 items-center justify-center rounded-full shadow-lg shadow-slate-300/60 group-hover:scale-105 transition">
+                    <x-application-logo variant="dark" class="h-12 w-12" />
                 </span>
                 <span class="text-2xl font-black text-[#010619] tracking-tight">{{ site_setting('site_name', 'الواکارت') }}</span>
             </a>
