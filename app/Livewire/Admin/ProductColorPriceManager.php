@@ -182,13 +182,25 @@ class ProductColorPriceManager extends Component
      */
     public function create(): void
     {
+        $options = $this->productOptions;
+
+        if (empty($options)) {
+            session()->flash('error', 'ابتدا باید محصول کارت بانکی یا کارت سوخت را از بخش مدیریت محصولات ایجاد کنید.');
+
+            return;
+        }
+
+        $validIds = array_column($options, 'id');
         $currentProductId = $this->productId;
+
         $this->resetForm();
-        if ($currentProductId && ($currentProductId === $this->cardProducts['fuel_card']->id || $currentProductId === $this->cardProducts['bank_card']->id)) {
+
+        if ($currentProductId && in_array($currentProductId, $validIds, true)) {
             $this->productId = $currentProductId;
         } else {
-            $this->productId = $this->cardProducts['bank_card']->id;
+            $this->productId = $validIds[0];
         }
+
         $this->showForm = true;
     }
 
@@ -253,11 +265,17 @@ class ProductColorPriceManager extends Component
      */
     private function isCardWorkflow(Product $product): bool
     {
-        return in_array(
-            (string) $product->getRawOriginal('customization_workflow'),
-            [CustomizationWorkflowEnum::BANK_CARD->value, CustomizationWorkflowEnum::FUEL_CARD->value],
-            true,
-        );
+        $workflowRaw = (string) $product->getRawOriginal('customization_workflow');
+        $workflow = CustomizationWorkflowEnum::tryFrom($workflowRaw);
+
+        if ($workflow === null || ! CustomizationWorkflowRegistry::isActive($workflow)) {
+            return false;
+        }
+
+        $typeRaw = (string) $product->getRawOriginal('type');
+        $expectedType = CustomizationWorkflowRegistry::expectedType($workflow);
+
+        return $typeRaw === $expectedType->value;
     }
 
     /**
@@ -442,88 +460,46 @@ class ProductColorPriceManager extends Component
         }
     }
 
-    public static function ensureCardProduct(CustomizationWorkflowEnum $workflow): Product
+    public static function findCardProduct(CustomizationWorkflowEnum $workflow): ?Product
     {
-        $product = Product::query()
-            ->where('customization_workflow', $workflow->value)
-            ->first();
-
-        if ($product !== null) {
-            return $product;
-        }
-
-        $slug = match ($workflow) {
-            CustomizationWorkflowEnum::BANK_CARD => 'bank-card',
-            CustomizationWorkflowEnum::FUEL_CARD => 'fuel-card',
-        };
-
         $expectedType = CustomizationWorkflowRegistry::expectedType($workflow);
 
-        $slugProduct = Product::query()->where('slug', $slug)->first();
-
-        if ($slugProduct !== null) {
-            // Adopt only if it is genuinely a card product of the expected type
-            // (e.g. legacy/pre-migration row), never mutating an unrelated store product.
-            if ($slugProduct->type === $expectedType) {
-                if ($slugProduct->customization_workflow !== $workflow) {
-                    $slugProduct->update(['customization_workflow' => $workflow]);
-                }
-
-                return $slugProduct;
-            }
-
-            // Slug is occupied by an unrelated non-card product. Find an available slug.
-            $baseSlug = $slug;
-            $counter = 1;
-            while (Product::query()->where('slug', $slug)->exists()) {
-                $slug = $baseSlug.'-'.$counter++;
-            }
-        }
-
-        $name = match ($workflow) {
-            CustomizationWorkflowEnum::BANK_CARD => 'کارت بانکی',
-            CustomizationWorkflowEnum::FUEL_CARD => 'کارت سوخت',
-        };
-
-        $basePrice = match ($workflow) {
-            CustomizationWorkflowEnum::BANK_CARD => 850000,
-            CustomizationWorkflowEnum::FUEL_CARD => 450000,
-        };
-
-        try {
-            return Product::create([
-                'type' => CustomizationWorkflowRegistry::expectedType($workflow),
-                'customization_workflow' => $workflow,
-                'name' => $name,
-                'slug' => $slug,
-                'description' => $name.' با طرح سفارشی',
-                'base_price' => $basePrice,
-                'is_active' => true,
-            ]);
-        } catch (\Illuminate\Database\QueryException) {
-            return Product::query()
-                ->where('customization_workflow', $workflow->value)
-                ->orWhere('slug', $slug)
-                ->firstOrFail();
-        }
+        return Product::query()
+            ->where('customization_workflow', $workflow->value)
+            ->where('type', $expectedType->value)
+            ->first();
     }
 
     public function getCardProductsProperty(): array
     {
         return [
-            'bank_card' => self::ensureCardProduct(CustomizationWorkflowEnum::BANK_CARD),
-            'fuel_card' => self::ensureCardProduct(CustomizationWorkflowEnum::FUEL_CARD),
+            'bank_card' => self::findCardProduct(CustomizationWorkflowEnum::BANK_CARD),
+            'fuel_card' => self::findCardProduct(CustomizationWorkflowEnum::FUEL_CARD),
         ];
     }
 
     public function getProductOptionsProperty(): array
     {
+        $options = [];
         $cards = $this->cardProducts;
 
-        return [
-            ['id' => $cards['bank_card']->id, 'name' => 'کارت بانکی', 'workflow' => 'bank_card'],
-            ['id' => $cards['fuel_card']->id, 'name' => 'کارت سوخت', 'workflow' => 'fuel_card'],
-        ];
+        if ($cards['bank_card'] !== null) {
+            $options[] = [
+                'id' => $cards['bank_card']->id,
+                'name' => $cards['bank_card']->name ?: 'کارت بانکی',
+                'workflow' => 'bank_card',
+            ];
+        }
+
+        if ($cards['fuel_card'] !== null) {
+            $options[] = [
+                'id' => $cards['fuel_card']->id,
+                'name' => $cards['fuel_card']->name ?: 'کارت سوخت',
+                'workflow' => 'fuel_card',
+            ];
+        }
+
+        return $options;
     }
 
     public function getColorOptionsProperty(): array

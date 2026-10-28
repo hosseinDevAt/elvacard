@@ -1,7 +1,7 @@
 <div>
     <x-admin.page-header title="طرح‌های کار و پایه قیمت‌ها" subtitle="تعیین قیمت پایه بر اساس رنگ کارت‌های بانکی و سوخت">
         <x-slot:actions>
-            <button type="button" wire:click="create" type="button" class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25 shrink-0">
+            <button type="button" wire:click="create" @disabled(empty($productOptions)) class="admin-btn admin-btn-primary gap-2 text-xs font-semibold shadow-md shadow-[#ffde5b]/25 shrink-0 {{ empty($productOptions) ? 'opacity-50 cursor-not-allowed' : '' }}">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -10,6 +10,56 @@
             </button>
         </x-slot:actions>
     </x-admin.page-header>
+
+    @if(session()->has('error'))
+        <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session()->has('success'))
+        <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(empty($productOptions))
+        <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-5 text-amber-900 shadow-xs">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-amber-100 text-amber-800 shrink-0">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-amber-900">محصول کارت بانکی یا کارت سوخت یافت نشد</h4>
+                        <p class="text-xs text-amber-700 mt-1">برای تعیین قیمت رنگ‌ها، ابتدا باید محصول پایه کارت بانکی یا کارت سوخت را از بخش مدیریت محصولات ایجاد کنید.</p>
+                    </div>
+                </div>
+                <a href="{{ route('admin.products') }}" class="admin-btn admin-btn-primary admin-btn-sm text-xs font-semibold shrink-0">
+                    مدیریت محصولات
+                </a>
+            </div>
+        </div>
+    @elseif(! $cardProducts['bank_card'] || ! $cardProducts['fuel_card'])
+        <div class="mb-6 rounded-2xl border border-sky-200 bg-sky-50/90 p-4 text-sky-900 shadow-xs">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 text-xs">
+                    <svg class="h-5 w-5 text-sky-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>
+                        محصول
+                        <strong>{{ ! $cardProducts['bank_card'] ? 'کارت بانکی' : 'کارت سوخت' }}</strong>
+                        هنوز ایجاد نشده است. برای تعریف قیمت آن، می‌توانید از بخش
+                        <a href="{{ route('admin.products') }}" class="font-bold underline text-sky-800 hover:text-sky-950">مدیریت محصولات</a>
+                        اقدام کنید.
+                    </span>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if($selectedProduct && ! $showForm)
         <div class="mb-4 -mt-2 flex items-center gap-2">
@@ -53,31 +103,33 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="admin-label">نوع کارت</label>
-                        <div class="grid grid-cols-2 gap-3 mt-1.5">
-                            @php
-                                $bankId = $cardProducts['bank_card']->id;
-                                $fuelId = $cardProducts['fuel_card']->id;
-                            @endphp
-                            <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$bankId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
-                                <input type="radio" wire:model.live="productId" value="{{ $bankId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
-                                        <line x1="2" y1="10" x2="22" y2="10" stroke-width="2"/>
-                                    </svg>
-                                    <span class="text-xs font-bold text-slate-800">کارت بانکی</span>
-                                </div>
-                            </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
+                            @if($cardProducts['bank_card'])
+                                @php $bankId = $cardProducts['bank_card']->id; @endphp
+                                <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$bankId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
+                                    <input type="radio" wire:model.live="productId" value="{{ $bankId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
+                                            <line x1="2" y1="10" x2="22" y2="10" stroke-width="2"/>
+                                        </svg>
+                                        <span class="text-xs font-bold text-slate-800">{{ $cardProducts['bank_card']->name ?: 'کارت بانکی' }}</span>
+                                    </div>
+                                </label>
+                            @endif
 
-                            <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$fuelId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
-                                <input type="radio" wire:model.live="productId" value="{{ $fuelId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                    <span class="text-xs font-bold text-slate-800">کارت سوخت</span>
-                                </div>
-                            </label>
+                            @if($cardProducts['fuel_card'])
+                                @php $fuelId = $cardProducts['fuel_card']->id; @endphp
+                                <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none {{ (int)$productId === (int)$fuelId ? 'border-[#010619] bg-slate-50 ring-2 ring-[#ffde5b]/60' : 'border-slate-200 hover:border-slate-300 bg-white' }} {{ $editingId ? 'opacity-70 cursor-not-allowed' : '' }}">
+                                    <input type="radio" wire:model.live="productId" value="{{ $fuelId }}" @disabled($editingId) class="text-[#010619] focus:ring-[#ffde5b]">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        <span class="text-xs font-bold text-slate-800">{{ $cardProducts['fuel_card']->name ?: 'کارت سوخت' }}</span>
+                                    </div>
+                                </label>
+                            @endif
                         </div>
                         @error('productId') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
