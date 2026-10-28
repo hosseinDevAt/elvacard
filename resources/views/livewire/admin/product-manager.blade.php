@@ -299,7 +299,7 @@
 
                     {{-- Direct image path / legacy single upload (preserved for backward compatibility) --}}
                     <details class="text-xs text-slate-500 group">
-                        <summary class="cursor-pointer font-medium hover:text-slate-700 flex items-center gap-1 select-none">
+                        <summary class="cursor-pointer font-medium hover:text-slate-700 flex items-center gap-1 select-none list-none [&::-webkit-details-marker]:hidden">
                             <span>تنظیمات پیشرفته مسیر فایل تصویر شاخص</span>
                             <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </summary>

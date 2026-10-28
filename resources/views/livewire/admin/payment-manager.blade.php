@@ -18,7 +18,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
             <div>
                 <label class="block text-xs text-gray-400 mb-1">وضعیت</label>
-                <select wire:model.live="statusFilter" class="admin-input">
+                <select wire:model.live="statusFilter" class="admin-select">
                     <option value="">همه</option>
                     @foreach ($statusCases as $case)
                         <option value="{{ $case->value }}">{{ $case->faLabel() }}</option>
@@ -27,7 +27,7 @@
             </div>
             <div>
                 <label class="block text-xs text-gray-400 mb-1">روش پرداخت</label>
-                <select wire:model.live="methodFilter" class="admin-input">
+                <select wire:model.live="methodFilter" class="admin-select">
                     <option value="">همه</option>
                     @foreach ($methodCases as $case)
                         <option value="{{ $case->value }}">{{ $case->faLabel() }}</option>

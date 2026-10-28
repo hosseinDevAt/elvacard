@@ -21,9 +21,12 @@
                         <input type="text" wire:model="name" class="admin-input">
                         @error('name') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
-                    <div class="w-32">
-                        <label class="admin-label">کد هگز</label>
-                        <input type="color" wire:model.live="colorCode" class="w-full h-11 rounded-xl border border-slate-200 cursor-pointer p-1">
+                    <div class="w-52">
+                        <label class="admin-label">کد رنگ (HEX)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" wire:model.live="colorCode" class="h-11 w-12 shrink-0 rounded-xl border border-slate-200 cursor-pointer p-1 bg-white">
+                            <input type="text" wire:model.live.debounce.300ms="colorCode" dir="ltr" maxlength="7" placeholder="#FF5733" class="admin-input font-mono text-xs uppercase flex-1">
+                        </div>
                         @error('colorCode') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     @if($colorCode)

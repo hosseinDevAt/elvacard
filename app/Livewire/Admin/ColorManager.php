@@ -32,7 +32,7 @@ class ColorManager extends Component
 
     protected $rules = [
         'name' => 'required|string|min:1|max:100',
-        'colorCode' => ['required', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        'colorCode' => ['required', 'string', 'max:7', 'regex:/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/'],
         'previewImage' => 'nullable|string|max:255',
         'isActive' => 'boolean',
         'isScratched' => 'boolean',
@@ -41,12 +41,44 @@ class ColorManager extends Component
 
     protected $messages = [
         'colorCode.required' => 'کد رنگ الزامی است.',
-        'colorCode.regex' => 'کد رنگ باید به فرمت #RRGGBB باشد (مثل #A1B2C3).',
+        'colorCode.regex' => 'کد رنگ باید به فرمت هگز معتبر باشد (مانند #FF5733 یا #F00).',
     ];
+
+    public static function normalizeHex(?string $hex): ?string
+    {
+        if ($hex === null) {
+            return null;
+        }
+
+        $hex = trim($hex);
+
+        if (preg_match('/^#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$/', $hex, $m)) {
+            return strtoupper('#'.$m[1].$m[1].$m[2].$m[2].$m[3].$m[3]);
+        }
+
+        if (preg_match('/^#[0-9A-Fa-f]{6}$/', $hex)) {
+            return strtoupper($hex);
+        }
+
+        return $hex;
+    }
+
+    public function updatedColorCode(mixed $value): void
+    {
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if (preg_match('/^#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$/', $trimmed, $m)) {
+                $this->colorCode = strtoupper('#'.$m[1].$m[1].$m[2].$m[2].$m[3].$m[3]);
+            }
+        }
+    }
 
     public function save(): void
     {
         $this->validate();
+
+        $normalizedColor = self::normalizeHex($this->colorCode);
+        $this->colorCode = $normalizedColor;
 
         if ($this->editingId && ! $this->isActive) {
             $blocker = ProductPurchaseabilityService::colorDeactivationBlocker($this->editingId);
@@ -60,7 +92,7 @@ class ColorManager extends Component
 
         $data = [
             'name' => $this->name,
-            'code_hex' => strtoupper($this->colorCode),
+            'code_hex' => $normalizedColor,
             'preview_image' => $this->previewImage ?: null,
             'is_scratched' => $this->isScratched,
             'is_active' => $this->isActive,
@@ -110,7 +142,7 @@ class ColorManager extends Component
 
         $this->editingId = $id;
         $this->name = $color->name;
-        $this->colorCode = $color->code_hex ?: '#000000';
+        $this->colorCode = self::normalizeHex($color->code_hex) ?: '#000000';
         $this->previewImage = $color->preview_image;
         $this->isScratched = (bool) $color->is_scratched;
         $this->isActive = (bool) $color->is_active;

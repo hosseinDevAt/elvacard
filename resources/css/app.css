@@ -134,8 +134,19 @@
         @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 transition placeholder:text-slate-400 hover:border-slate-400 focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed;
     }
 
-    .admin-select {
-        @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 transition placeholder:text-slate-400 hover:border-slate-400 focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed;
+    .admin-select,
+    select.admin-input {
+        @apply w-full rounded-xl border border-slate-300 bg-white py-2.5 text-sm text-slate-800 transition placeholder:text-slate-400 hover:border-slate-400 focus:border-[#010619] focus:outline-none focus:ring-2 focus:ring-[#ffde5b]/60 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed;
+        background-position: left 0.75rem center;
+        padding-left: 2.5rem;
+        padding-right: 1rem;
+    }
+
+    [dir="ltr"] .admin-select,
+    [dir="ltr"] select.admin-input {
+        background-position: right 0.75rem center;
+        padding-left: 1rem;
+        padding-right: 2.5rem;
     }
 
     .admin-label {
