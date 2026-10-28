@@ -230,7 +230,8 @@ class ProductCustomizerWorkflowOrchestrationTest extends TestCase
         $this->assertStringContainsString('مشخصات کارت سوخت', $html);
         $this->assertStringContainsString('owner_name', $html);
         $this->assertStringContainsString('vin', $html);
-        $this->assertStringContainsString('plate_number', $html);
+        $this->assertStringContainsString('plate_part1', $html);
+        $this->assertStringContainsString('plate_part2', $html);
         $this->assertStringContainsString('chip_info', $html);
         $this->assertStringNotContainsString('card_number', $html);
         $this->assertStringNotContainsString('card_holder_name', $html);

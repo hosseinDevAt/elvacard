@@ -305,6 +305,7 @@ class CmsSeoTitleTest extends TestCase
         $this->assertSame([
             'errors/404.blade.php',
             'errors/500.blade.php',
+            'errors/503.blade.php',
             'layouts/admin.blade.php',
             'layouts/app.blade.php',
             'layouts/auth.blade.php',

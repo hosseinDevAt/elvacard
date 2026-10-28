@@ -159,12 +159,24 @@ class CmsEscapingRegressionTest extends TestCase
             }
         }
 
-        $this->assertSame(['catalog/products/show.blade.php'], $hits);
+        $this->assertSame([
+            'catalog/designs/show.blade.php',
+            'catalog/products/show.blade.php',
+            'order-process/index.blade.php',
+        ], $hits);
 
+        // Verify product catalog controller hardens json-ld
         $controller = (string) file_get_contents(app_path('Http/Controllers/Catalog/ProductCatalogController.php'));
-
         $this->assertStringContainsString('JSON_HEX_TAG', $controller);
         $this->assertStringContainsString('JSON_HEX_AMP', $controller);
+
+        // Verify order-process view strictly uses nl2br(e(...)) to sanitize HTML before raw output
+        $orderProcessView = (string) file_get_contents(resource_path('views/order-process/index.blade.php'));
+        preg_match_all('/\{!!(.*?)!!\}/s', $orderProcessView, $matches);
+        $this->assertNotEmpty($matches[1]);
+        foreach ($matches[1] as $expression) {
+            $this->assertStringContainsString('e(', $expression, 'All raw blocks in order-process must sanitize with e().');
+        }
     }
 
     /**

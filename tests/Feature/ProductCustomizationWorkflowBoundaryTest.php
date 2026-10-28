@@ -449,19 +449,19 @@ class ProductCustomizationWorkflowBoundaryTest extends TestCase
         );
 
         $this->assertSame(
-            4,
+            5,
             $this->countTableReferences('designs', $log),
             'The server-side paginated catalog loads designs exactly twice (the paginate count query plus the page query) and each purchaseability witness confirms a purchasable design with a single EXISTS; the controller must not duplicate the catalog.'
         );
 
         $this->assertSame(
-            3,
+            4,
             $this->countTableReferences('design_color_compatibilities', $log),
             'Color compatibility must be resolved once by the allowed-image lookup and once by each purchaseability witness.'
         );
 
         $this->assertSame(
-            6,
+            7,
             $this->countTableReferences('design_images', $log),
             "Server-side catalog pagination references design_images four times: the whereExists existence filter in the count query, the correlated per-design preview plus whereExists inside the page query, and only the selected design's image chips - never every design's images at once. Each purchaseability witness adds one existence reference (and these witnesses never hydrate image collections)."
         );

@@ -123,6 +123,8 @@ class CustomDesignEntryFlowTest extends TestCase
             ->call('selectDesign', $this->fuelDesignId)
             ->call('setStep', 2)
             ->set('fuelCard.owner_name', 'علی رضایی')
+            ->set('fuelCard.phone_number', '09123456789')
+            ->set('fuelCard.vehicle_type', 'سواری شخصی')
             ->set('fuelCard.car_info', 'پژو ۲۰۶ مدل ۱۴۰۰')
             ->set('fuelCard.vin', 'IRABCDEFGH1234567')
             ->set('fuelCard.system_name', 'سامانه هوشمند سوخت')

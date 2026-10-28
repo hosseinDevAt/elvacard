@@ -173,7 +173,7 @@ class ProductCustomizerPaginationTest extends TestCase
         $this->assertCount(12, $catalog->items());
 
         foreach ($catalog->items() as $index => $item) {
-            $this->assertSame(['id', 'category_id', 'name', 'preview_image_path'], array_keys($item));
+            $this->assertSame(['id', 'category_id', 'name', 'slug', 'preview_image_path'], array_keys($item));
             $this->assertSame($this->sportsDesigns[$index + 1]->id, $item['id']);
             $this->assertStringStartsWith('designs/sport-', $item['preview_image_path']);
         }
