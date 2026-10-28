@@ -461,7 +461,10 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->get('/orders')->assertNotFound();
 
         // Tracking via token succeeds
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk()
             ->assertSee($order->reference);
     }
@@ -489,8 +492,10 @@ class HistoricalOrderDurabilityTest extends TestCase
             ->assertNotFound();
 
         // Tracking without valid token fails
-        $this->post(route('order-tracking.check'), ['token' => \Illuminate\Support\Str::random(40)])
-            ->assertSessionHasErrors(['token']);
+        $this->post(route('order-tracking.check'), [
+            'reference' => 'INVALID-REF',
+            'customer_phone_last4' => '9999',
+        ])->assertSessionHasErrors(['reference']);
     }
 
     // =========================================================================
@@ -617,7 +622,10 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->assertSame((int) $before->unit_price_snapshot, (int) $after->unit_price_snapshot);
         $this->assertSame((int) $before->final_price, (int) $after->final_price);
 
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk()
             ->assertSee('محصول فروشگاهی دوام');
     }
@@ -654,7 +662,10 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->assertFalse((bool) $first->fresh()->is_primary);
         $this->assertTrue((bool) $second->fresh()->is_primary);
 
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk()
             ->assertSee('محصول فروشگاهی دوام');
     }
@@ -764,7 +775,10 @@ class HistoricalOrderDurabilityTest extends TestCase
         $this->fuelProduct->update(['is_active' => false]);
         $this->color->update(['is_active' => false]);
 
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk();
 
         Livewire::actingAs($this->admin())
@@ -837,7 +851,10 @@ class HistoricalOrderDurabilityTest extends TestCase
         Storage::disk('public')->assertExists($path);
 
         // Both read models still render it.
-        $this->post(route('order-tracking.check'), ['token' => $order->fresh()->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk()
             ->assertSee($order->reference);
 

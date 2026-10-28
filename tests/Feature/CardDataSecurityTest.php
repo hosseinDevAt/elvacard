@@ -267,7 +267,10 @@ class CardDataSecurityTest extends TestCase
             ],
         ]);
 
-        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
+        $response = $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ]);
 
         $response->assertOk();
         $response->assertDontSee(self::VALID_PAN);
@@ -456,8 +459,10 @@ class CardDataSecurityTest extends TestCase
         $response = $this->get('/orders/'.$order->id);
         $response->assertNotFound();
 
-        $this->post(route('order-tracking.check'), ['token' => \Illuminate\Support\Str::random(40)])
-            ->assertSessionHasErrors(['token']);
+        $this->post(route('order-tracking.check'), [
+            'reference' => 'INVALID-REF',
+            'customer_phone_last4' => '9999',
+        ])->assertSessionHasErrors(['reference']);
     }
 
     public function test_admin_order_view_renders_unmasked_cvv2_when_provided_by_customer(): void

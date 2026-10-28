@@ -441,6 +441,7 @@ class FuelCardCartValidationTest extends TestCase
         $cart = app(CartService::class)->addItem($payload);
 
         $expected = BankCardCustomization::sanitize($payload);
+        $expected['is_scratched'] = (bool) ($color->is_scratched ?? false);
         $actual = $cart['items'][0]['customization_json'];
 
         $this->assertSame(

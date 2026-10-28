@@ -31,7 +31,13 @@ class PaymentReceiptController extends Controller
         }
 
         $rootReal = rtrim($rootReal, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
-        $fileReal = realpath($disk->path($path));
+
+        try {
+            $diskPath = $disk->path($path);
+            $fileReal = realpath($diskPath);
+        } catch (\League\Flysystem\PathTraversalDetected) {
+            abort(404);
+        }
 
         if ($fileReal === false || ! str_starts_with($fileReal, $rootReal)) {
             abort(404);

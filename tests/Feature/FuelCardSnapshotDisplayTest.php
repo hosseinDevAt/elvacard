@@ -239,7 +239,10 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $this->assertSame('طرح قطره', $item->design_name_snapshot);
         $this->assertSame($originalImagePath, $item->design_image_path_snapshot);
 
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk()
             ->assertSee('کارت سوخت نمایش');
     }
@@ -249,12 +252,14 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $user = $this->createCustomer();
         $order = $this->createFuelOrder($user);
 
-        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
+        $response = $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ]);
 
         $response->assertOk();
         $response->assertSee('کارت سوخت نمایش');
-        $response->assertSee($order->status->faLabel());
-        $response->assertSee($order->payment_status->faLabel());
+        $response->assertSee($order->customerStatusLabel());
 
         $response->assertDontSee('شماره کارت');
         $response->assertDontSee('نام دارنده کارت');
@@ -276,7 +281,10 @@ class FuelCardSnapshotDisplayTest extends TestCase
             'expiry_year' => '29',
         ]);
 
-        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
+        $response = $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ]);
 
         $response->assertOk();
         $response->assertDontSee('6274 0512 3456 7890');
@@ -302,8 +310,10 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $this->get('/orders/'.$order->id)
             ->assertNotFound();
 
-        $this->post(route('order-tracking.check'), ['token' => \Illuminate\Support\Str::random(40)])
-            ->assertSessionHasErrors(['token']);
+        $this->post(route('order-tracking.check'), [
+            'reference' => 'INVALID-REF',
+            'customer_phone_last4' => '9999',
+        ])->assertSessionHasErrors(['reference']);
     }
 
     public function test_admin_fuel_order_renders_without_bank_fields(): void
@@ -348,7 +358,10 @@ class FuelCardSnapshotDisplayTest extends TestCase
         $user = $this->createCustomer();
         $order = $this->createBankOrder($user);
 
-        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
+        $response = $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ]);
 
         $response->assertOk();
         $response->assertSee('کارت بانکی نمایش');
@@ -411,7 +424,10 @@ class FuelCardSnapshotDisplayTest extends TestCase
             ],
         ]);
 
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk()
             ->assertDontSee('6274 0000 0000 0000')
             ->assertDontSee('مشخصات کارت سوخت');

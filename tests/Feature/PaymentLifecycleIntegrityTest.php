@@ -306,6 +306,7 @@ class PaymentLifecycleIntegrityTest extends TestCase
             'customer_phone' => '09123456789',
             'shipping_address' => 'تهران، خیابان آزمایش',
             'shipping_postal_code' => '1234567890',
+            'shipping_plaque' => '12',
             'submission_token' => $token,
         ];
 

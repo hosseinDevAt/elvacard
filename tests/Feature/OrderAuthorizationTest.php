@@ -48,15 +48,20 @@ class OrderAuthorizationTest extends TestCase
 
     public function test_order_tracking_cannot_be_accessed_with_invalid_token(): void
     {
-        $this->post(route('order-tracking.check'), ['token' => Str::random(40)])
-            ->assertSessionHasErrors(['token']);
+        $this->post(route('order-tracking.check'), [
+            'reference' => 'INVALID-REF',
+            'customer_phone_last4' => '9999',
+        ])->assertSessionHasErrors(['reference']);
     }
 
     public function test_order_tracking_succeeds_with_valid_token(): void
     {
         $order = $this->createOrder();
 
-        $this->post(route('order-tracking.check'), ['token' => $order->token])
+        $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ])
             ->assertOk()
             ->assertSee($order->reference)
             ->assertDontSee($order->customer_phone);

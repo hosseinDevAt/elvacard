@@ -572,7 +572,10 @@ class FuelOrderIntegrityTest extends TestCase
         $this->assertSame('NAAAAAAAAAAAAAAA1', $item->customization_json['vin']);
         $this->assertSame('علی رضایی', $item->customization_json['owner_name']);
 
-        $response = $this->post(route('order-tracking.check'), ['token' => $order->token]);
+        $response = $this->post(route('order-tracking.check'), [
+            'reference' => $order->reference,
+            'customer_phone_last4' => substr($order->customer_phone, -4),
+        ]);
 
         $response->assertOk();
         $response->assertDontSee('کارت جدید');
