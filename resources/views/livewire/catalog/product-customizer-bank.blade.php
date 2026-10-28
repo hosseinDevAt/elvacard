@@ -197,7 +197,9 @@
                 <div class="grid grid-cols-2 gap-2 pt-2">
                     <div>
                         <label class="block text-[10px] text-slate-400 mb-1">ماه انقضا (شمسی)</label>
-                        <select wire:model.live="bankCard.expiry_month" class="w-full rounded-lg border border-[#152244] bg-[#070e24] px-2 py-1.5 text-xs text-white focus:border-[#ffde5b] focus:outline-none">
+                        <select wire:model.live="bankCard.expiry_month"
+                                style="background-position: left 0.5rem center; padding-left: 1.75rem; padding-right: 0.625rem;"
+                                class="w-full rounded-lg border border-[#152244] bg-[#070e24] py-1.5 text-xs text-white focus:border-[#ffde5b] focus:outline-none">
                             <option value="">انتخاب ماه...</option>
                             @for ($m = 1; $m <= 12; $m++)
                                 <option value="{{ sprintf('%02d', $m) }}">{{ fa_digits(sprintf('%02d', $m)) }}</option>
@@ -206,7 +208,9 @@
                     </div>
                     <div>
                         <label class="block text-[10px] text-slate-400 mb-1">سال انقضا (شمسی)</label>
-                        <select wire:model.live="bankCard.expiry_year" class="w-full rounded-lg border border-[#152244] bg-[#070e24] px-2 py-1.5 text-xs text-white focus:border-[#ffde5b] focus:outline-none">
+                        <select wire:model.live="bankCard.expiry_year"
+                                style="background-position: left 0.5rem center; padding-left: 1.75rem; padding-right: 0.625rem;"
+                                class="w-full rounded-lg border border-[#152244] bg-[#070e24] py-1.5 text-xs text-white focus:border-[#ffde5b] focus:outline-none">
                             <option value="">انتخاب سال...</option>
                             @for ($y = $expiryYearFrom; $y <= $expiryYearTo; $y++)
                                 <option value="{{ $y }}">{{ fa_digits($y) }}</option>

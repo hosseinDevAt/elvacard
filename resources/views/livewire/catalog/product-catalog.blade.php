@@ -70,7 +70,8 @@
                 <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
                     <span class="hidden sm:inline">مرتب‌سازی:</span>
                     <select wire:model.live="sort"
-                            class="rounded-xl border border-slate-200 bg-slate-50/70 py-2 ps-3.5 pe-8 text-xs font-bold text-slate-800 focus:border-[#010619] focus:outline-none focus:ring-1 focus:ring-[#ffde5b] cursor-pointer">
+                            style="background-position: left 0.75rem center; padding-left: 2.25rem; padding-right: 0.875rem;"
+                            class="rounded-xl border border-slate-200 bg-slate-50/70 py-2 text-xs font-bold text-slate-800 focus:border-[#010619] focus:outline-none focus:ring-1 focus:ring-[#ffde5b] cursor-pointer">
                         <option value="newest">جدیدترین‌ها</option>
                         <option value="cheapest">ارزان‌ترین‌ها</option>
                         <option value="expensive">گران‌ترین‌ها</option>

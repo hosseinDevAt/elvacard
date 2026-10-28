@@ -7,7 +7,7 @@
             @click="open = !open"
             :aria-expanded="open.toString()"
             aria-controls="faq-answer-{{ $faq->id }}">
-        <span class="text-xs sm:text-sm md:text-base leading-snug transition-colors pe-4"
+        <span class="flex-1 min-w-0 text-xs sm:text-sm md:text-base leading-snug transition-colors pe-4"
               :class="open ? 'text-[#010619] font-black' : 'text-slate-800 font-bold'">
             {{ $faq->question }}
         </span>
