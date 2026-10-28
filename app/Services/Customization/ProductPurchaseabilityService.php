@@ -51,28 +51,65 @@ class ProductPurchaseabilityService
                 });
             }
 
-            return self::activeCardColors($product->id) !== [];
+            return ProductColorPrice::query()
+                ->where('product_id', $product->id)
+                ->where('is_active', true)
+                ->whereHas('color', fn ($query) => $query->where('is_active', true))
+                ->exists();
         }
 
         if ($workflow === null || ! CustomizationWorkflowRegistry::isActive($workflow)) {
             return false;
         }
 
-        if ($product->type === ProductTypeEnum::FUEL) {
-            $activePrices = ProductColorPrice::query()
-                ->where('product_id', $product->id)
-                ->where('is_active', true)
-                ->whereHas('color', fn ($query) => $query->where('is_active', true))
-                ->count();
+        if ($product->type === ProductTypeEnum::FUEL || $workflow === CustomizationWorkflowEnum::FUEL_CARD) {
+            $activePrices = ProductColorPrice::fuelActiveCount($product->id);
 
             if ($activePrices !== 1) {
                 return false;
             }
         }
 
-        $colors = self::activeCardColors($product->id);
+        $colors = self::activeCardColors($product->id, $workflow);
 
         return $colors !== [] && self::hasPurchasableDesignForColors($colors);
+    }
+
+    /**
+     * Whether the given customization workflow is purchasable independent of a store product:
+     * it must be an active launched workflow, have valid active pricing, and have a purchasable design path.
+     */
+    public static function isWorkflowPurchasable(CustomizationWorkflowEnum|string $workflow): bool
+    {
+        $enum = $workflow instanceof CustomizationWorkflowEnum ? $workflow : CustomizationWorkflowEnum::tryFrom($workflow);
+
+        if ($enum === null || ! CustomizationWorkflowRegistry::isActive($enum)) {
+            return false;
+        }
+
+        if ($enum === CustomizationWorkflowEnum::FUEL_CARD) {
+            if (ProductColorPrice::fuelActiveCount() !== 1) {
+                return false;
+            }
+        }
+
+        $colors = self::activeWorkflowColors($enum);
+
+        return $colors !== [] && self::hasPurchasableDesignForColors($colors);
+    }
+
+    public static function activeWorkflowColors(CustomizationWorkflowEnum $workflow): array
+    {
+        return ProductColorPrice::query()
+            ->where(function ($q) use ($workflow) {
+                $q->where('customization_workflow', $workflow->value)
+                  ->orWhereHas('product', fn ($pq) => $pq->where('customization_workflow', $workflow->value)->where('is_active', true));
+            })
+            ->where('is_active', true)
+            ->whereHas('color', fn ($query) => $query->where('is_active', true))
+            ->pluck('color_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /**
@@ -136,10 +173,15 @@ class ProductPurchaseabilityService
             return null;
         }
 
-        $beforeColors = self::activeCardColors($productId);
+        $beforeColors = self::activeCardColors($productId, $product->customization_workflow);
 
         $afterColors = ProductColorPrice::query()
-            ->where('product_id', $productId)
+            ->where(function ($q) use ($productId, $product) {
+                $q->where('product_id', $productId);
+                if ($product->customization_workflow) {
+                    $q->orWhere('customization_workflow', $product->customization_workflow->value);
+                }
+            })
             ->where('is_active', true)
             ->when($excludePriceId !== null, fn ($query) => $query->where('id', '!=', $excludePriceId))
             ->whereHas('color', fn ($query) => $query->where('is_active', true))
@@ -340,10 +382,25 @@ class ProductPurchaseabilityService
         return self::hasPurchasableDesignForColors($cardColorIds);
     }
 
-    private static function activeCardColors(int $productId): array
+    public static function activeCardColors(?int $productId = null, ?CustomizationWorkflowEnum $workflow = null): array
     {
         return ProductColorPrice::query()
-            ->where('product_id', $productId)
+            ->where(function ($q) use ($productId, $workflow) {
+                if ($workflow !== null) {
+                    $q->where('customization_workflow', $workflow->value);
+                    if ($productId !== null) {
+                        $q->orWhere('product_id', $productId);
+                    }
+                } elseif ($productId !== null) {
+                    $product = Product::query()->find($productId);
+                    if ($product && $product->customization_workflow) {
+                        $q->where('customization_workflow', $product->customization_workflow->value)
+                          ->orWhere('product_id', $productId);
+                    } else {
+                        $q->where('product_id', $productId);
+                    }
+                }
+            })
             ->where('is_active', true)
             ->whereHas('color', fn ($query) => $query->where('is_active', true))
             ->pluck('color_id')

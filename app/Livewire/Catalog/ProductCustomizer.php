@@ -99,17 +99,43 @@ class ProductCustomizer extends Component
             }
         }
 
-        if ($resolvedWorkflow !== null) {
-            if (! CustomizationWorkflowRegistry::isActive($resolvedWorkflow)) {
+        // ProductCustomizer is strictly for customization workflows (Bank Card, Fuel Card).
+        // Standard commerce products without an active workflow must NEVER mount this component.
+        if ($resolvedWorkflow === null || ! CustomizationWorkflowRegistry::isActive($resolvedWorkflow)) {
+            abort(404);
+        }
+
+        $this->product_id = $product?->id ?? ($productId > 0 ? $productId : null);
+        $this->workflow = $resolvedWorkflow->value;
+        $this->basePrice = (int) ($product?->base_price ?? 0);
+
+        // Re-check purchaseability server-side: a launched-workflow product that
+        // lost its price path, design path, or fuel readiness must never mount a
+        // working customization surface (or a misleading "0 تومان" price).
+        if ($this->product_id !== null) {
+            if (! ProductPurchaseabilityService::isPurchasable($this->product_id)) {
                 abort(404);
             }
+        } else {
+            if (! ProductPurchaseabilityService::isWorkflowPurchasable($resolvedWorkflow)) {
+                abort(404);
+            }
+        }
 
-            $this->product_id = $product?->id ?? $productId;
-            $this->workflow = $resolvedWorkflow->value;
-            $this->basePrice = (int) ($product?->base_price ?? 0);
+        $colorPricesQuery = ProductColorPrice::query()
+            ->where('customization_workflow', $resolvedWorkflow->value)
+            ->where('is_active', true)
+            ->whereHas('color', fn ($query) => $query->where('is_active', true))
+            ->with([
+                'color' => fn ($colorQuery) => $colorQuery
+                    ->active()
+                    ->orderBy('sort_order'),
+            ])
+            ->orderBy('price');
 
+        if ($colorPricesQuery->clone()->doesntExist() && $this->product_id !== null) {
             $colorPricesQuery = ProductColorPrice::query()
-                ->where('customization_workflow', $resolvedWorkflow->value)
+                ->where('product_id', $this->product_id)
                 ->where('is_active', true)
                 ->whereHas('color', fn ($query) => $query->where('is_active', true))
                 ->with([
@@ -118,78 +144,28 @@ class ProductCustomizer extends Component
                         ->orderBy('sort_order'),
                 ])
                 ->orderBy('price');
-
-            if ($colorPricesQuery->clone()->doesntExist() && $this->product_id !== null) {
-                $colorPricesQuery = ProductColorPrice::query()
-                    ->where('product_id', $this->product_id)
-                    ->where('is_active', true)
-                    ->whereHas('color', fn ($query) => $query->where('is_active', true))
-                    ->with([
-                        'color' => fn ($colorQuery) => $colorQuery
-                            ->active()
-                            ->orderBy('sort_order'),
-                    ])
-                    ->orderBy('price');
-            }
-
-            $rawPrices = $colorPricesQuery->get();
-
-            if ($rawPrices->isEmpty()) {
-                abort(404);
-            }
-
-            if ($resolvedWorkflow === CustomizationWorkflowEnum::FUEL_CARD && $rawPrices->count() !== 1) {
-                abort(404);
-            }
-
-            $this->colorPrices = $rawPrices
-                ->map(fn ($price) => [
-                    'color_id' => $price->color_id,
-                    'name' => $price->color?->name,
-                    'color_hex' => $price->color?->code_hex,
-                    'price' => (int) $price->price,
-                    'is_scratched' => (bool) ($price->color?->is_scratched ?? false),
-                ])
-                ->values()
-                ->all();
-        } else {
-            if ($productId === null) {
-                abort(404);
-            }
-
-            $product = Product::query()
-                ->active()
-                ->with([
-                    'colorPrices' => fn ($query) => $query
-                        ->where('is_active', true)
-                        ->with([
-                            'color' => fn ($colorQuery) => $colorQuery
-                                ->active()
-                                ->orderBy('sort_order'),
-                        ])
-                        ->orderBy('price'),
-                ])
-                ->findOrFail($productId);
-
-            if (! ProductPurchaseabilityService::isPurchasable($productId)) {
-                abort(404);
-            }
-
-            $this->product_id = $productId;
-            $this->workflow = null;
-            $this->basePrice = (int) $product->base_price;
-
-            $this->colorPrices = collect($product->colorPrices)
-                ->map(fn ($price) => [
-                    'color_id' => $price->color_id,
-                    'name' => $price->color?->name,
-                    'color_hex' => $price->color?->code_hex,
-                    'price' => (int) $price->price,
-                    'is_scratched' => (bool) ($price->color?->is_scratched ?? false),
-                ])
-                ->values()
-                ->all();
         }
+
+        $rawPrices = $colorPricesQuery->get();
+
+        if ($rawPrices->isEmpty()) {
+            abort(404);
+        }
+
+        if ($resolvedWorkflow === CustomizationWorkflowEnum::FUEL_CARD && $rawPrices->count() !== 1) {
+            abort(404);
+        }
+
+        $this->colorPrices = $rawPrices
+            ->map(fn ($price) => [
+                'color_id' => $price->color_id,
+                'name' => $price->color?->name,
+                'color_hex' => $price->color?->code_hex,
+                'price' => (int) $price->price,
+                'is_scratched' => (bool) ($price->color?->is_scratched ?? false),
+            ])
+            ->values()
+            ->all();
 
         $initialDesignSlug = $initialDesignSlug ?? request()->query('design');
         $initialColorParam = $initialColorId ?? request()->query('color');

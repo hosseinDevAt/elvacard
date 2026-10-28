@@ -436,8 +436,13 @@ class CardColorPricingSeederIndependenceTest extends TestCase
             ->set('colorId', $color2->id)
             ->set('price', 420000)
             ->set('isActive', true)
-            ->call('save')
-            ->assertHasErrors(['isActive']);
+            ->call('save');
+
+        $this->assertSame(1, ProductColorPrice::fuelActiveCount());
+        $this->assertDatabaseMissing('product_color_prices', [
+            'customization_workflow' => 'fuel_card',
+            'color_id' => $color2->id,
+        ]);
     }
 
     /**

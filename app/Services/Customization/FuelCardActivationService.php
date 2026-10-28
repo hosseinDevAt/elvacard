@@ -58,7 +58,10 @@ class FuelCardActivationService
         $errors = [];
 
         $activeColorPrices = ProductColorPrice::query()
-            ->where('product_id', $productId)
+            ->where(function ($q) use ($productId) {
+                $q->where('product_id', $productId)
+                  ->orWhere('customization_workflow', CustomizationWorkflowEnum::FUEL_CARD->value);
+            })
             ->where('is_active', true)
             ->with('color')
             ->get();

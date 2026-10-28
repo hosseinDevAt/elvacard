@@ -77,16 +77,61 @@ class ProductColorPriceManager extends Component
                 $this->workflow = $resolved->customization_workflow->value;
                 $this->workflowFilter = $resolved->customization_workflow->value;
                 $this->productId = $resolved->id;
+            } elseif ($resolved !== null && $resolved->type === \App\Enums\ProductTypeEnum::FUEL) {
+                $this->workflow = CustomizationWorkflowEnum::FUEL_CARD->value;
+                $this->workflowFilter = CustomizationWorkflowEnum::FUEL_CARD->value;
+                $this->productId = $resolved->id;
+            } elseif ($resolved !== null && $resolved->type === \App\Enums\ProductTypeEnum::BANK) {
+                $this->workflow = CustomizationWorkflowEnum::BANK_CARD->value;
+                $this->workflowFilter = CustomizationWorkflowEnum::BANK_CARD->value;
+                $this->productId = $resolved->id;
+            }
+        }
+    }
+
+    public function updatedProductId(?int $value): void
+    {
+        if ($value) {
+            $product = Product::query()->find($value);
+            if ($product) {
+                if ($product->customization_workflow) {
+                    $this->workflow = $product->customization_workflow->value;
+                    $this->workflowFilter = $product->customization_workflow->value;
+                } elseif ($product->type === \App\Enums\ProductTypeEnum::FUEL) {
+                    $this->workflow = CustomizationWorkflowEnum::FUEL_CARD->value;
+                    $this->workflowFilter = CustomizationWorkflowEnum::FUEL_CARD->value;
+                } elseif ($product->type === \App\Enums\ProductTypeEnum::BANK) {
+                    $this->workflow = CustomizationWorkflowEnum::BANK_CARD->value;
+                    $this->workflowFilter = CustomizationWorkflowEnum::BANK_CARD->value;
+                }
             }
         }
     }
 
     public function save(): void
     {
+        if ($this->productId !== null) {
+            $product = Product::query()->find($this->productId);
+            if ($product !== null) {
+                if ($product->customization_workflow) {
+                    $this->workflow = $product->customization_workflow->value;
+                } elseif ($product->type === \App\Enums\ProductTypeEnum::FUEL) {
+                    $this->workflow = CustomizationWorkflowEnum::FUEL_CARD->value;
+                } elseif ($product->type === \App\Enums\ProductTypeEnum::BANK) {
+                    $this->workflow = CustomizationWorkflowEnum::BANK_CARD->value;
+                }
+            }
+        }
+
         $this->validate();
 
         $duplicate = ProductColorPrice::query()
-            ->where('customization_workflow', $this->workflow)
+            ->where(function ($q) {
+                $q->where('customization_workflow', $this->workflow);
+                if ($this->productId !== null) {
+                    $q->orWhere('product_id', $this->productId);
+                }
+            })
             ->where('color_id', $this->colorId)
             ->when($this->editingId, fn ($query) => $query->where('id', '!=', $this->editingId))
             ->exists();
@@ -113,9 +158,8 @@ class ProductColorPriceManager extends Component
         if (
             $this->isActive
             && $isFuelCard
-            && ProductColorPrice::fuelActiveCount($this->editingId) >= 1
+            && ProductColorPrice::fuelActiveCount($this->productId, $this->editingId) >= 1
         ) {
-            $this->addError('isActive', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
             session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
 
             return;
@@ -125,9 +169,8 @@ class ProductColorPriceManager extends Component
             ! $this->isActive
             && $isFuelCard
             && $currentColorPrice?->is_active
-            && ProductColorPrice::fuelActiveCount($this->editingId) === 0
+            && ProductColorPrice::fuelActiveCount($this->productId, $this->editingId) === 0
         ) {
-            $this->addError('isActive', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
             session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
 
             return;
@@ -350,7 +393,7 @@ class ProductColorPriceManager extends Component
         if (
             $workflow === CustomizationWorkflowEnum::FUEL_CARD->value
             && $priceItem->is_active
-            && ProductColorPrice::fuelActiveCount($id) === 0
+            && ProductColorPrice::fuelActiveCount($this->productId ?? $priceItem->product_id, $id) === 0
         ) {
             session()->flash('error', 'کارت سوخت باید دقیقاً یک رنگ و قیمت فعال داشته باشد.');
 

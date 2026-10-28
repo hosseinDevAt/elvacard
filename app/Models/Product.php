@@ -206,7 +206,7 @@ class Product extends Model
     {
         $activeColorPrice = 'EXISTS (
             SELECT 1 FROM product_color_prices AS pcp
-            WHERE pcp.product_id = products.id
+            WHERE (pcp.product_id = products.id OR (pcp.customization_workflow = products.customization_workflow AND products.customization_workflow IS NOT NULL))
               AND pcp.is_active = 1
               AND EXISTS (
                   SELECT 1 FROM colors AS c
@@ -227,7 +227,8 @@ class Product extends Model
                   INNER JOIN design_color_compatibilities AS dcc
                       ON dcc.design_image_id = di.id AND dcc.is_allowed = 1
                   INNER JOIN product_color_prices AS pcp2
-                      ON pcp2.product_id = products.id AND pcp2.is_active = 1
+                      ON (pcp2.product_id = products.id OR (pcp2.customization_workflow = products.customization_workflow AND products.customization_workflow IS NOT NULL))
+                     AND pcp2.is_active = 1
                   INNER JOIN colors AS c2
                       ON c2.id = pcp2.color_id AND c2.is_active = 1
                   WHERE di.design_id = d.id
@@ -239,9 +240,17 @@ class Product extends Model
         return $query
             ->where(function (Builder $q) use ($activeColorPrice, $purchasableDesign) {
                 $q->whereNull('customization_workflow')
-                    ->where(function (Builder $commerce) use ($activeColorPrice) {
+                    ->where(function (Builder $commerce) {
                         $commerce->whereNotNull('base_price')
-                            ->orWhereRaw($activeColorPrice);
+                            ->orWhereRaw('EXISTS (
+                                SELECT 1 FROM product_color_prices AS pcp
+                                WHERE pcp.product_id = products.id
+                                  AND pcp.is_active = 1
+                                  AND EXISTS (
+                                      SELECT 1 FROM colors AS c
+                                      WHERE c.id = pcp.color_id AND c.is_active = 1
+                                  )
+                            )');
                     });
 
                 $q->orWhere(function (Builder $card) use ($activeColorPrice, $purchasableDesign) {
@@ -260,7 +269,7 @@ class Product extends Model
                 $fuel->where('type', '!=', ProductTypeEnum::FUEL->value)
                     ->orWhereRaw('(
                         SELECT COUNT(*) FROM product_color_prices AS pcp3
-                        WHERE pcp3.product_id = products.id
+                        WHERE (pcp3.product_id = products.id OR (pcp3.customization_workflow = products.customization_workflow AND products.customization_workflow IS NOT NULL))
                           AND pcp3.is_active = 1
                           AND EXISTS (
                               SELECT 1 FROM colors AS c3
