@@ -4,10 +4,14 @@ namespace App\Livewire\Admin;
 
 use App\Models\CateDesign;
 use App\Models\Design;
+use App\Models\DesignColorCompatibility;
+use App\Models\DesignImage;
 use App\Services\Customization\ProductPurchaseabilityService;
 use App\Services\DesignCatalogService;
+use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -202,23 +206,76 @@ class DesignManager extends Component
 
     public function delete(int $id): void
     {
-        $design = Design::find($id);
+        $design = Design::query()->find($id);
 
         if (! $design) {
-            session()->flash('error', 'طرح موردنظر یافت نشد');
+            $msg = 'طرح موردنظر یافت نشد';
+            session()->flash('error', $msg);
+            $this->dispatch('elva-toast', message: $msg, type: 'error', title: 'خطا');
 
             return;
         }
 
-        if ($design->images()->exists()) {
-            session()->flash('error', 'این طرح دارای تصویر است و قابل حذف نیست. ابتدا تصاویر آن را حذف کنید.');
+        // 1. Guard against breaking purchasability of active products:
+        // If this design is the ONLY purchasable design keeping an active product buyable,
+        // deletion is blocked to prevent breaking customer-facing purchasing.
+        $blocker = ProductPurchaseabilityService::designDeactivationBlocker($design->id);
+        if ($blocker !== null) {
+            session()->flash('error', $blocker);
+            $this->dispatch('elva-toast', message: $blocker, type: 'error', title: 'خطا');
 
             return;
         }
 
-        $design->delete();
+        // 2. Collect image files and IDs owned by this design BEFORE database deletion
+        $images = $design->images()->get(['id', 'image_path']);
+        $imageIds = $images->pluck('id')->all();
+        $imagePaths = $images->pluck('image_path')->filter()->unique()->values()->all();
 
-        session()->flash('success', 'طرح با موفقیت حذف شد');
+        try {
+            DB::transaction(function () use ($design, $imageIds) {
+                // Delete compatibility records owned by these images
+                if (! empty($imageIds)) {
+                    DesignColorCompatibility::query()
+                        ->whereIn('design_image_id', $imageIds)
+                        ->delete();
+
+                    // Delete the design images themselves
+                    DesignImage::query()
+                        ->whereIn('id', $imageIds)
+                        ->delete();
+                }
+
+                // Delete the design record
+                $design->delete();
+            });
+        } catch (\Throwable $e) {
+            report($e);
+            $errorMsg = 'خطایی در حذف طرح رخ داد. لطفاً دوباره تلاش کنید.';
+            session()->flash('error', $errorMsg);
+            $this->dispatch('elva-toast', message: $errorMsg, type: 'error', title: 'خطا');
+
+            return;
+        }
+
+        // 3. Post-transaction file cleanup on the 'public' disk:
+        // Database transactions cannot rollback filesystem operations, so filesystem
+        // cleanup is executed only after the database transaction commits successfully.
+        // StoredFileManager::deleteDesignImageFilesWhenUnreferenced ensures physical files
+        // are only removed if no other DesignImage and no OrderItem still points to them.
+        if (! empty($imagePaths)) {
+            app(StoredFileManager::class)->deleteDesignImageFilesWhenUnreferenced($imagePaths);
+        }
+
+        // If the deleted design was currently being edited in the form, reset the form state
+        if ($this->editingId === $id) {
+            $this->resetForm();
+            $this->showForm = false;
+        }
+
+        $successMsg = 'طرح و تمام تصاویر و سازگاری‌های مرتبط با آن با موفقیت حذف شدند';
+        session()->flash('success', $successMsg);
+        $this->dispatch('elva-toast', message: $successMsg, type: 'success', title: 'موفقیت‌آمیز');
     }
 
     public function resetForm(): void
