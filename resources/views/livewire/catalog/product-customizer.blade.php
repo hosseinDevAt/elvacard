@@ -3,27 +3,42 @@
     $bankCardWorkflow = \App\Enums\CustomizationWorkflowEnum::BANK_CARD->value;
     $fuelCardWorkflow = \App\Enums\CustomizationWorkflowEnum::FUEL_CARD->value;
 @endphp
-<div class="min-h-screen bg-[#070e24] text-slate-100 rounded-3xl overflow-hidden shadow-2xl border border-[#152244] flex flex-col font-sans">
+<div class="min-h-screen bg-[#EEF2F7] text-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 flex flex-col font-sans" style="background-color: #EEF2F7;">
+    <style>
+        /* Scoped light theme rules for customizer workspace */
+        .customizer-light-panel h2.text-white { color: #010619 !important; }
+        .customizer-light-panel p.text-slate-400 { color: #64748b !important; }
+        .customizer-light-panel label.text-slate-300 { color: #334155 !important; }
+        .customizer-light-panel .bg-\[\#010619\] { background-color: #f8fafc !important; border-color: #e2e8f0 !important; }
+        .customizer-light-panel .bg-\[\#010619\]\/60 { background-color: #f8fafc !important; border-color: #e2e8f0 !important; }
+        .customizer-light-panel .bg-\[\#070e24\] { background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }
+        .customizer-light-panel input.text-white { color: #0f172a !important; }
+        .customizer-light-panel select.text-white { color: #0f172a !important; }
+        .customizer-light-panel span.text-white { color: #0f172a !important; }
+        .customizer-light-panel .text-slate-400 { color: #64748b !important; }
+        .customizer-light-panel .border-\[\#152244\] { border-color: #e2e8f0 !important; }
+        .customizer-light-panel .placeholder-slate-600::placeholder { color: #94a3b8 !important; }
+    </style>
     {{-- Header Bar --}}
-    <header class="flex items-center justify-between border-b border-[#152244] bg-[#070e24]/90 px-6 py-4 backdrop-blur-md">
+    <header class="flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-6 py-4 backdrop-blur-md shadow-sm">
         <div class="flex items-center gap-3">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ffde5b] text-[#010619] font-black shadow-md shadow-[#ffde5b]/20">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
             </span>
-            <span class="text-xl font-extrabold tracking-wider text-white">الواکارت</span>
+            <span class="text-xl font-extrabold tracking-wider text-[#010619]">الواکارت</span>
         </div>
 
         <div class="flex items-center gap-3">
-            <span class="text-xs font-semibold text-slate-300 hidden sm:inline">
+            <span class="text-xs font-semibold text-slate-600 hidden sm:inline">
                 @if ($step === 1)
                     اطلاعات و انتخاب طرح روی کارت
                 @else
                     اطلاعات و مشخصات پشت کارت
                 @endif
             </span>
-            <span class="rounded-full bg-[#ffde5b]/15 px-3 py-1 text-xs font-bold text-[#ffde5b] border border-[#ffde5b]/30">
+            <span class="rounded-full bg-[#ffde5b]/20 px-3 py-1 text-xs font-bold text-[#010619] border border-[#ffde5b]/50">
                 مرحله {{ $step }} از ۲
             </span>
         </div>
@@ -32,18 +47,18 @@
     {{-- Main Workspace Content --}}
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0">
         {{-- Left Control Panel --}}
-        <div class="lg:col-span-5 min-w-0 p-6 sm:p-8 bg-[#070e24]/60 border-b lg:border-b-0 lg:border-e border-[#152244] flex flex-col justify-between space-y-6 overflow-y-auto pb-10">
+        <div class="customizer-light-panel lg:col-span-5 min-w-0 p-6 sm:p-8 bg-white border-b lg:border-b-0 lg:border-e border-slate-200/80 flex flex-col justify-between space-y-6 overflow-y-auto pb-10">
             @if ($step === 1)
                 {{-- STEP 1: Front of Card Customization --}}
                 <div class="space-y-6">
                     <div>
-                        <h2 class="text-base font-bold text-white mb-1">۱. انتخاب طرح لیزر روی کارت</h2>
-                        <p class="text-xs text-slate-400">طرح و دسته مورد نظر برای حکاکی روی کارت را انتخاب کنید.</p>
+                        <h2 class="text-base font-bold text-[#010619] mb-1">۱. انتخاب طرح لیزر روی کارت</h2>
+                        <p class="text-xs text-slate-500">طرح و دسته مورد نظر برای حکاکی روی کارت را انتخاب کنید.</p>
                     </div>
 
                     {{-- Design Source Segmented Control (Bank Card Only) --}}
                     @if ($workflow === $bankCardWorkflow)
-                    <div class="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#010619] border border-[#152244]" role="tablist" aria-label="منبع انتخاب طرح کارت">
+                    <div class="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#EEF2F7] border border-slate-200" role="tablist" aria-label="منبع انتخاب طرح کارت" style="background-color: #EEF2F7;">
                         <button
                             type="button"
                             id="tab-catalog"
@@ -51,7 +66,7 @@
                             aria-selected="{{ $designSource === 'catalog' ? 'true' : 'false' }}"
                             aria-controls="panel-catalog"
                             wire:click="setDesignSource('catalog')"
-                            class="min-h-[44px] h-11 rounded-xl px-3 text-xs font-bold transition-all duration-150 motion-reduce:transition-none cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $designSource === 'catalog' ? 'bg-[#ffde5b] text-[#010619] font-black shadow-md shadow-[#ffde5b]/20' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5' }}"
+                            class="min-h-[44px] h-11 rounded-xl px-3 text-xs font-bold transition-all duration-150 motion-reduce:transition-none cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $designSource === 'catalog' ? 'bg-[#ffde5b] text-[#010619] font-black shadow-md shadow-[#ffde5b]/20' : 'text-slate-600 hover:text-[#010619] hover:bg-white/80' }}"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -65,7 +80,7 @@
                             aria-selected="{{ $designSource === 'custom' ? 'true' : 'false' }}"
                             aria-controls="panel-custom"
                             wire:click="setDesignSource('custom')"
-                            class="min-h-[44px] h-11 rounded-xl px-3 text-xs font-bold transition-all duration-150 motion-reduce:transition-none cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $designSource === 'custom' ? 'bg-[#ffde5b] text-[#010619] font-black shadow-md shadow-[#ffde5b]/20' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5' }}"
+                            class="min-h-[44px] h-11 rounded-xl px-3 text-xs font-bold transition-all duration-150 motion-reduce:transition-none cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $designSource === 'custom' ? 'bg-[#ffde5b] text-[#010619] font-black shadow-md shadow-[#ffde5b]/20' : 'text-slate-600 hover:text-[#010619] hover:bg-white/80' }}"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -79,12 +94,12 @@
                         <div id="panel-catalog" role="tabpanel" aria-labelledby="tab-catalog" class="space-y-6">
                             {{-- Category Tabs --}}
                             @if (count($categories) > 0)
-                                <div class="flex flex-wrap gap-2 border-b border-[#152244] pb-4">
+                                <div class="flex flex-wrap gap-2 border-b border-slate-200/80 pb-4">
                                     @foreach ($categories as $category)
                                         <button
                                             type="button"
                                             wire:click="selectCategory({{ $category['id'] }})"
-                                            class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 cursor-pointer {{ (int) $selected_category_id === (int) $category['id'] ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/60' }}"
+                                            class="rounded-xl px-4 py-2 text-xs font-bold transition duration-200 cursor-pointer {{ (int) $selected_category_id === (int) $category['id'] ? 'bg-[#ffde5b] text-[#010619] shadow-md shadow-[#ffde5b]/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-[#010619] border border-slate-200' }}"
                                         >
                                             {{ $category['name'] }}
                                         </button>
@@ -93,7 +108,7 @@
                             @endif
 
                             @error('design_id')
-                                <div class="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
+                                <div class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 flex items-center gap-2">
                                     <svg class="h-4 w-4 shrink-0 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
@@ -107,20 +122,20 @@
                                     <button
                                         type="button"
                                         wire:click="selectDesign({{ $design['id'] }})"
-                                        class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-[#010619]/90 overflow-hidden cursor-pointer {{ (int) $design_id === (int) $design['id'] ? 'border-[#ffde5b] ring-2 ring-[#ffde5b]/50 shadow-lg shadow-[#ffde5b]/10' : 'border-[#152244] hover:border-slate-700' }}"
+                                        class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-[#EEF2F7] overflow-hidden cursor-pointer {{ (int) $design_id === (int) $design['id'] ? 'border-[#ffde5b] ring-2 ring-[#ffde5b]/50 shadow-md shadow-[#ffde5b]/15 bg-[#ffde5b]/10' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-100' }}" style="background-color: #EEF2F7;"
                                     >
-                                        <div class="relative aspect-[16/10] w-full rounded-xl bg-black/50 overflow-hidden flex items-center justify-center p-2 border border-[#152244]">
+                                        <div class="relative aspect-[16/10] w-full rounded-xl bg-white overflow-hidden flex items-center justify-center p-2 border border-slate-200 shadow-inner">
                                             @if ($design['preview_image_path'])
                                                 <img src="{{ asset('storage/' . $design['preview_image_path']) }}" alt="{{ $design['name'] }}" class="h-full w-full object-contain transition duration-200 group-hover:scale-105">
                                             @else
-                                                <div class="flex flex-col items-center text-slate-600">
+                                                <div class="flex flex-col items-center text-slate-400">
                                                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                     </svg>
                                                 </div>
                                             @endif
                                         </div>
-                                        <span class="mt-2 text-xs font-bold text-slate-200 line-clamp-1 truncate">{{ $design['name'] }}</span>
+                                        <span class="mt-2 text-xs font-bold text-slate-800 line-clamp-1 truncate">{{ $design['name'] }}</span>
                                     </button>
                                 @empty
                                     <div class="col-span-2 py-8 text-center text-xs text-slate-500">
@@ -141,14 +156,14 @@
                                     $availableImages = collect($designImages)->where('design_id', $design_id)->values();
                                 @endphp
                                 @if ($availableImages->isNotEmpty())
-                                    <div class="pt-2 border-t border-[#152244]">
-                                        <label class="block text-xs font-bold text-slate-300 mb-2">انتخاب رنگ حکاکی لیزری طرح</label>
+                                    <div class="pt-2 border-t border-slate-200/80">
+                                        <label class="block text-xs font-bold text-slate-700 mb-2">انتخاب رنگ حکاکی لیزری طرح</label>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach ($availableImages as $img)
                                                 <button
                                                     type="button"
                                                     wire:click="selectDesignImage({{ $img['id'] }})"
-                                                    class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition cursor-pointer {{ (int) $design_image_id === (int) $img['id'] ? 'border-[#ffde5b] bg-[#ffde5b]/10 text-[#ffde5b]' : 'border-[#152244] bg-[#010619] text-slate-400 hover:border-slate-700' }}"
+                                                    class="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition cursor-pointer {{ (int) $design_image_id === (int) $img['id'] ? 'border-[#ffde5b] bg-[#ffde5b]/20 text-[#010619] font-bold shadow-sm' : 'border-slate-200 bg-[#EEF2F7] text-slate-700 hover:border-slate-300 hover:bg-slate-100' }}"
                                                 >
                                                     <span class="h-3 w-3 rounded-full border border-white/20" style="background-color: {{ $img['color_hex'] ?? '#cccccc' }};"></span>
                                                     <span>{{ $img['color_name'] ?? 'رنگ لیزر' }}</span>
@@ -164,7 +179,7 @@
                         <div id="panel-custom" role="tabpanel" aria-labelledby="tab-custom" class="space-y-4">
                             @if (! $customDesignToken)
                                 {{-- Custom Empty State: Luxury Dropzone --}}
-                                <div class="relative rounded-2xl border-2 border-dashed border-[#152244] hover:border-[#ffde5b]/60 bg-[#010619] p-4 sm:p-6 text-center transition duration-200 group">
+                                <div class="relative rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#ffde5b] bg-[#EEF2F7] p-4 sm:p-6 text-center transition duration-200 group" style="background-color: #EEF2F7;">
                                     <input
                                         type="file"
                                         id="custom-design-file-input"
@@ -179,20 +194,20 @@
                                         onkeydown="if(event.key === ' ' || event.key === 'Enter'){ event.preventDefault(); document.getElementById('custom-design-file-input').click(); }"
                                         class="flex flex-col items-center justify-center cursor-pointer space-y-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] rounded-xl p-2 select-none"
                                     >
-                                        <div class="h-12 w-12 rounded-full bg-[#ffde5b]/10 text-[#ffde5b] flex items-center justify-center group-hover:scale-105 transition duration-150 motion-reduce:transition-none shadow-inner">
+                                        <div class="h-12 w-12 rounded-full bg-[#ffde5b]/20 text-[#010619] flex items-center justify-center group-hover:scale-105 transition duration-150 motion-reduce:transition-none shadow-inner">
                                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                             </svg>
                                         </div>
                                         <div class="space-y-1">
-                                            <div class="text-sm font-bold text-white group-hover:text-[#ffde5b] transition">تصویر طرح خود را بارگذاری کنید</div>
-                                            <div class="text-xs text-slate-400">کلیک کنید یا فایل را اینجا بکشید</div>
+                                            <div class="text-sm font-bold text-[#010619] group-hover:text-amber-700 transition">تصویر طرح خود را بارگذاری کنید</div>
+                                            <div class="text-xs text-slate-600">کلیک کنید یا فایل را اینجا بکشید</div>
                                             <div class="text-[11px] text-slate-500 font-mono" dir="ltr">PNG, JPG, WEBP · Max 5MB</div>
                                         </div>
                                     </label>
 
-                                    <div id="custom-design-help-text" class="mt-3 rounded-xl bg-amber-400/5 border border-amber-400/15 p-2.5 text-[11px] text-amber-200/90 leading-relaxed text-start flex items-start gap-2">
-                                        <svg class="w-4 h-4 text-[#ffde5b] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div id="custom-design-help-text" class="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-900 leading-relaxed text-start flex items-start gap-2">
+                                        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         <span>برای ظرافت بیشتر حکاکی، تصویر تک‌رنگ یا PNG با پس‌زمینه شفاف پیشنهاد می‌شود.</span>
@@ -202,24 +217,24 @@
                                     <div
                                         wire:loading
                                         wire:target="customImage"
-                                        class="absolute inset-0 z-20 rounded-2xl bg-[#010619]/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 p-4"
+                                        class="absolute inset-0 z-20 rounded-2xl bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 p-4"
                                     >
                                         <svg class="animate-spin h-8 w-8 text-[#ffde5b]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                         </svg>
                                         <div class="text-center">
-                                            <div class="text-xs font-bold text-white">در حال آماده‌سازی تصویر...</div>
-                                            <div class="text-[11px] text-slate-400 mt-0.5">بررسی اصالت و اعتبارسنجی فایل</div>
+                                            <div class="text-xs font-bold text-[#010619]">در حال آماده‌سازی تصویر...</div>
+                                            <div class="text-[11px] text-slate-500 mt-0.5">بررسی اصالت و اعتبارسنجی فایل</div>
                                         </div>
                                     </div>
                                 </div>
                             @else
                                 {{-- Custom Success State: File Card --}}
-                                <div class="rounded-2xl bg-[#070e24] border border-[#152244] p-4 flex flex-col gap-3.5 shadow-lg">
+                                <div class="rounded-2xl bg-[#EEF2F7] border border-slate-200 p-4 flex flex-col gap-3.5 shadow-sm" style="background-color: #EEF2F7;">
                                     <div class="flex items-center gap-3">
                                         {{-- Thumbnail --}}
-                                        <div class="h-14 w-14 rounded-xl bg-[#010619] border border-[#152244] p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
+                                        <div class="h-14 w-14 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
                                             @if ($customDesignPreviewUrl)
                                                 <img src="{{ $customDesignPreviewUrl }}" alt="پیش‌نمایش طرح" class="max-h-full max-w-full object-contain">
                                             @else
@@ -230,11 +245,11 @@
                                         </div>
                                         {{-- Info --}}
                                         <div class="flex-1 min-w-0">
-                                            <div class="text-xs font-bold text-white truncate" title="{{ $customDesignOriginalName }}">
+                                            <div class="text-xs font-bold text-[#010619] truncate" title="{{ $customDesignOriginalName }}">
                                                 {{ $customDesignOriginalName ?? 'طرح اختصاصی شما' }}
                                             </div>
                                             <div class="flex items-center gap-2 mt-1">
-                                                <span class="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                                                <span class="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-bold">
                                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                                     </svg>
@@ -242,22 +257,22 @@
                                                 </span>
                                                 @if ($this->formattedCustomDesignFileSize)
                                                     <span class="text-slate-500 text-[10px]">·</span>
-                                                    <span class="text-[10px] text-slate-400 font-mono">{{ $this->formattedCustomDesignFileSize }}</span>
+                                                    <span class="text-[10px] text-slate-500 font-mono">{{ $this->formattedCustomDesignFileSize }}</span>
                                                 @endif
                                             </div>
                                         </div>
                                     </div>
 
                                     {{-- Action Buttons --}}
-                                    <div class="flex items-center gap-2 pt-1 border-t border-[#152244]/80">
+                                    <div class="flex items-center gap-2 pt-1 border-t border-slate-200">
                                         {{-- Change Image Action --}}
                                         <label
                                             for="custom-design-file-input-change"
                                             tabindex="0"
                                             onkeydown="if(event.key === ' ' || event.key === 'Enter'){ event.preventDefault(); document.getElementById('custom-design-file-input-change').click(); }"
-                                            class="min-h-[44px] flex-1 flex items-center justify-center gap-2 rounded-xl border border-[#152244] bg-[#010619] px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:border-slate-600 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b]"
+                                            class="min-h-[44px] flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:text-[#010619] hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b]"
                                         >
-                                            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                             </svg>
                                             <span>تغییر تصویر</span>
@@ -274,7 +289,7 @@
                                         <button
                                             type="button"
                                             wire:click="removeCustomImage"
-                                            class="min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-400 hover:bg-rose-500/20 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                                            class="min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
                                         >
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -314,8 +329,8 @@
 
                             {{-- Layout Mode Selector --}}
                             @if ($customDesignToken)
-                                <div class="pt-3 border-t border-[#152244] space-y-2.5">
-                                    <label class="block text-xs font-bold text-slate-300">نحوه قرارگیری طرح روی کارت:</label>
+                                <div class="pt-3 border-t border-slate-200/80 space-y-2.5">
+                                    <label class="block text-xs font-bold text-slate-700">نحوه قرارگیری طرح روی کارت:</label>
                                     <div class="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="نحوه قرارگیری طرح روی کارت">
                                         {{-- Option 1: Standard / Centered --}}
                                         <button
@@ -323,19 +338,19 @@
                                             wire:click="setCustomLayoutMode('centered')"
                                             role="radio"
                                             aria-checked="{{ $customLayoutMode === 'centered' ? 'true' : 'false' }}"
-                                            class="min-h-[44px] flex flex-col p-3 rounded-2xl border text-start transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $customLayoutMode === 'centered' ? 'border-[#ffde5b] bg-[#ffde5b]/10 shadow-md shadow-[#ffde5b]/10' : 'border-[#152244] bg-[#010619] hover:border-slate-700' }}"
+                                            class="min-h-[44px] flex flex-col p-3 rounded-2xl border text-start transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $customLayoutMode === 'centered' ? 'border-[#ffde5b] bg-[#ffde5b]/15 shadow-sm' : 'border-slate-200 bg-[#EEF2F7] hover:border-slate-300 hover:bg-slate-100' }}" style="background-color: #EEF2F7;"
                                         >
                                             <div class="flex items-center justify-between w-full mb-1.5">
-                                                <span class="text-xs font-bold {{ $customLayoutMode === 'centered' ? 'text-[#ffde5b]' : 'text-slate-200' }}">
+                                                <span class="text-xs font-bold {{ $customLayoutMode === 'centered' ? 'text-[#010619]' : 'text-slate-700' }}">
                                                     طرح استاندارد (مرکزی)
                                                 </span>
-                                                <span class="h-4 w-4 rounded-full border flex items-center justify-center shrink-0 {{ $customLayoutMode === 'centered' ? 'border-[#ffde5b] bg-[#ffde5b]' : 'border-slate-600' }}">
+                                                <span class="h-4 w-4 rounded-full border flex items-center justify-center shrink-0 {{ $customLayoutMode === 'centered' ? 'border-[#ffde5b] bg-[#ffde5b]' : 'border-slate-300 bg-white' }}">
                                                     @if ($customLayoutMode === 'centered')
                                                         <span class="h-1.5 w-1.5 rounded-full bg-[#010619]"></span>
                                                     @endif
                                                 </span>
                                             </div>
-                                            <p class="text-[11px] leading-relaxed {{ $customLayoutMode === 'centered' ? 'text-slate-300' : 'text-slate-400' }}">
+                                            <p class="text-[11px] leading-relaxed {{ $customLayoutMode === 'centered' ? 'text-slate-600' : 'text-slate-500' }}">
                                                 اندازه متناسب در مرکز کارت با حفظ حاشیه امن
                                             </p>
                                         </button>
@@ -346,19 +361,19 @@
                                             wire:click="setCustomLayoutMode('full_card')"
                                             role="radio"
                                             aria-checked="{{ $customLayoutMode === 'full_card' ? 'true' : 'false' }}"
-                                            class="min-h-[44px] flex flex-col p-3 rounded-2xl border text-start transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $customLayoutMode === 'full_card' ? 'border-[#ffde5b] bg-[#ffde5b]/10 shadow-md shadow-[#ffde5b]/10' : 'border-[#152244] bg-[#010619] hover:border-slate-700' }}"
+                                            class="min-h-[44px] flex flex-col p-3 rounded-2xl border text-start transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde5b] {{ $customLayoutMode === 'full_card' ? 'border-[#ffde5b] bg-[#ffde5b]/15 shadow-sm' : 'border-slate-200 bg-[#EEF2F7] hover:border-slate-300 hover:bg-slate-100' }}" style="background-color: #EEF2F7;"
                                         >
                                             <div class="flex items-center justify-between w-full mb-1.5">
-                                                <span class="text-xs font-bold {{ $customLayoutMode === 'full_card' ? 'text-[#ffde5b]' : 'text-slate-200' }}">
+                                                <span class="text-xs font-bold {{ $customLayoutMode === 'full_card' ? 'text-[#010619]' : 'text-slate-700' }}">
                                                     طرح سرتاسری (پوشش کامل)
                                                 </span>
-                                                <span class="h-4 w-4 rounded-full border flex items-center justify-center shrink-0 {{ $customLayoutMode === 'full_card' ? 'border-[#ffde5b] bg-[#ffde5b]' : 'border-slate-600' }}">
+                                                <span class="h-4 w-4 rounded-full border flex items-center justify-center shrink-0 {{ $customLayoutMode === 'full_card' ? 'border-[#ffde5b] bg-[#ffde5b]' : 'border-slate-300 bg-white' }}">
                                                     @if ($customLayoutMode === 'full_card')
                                                         <span class="h-1.5 w-1.5 rounded-full bg-[#010619]"></span>
                                                     @endif
                                                 </span>
                                             </div>
-                                            <p class="text-[11px] leading-relaxed {{ $customLayoutMode === 'full_card' ? 'text-slate-300' : 'text-slate-400' }}">
+                                            <p class="text-[11px] leading-relaxed {{ $customLayoutMode === 'full_card' ? 'text-slate-600' : 'text-slate-500' }}">
                                                 پوشش کامل سطح کارت تا لبه‌ها
                                             </p>
                                         </button>
@@ -379,12 +394,12 @@
         </div>
 
         {{-- Right Panel — Live 2D Fixed-Layout Preview --}}
-        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-[#070e24] flex flex-col items-center justify-between space-y-6 pb-10">
+        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-[#EEF2F7] flex flex-col items-center justify-between space-y-6 pb-10" style="background-color: #EEF2F7;">
             <div class="w-full flex flex-col items-center space-y-6">
                 {{-- Preview Header & Controls --}}
                 <div class="w-full flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5">
-                        <h3 class="text-xs font-bold text-slate-300">
+                        <h3 class="text-xs font-bold text-[#010619]">
                             @if ($step === 1)
                                 @if ($workflow === $fuelCardWorkflow)
                                     پیش‌نمایش کارت سوخت
@@ -397,26 +412,26 @@
                         </h3>
 
                         @if ($designSource === 'custom' && $customDesignToken)
-                            <div class="inline-flex items-center gap-1.5 rounded-full bg-[#ffde5b]/10 border border-[#ffde5b]/30 px-2.5 py-1 text-[11px] font-bold text-[#ffde5b]">
-                                <span class="h-1.5 w-1.5 rounded-full bg-[#ffde5b] animate-pulse"></span>
+                            <div class="inline-flex items-center gap-1.5 rounded-full bg-[#ffde5b]/20 border border-[#ffde5b]/60 px-2.5 py-1 text-[11px] font-bold text-[#010619]">
+                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                 <span>پیش‌نمایش طرح اختصاصی</span>
                             </div>
                         @endif
                     </div>
 
                     {{-- Front / Back View Switcher Tabs --}}
-                    <div class="flex items-center rounded-xl bg-[#070e24] p-1 border border-[#152244]">
+                    <div class="flex items-center rounded-xl bg-white p-1 border border-slate-200/80 shadow-sm">
                         <button
                             type="button"
                             wire:click="setActiveView('front')"
-                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'front' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-400 hover:text-white' }}"
+                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'front' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-600 hover:text-[#010619]' }}"
                         >
                             جلو
                         </button>
                         <button
                             type="button"
                             wire:click="setActiveView('back')"
-                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'back' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-400 hover:text-white' }}"
+                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'back' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-600 hover:text-[#010619]' }}"
                         >
                             پشت
                         </button>
@@ -429,7 +444,7 @@
                         <div class="flex flex-wrap items-center justify-center gap-3">
                             <div class="flex flex-col items-center gap-1">
                                 <span class="h-8 w-8 rounded-full border border-white/20" style="background-color: {{ $selectedColor['color_hex'] ?? '#111' }};"></span>
-                                <span class="text-[10px] font-medium text-slate-400">{{ $selectedColor['name'] }}</span>
+                                <span class="text-[10px] font-medium text-slate-600">{{ $selectedColor['name'] }}</span>
                             </div>
                         </div>
                     @endif
@@ -444,10 +459,10 @@
                                 wire:click="selectColor({{ $cp['color_id'] }})"
                                 class="group flex flex-col items-center gap-1 focus:outline-none cursor-pointer"
                             >
-                                <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-[#ffde5b] ring-offset-2 ring-offset-[#010619] scale-110' : 'hover:scale-105' }}"
+                                <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-[#ffde5b] ring-offset-2 ring-offset-white scale-110' : 'hover:scale-105' }}"
                                       style="background-color: {{ $cp['color_hex'] ?? '#111' }};"
                                 ></span>
-                                <span class="text-[10px] font-medium flex items-center gap-0.5 {{ $isSelected ? 'text-[#ffde5b] font-bold' : 'text-slate-400' }}">
+                                <span class="text-[10px] font-medium flex items-center gap-0.5 {{ $isSelected ? 'text-[#010619] font-bold' : 'text-slate-600' }}">
                                     <span>{{ $cp['name'] }}</span>
                                     @if ($cp['is_scratched'] ?? false)
                                         <span class="text-[9px] opacity-75">(خش‌دار)</span>
@@ -688,7 +703,7 @@
     </div>
 
     {{-- Workspace Footer Bar --}}
-    <footer class="sticky bottom-0 z-30 border-t border-[#152244] bg-[#070e24]/95 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md shadow-2xl">
+    <footer class="sticky bottom-0 z-30 border-t border-slate-200/80 bg-white/95 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md shadow-lg">
         {{-- Navigation Actions --}}
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             @if ($step === 1)
@@ -708,7 +723,7 @@
                 <button
                     type="button"
                     wire:click="setStep(1)"
-                    class="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 px-5 py-3 w-full sm:w-auto text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white border border-slate-700 cursor-pointer"
+                    class="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-5 py-3 w-full sm:w-auto text-xs font-bold text-slate-700 transition hover:bg-slate-200 hover:text-[#010619] border border-slate-200 cursor-pointer"
                 >
                     <svg class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
@@ -735,15 +750,15 @@
         </div>
 
         {{-- Step Counter Indicator --}}
-        <div class="text-xs font-mono text-slate-400 bg-black/60 px-4 py-1.5 rounded-full border border-[#152244]">
+        <div class="text-xs font-mono text-slate-700 bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200 font-bold">
             {{ fa_digits($step) }} / ۲
         </div>
 
         {{-- Dynamic Server-side Total Price Display --}}
         <div class="text-end">
-            <span class="text-xs text-slate-400 block">مبلغ قابل پرداخت:</span>
-            <span class="text-lg font-black text-[#ffde5b] tracking-tight">
-                {{ fa_digits(number_format($totalPrice)) }} <span class="text-xs font-normal text-slate-400">تومان</span>
+            <span class="text-xs text-slate-500 block">مبلغ قابل پرداخت:</span>
+            <span class="text-lg font-black text-[#010619] tracking-tight">
+                {{ fa_digits(number_format($totalPrice)) }} <span class="text-xs font-normal text-slate-500">تومان</span>
             </span>
         </div>
     </footer>
