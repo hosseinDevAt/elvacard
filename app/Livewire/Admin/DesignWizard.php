@@ -57,6 +57,8 @@ class DesignWizard extends Component
 
     public bool $isActive = true;
 
+    public string $workspaceVisibility = 'both';
+
     public bool $isPopular = false;
 
     public int $sortOrder = 0;
@@ -109,6 +111,9 @@ class DesignWizard extends Component
         $this->robotsIndex = (bool) $design->robots_index;
         $this->seoContent = $design->seo_content;
         $this->isActive = (bool) $design->is_active;
+        $this->workspaceVisibility = $design->workspace_visibility instanceof \App\Enums\DesignWorkspaceVisibilityEnum
+            ? $design->workspace_visibility->value
+            : (string) ($design->workspace_visibility ?? 'both');
         $this->isPopular = (bool) $design->is_popular;
         $this->sortOrder = (int) $design->sort_order;
         $this->showImageForm = true;
@@ -426,6 +431,7 @@ class DesignWizard extends Component
             'seoContent' => 'nullable|string',
             'robotsIndex' => 'boolean',
             'isActive' => 'boolean',
+            'workspaceVisibility' => ['required', 'string', 'in:bank,fuel,both'],
             'isPopular' => 'boolean',
             'sortOrder' => 'integer|min:0',
         ];
@@ -452,6 +458,7 @@ class DesignWizard extends Component
             'seo_content' => $this->seoContent ?: null,
             'robots_index' => $this->robotsIndex,
             'is_active' => $this->isActive,
+            'workspace_visibility' => $this->workspaceVisibility,
             'is_popular' => $this->isPopular,
             'sort_order' => $this->sortOrder,
         ];
@@ -549,6 +556,8 @@ class DesignWizard extends Component
             'category' => $this->cateDesignId ? CateDesign::find($this->cateDesignId)?->name : null,
             'slug' => $design?->slug,
             'isActive' => $this->isActive,
+            'workspaceVisibility' => $this->workspaceVisibility,
+            'workspaceVisibilityLabel' => \App\Enums\DesignWorkspaceVisibilityEnum::tryFrom($this->workspaceVisibility)?->faLabel() ?? 'هر دو میزکار',
             'sortOrder' => $this->sortOrder,
             'description' => $this->description,
             'imagesCount' => $images->count(),

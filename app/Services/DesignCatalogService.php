@@ -33,7 +33,7 @@ class DesignCatalogService
             return new LengthAwarePaginator([], 0, $perPage, 1);
         }
 
-        return $this->page($categoryId, $colorId, $allowedImageIds, $perPage);
+        return $this->page($categoryId, $colorId, $allowedImageIds, $perPage, false, $workflow);
     }
 
     /**
@@ -80,7 +80,7 @@ class DesignCatalogService
             return false;
         }
 
-        return $this->baseQuery($categoryId, $allowedImageIds)
+        return $this->baseQuery($categoryId, $allowedImageIds, false, $workflow)
             ->where('id', $designId)
             ->exists();
     }
@@ -91,9 +91,9 @@ class DesignCatalogService
      * given card color. Reused by activation readiness so fuel activation and
      * the public catalog share one design-visibility truth.
      */
-    public function hasPurchasableDesign(?int $categoryId = null, ?Collection $allowedImageIds = null): bool
+    public function hasPurchasableDesign(?int $categoryId = null, ?Collection $allowedImageIds = null, ?CustomizationWorkflowEnum $workflow = null): bool
     {
-        return $this->baseQuery($categoryId, $allowedImageIds)->exists();
+        return $this->baseQuery($categoryId, $allowedImageIds, false, $workflow)->exists();
     }
 
     /**
@@ -160,9 +160,9 @@ class DesignCatalogService
      * Finds an individual design by slug using the authoritative public visibility rules:
      * active design, active category, and at least one active image.
      */
-    public function findVisibleBySlug(string $slug): ?Design
+    public function findVisibleBySlug(string $slug, ?CustomizationWorkflowEnum $workflow = null): ?Design
     {
-        return $this->baseQuery(null, null)
+        return $this->baseQuery(null, null, false, $workflow)
             ->where('slug', $slug)
             ->first();
     }
@@ -300,14 +300,19 @@ class DesignCatalogService
      * The single source of design visibility: active design, active category,
      * and at least one active image within the allowed set.
      */
-    private function baseQuery(?int $categoryId, ?Collection $allowedImageIds, bool $onlyPopular = false)
-    {
+    private function baseQuery(
+        ?int $categoryId,
+        ?Collection $allowedImageIds,
+        bool $onlyPopular = false,
+        ?CustomizationWorkflowEnum $workflow = null,
+    ) {
         return Design::query()
             ->when(
                 $categoryId !== null,
                 fn ($query) => $query->where('cate_design_id', $categoryId)
             )
             ->when($onlyPopular, fn ($query) => $query->where('is_popular', true))
+            ->when($workflow !== null, fn ($query) => $query->forWorkflow($workflow))
             ->where('is_active', true)
             // Authoritative active-category enforcement: Livewire public
             // properties are client-hydrated, so visibility must be guaranteed
@@ -322,6 +327,7 @@ class DesignCatalogService
         ?Collection $allowedImageIds,
         int $perPage,
         bool $onlyPopular = false,
+        ?CustomizationWorkflowEnum $workflow = null,
     ): LengthAwarePaginator {
         $preview = DesignImage::query()
             ->select('image_path')
@@ -338,7 +344,7 @@ class DesignCatalogService
             )
             ->limit(1);
 
-        return $this->baseQuery($categoryId, $allowedImageIds, $onlyPopular)
+        return $this->baseQuery($categoryId, $allowedImageIds, $onlyPopular, $workflow)
             ->select(['id', 'cate_design_id', 'name', 'slug'])
             ->addSelect(['preview_image_path' => $preview])
             ->orderBy('sort_order')

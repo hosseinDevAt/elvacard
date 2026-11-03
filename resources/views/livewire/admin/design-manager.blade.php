@@ -37,6 +37,7 @@
                         <th class="admin-th">دسته‌بندی</th>
                         <th class="admin-th">تصاویر</th>
                         <th class="admin-th text-center">پرطرفدار</th>
+                        <th class="admin-th">محل نمایش</th>
                         <th class="admin-th">وضعیت</th>
                         <th class="admin-th text-center">عملیات</th>
                     </tr>
@@ -64,6 +65,20 @@
                                         {{ $design->is_popular ? '★ پرطرفدار' : 'عادی' }}
                                     </span>
                                 </button>
+                            </td>
+                            <td class="admin-td">
+                                @php
+                                    $vis = $design->workspace_visibility instanceof \App\Enums\DesignWorkspaceVisibilityEnum
+                                        ? $design->workspace_visibility->value
+                                        : (string) ($design->workspace_visibility ?? 'both');
+                                @endphp
+                                @if($vis === 'bank')
+                                    <span class="admin-badge admin-badge-info text-xs">فقط کارت بانکی</span>
+                                @elseif($vis === 'fuel')
+                                    <span class="admin-badge admin-badge-warning text-xs">فقط کارت سوخت</span>
+                                @else
+                                    <span class="admin-badge admin-badge-neutral text-xs">هر دو میزکار</span>
+                                @endif
                             </td>
                             <td class="admin-td">
                                 <span class="admin-badge {{ $design->is_active ? 'admin-badge-emerald' : 'admin-badge-gray' }}">

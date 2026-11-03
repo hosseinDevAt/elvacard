@@ -613,6 +613,7 @@ class CartService
         $design = $this->lockForUpdate(
             Design::query()
                 ->active()
+                ->forWorkflow($workflow)
                 ->whereRelation('category', fn ($query) => $query->where('is_active', true)),
             $forUpdate
         )->find($designId);

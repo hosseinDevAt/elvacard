@@ -72,7 +72,7 @@ class ProductPurchaseabilityService
 
         $colors = self::activeCardColors($product->id, $workflow);
 
-        return $colors !== [] && self::hasPurchasableDesignForColors($colors);
+        return $colors !== [] && self::hasPurchasableDesignForColors($colors, [], [], $workflow);
     }
 
     /**
@@ -95,7 +95,7 @@ class ProductPurchaseabilityService
 
         $colors = self::activeWorkflowColors($enum);
 
-        return $colors !== [] && self::hasPurchasableDesignForColors($colors);
+        return $colors !== [] && self::hasPurchasableDesignForColors($colors, [], [], $enum);
     }
 
     public static function activeWorkflowColors(CustomizationWorkflowEnum $workflow): array
@@ -416,7 +416,7 @@ class ProductPurchaseabilityService
             ->pluck('design_image_id');
     }
 
-    private static function hasPurchasableDesignForColors(array $colorIds, array $excludedImageIds = [], array $excludedDesignIds = []): bool
+    private static function hasPurchasableDesignForColors(array $colorIds, array $excludedImageIds = [], array $excludedDesignIds = [], ?CustomizationWorkflowEnum $workflow = null): bool
     {
         if ($colorIds === []) {
             return false;
@@ -437,7 +437,7 @@ class ProductPurchaseabilityService
                 $allowed = $allowed->diff($excludedDesignImages);
             }
 
-            if (app(DesignCatalogService::class)->hasPurchasableDesign(null, $allowed)) {
+            if (app(DesignCatalogService::class)->hasPurchasableDesign(null, $allowed, $workflow)) {
                 return true;
             }
         }

@@ -226,7 +226,7 @@ class ProductCustomizer extends Component
         }
 
         $designService = app(DesignCatalogService::class);
-        $design = $designService->findVisibleBySlug(trim($initialDesignSlug));
+        $design = $designService->findVisibleBySlug(trim($initialDesignSlug), $this->catalogWorkflow());
 
         if ($design === null) {
             // Invalid or unavailable design: fallback safely, do not substitute unrelated design

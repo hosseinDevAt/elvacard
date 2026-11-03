@@ -115,6 +115,34 @@
                 </div>
             </div>
 
+            <div class="pt-2">
+                <label class="admin-label">محل نمایش طرح در میزکار (انتخاب الزامی)</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1.5">
+                    <label class="relative flex items-center p-3 rounded-xl border cursor-pointer transition {{ $workspaceVisibility === 'bank' ? 'border-[#ffde5b] bg-[#ffde5b]/10 shadow-sm' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <input type="radio" wire:model.live="workspaceVisibility" value="bank" class="sr-only">
+                        <div class="text-xs">
+                            <span class="block font-bold text-slate-900">فقط کارت بانکی (bank)</span>
+                            <span class="block text-slate-500 text-[11px] mt-0.5">فقط در میزکار کارت بانکی قابل انتخاب است</span>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center p-3 rounded-xl border cursor-pointer transition {{ $workspaceVisibility === 'fuel' ? 'border-[#ffde5b] bg-[#ffde5b]/10 shadow-sm' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <input type="radio" wire:model.live="workspaceVisibility" value="fuel" class="sr-only">
+                        <div class="text-xs">
+                            <span class="block font-bold text-slate-900">فقط کارت سوخت (fuel)</span>
+                            <span class="block text-slate-500 text-[11px] mt-0.5">فقط در میزکار کارت سوخت قابل انتخاب است</span>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center p-3 rounded-xl border cursor-pointer transition {{ $workspaceVisibility === 'both' ? 'border-[#ffde5b] bg-[#ffde5b]/10 shadow-sm' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <input type="radio" wire:model.live="workspaceVisibility" value="both" class="sr-only">
+                        <div class="text-xs">
+                            <span class="block font-bold text-slate-900">هر دو میزکار (both)</span>
+                            <span class="block text-slate-500 text-[11px] mt-0.5">هم در کارت بانکی و هم در کارت سوخت</span>
+                        </div>
+                    </label>
+                </div>
+                @error('workspaceVisibility') <p class="admin-error">{{ $message }}</p> @enderror
+            </div>
+
             <div class="flex flex-wrap items-center gap-6 pt-2">
                 <div class="flex items-center gap-2">
                     <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
@@ -429,6 +457,14 @@
                 <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
                     <dt class="text-slate-500">اسلاگ</dt>
                     <dd class="font-medium text-slate-900 font-mono text-xs text-end" dir="ltr">{{ $summary['slug'] ?: '—' }}</dd>
+                </div>
+                <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+                    <dt class="text-slate-500">محل نمایش در میزکار</dt>
+                    <dd class="font-medium text-end">
+                        <span class="admin-badge {{ $summary['workspaceVisibility'] === 'bank' ? 'admin-badge-info' : ($summary['workspaceVisibility'] === 'fuel' ? 'admin-badge-warning' : 'admin-badge-neutral') }}">
+                            {{ $summary['workspaceVisibilityLabel'] }}
+                        </span>
+                    </dd>
                 </div>
                 <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
                     <dt class="text-slate-500">وضعیت</dt>

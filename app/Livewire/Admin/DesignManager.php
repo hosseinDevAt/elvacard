@@ -47,6 +47,8 @@ class DesignManager extends Component
 
     public bool $isActive = true;
 
+    public string $workspaceVisibility = 'both';
+
     public bool $isPopular = false;
 
     public int $sortOrder = 0;
@@ -67,6 +69,7 @@ class DesignManager extends Component
         'seoContent' => 'nullable|string',
         'robotsIndex' => 'boolean',
         'isActive' => 'boolean',
+        'workspaceVisibility' => 'required|string|in:bank,fuel,both',
         'isPopular' => 'boolean',
         'sortOrder' => 'integer|min:0',
     ];
@@ -74,6 +77,7 @@ class DesignManager extends Component
     protected $messages = [
         'cateDesignId.required' => 'دسته‌بندی طرح را انتخاب کنید.',
         'name.required' => 'نام طرح الزامی است.',
+        'workspaceVisibility.required' => 'انتخاب محل نمایش طرح الزامی است.',
     ];
 
     public function save(): void
@@ -121,6 +125,7 @@ class DesignManager extends Component
             'seo_content' => $this->seoContent ?: null,
             'robots_index' => $this->robotsIndex,
             'is_active' => $this->isActive,
+            'workspace_visibility' => $this->workspaceVisibility,
             'is_popular' => $this->isPopular,
             'sort_order' => $this->sortOrder,
         ];
@@ -181,6 +186,9 @@ class DesignManager extends Component
         $this->robotsIndex = (bool) $design->robots_index;
         $this->seoContent = $design->seo_content;
         $this->isActive = (bool) $design->is_active;
+        $this->workspaceVisibility = $design->workspace_visibility instanceof \App\Enums\DesignWorkspaceVisibilityEnum
+            ? $design->workspace_visibility->value
+            : (string) ($design->workspace_visibility ?? 'both');
         $this->isPopular = (bool) $design->is_popular;
         $this->sortOrder = (int) $design->sort_order;
         $this->showForm = true;
@@ -289,6 +297,7 @@ class DesignManager extends Component
         $this->robotsIndex = true;
         $this->seoContent = null;
         $this->isActive = true;
+        $this->workspaceVisibility = 'both';
         $this->isPopular = false;
         $this->sortOrder = 0;
         $this->editingId = null;
