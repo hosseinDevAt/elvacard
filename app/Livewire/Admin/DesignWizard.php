@@ -61,6 +61,10 @@ class DesignWizard extends Component
 
     public bool $isPopular = false;
 
+    public ?string $featuredImagePath = null;
+
+    public $featuredImageUpload = null;
+
     public int $sortOrder = 0;
 
     // Step 1 — quick category creation
@@ -115,6 +119,7 @@ class DesignWizard extends Component
             ? $design->workspace_visibility->value
             : (string) ($design->workspace_visibility ?? 'both');
         $this->isPopular = (bool) $design->is_popular;
+        $this->featuredImagePath = $design->featured_image_path;
         $this->sortOrder = (int) $design->sort_order;
         $this->showImageForm = true;
     }
@@ -419,6 +424,20 @@ class DesignWizard extends Component
         $this->showImageForm = true;
     }
 
+    public function removeFeaturedImage(): void
+    {
+        if ($this->featuredImagePath) {
+            $oldPath = $this->featuredImagePath;
+            $this->featuredImagePath = null;
+            if ($this->designId) {
+                Design::whereKey($this->designId)->update(['featured_image_path' => null]);
+            }
+            app(StoredFileManager::class)->deletePublicFile($oldPath);
+        }
+
+        $this->featuredImageUpload = null;
+    }
+
     protected function stepOneRules(): array
     {
         return [
@@ -433,6 +452,7 @@ class DesignWizard extends Component
             'isActive' => 'boolean',
             'workspaceVisibility' => ['required', 'string', 'in:bank,fuel,both'],
             'isPopular' => 'boolean',
+            'featuredImageUpload' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
             'sortOrder' => 'integer|min:0',
         ];
     }
@@ -448,6 +468,17 @@ class DesignWizard extends Component
             }
         }
 
+        if ($this->featuredImageUpload) {
+            $oldPath = $this->featuredImagePath;
+            $newPath = $this->featuredImageUpload->store('designs/featured', 'public');
+            $this->featuredImagePath = $newPath;
+            $this->featuredImageUpload = null;
+
+            if ($oldPath && $oldPath !== $newPath) {
+                app(StoredFileManager::class)->deletePublicFile($oldPath);
+            }
+        }
+
         $data = [
             'cate_design_id' => $this->cateDesignId,
             'name' => $this->name,
@@ -460,6 +491,7 @@ class DesignWizard extends Component
             'is_active' => $this->isActive,
             'workspace_visibility' => $this->workspaceVisibility,
             'is_popular' => $this->isPopular,
+            'featured_image_path' => $this->featuredImagePath,
             'sort_order' => $this->sortOrder,
         ];
 
@@ -563,6 +595,9 @@ class DesignWizard extends Component
             'imagesCount' => $images->count(),
             'colorsCount' => count($colorOverview),
             'allowedCombos' => array_sum(array_column($compatibilityRows, 'allowedCount')),
+            'isPopular' => $this->isPopular,
+            'featuredImagePath' => $this->featuredImagePath,
+            'hasCustomFeaturedThumbnail' => ! empty($this->featuredImagePath) || ! empty($this->featuredImageUpload),
         ];
 
         return view('livewire.admin.design-wizard', [

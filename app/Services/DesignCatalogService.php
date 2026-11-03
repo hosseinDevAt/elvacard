@@ -345,7 +345,7 @@ class DesignCatalogService
             ->limit(1);
 
         return $this->baseQuery($categoryId, $allowedImageIds, $onlyPopular, $workflow)
-            ->select(['id', 'cate_design_id', 'name', 'slug'])
+            ->select(['id', 'cate_design_id', 'name', 'slug', 'featured_image_path', 'is_popular'])
             ->addSelect(['preview_image_path' => $preview])
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -355,7 +355,9 @@ class DesignCatalogService
                 'category_id' => (int) $design->cate_design_id,
                 'name' => $design->name,
                 'slug' => $design->slug,
-                'preview_image_path' => $design->preview_image_path,
+                'preview_image_path' => $onlyPopular
+                    ? $design->resolveFeaturedThumbnailPath()
+                    : $design->preview_image_path,
             ]);
     }
 

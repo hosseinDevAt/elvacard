@@ -39,8 +39,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
                 @foreach ($designs as $design)
                     @php
-                        $firstImage = $design->images->first();
-                        $imagePath = $firstImage?->image_path;
+                        $imagePath = $design->resolveFeaturedThumbnailPath();
                         $designUrl = route('catalog.designs.show', $design->slug);
                     @endphp
 

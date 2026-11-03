@@ -51,6 +51,8 @@ class DesignManager extends Component
 
     public bool $isPopular = false;
 
+    public ?string $featuredImagePath = null;
+
     public int $sortOrder = 0;
 
     public string $search = '';
@@ -127,6 +129,7 @@ class DesignManager extends Component
             'is_active' => $this->isActive,
             'workspace_visibility' => $this->workspaceVisibility,
             'is_popular' => $this->isPopular,
+            'featured_image_path' => $this->featuredImagePath,
             'sort_order' => $this->sortOrder,
         ];
 
@@ -190,6 +193,7 @@ class DesignManager extends Component
             ? $design->workspace_visibility->value
             : (string) ($design->workspace_visibility ?? 'both');
         $this->isPopular = (bool) $design->is_popular;
+        $this->featuredImagePath = $design->featured_image_path;
         $this->sortOrder = (int) $design->sort_order;
         $this->showForm = true;
     }
@@ -239,6 +243,7 @@ class DesignManager extends Component
         $images = $design->images()->get(['id', 'image_path']);
         $imageIds = $images->pluck('id')->all();
         $imagePaths = $images->pluck('image_path')->filter()->unique()->values()->all();
+        $featuredImagePath = $design->featured_image_path;
 
         try {
             DB::transaction(function () use ($design, $imageIds) {
@@ -275,6 +280,10 @@ class DesignManager extends Component
             app(StoredFileManager::class)->deleteDesignImageFilesWhenUnreferenced($imagePaths);
         }
 
+        if (! empty($featuredImagePath)) {
+            app(StoredFileManager::class)->deletePublicFile($featuredImagePath);
+        }
+
         // If the deleted design was currently being edited in the form, reset the form state
         if ($this->editingId === $id) {
             $this->resetForm();
@@ -299,6 +308,7 @@ class DesignManager extends Component
         $this->isActive = true;
         $this->workspaceVisibility = 'both';
         $this->isPopular = false;
+        $this->featuredImagePath = null;
         $this->sortOrder = 0;
         $this->editingId = null;
     }

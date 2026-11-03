@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Design extends Model
 {
@@ -29,6 +30,7 @@ class Design extends Model
         'sort_order',
         'is_popular',
         'popular_sort_order',
+        'featured_image_path',
     ];
 
     protected $casts = [
@@ -101,5 +103,46 @@ class Design extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Resolves the authoritative promotional thumbnail path for featured design cards.
+     * Priority:
+     * 1. Valid custom featured thumbnail if design is popular and file exists on public disk.
+     * 2. Automatic thumbnail from design images (first active image according to sort order).
+     * 3. Null (calling views handle placeholder fallback).
+     */
+    public function resolveFeaturedThumbnailPath(): ?string
+    {
+        if ($this->is_popular && $this->hasCustomFeaturedThumbnail()) {
+            return $this->featured_image_path;
+        }
+
+        if (! empty($this->preview_image_path)) {
+            return $this->preview_image_path;
+        }
+
+        if ($this->relationLoaded('images')) {
+            $image = $this->images->firstWhere('is_active', true) ?? $this->images->first();
+            if ($image && ! empty($image->image_path)) {
+                return $image->image_path;
+            }
+        }
+
+        return $this->images()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->value('image_path')
+            ?? $this->images()->orderBy('sort_order')->value('image_path');
+    }
+
+    public function hasCustomFeaturedThumbnail(): bool
+    {
+        return ! empty($this->featured_image_path) && Storage::disk('public')->exists($this->featured_image_path);
+    }
+
+    public function isUsingCustomFeaturedThumbnail(): bool
+    {
+        return (bool) $this->is_popular && $this->hasCustomFeaturedThumbnail();
     }
 }

@@ -149,7 +149,7 @@
                     <label for="is_active" class="text-sm font-medium text-slate-700">فعال (نمایش در سفارشی‌ساز)</label>
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" wire:model="isPopular" id="is_popular" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
+                    <input type="checkbox" wire:model.live="isPopular" id="is_popular" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                     <label for="is_popular" class="text-sm font-medium text-slate-700">طرح پرطرفدار (نمایش در بخش پرطرفدارها)</label>
                 </div>
                 <div class="flex items-center gap-2">
@@ -157,6 +157,62 @@
                     <label for="robots_index" class="text-sm font-medium text-slate-700">قابل ایندکس در موتورهای جستجو</label>
                 </div>
             </div>
+
+            @if($isPopular)
+                <div class="rounded-xl border border-amber-200/90 bg-amber-50/50 p-4 transition-all">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-bold text-xs text-amber-950">تصویر شاخص اختصاصی برای طرح پرطرفدار</span>
+                                @if($featuredImageUpload || $featuredImagePath)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                                        تصویر اختصاصی تنظیم شده (در اولویت نمایش)
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200 text-slate-700">
+                                        استفاده از تصویر خودکار رنگ‌ها
+                                    </span>
+                                @endif
+                            </div>
+                            <p class="text-[11px] text-amber-800/80 leading-relaxed">
+                                این تصویر صرفاً در کارت‌های معرفی بخش پرطرفدارها (صفحه اصلی و لیست پرطرفدارها) نمایش داده می‌شود و اختیاری است. در صورت عدم بارگذاری، تصویر اولین رنگ فعال طرح نمایش می‌یابد.
+                            </p>
+                        </div>
+
+                        @if($featuredImageUpload || $featuredImagePath)
+                            <button type="button" wire:click="removeFeaturedImage" wire:confirm="آیا از حذف تصویر اختصاصی مطمئن هستید؟ (سیستم مجدداً از تصویر خودکار رنگ‌ها استفاده خواهد کرد)" class="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 font-semibold px-2.5 py-1 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 transition shrink-0 cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                <span>حذف تصویر اختصاصی</span>
+                            </button>
+                        @endif
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t border-amber-200/60 flex flex-col sm:flex-row items-center gap-4">
+                        @if($featuredImageUpload && method_exists($featuredImageUpload, 'isPreviewable') && $featuredImageUpload->isPreviewable())
+                            <div class="relative rounded-lg border border-amber-300 bg-white p-1 shadow-sm shrink-0">
+                                <img src="{{ $featuredImageUpload->temporaryUrl() }}" alt="پیش‌نمایش تصویر جدید" class="h-20 w-32 object-contain rounded">
+                                <span class="absolute bottom-1 end-1 bg-amber-500 text-white text-[9px] px-1 rounded font-mono">پیش‌نمایش جدید</span>
+                            </div>
+                        @elseif($featuredImagePath)
+                            <div class="relative rounded-lg border border-amber-300 bg-white p-1 shadow-sm shrink-0">
+                                <img src="{{ asset('storage/' . $featuredImagePath) }}" alt="تصویر فعلی" class="h-20 w-32 object-contain rounded">
+                                <span class="absolute bottom-1 end-1 bg-slate-800 text-white text-[9px] px-1 rounded font-mono">تصویر فعلی</span>
+                            </div>
+                        @endif
+
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-slate-800 mb-1">
+                                {{ $featuredImageUpload || $featuredImagePath ? 'جایگزینی با تصویر جدید' : 'بارگذاری تصویر شاخص اختصاصی' }}
+                            </label>
+                            <input type="file" wire:model="featuredImageUpload" accept="image/jpeg,image/png,image/jpg,image/webp" class="block w-full text-xs text-slate-500 file:me-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-200/80 file:text-amber-900 hover:file:bg-amber-300 transition cursor-pointer">
+                            <div wire:loading wire:target="featuredImageUpload" class="text-xs text-amber-700 mt-1 font-medium">در حال بارگذاری فایل...</div>
+                            @error('featuredImageUpload') <p class="admin-error">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="border-t border-slate-100 pt-4">
                 <h4 class="font-bold text-slate-900 mb-3 text-sm">تنظیمات سئو</h4>
@@ -477,6 +533,21 @@
                 <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
                     <dt class="text-slate-500">ترتیب نمایش</dt>
                     <dd class="font-mono text-xs text-slate-900 text-end">{{ $summary['sortOrder'] }}</dd>
+                </div>
+                <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+                    <dt class="text-slate-500">طرح پرطرفدار</dt>
+                    <dd class="font-medium text-end">
+                        @if($summary['isPopular'])
+                            <span class="admin-badge admin-badge-warning text-xs">★ پرطرفدار</span>
+                            @if($summary['hasCustomFeaturedThumbnail'])
+                                <span class="block text-[10px] text-emerald-600 font-medium mt-0.5">تصویر شاخص اختصاصی تنظیم شده</span>
+                            @else
+                                <span class="block text-[10px] text-slate-500 font-medium mt-0.5">تصویر خودکار رنگ‌ها</span>
+                            @endif
+                        @else
+                            <span class="admin-badge admin-badge-neutral text-xs">عادی</span>
+                        @endif
+                    </dd>
                 </div>
                 <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
                     <dt class="text-slate-500">تصاویر ثبت‌شده</dt>
