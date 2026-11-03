@@ -221,6 +221,48 @@ class DateServiceTest extends TestCase
         $this->assertNull($this->dates->jalaliExpiryToGregorian('13', '1404'));
     }
 
+    /**
+     * Permanent regression test: all 372 Jalali months across years 1400 through 1430
+     * round-trip accurately and consistently between Jalali and Gregorian expiry representations.
+     */
+    public function test_all_372_jalali_expiry_months_round_trip_consistently(): void
+    {
+        [$minYear, $maxYear] = $this->dates->jalaliYearRange();
+
+        for ($year = $minYear; $year <= $maxYear; $year++) {
+            for ($month = 1; $month <= 12; $month++) {
+                $jalaliMonth = sprintf('%02d', $month);
+                $jalaliYear = (string) $year;
+
+                $gregorian = $this->dates->jalaliExpiryToGregorian($jalaliMonth, $jalaliYear);
+                $this->assertNotNull(
+                    $gregorian,
+                    "Failed converting Jalali {$jalaliYear}/{$jalaliMonth} to Gregorian."
+                );
+
+                $recovered = $this->dates->gregorianExpiryToJalali(
+                    $gregorian['expiry_month'],
+                    $gregorian['expiry_year']
+                );
+                $this->assertNotNull(
+                    $recovered,
+                    "Failed recovering Jalali from Gregorian {$gregorian['expiry_month']}/{$gregorian['expiry_year']} (original: {$jalaliYear}/{$jalaliMonth})."
+                );
+
+                $this->assertSame(
+                    $jalaliMonth,
+                    $recovered['expiry_month'],
+                    "Month mismatch for Jalali {$jalaliYear}/{$jalaliMonth}: recovered {$recovered['expiry_month']}."
+                );
+                $this->assertSame(
+                    $jalaliYear,
+                    $recovered['expiry_year'],
+                    "Year mismatch for Jalali {$jalaliYear}/{$jalaliMonth}: recovered {$recovered['expiry_year']}."
+                );
+            }
+        }
+    }
+
     public function test_jalali_year_range_starts_at_1400_and_not_capped_at_1415(): void
     {
         [$from, $to] = $this->dates->jalaliYearRange();

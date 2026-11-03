@@ -268,6 +268,74 @@ class DateService
     }
 
     /**
+     * Convert stored Gregorian expiry month/year back to corresponding Jalali MM/YYYY (and YY).
+     * Reversible partner of jalaliExpiryToGregorian().
+     */
+    public function gregorianExpiryToJalali(?string $gregorianMonth, ?string $gregorianYear): ?array
+    {
+        if ($gregorianMonth === null || $gregorianYear === null) {
+            return null;
+        }
+
+        $m = $this->ascii(trim((string) $gregorianMonth));
+        $y = $this->ascii(trim((string) $gregorianYear));
+
+        if ($m === '' || $y === '') {
+            return null;
+        }
+
+        if (preg_match('/^(0[1-9]|1[0-2]|[1-9])$/', $m) !== 1) {
+            return null;
+        }
+
+        $gm = (int) $m;
+
+        if (preg_match('/^\d{4}$/', $y) === 1) {
+            $yInt = (int) $y;
+            // If already a 4-digit Jalali year, return directly
+            if ($yInt >= 1300 && $yInt <= 1600) {
+                return [
+                    'expiry_month' => sprintf('%02d', $gm),
+                    'expiry_year' => (string) $yInt,
+                    'expiry_year_short' => sprintf('%02d', $yInt % 100),
+                ];
+            }
+            $gy = $yInt;
+        } elseif (preg_match('/^\d{2}$/', $y) === 1) {
+            $gy = 2000 + (int) $y;
+        } else {
+            return null;
+        }
+
+        // The first day of the Gregorian expiry month reliably maps to the corresponding Jalali month
+        $jDate = CalendarUtils::toJalali($gy, $gm, 1);
+
+        return [
+            'expiry_month' => sprintf('%02d', $jDate[1]),
+            'expiry_year' => (string) $jDate[0],
+            'expiry_year_short' => sprintf('%02d', $jDate[0] % 100),
+        ];
+    }
+
+    /**
+     * Format a stored expiry (Gregorian or Jalali) into a consistent Jalali MM/YY display string.
+     */
+    public function formatExpiryJalali(?string $month, ?string $year, bool $persianDigits = false, bool $shortYear = true): ?string
+    {
+        $converted = $this->gregorianExpiryToJalali($month, $year);
+
+        if ($converted === null) {
+            return null;
+        }
+
+        $m = $converted['expiry_month'];
+        $y = $shortYear ? $converted['expiry_year_short'] : $converted['expiry_year'];
+        $formatted = $m . '/' . $y;
+
+        return $persianDigits ? $this->digits($formatted) : $formatted;
+    }
+
+    /**
      * Whether the given Jalali month/year card expiry has already passed
      * relative to the current Jalali month. Returns false for malformed input
      * (other validation rules cover format errors). This does NOT modify the

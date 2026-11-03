@@ -316,7 +316,7 @@ class CardDataSecurityTest extends TestCase
         // Admin order view reveals full unmasked production parameters for physical manufacturing
         $this->assertStringContainsString('6274 0512 3456 7898', $html);
         $this->assertStringContainsString(self::CVV2_VALUE, $html);
-        $this->assertStringContainsString('12/28', $html);
+        $this->assertStringContainsString('09/07', $html);
         $this->assertStringContainsString('HOSSEIN REZAIE', $html);
         $this->assertStringContainsString($this->color->name, $html);
         $this->assertStringContainsString($this->design->name, $html);

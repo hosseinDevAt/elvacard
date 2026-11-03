@@ -95,8 +95,76 @@ class OrderItem extends Model
                 if ($modified) {
                     $item->customization_json = $custom;
                 }
+
+                // Strictly ensure incomplete bank card expiry data is never persisted for new items
+                // or updates that introduce/modify expiry data. Historical incomplete records are
+                // permitted to undergo unrelated updates without being blocked.
+                if (! empty($custom['security_expiry_enabled'])) {
+                    $hasIncompleteExpiry = empty($custom['expiry_month']) || empty($custom['expiry_year']);
+
+                    if ($hasIncompleteExpiry) {
+                        $isNewItem = ! $item->exists;
+                        $workflowChanged = $item->isDirty('customization_workflow');
+
+                        $oldCustom = $item->getOriginal('customization_json');
+                        if (is_string($oldCustom)) {
+                            $oldCustom = json_decode($oldCustom, true);
+                        }
+                        if (! is_array($oldCustom)) {
+                            $oldCustom = [];
+                        }
+
+                        $oldEnabled = ! empty($oldCustom['security_expiry_enabled']);
+                        $oldMonth = isset($oldCustom['expiry_month']) ? (string) $oldCustom['expiry_month'] : null;
+                        $oldYear = isset($oldCustom['expiry_year']) ? (string) $oldCustom['expiry_year'] : null;
+
+                        $newMonth = isset($custom['expiry_month']) ? (string) $custom['expiry_month'] : null;
+                        $newYear = isset($custom['expiry_year']) ? (string) $custom['expiry_year'] : null;
+
+                        $expiryModified = (! $oldEnabled)
+                            || ($oldMonth !== $newMonth)
+                            || ($oldYear !== $newYear);
+
+                        if ($isNewItem || $workflowChanged || $expiryModified) {
+                            throw new \InvalidArgumentException('اطلاعات تاریخ انقضای کارت بانکی ناقص است.');
+                        }
+                    }
+                }
             }
         });
+    }
+
+    /**
+     * Get Jalali expiry month and year for display across admin and customer views.
+     */
+    public function getJalaliExpiry(): ?array
+    {
+        $custom = $this->customization_json;
+        if (! is_array($custom) || empty($custom['security_expiry_enabled'])) {
+            return null;
+        }
+
+        $month = $custom['expiry_month'] ?? null;
+        $year = $custom['expiry_year'] ?? null;
+
+        if (empty($month) || empty($year)) {
+            return null;
+        }
+
+        return app(\App\Support\Dates\DateService::class)->gregorianExpiryToJalali((string) $month, (string) $year);
+    }
+
+    /**
+     * Grouped Jalali expiry (e.g. "02/07") for display.
+     */
+    public function getFormattedExpiry(): ?string
+    {
+        $jalali = $this->getJalaliExpiry();
+        if (! $jalali) {
+            return null;
+        }
+
+        return $jalali['expiry_month'] . '/' . $jalali['expiry_year_short'];
     }
 
     /**

@@ -107,7 +107,7 @@
                                                 <p><span class="font-semibold">حکاکی CVV2:</span> <span>فعال</span></p>
                                             @endif
                                             @if (! empty($customization['security_expiry_enabled']))
-                                                <p><span class="font-semibold">تاریخ انقضا:</span> <span dir="ltr">{{ $customization['expiry_month'] ?? '--' }}/{{ $customization['expiry_year'] ?? '--' }}</span></p>
+                                                <p><span class="font-semibold">تاریخ انقضا:</span> <span dir="ltr">{{ $item->getFormattedExpiry() ?? (($customization['expiry_month'] ?? '--') . '/' . ($customization['expiry_year'] ?? '--')) }}</span></p>
                                             @endif
                                         </div>
                                     @endif
@@ -144,7 +144,7 @@
             </div>
 
             <div>
-                <a href="{{ route('orders.index') }}" wire:navigate class="text-primary-600 hover:text-primary-800 text-sm transition">بازگشت به سفارش‌های من</a>
+                <a href="{{ Route::has('orders.index') ? route('orders.index') : url('/') }}" wire:navigate class="text-primary-600 hover:text-primary-800 text-sm transition">بازگشت به سفارش‌های من</a>
             </div>
         </div>
     </div>

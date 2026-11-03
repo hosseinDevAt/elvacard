@@ -178,9 +178,9 @@
                                     $formattedPan = $item->getFormattedDecryptedPan() ?? ($fullPan ? \App\Services\Customization\CardPresenter::presentCardNumber($fullPan) : ($item->getMaskedPan() ?? 'ثبت نشده'));
                                     $decryptedCvv = $item->getDecryptedCvv();
                                     $displayCvv = $decryptedCvv ?: ($custom['cvv2'] ?? ($custom['cvv'] ?? null));
-                                    $formattedExpiry = (!empty($custom['expiry_month']) && !empty($custom['expiry_year'])) 
-                                        ? (str_pad((string)$custom['expiry_month'], 2, '0', STR_PAD_LEFT) . '/' . substr((string)$custom['expiry_year'], -2)) 
-                                        : (!empty($custom['expiry']) ? $custom['expiry'] : null);
+                                    $jalaliExpiry = $item->getJalaliExpiry();
+                                    $formattedExpiry = $item->getFormattedExpiry()
+                                        ?? (!empty($custom['expiry']) ? $custom['expiry'] : null);
                                     $colorName = mb_strtolower($item->color_name_snapshot ?? '');
                                     $itemColorHex = $item->color?->code_hex ?? null;
                                     $cardTextColor = \App\Services\Customization\CardPresenter::backTextColorClass($itemColorHex);
@@ -437,9 +437,9 @@
                                                     <div class="absolute rounded px-1" style="left: {{ $slots['expiry']['x'] * 100 }}%; top: {{ $slots['expiry']['y'] * 100 }}%;">
                                                         <div class="text-[8px] font-bold tracking-widest {{ $cardSubtextColor }}">EXPIRES</div>
                                                         <div class="font-mono font-bold text-[11px] tracking-wider select-all inline-flex items-center gap-0.5 {{ $cardTextColor }}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
-                                                            <span>{{ str_pad((string)($custom['expiry_month'] ?? ''), 2, '0', STR_PAD_LEFT) ?: '--' }}</span>
+                                                            <span>{{ $jalaliExpiry ? $jalaliExpiry['expiry_month'] : (str_pad((string)($custom['expiry_month'] ?? ''), 2, '0', STR_PAD_LEFT) ?: '--') }}</span>
                                                             <span class="opacity-70">/</span>
-                                                            <span>{{ substr((string)($custom['expiry_year'] ?? ''), -2) ?: '--' }}</span>
+                                                            <span>{{ $jalaliExpiry ? $jalaliExpiry['expiry_year_short'] : (substr((string)($custom['expiry_year'] ?? ''), -2) ?: '--') }}</span>
                                                         </div>
                                                     </div>
                                                 @endif

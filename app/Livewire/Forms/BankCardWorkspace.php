@@ -38,8 +38,16 @@ class BankCardWorkspace extends Form
         if ($this->security_expiry_enabled) {
             $month = $this->expiry_month;
             $rules['expiry_year'][] = function (string $attribute, mixed $value, \Closure $fail) use ($month): void {
-                if ($value !== '' && $month !== '' && app(DateService::class)->isPastJalaliExpiry($month, (string) $value)) {
-                    $fail('تاریخ انقضای کارت گذشته است؛ لطفاً تاریخی در آینده انتخاب کنید.');
+                if ($value !== '' && $month !== '') {
+                    $dates = app(DateService::class);
+                    if ($dates->isPastJalaliExpiry($month, (string) $value)) {
+                        $fail('تاریخ انقضای کارت گذشته است؛ لطفاً تاریخی در آینده انتخاب کنید.');
+                        return;
+                    }
+                    if ($dates->jalaliExpiryToGregorian($month, (string) $value) === null) {
+                        $fail('تاریخ انقضای انتخاب شده نامعتبر است.');
+                        return;
+                    }
                 }
             };
         }

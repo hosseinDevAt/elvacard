@@ -498,6 +498,12 @@ class CartService
 
         $sanitizedCustomization = $this->sanitizeCustomization($workflow, $payload);
         if ($workflow === CustomizationWorkflowEnum::BANK_CARD) {
+            if (! empty($sanitizedCustomization['security_expiry_enabled'])) {
+                if (empty($sanitizedCustomization['expiry_month']) || empty($sanitizedCustomization['expiry_year'])) {
+                    throw new InvalidArgumentException('اطلاعات تاریخ انقضای کارت بانکی ناقص یا نامعتبر است؛ انتخاب ماه و سال انقضا الزامی است.');
+                }
+            }
+
             $sanitizedCustomization['is_scratched'] = (bool) ($colorPrice->color?->is_scratched ?? false);
         }
 

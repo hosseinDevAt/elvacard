@@ -170,28 +170,32 @@ class BankCardCustomization
         if (isset($rawCustomization['security_expiry_enabled'])) {
             $sanitizedCustomization['security_expiry_enabled'] = (bool) $rawCustomization['security_expiry_enabled'];
             if ($sanitizedCustomization['security_expiry_enabled']) {
-                $month = null;
-                if (! empty($rawCustomization['expiry_month']) && is_string($rawCustomization['expiry_month'])) {
-                    $month = mb_substr(trim($rawCustomization['expiry_month']), 0, 2);
-                    if (preg_match('/^(0[1-9]|1[0-2])$/', $month) === 1) {
-                        $sanitizedCustomization['expiry_month'] = $month;
-                    }
-                }
+                $rawMonth = ! empty($rawCustomization['expiry_month']) && (is_string($rawCustomization['expiry_month']) || is_numeric($rawCustomization['expiry_month']))
+                    ? mb_substr(trim((string) $rawCustomization['expiry_month']), 0, 2)
+                    : null;
+                $rawYear = ! empty($rawCustomization['expiry_year']) && (is_string($rawCustomization['expiry_year']) || is_numeric($rawCustomization['expiry_year']))
+                    ? trim((string) $rawCustomization['expiry_year'])
+                    : null;
 
-                if (! empty($rawCustomization['expiry_year']) && is_string($rawCustomization['expiry_year'])) {
+                if ($rawMonth !== null && $rawYear !== null && preg_match('/^(0[1-9]|1[0-2])$/', $rawMonth) === 1) {
                     $dates = app(DateService::class);
-                    $year = $dates->ascii(trim($rawCustomization['expiry_year']));
+                    $asciiYear = $dates->ascii($rawYear);
 
-                    if (preg_match('/^\d{4}$/', $year) === 1) {
-                        $converted = $dates->jalaliExpiryToGregorian($sanitizedCustomization['expiry_month'] ?? null, $year);
+                    // Case 1: 4-digit Jalali year -> Convert to Gregorian
+                    if (preg_match('/^\d{4}$/', $asciiYear) === 1) {
+                        $converted = $dates->jalaliExpiryToGregorian($rawMonth, $asciiYear);
                         if ($converted !== null) {
                             $sanitizedCustomization['expiry_month'] = $converted['expiry_month'];
                             $sanitizedCustomization['expiry_year'] = $converted['expiry_year'];
                         }
-                    } elseif (preg_match('/^\d{2}$/', $year) === 1) {
-                        $currentShort = (int) date('y');
-                        if ((int) $year >= $currentShort && (int) $year <= $currentShort + 10) {
-                            $sanitizedCustomization['expiry_year'] = $year;
+                    }
+                    // Case 2: 2-digit Gregorian year (repeated sanitization of already converted dates)
+                    elseif (preg_match('/^\d{2}$/', $asciiYear) === 1) {
+                        $backToJalali = $dates->gregorianExpiryToJalali($rawMonth, $asciiYear);
+                        [$minYear, $maxYear] = $dates->jalaliYearRange();
+                        if ($backToJalali !== null && (int) $backToJalali['expiry_year'] >= $minYear && (int) $backToJalali['expiry_year'] <= $maxYear) {
+                            $sanitizedCustomization['expiry_month'] = $rawMonth;
+                            $sanitizedCustomization['expiry_year'] = $asciiYear;
                         }
                     }
                 }
