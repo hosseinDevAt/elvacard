@@ -22,6 +22,15 @@
                     <input type="text" wire:model="name" class="admin-input" placeholder="مثال: ورزشی، مینیمال، فانتزی...">
                     @error('name') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
+                <div class="w-full sm:w-56">
+                    <label class="admin-label">محل نمایش در میزکار</label>
+                    <select wire:model="workspaceVisibility" class="admin-input">
+                        <option value="both">هر دو میزکار</option>
+                        <option value="bank">فقط کارت بانکی</option>
+                        <option value="fuel">فقط کارت سوخت</option>
+                    </select>
+                    @error('workspaceVisibility') <p class="admin-error">{{ $message }}</p> @enderror
+                </div>
                 <div class="flex items-center gap-2 pb-2">
                     <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
                     <label for="is_active" class="text-sm font-medium text-slate-700">فعال</label>
@@ -47,6 +56,18 @@
                             <h3 class="font-bold text-slate-900">{{ $category->name }}</h3>
                             <span class="admin-badge {{ $category->is_active ? 'admin-badge-emerald' : 'admin-badge-gray' }}">
                                 {{ $category->is_active ? 'فعال' : 'غیرفعال' }}
+                            </span>
+                            @php
+                                $vis = $category->workspace_visibility instanceof \App\Enums\DesignWorkspaceVisibilityEnum
+                                    ? $category->workspace_visibility->value
+                                    : (string) ($category->workspace_visibility ?? 'both');
+                            @endphp
+                            <span class="admin-badge {{ $vis === 'bank' ? 'admin-badge-info' : ($vis === 'fuel' ? 'admin-badge-warning' : 'admin-badge-neutral') }}">
+                                {{ match($vis) {
+                                    'bank' => 'فقط کارت بانکی',
+                                    'fuel' => 'فقط کارت سوخت',
+                                    default => 'هر دو میزکار',
+                                } }}
                             </span>
                         </div>
                         <p class="text-xs text-slate-500 mt-1">{{ $category->designs->count() }} طرح متصل</p>

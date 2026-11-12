@@ -18,6 +18,8 @@ class CateDesignManager extends Component
 
     public string $name = '';
 
+    public string $workspaceVisibility = 'both';
+
     public bool $isActive = true;
 
     public ?int $editingId = null;
@@ -26,7 +28,14 @@ class CateDesignManager extends Component
 
     protected $rules = [
         'name' => 'required|string|min:1|max:255',
+        'workspaceVisibility' => 'required|string|in:bank,fuel,both',
         'isActive' => 'boolean',
+    ];
+
+    protected $messages = [
+        'name.required' => 'وارد کردن نام دسته‌بندی الزامی است.',
+        'workspaceVisibility.required' => 'انتخاب محل نمایش دسته‌بندی الزامی است.',
+        'workspaceVisibility.in' => 'محل نمایش انتخاب شده نامعتبر است.',
     ];
 
     public function save(): void
@@ -63,6 +72,7 @@ class CateDesignManager extends Component
             $cateDesign->update([
                 'name' => $this->name,
                 'slug' => $slug,
+                'workspace_visibility' => $this->workspaceVisibility,
                 'is_active' => $this->isActive,
             ]);
             session()->flash('success', 'دسته‌بندی با موفقیت ویرایش شد');
@@ -70,6 +80,7 @@ class CateDesignManager extends Component
             CateDesign::create([
                 'name' => $this->name,
                 'slug' => $slug,
+                'workspace_visibility' => $this->workspaceVisibility,
                 'is_active' => $this->isActive,
             ]);
             session()->flash('success', 'دسته‌بندی با موفقیت اضافه شد');
@@ -102,6 +113,9 @@ class CateDesignManager extends Component
 
         $this->editingId = $id;
         $this->name = $cate->name;
+        $this->workspaceVisibility = $cate->workspace_visibility instanceof \App\Enums\DesignWorkspaceVisibilityEnum
+            ? $cate->workspace_visibility->value
+            : (string) ($cate->workspace_visibility ?? 'both');
         $this->isActive = (bool) $cate->is_active;
         $this->showForm = true;
     }
@@ -129,6 +143,7 @@ class CateDesignManager extends Component
     public function resetForm(): void
     {
         $this->name = '';
+        $this->workspaceVisibility = 'both';
         $this->isActive = true;
         $this->editingId = null;
     }

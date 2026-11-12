@@ -97,6 +97,25 @@ class DesignCatalogService
     }
 
     /**
+     * Returns the active categories visible for a customization workflow that contain
+     * at least one eligible design for that workflow.
+     */
+    public function categoriesForWorkflow(?CustomizationWorkflowEnum $workflow = null): Collection
+    {
+        return CateDesign::query()
+            ->active()
+            ->when($workflow !== null, fn ($query) => $query->forWorkflow($workflow))
+            ->whereHas('designs', function ($query) use ($workflow) {
+                $query->active()
+                    ->when($workflow !== null, fn ($dq) => $dq->forWorkflow($workflow))
+                    ->whereHas('images', fn ($iq) => $iq->where('is_active', true));
+            })
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'name', 'slug', 'workspace_visibility']);
+    }
+
+    /**
      * Returns every design currently visible in the public catalog (active,
      * in an active category, with at least one active image), optionally
      * restricted to the given ids. Homepage featured sections and admin
@@ -317,7 +336,10 @@ class DesignCatalogService
             // Authoritative active-category enforcement: Livewire public
             // properties are client-hydrated, so visibility must be guaranteed
             // in the query itself, not by any component or controller input.
-            ->whereRelation('category', fn ($query) => $query->where('is_active', true))
+            ->whereRelation('category', function ($query) use ($workflow) {
+                $query->where('is_active', true)
+                    ->when($workflow !== null, fn ($cq) => $cq->forWorkflow($workflow));
+            })
             ->whereExists(fn ($query) => $this->scopeAllowedImages($query, $allowedImageIds));
     }
 

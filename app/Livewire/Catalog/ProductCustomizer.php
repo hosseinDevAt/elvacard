@@ -818,12 +818,10 @@ class ProductCustomizer extends Component
 
     private function refreshCategories(): void
     {
-        $this->categories = CateDesign::query()
-            ->active()
-            ->orderBy('sort_order')
-            ->get(['id', 'name'])
+        $this->categories = app(DesignCatalogService::class)
+            ->categoriesForWorkflow($this->catalogWorkflow())
             ->map(fn (CateDesign $category) => [
-                'id' => $category->id,
+                'id' => (int) $category->id,
                 'name' => $category->name,
             ])
             ->values()
