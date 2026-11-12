@@ -18,6 +18,7 @@ use App\Services\DesignCatalogService;
 use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -34,6 +35,10 @@ class ProductManager extends Component
     public ?string $customizationWorkflow = null;
 
     public string $name = '';
+
+    public string $slug = '';
+
+    public bool $slugManuallyChanged = false;
 
     public ?string $description = null;
 
@@ -98,29 +103,89 @@ class ProductManager extends Component
 
     public array $specifications = [];
 
-    protected $rules = [
-        'type' => 'required|in:bank,fuel,standard',
-        'customizationWorkflow' => 'nullable|in:bank_card,fuel_card',
-        'name' => 'required|string|min:1|max:255',
-        'description' => 'nullable|string',
-        'mainImage' => 'nullable|string|max:255',
-        'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        'galleryUploads' => 'nullable|array|max:10',
-        'galleryUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        'basePrice' => 'nullable|integer|min:0',
-        'productCategoryId' => 'nullable|integer|exists:product_categories,id',
-        'metaTitle' => 'nullable|string|max:255',
-        'metaDescription' => 'nullable|string|max:255',
-        'canonicalUrl' => 'nullable|url:http,https|max:255',
-        'ogImage' => 'nullable|string|max:255',
-        'ogImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        'seoContent' => 'nullable|string',
-        'specifications' => 'nullable|array|max:50',
-        'specifications.*.label' => 'nullable|string|max:120',
-        'specifications.*.value' => 'nullable|string|max:500',
-        'robotsIndex' => 'boolean',
-        'isActive' => 'boolean',
-    ];
+    protected function rules(): array
+    {
+        return [
+            'type' => 'required|in:bank,fuel,standard',
+            'customizationWorkflow' => 'nullable|in:bank_card,fuel_card',
+            'name' => 'required|string|min:1|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_-]+$/',
+                function ($attribute, $value, $fail) {
+                    $slug = (string) $value;
+                    $productExists = Product::query()
+                        ->where('slug', $slug)
+                        ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
+                        ->exists();
+
+                    $historyExists = ProductSlugHistory::query()
+                        ->where('slug', $slug)
+                        ->when($this->editingId, fn ($q) => $q->where(function ($sub) {
+                            $sub->whereNull('product_id')
+                                ->orWhere('product_id', '!=', $this->editingId);
+                        }))
+                        ->exists();
+
+                    if ($productExists || $historyExists) {
+                        $fail('این نامک قبلاً ثبت شده و تکراری است.');
+                    }
+                },
+            ],
+            'description' => 'nullable|string',
+            'mainImage' => 'nullable|string|max:255',
+            'mainImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'galleryUploads' => 'nullable|array|max:10',
+            'galleryUploads.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'basePrice' => 'nullable|integer|min:0',
+            'productCategoryId' => 'nullable|integer|exists:product_categories,id',
+            'metaTitle' => 'nullable|string|max:255',
+            'metaDescription' => 'nullable|string|max:255',
+            'canonicalUrl' => 'nullable|url:http,https|max:255',
+            'ogImage' => 'nullable|string|max:255',
+            'ogImageUpload' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'seoContent' => 'nullable|string',
+            'specifications' => 'nullable|array|max:50',
+            'specifications.*.label' => 'nullable|string|max:120',
+            'specifications.*.value' => 'nullable|string|max:500',
+            'robotsIndex' => 'boolean',
+            'isActive' => 'boolean',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'name.required' => 'نام محصول الزامی است.',
+            'slug.required' => 'نامک محصول الزامی است.',
+            'slug.regex' => 'نامک فقط می‌تواند شامل حروف کوچک انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد.',
+        ];
+    }
+
+    protected function validationAttributes(): array
+    {
+        return [
+            'name' => 'نام محصول',
+            'slug' => 'نامک انگلیسی',
+        ];
+    }
+
+    public function updatedName(string $value): void
+    {
+        if (! $this->editingId && (! $this->slugManuallyChanged || trim($this->slug) === '')) {
+            $suggested = Str::slug($value);
+            if ($suggested !== '') {
+                $this->slug = $suggested;
+            }
+        }
+    }
+
+    public function updatedSlug(string $value): void
+    {
+        $this->slugManuallyChanged = true;
+    }
 
     protected $variantRules = [
         'variantColorId' => 'required|integer|exists:colors,id',
@@ -145,6 +210,39 @@ class ProductManager extends Component
         // carried from another row is dropped before validation.
         if ($this->customizationWorkflow !== null) {
             $this->productCategoryId = null;
+        }
+
+        $normalizedSlug = strtolower(trim($this->slug ?? ''));
+
+        if ($this->editingId) {
+            $existing = Product::find($this->editingId);
+
+            if (! $existing) {
+                session()->flash('error', 'محصول موردنظر یافت نشد');
+
+                return;
+            }
+
+            $originalSlug = (string) $existing->slug;
+
+            if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                $normalizedSlug = $originalSlug;
+            }
+
+            $this->slug = $normalizedSlug;
+        } else {
+            if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                $fallbackBase = trim($this->name);
+                $normalizedSlug = $this->uniqueSlug(
+                    $fallbackBase !== '' ? $fallbackBase : 'product',
+                    Product::class,
+                    null,
+                    'product',
+                    fn (string $candidate): bool => ProductSlugHistory::query()->where('slug', $candidate)->exists(),
+                );
+            }
+
+            $this->slug = $normalizedSlug;
         }
 
         $this->validate();
@@ -277,17 +375,16 @@ class ProductManager extends Component
             $this->ogImageUpload = null;
         }
 
-        $slug = $this->uniqueSlug(
-            $this->name,
-            Product::class,
-            $this->editingId,
-            'product',
-            fn (string $candidate): bool => ProductSlugHistory::query()->where('slug', $candidate)->exists(),
-        );
+        $slug = $this->slug;
 
         if ($this->editingId && $previousSlug !== null && $previousSlug !== $slug) {
             ProductSlugHistory::query()
                 ->firstOrCreate(['slug' => $previousSlug], ['product_id' => $this->editingId]);
+
+            ProductSlugHistory::query()
+                ->where('slug', $slug)
+                ->where('product_id', $this->editingId)
+                ->delete();
         }
 
         // A variable Store product is priced exclusively by its active
@@ -530,6 +627,8 @@ class ProductManager extends Component
         $this->type = $product->type->value;
         $this->customizationWorkflow = $product->customization_workflow?->value ?? null;
         $this->name = $product->name;
+        $this->slug = (string) $product->slug;
+        $this->slugManuallyChanged = false;
         $this->description = $product->description;
         $this->mainImage = $product->main_image;
         $this->basePrice = $product->base_price;
@@ -623,6 +722,8 @@ class ProductManager extends Component
         $this->type = ProductTypeEnum::STANDARD->value;
         $this->customizationWorkflow = null;
         $this->name = '';
+        $this->slug = '';
+        $this->slugManuallyChanged = false;
         $this->description = null;
         $this->mainImage = null;
         $this->mainImageUpload = null;

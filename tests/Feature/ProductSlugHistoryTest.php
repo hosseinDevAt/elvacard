@@ -33,17 +33,22 @@ class ProductSlugHistoryTest extends TestCase
         ]);
     }
 
-    private function renameViaManager(Product $product, string $newName): void
+    private function renameViaManager(Product $product, string $newName, ?string $newSlug = null): void
     {
-        Livewire::actingAs($this->admin())
+        $test = Livewire::actingAs($this->admin())
             ->test(ProductManager::class)
-            ->set('editingId', $product->id)
+            ->call('edit', $product->id)
             ->set('type', ProductTypeEnum::STANDARD->value)
             ->set('customizationWorkflow', null)
             ->set('name', $newName)
             ->set('basePrice', (int) $product->base_price)
-            ->set('isActive', true)
-            ->call('save')
+            ->set('isActive', true);
+
+        if ($newSlug !== null) {
+            $test->set('slug', $newSlug);
+        }
+
+        $test->call('save')
             ->assertHasNoErrors();
     }
 
@@ -66,13 +71,13 @@ class ProductSlugHistoryTest extends TestCase
     {
         $product = $this->standardProduct('عقاب کارت', 'eagle-card');
         $oldSlug = $product->slug;
+        $newSlug = 'golden-eagle-card';
 
-        $this->renameViaManager($product, 'عقاب کارت طلایی');
+        $this->renameViaManager($product, 'عقاب کارت طلایی', $newSlug);
 
         $fresh = $product->fresh();
-        $expected = Str::slug('عقاب کارت طلایی');
         $this->assertNotSame($oldSlug, $fresh->slug);
-        $this->assertSame($expected, $fresh->slug);
+        $this->assertSame($newSlug, $fresh->slug);
 
         $this->assertDatabaseHas('product_slug_histories', [
             'slug' => $oldSlug,
@@ -81,9 +86,9 @@ class ProductSlugHistoryTest extends TestCase
 
         $this->get(route('catalog.products.show', $oldSlug))
             ->assertStatus(301)
-            ->assertRedirect(route('catalog.products.show', $expected));
+            ->assertRedirect(route('catalog.products.show', $newSlug));
 
-        $this->get(route('catalog.products.show', $expected))
+        $this->get(route('catalog.products.show', $newSlug))
             ->assertOk()
             ->assertSee('عقاب کارت طلایی');
     }
@@ -104,7 +109,7 @@ class ProductSlugHistoryTest extends TestCase
         $a = $this->createViaManager('Foo Card');
         $this->assertSame('foo-card', $a->slug);
 
-        $this->renameViaManager($a, 'Bar Card');
+        $this->renameViaManager($a, 'Bar Card', 'bar-card');
         $a->refresh();
         $this->assertSame('bar-card', $a->slug);
 
@@ -125,7 +130,7 @@ class ProductSlugHistoryTest extends TestCase
     public function test_historical_slug_never_redirects_to_another_product(): void
     {
         $a = $this->createViaManager('Foo Card');
-        $this->renameViaManager($a, 'Bar Card');
+        $this->renameViaManager($a, 'Bar Card', 'bar-card');
         $a->refresh();
         $b = $this->createViaManager('Foo Card');
         $this->assertSame('foo-card-2', $b->slug);
@@ -141,7 +146,7 @@ class ProductSlugHistoryTest extends TestCase
     public function test_deleted_product_historical_slug_returns_404_and_stays_reserved(): void
     {
         $a = $this->createViaManager('Foo Card');
-        $this->renameViaManager($a, 'Bar Card');
+        $this->renameViaManager($a, 'Bar Card', 'bar-card');
         $a->refresh();
         $this->assertSame('bar-card', $a->slug);
 

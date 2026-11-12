@@ -114,19 +114,25 @@
                         <input type="text" wire:model="name" class="admin-input">
                         @error('name') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
-                    @if(! $customizationWorkflow)
-                        <div>
-                            <label class="admin-label">دسته‌بندی محصول</label>
-                            <select wire:model="productCategoryId" class="admin-select">
-                                <option value="">بدون دسته‌بندی</option>
-                                @foreach($categoryOptions as $option)
-                                    <option value="{{ $option->id }}">{{ $option->name }}@if(! $option->is_active) (غیرفعال)@endif</option>
-                                @endforeach
-                            </select>
-                            @error('productCategoryId') <p class="admin-error">{{ $message }}</p> @enderror
-                        </div>
-                    @endif
+                    <div>
+                        <label class="admin-label">نامک انگلیسی (Slug)</label>
+                        <input type="text" wire:model="slug" dir="ltr" placeholder="example-product-name" class="admin-input font-mono text-xs">
+                        @error('slug') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
                 </div>
+
+                @if(! $customizationWorkflow)
+                    <div>
+                        <label class="admin-label">دسته‌بندی محصول</label>
+                        <select wire:model="productCategoryId" class="admin-select">
+                            <option value="">بدون دسته‌بندی</option>
+                            @foreach($categoryOptions as $option)
+                                <option value="{{ $option->id }}">{{ $option->name }}@if(! $option->is_active) (غیرفعال)@endif</option>
+                            @endforeach
+                        </select>
+                        @error('productCategoryId') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                @endif
 
                 <div>
                     <label class="admin-label">توضیحات</label>

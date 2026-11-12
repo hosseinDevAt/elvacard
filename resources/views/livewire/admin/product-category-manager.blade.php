@@ -22,6 +22,13 @@
                         @error('name') <p class="admin-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
+                        <label class="admin-label">نامک انگلیسی (Slug)</label>
+                        <input type="text" wire:model="slug" dir="ltr" placeholder="example-category-name" class="admin-input font-mono text-xs">
+                        @error('slug') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
                         <label class="admin-label">ترتیب نمایش</label>
                         <input type="number" wire:model="sortOrder" min="0" class="admin-input">
                         @error('sortOrder') <p class="admin-error">{{ $message }}</p> @enderror
