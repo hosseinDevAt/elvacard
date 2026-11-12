@@ -16,32 +16,41 @@
     @if($showForm)
         <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید' }}</h3>
-            <form wire:submit="save" class="flex flex-wrap items-end gap-4">
-                <div class="w-full sm:flex-1">
-                    <label class="admin-label">نام دسته‌بندی</label>
-                    <input type="text" wire:model="name" class="admin-input" placeholder="مثال: ورزشی، مینیمال، فانتزی...">
-                    @error('name') <p class="admin-error">{{ $message }}</p> @enderror
+            <form wire:submit="save" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="admin-label">نام دسته‌بندی</label>
+                        <input type="text" wire:model="name" class="admin-input" placeholder="مثال: ورزشی، مینیمال، فانتزی...">
+                        @error('name') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="admin-label">نامک انگلیسی (Slug)</label>
+                        <input type="text" wire:model="slug" dir="ltr" placeholder="example-category-slug" class="admin-input font-mono text-xs">
+                        @error('slug') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
                 </div>
-                <div class="w-full sm:w-56">
-                    <label class="admin-label">محل نمایش در میزکار</label>
-                    <select wire:model="workspaceVisibility" class="admin-input">
-                        <option value="both">هر دو میزکار</option>
-                        <option value="bank">فقط کارت بانکی</option>
-                        <option value="fuel">فقط کارت سوخت</option>
-                    </select>
-                    @error('workspaceVisibility') <p class="admin-error">{{ $message }}</p> @enderror
-                </div>
-                <div class="flex items-center gap-2 pb-2">
-                    <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
-                    <label for="is_active" class="text-sm font-medium text-slate-700">فعال</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="submit" class="admin-btn admin-btn-primary">
-                        <span>ذخیره</span>
-                    </button>
-                    <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="admin-btn admin-btn-secondary">
-                        <span>لغو</span>
-                    </button>
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="w-full sm:w-56">
+                        <label class="admin-label">محل نمایش در میزکار</label>
+                        <select wire:model="workspaceVisibility" class="admin-input">
+                            <option value="both">هر دو میزکار</option>
+                            <option value="bank">فقط کارت بانکی</option>
+                            <option value="fuel">فقط کارت سوخت</option>
+                        </select>
+                        @error('workspaceVisibility') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="flex items-center gap-2 pb-2">
+                        <input type="checkbox" wire:model="isActive" id="is_active" class="rounded border-slate-300 text-[#010619] focus:ring-[#ffde5b]">
+                        <label for="is_active" class="text-sm font-medium text-slate-700">فعال</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="submit" class="admin-btn admin-btn-primary">
+                            <span>ذخیره</span>
+                        </button>
+                        <button type="button" wire:click="$set('showForm', false); $wire.resetForm()" class="admin-btn admin-btn-secondary">
+                            <span>لغو</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -54,6 +63,7 @@
                     <div>
                         <div class="flex items-center gap-3">
                             <h3 class="font-bold text-slate-900">{{ $category->name }}</h3>
+                            <span class="text-xs text-slate-400 font-mono" dir="ltr">{{ $category->slug }}</span>
                             <span class="admin-badge {{ $category->is_active ? 'admin-badge-emerald' : 'admin-badge-gray' }}">
                                 {{ $category->is_active ? 'فعال' : 'غیرفعال' }}
                             </span>

@@ -13,6 +13,7 @@ use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -42,6 +43,10 @@ class DesignWizard extends Component
     public ?int $cateDesignId = null;
 
     public string $name = '';
+
+    public string $slug = '';
+
+    public bool $slugManuallyChanged = false;
 
     public ?string $description = null;
 
@@ -108,6 +113,8 @@ class DesignWizard extends Component
         $this->designId = $design->id;
         $this->cateDesignId = (int) $design->cate_design_id;
         $this->name = (string) $design->name;
+        $this->slug = (string) $design->slug;
+        $this->slugManuallyChanged = false;
         $this->description = $design->description;
         $this->metaTitle = $design->meta_title;
         $this->metaDescription = $design->meta_description;
@@ -124,6 +131,52 @@ class DesignWizard extends Component
         $this->showImageForm = true;
     }
 
+    public function updatedName(string $value): void
+    {
+        if (! $this->designId && (! $this->slugManuallyChanged || trim($this->slug) === '')) {
+            $suggested = Str::slug($value);
+            if ($suggested !== '') {
+                $this->slug = $suggested;
+            }
+        }
+    }
+
+    public function updatedSlug(string $value): void
+    {
+        $this->slugManuallyChanged = true;
+    }
+
+    protected function normalizeStepOneSlug(): void
+    {
+        $normalizedSlug = strtolower(trim($this->slug ?? ''));
+
+        if ($this->designId) {
+            $existing = Design::find($this->designId);
+
+            if ($existing) {
+                $originalSlug = (string) $existing->slug;
+
+                if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                    $normalizedSlug = $originalSlug;
+                }
+            }
+
+            $this->slug = $normalizedSlug;
+        } else {
+            if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                $fallbackBase = trim($this->name);
+                $normalizedSlug = $this->uniqueSlug(
+                    $fallbackBase !== '' ? $fallbackBase : 'design',
+                    Design::class,
+                    null,
+                    'design',
+                );
+            }
+
+            $this->slug = $normalizedSlug;
+        }
+    }
+
     public function back(): void
     {
         if ($this->step > 1) {
@@ -134,7 +187,8 @@ class DesignWizard extends Component
     public function next(): void
     {
         if ($this->step === 1) {
-            $this->validate($this->stepOneRules());
+            $this->normalizeStepOneSlug();
+            $this->validate($this->stepOneRules(), $this->stepOneMessages(), $this->stepOneValidationAttributes());
 
             if (! $this->persistDesign()) {
                 return;
@@ -149,7 +203,8 @@ class DesignWizard extends Component
     public function save(): void
     {
         if ($this->step === 1) {
-            $this->validate($this->stepOneRules());
+            $this->normalizeStepOneSlug();
+            $this->validate($this->stepOneRules(), $this->stepOneMessages(), $this->stepOneValidationAttributes());
         }
 
         if ($this->isActive) {
@@ -443,6 +498,23 @@ class DesignWizard extends Component
         return [
             'cateDesignId' => 'required|integer|exists:cate_designs,id',
             'name' => 'required|string|min:1|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_-]+$/',
+                function ($attribute, $value, $fail) {
+                    $slug = (string) $value;
+                    $exists = Design::query()
+                        ->where('slug', $slug)
+                        ->when($this->designId, fn ($q) => $q->where('id', '!=', $this->designId))
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('این نامک قبلاً ثبت شده و تکراری است.');
+                    }
+                },
+            ],
             'description' => 'nullable|string',
             'metaTitle' => 'nullable|string|max:255',
             'metaDescription' => 'nullable|string|max:255',
@@ -454,6 +526,25 @@ class DesignWizard extends Component
             'isPopular' => 'boolean',
             'featuredImageUpload' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
             'sortOrder' => 'integer|min:0',
+        ];
+    }
+
+    protected function stepOneMessages(): array
+    {
+        return [
+            'cateDesignId.required' => 'دسته‌بندی طرح را انتخاب کنید.',
+            'name.required' => 'نام طرح الزامی است.',
+            'slug.required' => 'نامک طرح الزامی است.',
+            'slug.regex' => 'نامک فقط می‌تواند شامل حروف کوچک انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد.',
+            'workspaceVisibility.required' => 'انتخاب محل نمایش طرح الزامی است.',
+        ];
+    }
+
+    protected function stepOneValidationAttributes(): array
+    {
+        return [
+            'name' => 'نام طرح',
+            'slug' => 'نامک انگلیسی',
         ];
     }
 
@@ -495,6 +586,10 @@ class DesignWizard extends Component
             'sort_order' => $this->sortOrder,
         ];
 
+        if ($this->slug !== '') {
+            $data['slug'] = $this->slug;
+        }
+
         if ($this->designId) {
             if (! $this->isActive) {
                 $blocker = ProductPurchaseabilityService::designDeactivationBlocker($this->designId);
@@ -511,7 +606,9 @@ class DesignWizard extends Component
             return true;
         }
 
-        $data['slug'] = $this->uniqueSlug($this->name, Design::class, null, 'design');
+        if (empty($data['slug'])) {
+            $data['slug'] = $this->uniqueSlug($this->name, Design::class, null, 'design');
+        }
 
         // A brand-new design cannot have any image yet (images are attached in
         // step 2), so it can never be ready for the workspace. Keep the
@@ -586,7 +683,7 @@ class DesignWizard extends Component
         $summary = [
             'name' => $this->name,
             'category' => $this->cateDesignId ? CateDesign::find($this->cateDesignId)?->name : null,
-            'slug' => $design?->slug,
+            'slug' => $this->slug ?: $design?->slug,
             'isActive' => $this->isActive,
             'workspaceVisibility' => $this->workspaceVisibility,
             'workspaceVisibilityLabel' => \App\Enums\DesignWorkspaceVisibilityEnum::tryFrom($this->workspaceVisibility)?->faLabel() ?? 'هر دو میزکار',

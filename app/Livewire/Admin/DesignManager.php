@@ -12,6 +12,7 @@ use App\Services\StoredFileManager;
 use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -32,6 +33,10 @@ class DesignManager extends Component
     public ?int $cateDesignId = null;
 
     public string $name = '';
+
+    public string $slug = '';
+
+    public bool $slugManuallyChanged = false;
 
     public ?string $description = null;
 
@@ -61,29 +66,109 @@ class DesignManager extends Component
 
     public bool $showForm = false;
 
-    protected $rules = [
-        'cateDesignId' => 'required|integer|exists:cate_designs,id',
-        'name' => 'required|string|min:1|max:255',
-        'description' => 'nullable|string',
-        'metaTitle' => 'nullable|string|max:255',
-        'metaDescription' => 'nullable|string|max:255',
-        'canonicalUrl' => 'nullable|string|max:255',
-        'seoContent' => 'nullable|string',
-        'robotsIndex' => 'boolean',
-        'isActive' => 'boolean',
-        'workspaceVisibility' => 'required|string|in:bank,fuel,both',
-        'isPopular' => 'boolean',
-        'sortOrder' => 'integer|min:0',
-    ];
+    protected function rules(): array
+    {
+        return [
+            'cateDesignId' => 'required|integer|exists:cate_designs,id',
+            'name' => 'required|string|min:1|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_-]+$/',
+                function ($attribute, $value, $fail) {
+                    $slug = (string) $value;
+                    $exists = Design::query()
+                        ->where('slug', $slug)
+                        ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
+                        ->exists();
 
-    protected $messages = [
-        'cateDesignId.required' => 'دسته‌بندی طرح را انتخاب کنید.',
-        'name.required' => 'نام طرح الزامی است.',
-        'workspaceVisibility.required' => 'انتخاب محل نمایش طرح الزامی است.',
-    ];
+                    if ($exists) {
+                        $fail('این نامک قبلاً ثبت شده و تکراری است.');
+                    }
+                },
+            ],
+            'description' => 'nullable|string',
+            'metaTitle' => 'nullable|string|max:255',
+            'metaDescription' => 'nullable|string|max:255',
+            'canonicalUrl' => 'nullable|string|max:255',
+            'seoContent' => 'nullable|string',
+            'robotsIndex' => 'boolean',
+            'isActive' => 'boolean',
+            'workspaceVisibility' => 'required|string|in:bank,fuel,both',
+            'isPopular' => 'boolean',
+            'sortOrder' => 'integer|min:0',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'cateDesignId.required' => 'دسته‌بندی طرح را انتخاب کنید.',
+            'name.required' => 'نام طرح الزامی است.',
+            'slug.required' => 'نامک طرح الزامی است.',
+            'slug.regex' => 'نامک فقط می‌تواند شامل حروف کوچک انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد.',
+            'workspaceVisibility.required' => 'انتخاب محل نمایش طرح الزامی است.',
+        ];
+    }
+
+    protected function validationAttributes(): array
+    {
+        return [
+            'name' => 'نام طرح',
+            'slug' => 'نامک انگلیسی',
+        ];
+    }
+
+    public function updatedName(string $value): void
+    {
+        if (! $this->editingId && (! $this->slugManuallyChanged || trim($this->slug) === '')) {
+            $suggested = Str::slug($value);
+            if ($suggested !== '') {
+                $this->slug = $suggested;
+            }
+        }
+    }
+
+    public function updatedSlug(string $value): void
+    {
+        $this->slugManuallyChanged = true;
+    }
 
     public function save(): void
     {
+        $normalizedSlug = strtolower(trim($this->slug ?? ''));
+
+        if ($this->editingId) {
+            $existing = Design::find($this->editingId);
+
+            if (! $existing) {
+                session()->flash('error', 'طرح موردنظر یافت نشد');
+
+                return;
+            }
+
+            $originalSlug = (string) $existing->slug;
+
+            if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                $normalizedSlug = $originalSlug;
+            }
+
+            $this->slug = $normalizedSlug;
+        } else {
+            if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                $fallbackBase = trim($this->name);
+                $normalizedSlug = $this->uniqueSlug(
+                    $fallbackBase !== '' ? $fallbackBase : 'design',
+                    Design::class,
+                    null,
+                    'design',
+                );
+            }
+
+            $this->slug = $normalizedSlug;
+        }
+
         $this->validate();
 
         $targetCategory = CateDesign::find($this->cateDesignId);
@@ -114,12 +199,10 @@ class DesignManager extends Component
             }
         }
 
-        $slug = $this->uniqueSlug($this->name, Design::class, $this->editingId, 'design');
-
         $data = [
             'cate_design_id' => $this->cateDesignId,
             'name' => $this->name,
-            'slug' => $slug,
+            'slug' => $this->slug,
             'description' => $this->description ?: null,
             'meta_title' => $this->metaTitle ?: null,
             'meta_description' => $this->metaDescription ?: null,
@@ -182,6 +265,8 @@ class DesignManager extends Component
         $this->editingId = $id;
         $this->cateDesignId = (int) $design->cate_design_id;
         $this->name = $design->name;
+        $this->slug = (string) $design->slug;
+        $this->slugManuallyChanged = false;
         $this->description = $design->description;
         $this->metaTitle = $design->meta_title;
         $this->metaDescription = $design->meta_description;
@@ -299,6 +384,8 @@ class DesignManager extends Component
     {
         $this->cateDesignId = null;
         $this->name = '';
+        $this->slug = '';
+        $this->slugManuallyChanged = false;
         $this->description = null;
         $this->metaTitle = null;
         $this->metaDescription = null;

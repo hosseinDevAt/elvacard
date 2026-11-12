@@ -70,35 +70,41 @@
         <div class="admin-card p-6 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="admin-label">دسته‌بندی طرح</label>
-                    <select wire:model="cateDesignId" class="admin-input">
-                        <option value="">— انتخاب دسته‌بندی —</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}{{ $category->is_active ? '' : ' (غیرفعال)' }}</option>
-                        @endforeach
-                    </select>
-                    @error('cateDesignId') <p class="admin-error">{{ $message }}</p> @enderror
-
-                    <button type="button" wire:click="$toggle('showCategoryForm')" class="mt-2 text-xs font-bold text-[#010619] hover:underline transition">
-                        {{ $showCategoryForm ? 'بستن فرم دسته‌بندی جدید' : '+ دسته‌بندی جدید' }}
-                    </button>
-
-                    @if($showCategoryForm)
-                        <div class="mt-3 flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                            <input type="text" wire:model="newCategoryName" placeholder="نام دسته‌بندی جدید"
-                                   class="admin-input sm:w-56 text-xs">
-                            <button type="button" wire:click="addCategory" class="admin-btn admin-btn-primary admin-btn-sm">
-                                افزودن
-                            </button>
-                        </div>
-                        @error('newCategoryName') <p class="admin-error">{{ $message }}</p> @enderror
-                    @endif
-                </div>
-                <div>
                     <label class="admin-label">نام طرح</label>
                     <input type="text" wire:model="name" class="admin-input" placeholder="مثال: عقاب طلایی">
                     @error('name') <p class="admin-error">{{ $message }}</p> @enderror
                 </div>
+                <div>
+                    <label class="admin-label">نامک انگلیسی (Slug)</label>
+                    <input type="text" wire:model="slug" dir="ltr" placeholder="example-design-slug" class="admin-input font-mono text-xs">
+                    @error('slug') <p class="admin-error">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
+            <div>
+                <label class="admin-label">دسته‌بندی طرح</label>
+                <select wire:model="cateDesignId" class="admin-input">
+                    <option value="">— انتخاب دسته‌بندی —</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}{{ $category->is_active ? '' : ' (غیرفعال)' }}</option>
+                    @endforeach
+                </select>
+                @error('cateDesignId') <p class="admin-error">{{ $message }}</p> @enderror
+
+                <button type="button" wire:click="$toggle('showCategoryForm')" class="mt-2 text-xs font-bold text-[#010619] hover:underline transition">
+                    {{ $showCategoryForm ? 'بستن فرم دسته‌بندی جدید' : '+ دسته‌بندی جدید' }}
+                </button>
+
+                @if($showCategoryForm)
+                    <div class="mt-3 flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <input type="text" wire:model="newCategoryName" placeholder="نام دسته‌بندی جدید"
+                               class="admin-input sm:w-56 text-xs">
+                        <button type="button" wire:click="addCategory" class="admin-btn admin-btn-primary admin-btn-sm">
+                            افزودن
+                        </button>
+                    </div>
+                    @error('newCategoryName') <p class="admin-error">{{ $message }}</p> @enderror
+                @endif
             </div>
 
             <div>
