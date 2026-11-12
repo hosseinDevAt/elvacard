@@ -33,15 +33,20 @@ class ArticleSlugHistoryTest extends TestCase
         return Article::query()->latest('id')->firstOrFail();
     }
 
-    private function renameViaManager(Article $article, string $newTitle, string $status = ArticleStatusEnum::PUBLISHED->value): void
+    private function renameViaManager(Article $article, string $newTitle, string $status = ArticleStatusEnum::PUBLISHED->value, ?string $newSlug = null): void
     {
-        Livewire::actingAs($this->admin())
+        $test = Livewire::actingAs($this->admin())
             ->test(ArticleManager::class)
-            ->set('editingId', $article->id)
+            ->call('edit', $article->id)
             ->set('title', $newTitle)
             ->set('content', $article->content)
-            ->set('status', $status)
-            ->call('save')
+            ->set('status', $status);
+
+        if ($newSlug !== null) {
+            $test->set('slug', $newSlug);
+        }
+
+        $test->call('save')
             ->assertHasNoErrors();
     }
 
@@ -50,7 +55,7 @@ class ArticleSlugHistoryTest extends TestCase
         $article = $this->createViaManager('Sample Post');
         $oldSlug = $article->slug;
 
-        $this->renameViaManager($article, 'Updated Sample Post');
+        $this->renameViaManager($article, 'Updated Sample Post', ArticleStatusEnum::PUBLISHED->value, 'updated-sample-post');
 
         $fresh = $article->fresh();
 
@@ -86,7 +91,7 @@ class ArticleSlugHistoryTest extends TestCase
         $a = $this->createViaManager('Foo Post');
         $oldSlug = $a->slug;
 
-        $this->renameViaManager($a, 'Bar Post');
+        $this->renameViaManager($a, 'Bar Post', ArticleStatusEnum::PUBLISHED->value, 'bar-post');
         $a->refresh();
 
         $b = $this->createViaManager('Foo Post');
@@ -100,7 +105,7 @@ class ArticleSlugHistoryTest extends TestCase
         $a = $this->createViaManager('Foo Post');
         $oldSlug = $a->slug;
 
-        $this->renameViaManager($a, 'Bar Post');
+        $this->renameViaManager($a, 'Bar Post', ArticleStatusEnum::PUBLISHED->value, 'bar-post');
         $a->refresh();
 
         Livewire::actingAs($this->admin())
@@ -124,7 +129,7 @@ class ArticleSlugHistoryTest extends TestCase
         $article = $this->createViaManager('Public Post');
         $oldSlug = $article->slug;
 
-        $this->renameViaManager($article, 'Renamed Post', ArticleStatusEnum::DRAFT->value);
+        $this->renameViaManager($article, 'Renamed Post', ArticleStatusEnum::DRAFT->value, 'renamed-post');
         $article->refresh();
 
         $this->assertDatabaseHas('article_slug_histories', [
@@ -145,7 +150,7 @@ class ArticleSlugHistoryTest extends TestCase
         $article = $this->createViaManager('Scheduled Post');
         $oldSlug = $article->slug;
 
-        $this->renameViaManager($article, 'Scheduled Post v2');
+        $this->renameViaManager($article, 'Scheduled Post v2', ArticleStatusEnum::PUBLISHED->value, 'scheduled-post-v2');
         $article->refresh();
 
         $this->assertDatabaseHas('article_slug_histories', [

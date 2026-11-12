@@ -12,6 +12,7 @@ use App\Support\Concerns\AuthorizesAdminActions;
 use App\Support\Concerns\GeneratesUniqueSlug;
 use App\Support\Dates\DateService;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -29,6 +30,10 @@ class ArticleManager extends Component
     public ?int $articleCategoryId = null;
 
     public string $title = '';
+
+    public string $slug = '';
+
+    public bool $slugManuallyChanged = false;
 
     public ?string $excerpt = null;
 
@@ -60,6 +65,32 @@ class ArticleManager extends Component
     {
         return [
             'title' => 'required|string|min:1|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_-]+$/',
+                function ($attribute, $value, $fail) {
+                    $slug = (string) $value;
+
+                    $articleExists = Article::query()
+                        ->where('slug', $slug)
+                        ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
+                        ->exists();
+
+                    $historyExists = ArticleSlugHistory::query()
+                        ->where('slug', $slug)
+                        ->when($this->editingId, fn ($q) => $q->where(function ($sub) {
+                            $sub->whereNull('article_id')
+                                ->orWhere('article_id', '!=', $this->editingId);
+                        }))
+                        ->exists();
+
+                    if ($articleExists || $historyExists) {
+                        $fail('این نامک قبلاً ثبت شده و تکراری است.');
+                    }
+                },
+            ],
             'articleCategoryId' => 'nullable|exists:article_categories,id',
             'excerpt' => 'nullable|string',
             'content' => 'required|string|min:1',
@@ -105,6 +136,42 @@ class ArticleManager extends Component
         ];
     }
 
+    protected function messages(): array
+    {
+        return [
+            'title.required' => 'وارد کردن عنوان مقاله الزامی است.',
+            'slug.required' => 'وارد کردن نامک مقاله الزامی است.',
+            'slug.regex' => 'نامک فقط می‌تواند شامل حروف کوچک انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد.',
+            'content.required' => 'وارد کردن محتوای مقاله الزامی است.',
+            'status.required' => 'انتخاب وضعیت انتشار الزامی است.',
+        ];
+    }
+
+    protected function validationAttributes(): array
+    {
+        return [
+            'title' => 'عنوان مقاله',
+            'slug' => 'نامک انگلیسی',
+            'content' => 'محتوای مقاله',
+            'status' => 'وضعیت انتشار',
+        ];
+    }
+
+    public function updatedTitle(string $value): void
+    {
+        if (! $this->editingId && (! $this->slugManuallyChanged || trim($this->slug) === '')) {
+            $suggested = Str::slug($value);
+            if ($suggested !== '') {
+                $this->slug = $suggested;
+            }
+        }
+    }
+
+    public function updatedSlug(string $value): void
+    {
+        $this->slugManuallyChanged = true;
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -123,6 +190,36 @@ class ArticleManager extends Component
 
     public function save(): void
     {
+        $normalizedSlug = strtolower(trim($this->slug ?? ''));
+
+        if ($this->editingId) {
+            $article = Article::find($this->editingId);
+
+            if (! $article) {
+                session()->flash('error', 'مقاله موردنظر یافت نشد');
+
+                return;
+            }
+
+            $originalSlug = (string) $article->slug;
+
+            if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                $normalizedSlug = $originalSlug;
+            }
+
+            $this->slug = $normalizedSlug;
+        } else {
+            if (! $this->slugManuallyChanged || $normalizedSlug === '') {
+                $fallbackBase = trim($this->title);
+                $normalizedSlug = $this->generateUniqueSlug(
+                    $fallbackBase !== '' ? $fallbackBase : 'article',
+                    null,
+                );
+            }
+
+            $this->slug = $normalizedSlug;
+        }
+
         $this->validate();
 
         $this->articleCategoryId = $this->articleCategoryId !== null && $this->articleCategoryId !== '' ? $this->articleCategoryId : null;
@@ -161,7 +258,7 @@ class ArticleManager extends Component
 
         $dates = app(DateService::class);
 
-        $slug = $this->generateUniqueSlug($this->title, $this->editingId);
+        $slug = $this->slug;
 
         $data = [
             'article_category_id' => $this->articleCategoryId,
@@ -194,6 +291,11 @@ class ArticleManager extends Component
                     ['slug' => $previousSlug],
                     ['article_id' => $this->editingId],
                 );
+
+                ArticleSlugHistory::query()
+                    ->where('slug', $slug)
+                    ->where('article_id', $this->editingId)
+                    ->delete();
             }
 
             if ($oldCoverImage !== null && $oldCoverImage !== $coverImage) {
@@ -251,6 +353,8 @@ class ArticleManager extends Component
         $this->editingId = $id;
         $this->articleCategoryId = $article->article_category_id;
         $this->title = $article->title;
+        $this->slug = (string) $article->slug;
+        $this->slugManuallyChanged = false;
         $this->excerpt = $article->excerpt;
         $this->content = $article->content;
         $this->coverImage = $article->cover_image;
@@ -290,6 +394,8 @@ class ArticleManager extends Component
     {
         $this->articleCategoryId = null;
         $this->title = '';
+        $this->slug = '';
+        $this->slugManuallyChanged = false;
         $this->excerpt = null;
         $this->content = '';
         $this->coverImageUpload = null;

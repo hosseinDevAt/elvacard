@@ -15,10 +15,17 @@
         <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش مقاله' : 'مقاله جدید' }}</h3>
             <form wire:submit="save" class="space-y-4">
-                <div>
-                    <label class="admin-label">عنوان مقاله</label>
-                    <input type="text" wire:model="title" class="admin-input">
-                    @error('title') <p class="admin-error">{{ $message }}</p> @enderror
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="admin-label">عنوان مقاله</label>
+                        <input type="text" wire:model="title" class="admin-input">
+                        @error('title') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="admin-label">نامک انگلیسی (Slug)</label>
+                        <input type="text" wire:model="slug" dir="ltr" placeholder="example-article-slug" class="admin-input font-mono text-xs">
+                        @error('slug') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
                 </div>
                 <div>
                     <label class="admin-label">دسته‌بندی</label>
@@ -131,7 +138,10 @@
                     @forelse($articles as $article)
                         <tr class="hover:bg-slate-50/60 transition">
                             <td class="admin-td text-xs text-slate-400 font-mono">{{ $article->id }}</td>
-                            <td class="admin-td font-bold text-slate-900">{{ $article->title }}</td>
+                            <td class="admin-td">
+                                <span class="font-bold text-slate-900 block">{{ $article->title }}</span>
+                                <span class="text-xs text-slate-400 font-mono block mt-0.5" dir="ltr">{{ $article->slug }}</span>
+                            </td>
                             <td class="admin-td text-slate-600 text-xs">{{ $article->category?->name ?? 'بدون دسته‌بندی' }}</td>
                             <td class="admin-td">
                                 <span class="admin-badge {{ $article->status === \App\Enums\ArticleStatusEnum::PUBLISHED ? 'admin-badge-success' : 'admin-badge-neutral' }}">

@@ -14,11 +14,18 @@
     @if($showForm)
         <div class="admin-card p-6 mb-6">
             <h3 class="font-bold text-slate-900 mb-4">{{ $editingId ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید' }}</h3>
-            <form wire:submit="save" class="flex flex-wrap items-end gap-4">
-                <div class="w-full sm:flex-1">
-                    <label class="admin-label">نام دسته‌بندی</label>
-                    <input type="text" wire:model="name" class="admin-input">
-                    @error('name') <p class="admin-error">{{ $message }}</p> @enderror
+            <form wire:submit="save" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="admin-label">نام دسته‌بندی</label>
+                        <input type="text" wire:model="name" class="admin-input">
+                        @error('name') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="admin-label">نامک انگلیسی (Slug)</label>
+                        <input type="text" wire:model="slug" dir="ltr" placeholder="example-category-slug" class="admin-input font-mono text-xs">
+                        @error('slug') <p class="admin-error">{{ $message }}</p> @enderror
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm font-semibold">{{ $editingId ? 'ذخیره تغییرات' : 'ایجاد دسته‌بندی' }}</button>
