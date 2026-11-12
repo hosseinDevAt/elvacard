@@ -394,12 +394,12 @@
         </div>
 
         {{-- Right Panel — Live 2D Fixed-Layout Preview --}}
-        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 bg-[#EEF2F7] flex flex-col items-center justify-between space-y-6 pb-10" style="background-color: #EEF2F7;">
+        <div class="lg:col-span-7 min-w-0 p-6 sm:p-8 {{ $isDarkPreview ? 'bg-[#070e24] text-slate-100' : 'bg-[#EEF2F7] text-slate-900' }} flex flex-col items-center justify-between space-y-6 pb-10 transition-colors duration-300" style="background-color: {{ $isDarkPreview ? '#070e24' : '#EEF2F7' }};">
             <div class="w-full flex flex-col items-center space-y-6">
                 {{-- Preview Header & Controls --}}
                 <div class="w-full flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5">
-                        <h3 class="text-xs font-bold text-[#010619]">
+                        <h3 class="text-xs font-bold {{ $isDarkPreview ? 'text-slate-200' : 'text-[#010619]' }}">
                             @if ($step === 1)
                                 @if ($workflow === $fuelCardWorkflow)
                                     پیش‌نمایش کارت سوخت
@@ -412,7 +412,7 @@
                         </h3>
 
                         @if ($designSource === 'custom' && $customDesignToken)
-                            <div class="inline-flex items-center gap-1.5 rounded-full bg-[#ffde5b]/20 border border-[#ffde5b]/60 px-2.5 py-1 text-[11px] font-bold text-[#010619]">
+                            <div class="inline-flex items-center gap-1.5 rounded-full {{ $isDarkPreview ? 'bg-[#ffde5b]/15 border border-[#ffde5b]/40 text-[#ffde5b]' : 'bg-[#ffde5b]/20 border border-[#ffde5b]/60 text-[#010619]' }} px-2.5 py-1 text-[11px] font-bold">
                                 <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                 <span>پیش‌نمایش طرح اختصاصی</span>
                             </div>
@@ -420,18 +420,18 @@
                     </div>
 
                     {{-- Front / Back View Switcher Tabs --}}
-                    <div class="flex items-center rounded-xl bg-white p-1 border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center rounded-xl p-1 {{ $isDarkPreview ? 'bg-slate-900/80 border border-slate-700/60 shadow-inner' : 'bg-white border border-slate-200/80 shadow-sm' }}">
                         <button
                             type="button"
                             wire:click="setActiveView('front')"
-                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'front' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-600 hover:text-[#010619]' }}"
+                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'front' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : ($isDarkPreview ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-[#010619]') }}"
                         >
                             جلو
                         </button>
                         <button
                             type="button"
                             wire:click="setActiveView('back')"
-                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'back' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : 'text-slate-600 hover:text-[#010619]' }}"
+                            class="rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer {{ $activeView === 'back' ? 'bg-[#ffde5b] text-[#010619] shadow-sm' : ($isDarkPreview ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-[#010619]') }}"
                         >
                             پشت
                         </button>
@@ -444,7 +444,7 @@
                         <div class="flex flex-wrap items-center justify-center gap-3">
                             <div class="flex flex-col items-center gap-1">
                                 <span class="h-8 w-8 rounded-full border border-white/20" style="background-color: {{ $selectedColor['color_hex'] ?? '#111' }};"></span>
-                                <span class="text-[10px] font-medium text-slate-600">{{ $selectedColor['name'] }}</span>
+                                <span class="text-[10px] font-medium {{ $isDarkPreview ? 'text-slate-400' : 'text-slate-600' }}">{{ $selectedColor['name'] }}</span>
                             </div>
                         </div>
                     @endif
@@ -459,10 +459,10 @@
                                 wire:click="selectColor({{ $cp['color_id'] }})"
                                 class="group flex flex-col items-center gap-1 focus:outline-none cursor-pointer"
                             >
-                                <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? 'ring-2 ring-[#ffde5b] ring-offset-2 ring-offset-white scale-110' : 'hover:scale-105' }}"
+                                <span class="h-8 w-8 rounded-full border border-white/20 transition-all duration-200 flex items-center justify-center {{ $isSelected ? ($isDarkPreview ? 'ring-2 ring-[#ffde5b] ring-offset-2 ring-offset-[#070e24] scale-110' : 'ring-2 ring-[#ffde5b] ring-offset-2 ring-offset-white scale-110') : 'hover:scale-105' }}"
                                       style="background-color: {{ $cp['color_hex'] ?? '#111' }};"
                                 ></span>
-                                <span class="text-[10px] font-medium flex items-center gap-0.5 {{ $isSelected ? 'text-[#010619] font-bold' : 'text-slate-600' }}">
+                                <span class="text-[10px] font-medium flex items-center gap-0.5 {{ $isSelected ? ($isDarkPreview ? 'text-[#ffde5b] font-bold' : 'text-[#010619] font-bold') : ($isDarkPreview ? 'text-slate-400' : 'text-slate-600') }}">
                                     <span>{{ $cp['name'] }}</span>
                                     @if ($cp['is_scratched'] ?? false)
                                         <span class="text-[9px] opacity-75">(خش‌دار)</span>

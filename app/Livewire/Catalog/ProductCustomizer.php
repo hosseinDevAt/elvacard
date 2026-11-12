@@ -637,6 +637,59 @@ class ProductCustomizer extends Component
         );
     }
 
+    /**
+     * Determines whether the currently active artwork is white/light and requires
+     * a dark contrasting background in the design preview area.
+     *
+     * Fuel card designs are rendered in white only, so the Fuel workspace
+     * consistently receives the dark contrasting background.
+     * Bank card workspace dynamically evaluates whether the active design image
+     * or custom uploaded artwork is white/light.
+     */
+    public function getIsLightArtworkPreviewProperty(): bool
+    {
+        // 1. Fuel Card Workspace is always white artwork
+        if ($this->authoritativeWorkflow() === CustomizationWorkflowEnum::FUEL_CARD->value) {
+            return true;
+        }
+
+        // 2. Custom Uploaded Design
+        if ($this->designSource === 'custom') {
+            if ($this->customDesignToken) {
+                $temp = app(CustomDesignService::class)->getTempDesign($this->customDesignToken);
+                if ($temp && ! empty($temp['path'])) {
+                    return CardPresenter::isLightArtwork(
+                        imagePath: $temp['path'],
+                        colorName: $temp['original_name'] ?? $this->customDesignOriginalName,
+                        disk: 'local'
+                    );
+                }
+            }
+
+            return false;
+        }
+
+        // 3. Catalog Selection
+        $image = collect($this->designImages)->firstWhere('id', $this->design_image_id)
+            ?? ($this->designImages[0] ?? null);
+
+        if (! $image) {
+            return false;
+        }
+
+        return CardPresenter::isLightArtwork(
+            imagePath: $image['image_path'] ?? null,
+            colorHex: $image['color_hex'] ?? null,
+            colorName: $image['color_name'] ?? null,
+            disk: 'public'
+        );
+    }
+
+    public function getIsDarkPreviewProperty(): bool
+    {
+        return $this->isLightArtworkPreview;
+    }
+
     protected function rules(): array
     {
         if ($this->designSource === 'custom') {
@@ -901,6 +954,7 @@ class ProductCustomizer extends Component
             'totalPrice' => $totalPrice,
             'selectedColor' => $selectedPriceItem,
             'designs' => $designs,
+            'isDarkPreview' => $this->isDarkPreview,
             'customDesignPreviewUrl' => $this->customDesignToken
                 ? route('custom-design.preview', ['token' => $this->customDesignToken])
                 : null,

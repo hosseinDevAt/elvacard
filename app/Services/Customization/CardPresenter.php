@@ -3,6 +3,8 @@
 namespace App\Services\Customization;
 
 use App\Rules\IbanRule;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class CardPresenter
 {
@@ -233,5 +235,154 @@ class CardPresenter
         return self::isLightBackground($hex)
             ? 'bg-black/10 text-slate-950 border border-black/15 shadow-inner'
             : 'bg-white/90 text-gray-900 border border-white/20 shadow-inner';
+    }
+
+    /**
+     * Determines whether a design artwork (via metadata or image file analysis)
+     * contains white or light artwork requiring a contrasting dark background.
+     */
+    public static function isLightArtwork(
+        ?string $imagePath = null,
+        ?string $colorHex = null,
+        ?string $colorName = null,
+        string $disk = 'public'
+    ): bool {
+        // 1. Metadata check: Color name (Persian / English)
+        if ($colorName !== null && trim($colorName) !== '') {
+            if (preg_match('/(سفید|white|روشن)/iu', $colorName)) {
+                return true;
+            }
+        }
+
+        // 2. Metadata check: Color HEX code
+        if ($colorHex !== null && trim($colorHex) !== '') {
+            $hex = ltrim(trim($colorHex), '#');
+            if (strlen($hex) === 3) {
+                $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+            }
+            if (strlen($hex) === 6 && ctype_xdigit($hex)) {
+                $r = hexdec(substr($hex, 0, 2));
+                $g = hexdec(substr($hex, 2, 2));
+                $b = hexdec(substr($hex, 4, 2));
+
+                $lum = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255.0;
+                $max = max($r, $g, $b);
+                $min = min($r, $g, $b);
+                $sat = $max > 0 ? ($max - $min) / $max : 0.0;
+
+                // White or near-white: high luminance and low saturation (excludes gold, yellow, copper)
+                if ($lum >= 0.82 && $sat <= 0.20) {
+                    return true;
+                }
+            }
+        }
+
+        // 3. Filename check
+        if ($imagePath !== null && trim($imagePath) !== '') {
+            $cleanPath = strtolower(trim($imagePath));
+            if (preg_match('/[-_.]white[-_.]/i', $cleanPath) || str_ends_with($cleanPath, '-white.png') || str_ends_with($cleanPath, '_white.png')) {
+                return true;
+            }
+        }
+
+        // 4. File-level inspection via GD (cached)
+        if ($imagePath !== null && trim($imagePath) !== '') {
+            return self::inspectImageFileLuminance($imagePath, $disk);
+        }
+
+        return false;
+    }
+
+    /**
+     * Inspects non-transparent pixels of an image file to determine if the artwork is white/light.
+     */
+    protected static function inspectImageFileLuminance(string $imagePath, string $disk = 'public'): bool
+    {
+        if (! extension_loaded('gd')) {
+            return false;
+        }
+
+        $cacheKey = 'artwork_lum:' . md5($disk . ':' . $imagePath);
+
+        try {
+            return (bool) Cache::remember($cacheKey, 86400, function () use ($imagePath, $disk) {
+                try {
+                    $storage = Storage::disk($disk);
+                    if (! $storage->exists($imagePath)) {
+                        return false;
+                    }
+
+                    $contents = $storage->get($imagePath);
+                    if (! $contents) {
+                        return false;
+                    }
+
+                    $im = @imagecreatefromstring($contents);
+                    if (! $im) {
+                        return false;
+                    }
+
+                    $w = imagesx($im);
+                    $h = imagesy($im);
+                    if ($w <= 0 || $h <= 0) {
+                        imagedestroy($im);
+                        return false;
+                    }
+
+                    $stepX = max(1, (int) ($w / 30));
+                    $stepY = max(1, (int) ($h / 30));
+
+                    $totalLum = 0.0;
+                    $totalSat = 0.0;
+                    $visibleCount = 0;
+                    $lightPixelCount = 0;
+
+                    for ($y = 0; $y < $h; $y += $stepY) {
+                        for ($x = 0; $x < $w; $x += $stepX) {
+                            $rgba = imagecolorat($im, $x, $y);
+                            $alpha = ($rgba & 0x7F000000) >> 24;
+
+                            // 127 is fully transparent in GD; skip mostly-transparent pixels
+                            if ($alpha > 110) {
+                                continue;
+                            }
+
+                            $r = ($rgba >> 16) & 0xFF;
+                            $g = ($rgba >> 8) & 0xFF;
+                            $b = $rgba & 0xFF;
+
+                            $lum = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255.0;
+                            $max = max($r, $g, $b);
+                            $min = min($r, $g, $b);
+                            $sat = $max > 0 ? ($max - $min) / $max : 0.0;
+
+                            $totalLum += $lum;
+                            $totalSat += $sat;
+                            $visibleCount++;
+
+                            if ($lum >= 0.80 && $sat <= 0.25) {
+                                $lightPixelCount++;
+                            }
+                        }
+                    }
+
+                    imagedestroy($im);
+
+                    if ($visibleCount === 0) {
+                        return false;
+                    }
+
+                    $avgLum = $totalLum / $visibleCount;
+                    $avgSat = $totalSat / $visibleCount;
+                    $lightRatio = $lightPixelCount / $visibleCount;
+
+                    return ($avgLum >= 0.80 && $avgSat <= 0.25) || ($lightRatio >= 0.50);
+                } catch (\Throwable $e) {
+                    return false;
+                }
+            });
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }
