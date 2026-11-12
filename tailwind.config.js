@@ -21,6 +21,7 @@ export default {
         'border-accent-500', 'focus:ring-accent-200', 'focus:border-accent-500',
         'bg-[#ffde5b]', 'bg-[#010619]', 'text-[#010619]', 'text-[#ffde5b]',
         'border-[#ffde5b]', 'border-[#010619]',
+        'bg-[#172033]', 'border-[#334155]', 'bg-[#F8F7F3]', 'border-[#DDD9CF]',
     ],
 
     theme: {

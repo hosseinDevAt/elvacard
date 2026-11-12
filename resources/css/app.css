@@ -193,6 +193,17 @@
     .badge-brand {
         @apply inline-flex items-center gap-1 rounded-full bg-[#ffde5b]/20 text-[#664d00] border border-[#ffde5b]/50 px-3 py-1 text-xs font-semibold;
     }
+
+    /* Card design picker thumbnail contrast classes */
+    .design-thumbnail-dark {
+        background-color: #172033 !important;
+        border-color: #334155 !important;
+    }
+
+    .design-thumbnail-light {
+        background-color: #F8F7F3 !important;
+        border-color: #DDD9CF !important;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

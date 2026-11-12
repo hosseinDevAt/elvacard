@@ -124,7 +124,7 @@
                                         wire:click="selectDesign({{ $design['id'] }})"
                                         class="group relative flex flex-col rounded-2xl border p-3 text-start transition duration-200 bg-[#EEF2F7] overflow-hidden cursor-pointer {{ (int) $design_id === (int) $design['id'] ? 'border-[#ffde5b] ring-2 ring-[#ffde5b]/50 shadow-md shadow-[#ffde5b]/15 bg-[#ffde5b]/10' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-100' }}" style="background-color: #EEF2F7;"
                                     >
-                                        <div class="relative aspect-[16/10] w-full rounded-xl bg-white overflow-hidden flex items-center justify-center p-2 border border-slate-200 shadow-inner">
+                                        <div class="relative aspect-[16/10] w-full rounded-xl overflow-hidden flex items-center justify-center p-2 border shadow-inner {{ !empty($design['is_light_artwork']) ? 'bg-[#172033] border-[#334155] design-thumbnail-dark' : 'bg-[#F8F7F3] border-[#DDD9CF] design-thumbnail-light' }}" style="{{ !empty($design['is_light_artwork']) ? 'background-color: #172033; border-color: #334155;' : 'background-color: #F8F7F3; border-color: #DDD9CF;' }}">
                                             @if ($design['preview_image_path'])
                                                 <img src="{{ asset('storage/' . $design['preview_image_path']) }}" alt="{{ $design['name'] }}" class="h-full w-full object-contain transition duration-200 group-hover:scale-105">
                                             @else

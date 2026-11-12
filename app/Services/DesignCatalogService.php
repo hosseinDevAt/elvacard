@@ -7,6 +7,7 @@ use App\Models\CateDesign;
 use App\Models\Design;
 use App\Models\DesignColorCompatibility;
 use App\Models\DesignImage;
+use App\Services\Customization\CardPresenter;
 use App\Services\Customization\CustomizationWorkflowRegistry;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -366,21 +367,68 @@ class DesignCatalogService
             )
             ->limit(1);
 
+        $previewColorHex = DesignImage::query()
+            ->leftJoin('colors', 'colors.id', '=', 'design_images.color_id')
+            ->select('colors.code_hex')
+            ->whereColumn('design_images.design_id', 'designs.id')
+            ->where('design_images.is_active', true)
+            ->when(
+                $allowedImageIds !== null,
+                fn ($query) => $query->whereIn('design_images.id', $allowedImageIds)
+            )
+            ->when(
+                $colorId !== null,
+                fn ($query) => $query->orderByRaw('(design_images.color_id = ?) DESC, design_images.sort_order ASC', [$colorId]),
+                fn ($query) => $query->orderBy('design_images.sort_order')
+            )
+            ->limit(1);
+
+        $previewColorName = DesignImage::query()
+            ->leftJoin('colors', 'colors.id', '=', 'design_images.color_id')
+            ->select('colors.name')
+            ->whereColumn('design_images.design_id', 'designs.id')
+            ->where('design_images.is_active', true)
+            ->when(
+                $allowedImageIds !== null,
+                fn ($query) => $query->whereIn('design_images.id', $allowedImageIds)
+            )
+            ->when(
+                $colorId !== null,
+                fn ($query) => $query->orderByRaw('(design_images.color_id = ?) DESC, design_images.sort_order ASC', [$colorId]),
+                fn ($query) => $query->orderBy('design_images.sort_order')
+            )
+            ->limit(1);
+
         return $this->baseQuery($categoryId, $allowedImageIds, $onlyPopular, $workflow)
             ->select(['id', 'cate_design_id', 'name', 'slug', 'featured_image_path', 'is_popular'])
-            ->addSelect(['preview_image_path' => $preview])
+            ->addSelect([
+                'preview_image_path' => $preview,
+                'preview_color_hex' => $previewColorHex,
+                'preview_color_name' => $previewColorName,
+            ])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->paginate($perPage)
-            ->through(fn (Design $design) => [
-                'id' => $design->id,
-                'category_id' => (int) $design->cate_design_id,
-                'name' => $design->name,
-                'slug' => $design->slug,
-                'preview_image_path' => $onlyPopular
+            ->through(function (Design $design) use ($onlyPopular) {
+                $imagePath = $onlyPopular
                     ? $design->resolveFeaturedThumbnailPath()
-                    : $design->preview_image_path,
-            ]);
+                    : $design->preview_image_path;
+
+                $isLightArtwork = CardPresenter::isLightArtwork(
+                    $imagePath,
+                    $design->preview_color_hex,
+                    $design->preview_color_name
+                );
+
+                return [
+                    'id' => $design->id,
+                    'category_id' => (int) $design->cate_design_id,
+                    'name' => $design->name,
+                    'slug' => $design->slug,
+                    'preview_image_path' => $imagePath,
+                    'is_light_artwork' => $isLightArtwork,
+                ];
+            });
     }
 
     private function scopeAllowedImages($query, ?Collection $allowedImageIds): void
