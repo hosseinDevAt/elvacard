@@ -38,7 +38,7 @@ class FuelCardCustomizationTest extends TestCase
             'customization_json' => [
                 'owner_name' => ' رضا محمدی ',
                 'phone_number' => ' ۰۹۱۲۳۴۵۶۷۸۹ ',
-                'vehicle_type' => 'کامیونت کشنده عمومی',
+                'vehicle_type' => 'کامیون کشنده عمومی',
                 'vehicle_model' => 'ولوو اف اچ 12',
                 'oil_serial_number' => '7744330',
                 'plate_number' => '۱۲ ب ۳۴۵ ایران ۱۱',
@@ -50,13 +50,32 @@ class FuelCardCustomizationTest extends TestCase
         $this->assertSame([
             'owner_name' => 'رضا محمدی',
             'phone_number' => '09123456789',
-            'vehicle_type' => 'کامیونت کشنده عمومی',
+            'vehicle_type' => 'کامیون کشنده عمومی',
             'vehicle_model' => 'ولوو اف اچ 12',
             'oil_serial_number' => '7744330',
             'vin' => 'IRABCDEFGH1234567',
             'plate_number' => '12 ب 345 ایران 11',
             'chip_info' => 'large',
         ], $result);
+    }
+
+    public function test_sanitize_normalizes_historical_kamyonet_vehicle_types(): void
+    {
+        $result1 = FuelCardCustomization::sanitize([
+            'customization_json' => [
+                'vehicle_type' => 'کامیونت کشنده عمومی',
+                'chip_info' => 'small',
+            ],
+        ]);
+        $this->assertSame('کامیون کشنده عمومی', $result1['vehicle_type']);
+
+        $result2 = FuelCardCustomization::sanitize([
+            'customization_json' => [
+                'vehicle_type' => 'کامیونت عمومی',
+                'chip_info' => 'small',
+            ],
+        ]);
+        $this->assertSame('کامیون عمومی', $result2['vehicle_type']);
     }
 
     public function test_chip_info_only_accepts_small_or_large(): void

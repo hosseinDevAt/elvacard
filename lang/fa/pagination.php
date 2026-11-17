@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'previous' => '&laquo; قبلی',
-    'next' => 'بعدی &raquo;',
+    'previous' => 'صفحه قبل',
+    'next' => 'صفحه بعد',
     'showing' => 'نمایش',
     'to' => 'تا',
     'of' => 'از',

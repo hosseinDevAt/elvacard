@@ -9,8 +9,8 @@ class FuelCardCustomization
     public const VALID_CHIP_SIZES = ['small', 'large'];
 
     public const VALID_VEHICLE_TYPES = [
-        'کامیونت کشنده عمومی',
-        'کامیونت عمومی',
+        'کامیون کشنده عمومی',
+        'کامیون عمومی',
         'سواری شخصی',
         'سواری عمومی',
         'مینی‌بوس عمومی',
@@ -82,8 +82,8 @@ class FuelCardCustomization
     public static function rulesFor(): array
     {
         return [
-            'owner_name' => ['required', 'string', 'max:100'],
-            'phone_number' => ['required', 'string', 'regex:/^09[0-9]{9}$/'],
+            'owner_name' => ['nullable', 'string', 'max:100'],
+            'phone_number' => ['nullable', 'string', 'regex:/^09[0-9]{9}$/'],
             'vehicle_type' => ['required', 'string', 'in:' . implode(',', self::VALID_VEHICLE_TYPES)],
             'vehicle_model' => ['nullable', 'string', 'max:100'],
             'oil_serial_number' => ['nullable', 'string', 'max:50'],
@@ -152,6 +152,12 @@ class FuelCardCustomization
 
             if ($key === 'vehicle_type') {
                 $type = is_string($value) ? trim($value) : '';
+
+                if ($type === 'کامیونت کشنده عمومی') {
+                    $type = 'کامیون کشنده عمومی';
+                } elseif ($type === 'کامیونت عمومی') {
+                    $type = 'کامیون عمومی';
+                }
 
                 if (in_array($type, self::VALID_VEHICLE_TYPES, true)) {
                     $sanitized[$key] = $type;

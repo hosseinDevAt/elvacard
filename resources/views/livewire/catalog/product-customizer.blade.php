@@ -146,7 +146,7 @@
 
                             @if ($designs->hasPages())
                                 <div class="pt-1">
-                                    {{ $designs->links() }}
+                                    {{ $designs->links('livewire.catalog.pagination') }}
                                 </div>
                             @endif
 

@@ -924,6 +924,11 @@ class ProductCustomizer extends Component
         return $this->workflow !== null ? CustomizationWorkflowEnum::tryFrom($this->workflow) : null;
     }
 
+    public function paginationView(): string
+    {
+        return 'livewire.catalog.pagination';
+    }
+
     public function render()
     {
         $allowedImageIds = $this->allowedImageIds();

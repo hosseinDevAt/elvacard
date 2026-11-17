@@ -168,7 +168,7 @@ class FuelCardDesignerEnhancementTest extends TestCase
     /**
      * Requirement 2: Validation of required and optional fields.
      */
-    public function test_fuel_card_requires_owner_name(): void
+    public function test_fuel_card_allows_empty_owner_name(): void
     {
         [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD);
 
@@ -178,21 +178,21 @@ class FuelCardDesignerEnhancementTest extends TestCase
             ->set('fuelCard.vehicle_type', 'سواری شخصی')
             ->set('fuelCard.chip_info', 'small')
             ->call('addToCart')
-            ->assertHasErrors(['fuelCard.owner_name' => 'required']);
+            ->assertHasNoErrors(['fuelCard.owner_name']);
     }
 
-    public function test_fuel_card_requires_valid_iranian_phone_number(): void
+    public function test_fuel_card_phone_number_is_optional_but_must_be_valid_if_provided(): void
     {
         [$product] = $this->createProductWithWorkflow(CustomizationWorkflowEnum::FUEL_CARD);
 
-        // Empty phone
+        // Empty phone is allowed (optional)
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
             ->set('fuelCard.owner_name', 'علی رضایی')
             ->set('fuelCard.phone_number', '')
             ->set('fuelCard.vehicle_type', 'سواری شخصی')
             ->set('fuelCard.chip_info', 'small')
             ->call('addToCart')
-            ->assertHasErrors(['fuelCard.phone_number']);
+            ->assertHasNoErrors(['fuelCard.phone_number']);
 
         // Invalid format (less than 11 digits or doesn't start with 09)
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
@@ -267,7 +267,7 @@ class FuelCardDesignerEnhancementTest extends TestCase
         Livewire::test(ProductCustomizer::class, ['productId' => $product->id])
             ->set('fuelCard.owner_name', 'رضا اکبری')
             ->set('fuelCard.phone_number', '۰۹۱۲۳۴۵۶۷۸۹')
-            ->set('fuelCard.vehicle_type', 'کامیونت عمومی')
+            ->set('fuelCard.vehicle_type', 'کامیون عمومی')
             ->set('fuelCard.vehicle_model', 'ولوو اف اچ 12')
             ->set('fuelCard.oil_serial_number', '7744330')
             ->set('fuelCard.plate_part1', '۱۲')
@@ -286,7 +286,7 @@ class FuelCardDesignerEnhancementTest extends TestCase
 
         $this->assertSame('رضا اکبری', $custom['owner_name']);
         $this->assertSame('09123456789', $custom['phone_number']);
-        $this->assertSame('کامیونت عمومی', $custom['vehicle_type']);
+        $this->assertSame('کامیون عمومی', $custom['vehicle_type']);
         $this->assertSame('ولوو اف اچ 12', $custom['vehicle_model']);
         $this->assertSame('7744330', $custom['oil_serial_number']);
         $this->assertSame('12 ج 345 ایران 11', $custom['plate_number']);
@@ -328,7 +328,7 @@ class FuelCardDesignerEnhancementTest extends TestCase
             'customization_json' => [
                 'owner_name' => 'رضا اکبری',
                 'phone_number' => '09123456789',
-                'vehicle_type' => 'کامیونت عمومی',
+                'vehicle_type' => 'کامیون عمومی',
                 'vehicle_model' => 'ولوو اف اچ 12',
                 'oil_serial_number' => '7744330',
                 'plate_number' => '12 ج 345 ایران 11',
@@ -342,7 +342,7 @@ class FuelCardDesignerEnhancementTest extends TestCase
             ->call('viewOrder', $order->id)
             ->assertSee('رضا اکبری')
             ->assertSee('09123456789')
-            ->assertSee('کامیونت عمومی')
+            ->assertSee('کامیون عمومی')
             ->assertSee('ولوو اف اچ 12')
             ->assertSee('7744330')
             ->assertSee('IRV12345678901234')

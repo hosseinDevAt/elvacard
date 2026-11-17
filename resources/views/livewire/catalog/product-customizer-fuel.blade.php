@@ -79,9 +79,9 @@
         <div class="space-y-1.5 sm:col-span-2">
             <div class="flex items-center justify-between">
                 <label for="fuel_owner_name" class="block text-xs font-bold text-slate-300">
-                    نام مالک کارت / خودرو <span class="text-[#ffde5b]">*</span>
+                    نام مالک کارت / خودرو
                 </label>
-                <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">الزامی</span>
+                <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">اختیاری</span>
             </div>
             <input
                 id="fuel_owner_name"
@@ -101,9 +101,9 @@
         <div class="space-y-1.5">
             <div class="flex items-center justify-between">
                 <label for="fuel_phone_number" class="block text-xs font-bold text-slate-300">
-                    شماره تلفن همراه <span class="text-[#ffde5b]">*</span>
+                    شماره تلفن همراه
                 </label>
-                <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">الزامی</span>
+                <span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">اختیاری</span>
             </div>
             <input
                 id="fuel_phone_number"
